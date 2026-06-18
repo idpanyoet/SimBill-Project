@@ -143,6 +143,22 @@ radiusService.syncVoucher().catch(e => console.warn('[startup sync] Gagal:', e.m
 setTimeout(async () => {
     try {
         const { query } = require('./config/db');
+        // Bersihkan voucher 'unused' yang berasal dari flow lama (invoice sudah expired/cancelled)
+        // Voucher dari flow baru tidak dibuat saat order, jadi tidak perlu cleanup khusus
+        const cleaned = await query(`
+            DELETE v FROM voucher v
+            JOIN invoice i ON i.keterangan LIKE CONCAT('Voucher ', v.username, ' — WA:%')
+            WHERE v.status = 'unused'
+              AND (i.status IN ('cancelled','overdue') OR i.tgl_jatuh_tempo < CURDATE())
+        `).catch(() => ({ affectedRows: 0 }));
+        if (cleaned.affectedRows > 0)
+            console.log(`[startup] Cleanup ${cleaned.affectedRows} voucher orphan (flow lama)`);
+    } catch(e) { /* skip */ }
+}, 5000);
+
+setTimeout(async () => {
+    try {
+        const { query } = require('./config/db');
         const radiusRoutes = require('./routes/radius');
         // Trigger sync via direct DB query
         const rows = await query('SELECT nasname, shortname, secret FROM nas');

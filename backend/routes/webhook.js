@@ -149,21 +149,27 @@ async function _prosesKonfirmasiBayar(order_id, payment_type, sukses, cancelled,
         await query(`UPDATE invoice SET status='paid', tgl_bayar=NOW(), metode_bayar=? WHERE id=?`,
             [payment_type, invVoucher.id]);
 
-        // Ambil info dari keterangan invoice: "Voucher USERNAME — WA: 628xxx"
-        const ket  = invVoucher.keterangan || '';
-        const usernameMatch = ket.match(/Voucher ([\w-]+)/);
-        const waMatch       = ket.match(/WA: (\d+)/);
-        const username = usernameMatch?.[1];
+        // Ambil info pembeli dari keterangan invoice
+        // Format baru: "Voucher PENDING — WA: 628xxx — Nama: Budi — Paket: 5"
+        // Format lama: "Voucher USERNAME — WA: 628xxx"
+        const ket      = invVoucher.keterangan || '';
+        const waMatch  = ket.match(/WA: (\d+)/);
+        const namaMatch= ket.match(/Nama: ([^—]+)/);
         const noHp     = waMatch?.[1];
+        const namaBeli = namaMatch?.[1]?.trim() || 'Pelanggan';
 
-        if (username && noHp) {
+        // Generate username baru (baru alur: voucher dibuat di sini bukan saat order)
+        const { _acakUsername } = require('./voucher-publik');
+        const username = _acakUsername();
+
+        if (noHp) {
             const paket = await queryOne('SELECT * FROM paket WHERE id=?', [invVoucher.paket_id]);
             if (paket) {
                 const { _aktivasiVoucher } = require('./voucher-publik');
-                await _aktivasiVoucher(username, noHp, 'Pelanggan', paket);
+                await _aktivasiVoucher(username, noHp, namaBeli, paket);
             }
         }
-        console.log(`[WEBHOOK] ✅ Voucher lunas: ${order_id}`);
+        console.log(`[WEBHOOK] ✅ Voucher lunas & dibuat: ${order_id} → ${username || '?'}`);
         return;
     }
 
