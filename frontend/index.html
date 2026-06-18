@@ -90,8 +90,8 @@ nav{position:sticky;top:0;z-index:100;background:rgba(40,39,37,.92);backdrop-fil
 .cek-box{max-width:640px;margin:0 auto;display:flex;align-items:center;gap:28px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:22px 24px}
 .cek-info h3{font-size:15px;font-weight:600;margin-bottom:4px}
 .cek-info p{font-size:13px;color:var(--text2)}
-.cek-form{display:flex;gap:8px;flex:1;min-width:0}
-.cek-form input{flex:1;padding:9px 13px;background:var(--card);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:inherit}
+.cek-form{display:flex;gap:8px;flex:1;min-width:0;flex-wrap:wrap}
+.cek-form input{flex:1;min-width:0;padding:9px 13px;background:var(--card);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:inherit}
 .cek-form input:focus{outline:none;border-color:var(--accent)}
 .btn-cek{padding:9px 18px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .15s}
 .btn-cek:hover{background:#1d4ed8}
@@ -194,11 +194,7 @@ footer a:hover{color:var(--accent)}
     <div class="stat"><div class="stat-val">99.2%</div><div class="stat-lbl">Uptime</div></div>
     <div class="stat"><div class="stat-val">&lt;3ms</div><div class="stat-lbl">Latensi Lokal</div></div>
   </div>
-  <div class="search-wrap">
-    <input type="text" id="inp-search" placeholder="Cari paket voucher..." oninput="filterPaket(this.value)">
-    <span class="search-ico">🔍</span>
   </div>
-</div>
 
 <div class="section" id="paket">
   <div class="sec-label">Pilih Paket Voucher</div>
