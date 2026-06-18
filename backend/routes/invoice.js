@@ -19,11 +19,21 @@ router.get('/', async (req, res, next) => {
         let where = ['1=1'];
         let params = [];
 
-        if (status)        { where.push('i.status = ?'); params.push(status); }
-        if (pelanggan_id)  { where.push('i.pelanggan_id = ?'); params.push(pelanggan_id); }
-        if (dari)          { where.push('i.tgl_invoice >= ?'); params.push(dari); }
-        if (sampai)        { where.push('i.tgl_invoice <= ?'); params.push(sampai); }
-        if (tipe_koneksi)  { where.push('p.tipe_koneksi = ?'); params.push(tipe_koneksi); }
+        if (status)       { where.push('i.status = ?'); params.push(status); }
+        if (pelanggan_id) { where.push('i.pelanggan_id = ?'); params.push(pelanggan_id); }
+        if (dari)         { where.push('i.tgl_invoice >= ?'); params.push(dari); }
+        if (sampai)       { where.push('i.tgl_invoice <= ?'); params.push(sampai); }
+
+        // Filter tab: pppoe, hotspot, atau voucher (pelanggan_id IS NULL)
+        if (tipe_koneksi === 'voucher') {
+            where.push('i.pelanggan_id IS NULL');
+        } else if (tipe_koneksi === 'pppoe') {
+            where.push('i.pelanggan_id IS NOT NULL');
+            where.push("(pk.tipe = 'pppoe' OR pk.tipe = 'keduanya')");
+        } else if (tipe_koneksi === 'hotspot') {
+            where.push('i.pelanggan_id IS NOT NULL');
+            where.push("(pk.tipe = 'hotspot' OR pk.tipe = 'keduanya')");
+        }
 
         const rows = await query(`
             SELECT i.*,

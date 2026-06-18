@@ -776,8 +776,9 @@ body.dark .toggle-thumb{left:18px}
 
         <!-- Tab bar -->
         <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:12px">
-          <button id="inv-tab-pppoe" onclick="switchInvTab('pppoe')" style="padding:8px 20px;font-size:13px;font-weight:500;border:none;background:none;border-bottom:2px solid var(--accent);margin-bottom:-2px;color:var(--accent);cursor:pointer">📡 PPPoE</button>
+          <button id="inv-tab-pppoe"   onclick="switchInvTab('pppoe')"   style="padding:8px 20px;font-size:13px;font-weight:500;border:none;background:none;border-bottom:2px solid var(--accent);margin-bottom:-2px;color:var(--accent);cursor:pointer">📡 PPPoE</button>
           <button id="inv-tab-hotspot" onclick="switchInvTab('hotspot')" style="padding:8px 20px;font-size:13px;font-weight:500;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text2);cursor:pointer">📶 Hotspot</button>
+          <button id="inv-tab-voucher" onclick="switchInvTab('voucher')" style="padding:8px 20px;font-size:13px;font-weight:500;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text2);cursor:pointer">🎟️ Voucher Online</button>
         </div>
 
         <div class="card">
@@ -3183,8 +3184,9 @@ let _invTab = 'pppoe';
 
 function switchInvTab(tab) {
   _invTab = tab;
-  ['pppoe','hotspot'].forEach(function(t) {
+  ['pppoe','hotspot','voucher'].forEach(function(t) {
     const btn = document.getElementById('inv-tab-' + t);
+    if (!btn) return;
     if (t === tab) {
       btn.style.borderBottomColor = 'var(--accent)';
       btn.style.color = 'var(--accent)';
@@ -3199,8 +3201,7 @@ function switchInvTab(tab) {
 async function loadInvoice() {
   try {
     const status = document.getElementById('inv-filter-status')?.value || '';
-    const tipe   = _invTab === 'pppoe' ? 'pppoe' : 'hotspot';
-    const params = new URLSearchParams({ limit: 100, tipe_koneksi: tipe });
+    const params = new URLSearchParams({ limit: 100, tipe_koneksi: _invTab });
     if (status) params.append('status', status);
     const data = await apiFetch('/api/invoice?' + params.toString());
     renderTblInvoice(data.data || data);
