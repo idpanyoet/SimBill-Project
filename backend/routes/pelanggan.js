@@ -1,0 +1,232 @@
+// routes/pelanggan.js — Manajemen pelanggan + sinkronisasi RADIUS
+const router = require('express').Router();
+const bcrypt = require('bcryptjs');
+const { query, queryOne, hitungExpired } = require('../config/db');
+const { authMiddleware } = require('../middleware/auth');
+const radiusService = require('../services/radius');
+const dayjs = require('dayjs');
+
+router.use(authMiddleware);
+
+// GET /api/pelanggan — daftar dengan filter & pagination
+router.get('/', async (req, res, next) => {
+    try {
+        const { status, tipe, cari, halaman = 1, limit = 20 } = req.query;
+        const offset = (parseInt(halaman) - 1) * parseInt(limit);
+
+        let where = ['1=1'];
+        let params = [];
+
+        if (status) { where.push('p.status = ?'); params.push(status); }
+        if (tipe)   { where.push('p.tipe_koneksi = ?'); params.push(tipe); }
+        if (cari)   {
+            where.push('(p.nama LIKE ? OR p.username LIKE ? OR p.no_hp LIKE ?)');
+            params.push(`%${cari}%`, `%${cari}%`, `%${cari}%`);
+        }
+
+        const whereStr = where.join(' AND ');
+
+        const [total] = await query(
+            `SELECT COUNT(*) AS total FROM pelanggan p WHERE ${whereStr}`, params
+        );
+        const rows = await query(`
+            SELECT p.*, pk.nama AS nama_paket, pk.kecepatan_dn, pk.harga
+            FROM pelanggan p
+            JOIN paket pk ON p.paket_id = pk.id
+            WHERE ${whereStr}
+            ORDER BY p.created_at DESC
+            LIMIT ? OFFSET ?
+        `, [...params, parseInt(limit), offset]);
+
+        res.json({ data: rows, total: total.total, halaman, limit });
+    } catch (e) { next(e); }
+});
+
+// GET /api/pelanggan/:id
+router.get('/:id', async (req, res, next) => {
+    try {
+        const p = await queryOne(`
+            SELECT p.*, pk.nama AS nama_paket, pk.kecepatan_dn, pk.kecepatan_up, pk.harga, pk.pool_name
+            FROM pelanggan p JOIN paket pk ON p.paket_id = pk.id
+            WHERE p.id = ?
+        `, [req.params.id]);
+        if (!p) return res.status(404).json({ error: 'Pelanggan tidak ditemukan' });
+        res.json(p);
+    } catch (e) { next(e); }
+});
+
+// POST /api/pelanggan — tambah pelanggan baru
+router.post('/', async (req, res, next) => {
+    let step = 'validasi';
+    try {
+        const { nama, username, password, no_hp, email, alamat,
+                paket_id, tipe_koneksi, ip_tetap, notes } = req.body;
+
+        if (!nama || !username || !password || !no_hp || !paket_id)
+            return res.status(400).json({ error: 'nama, username, password, no_hp, paket_id wajib diisi' });
+        if (!['pppoe', 'hotspot'].includes(tipe_koneksi))
+            return res.status(400).json({ error: 'tipe_koneksi harus pppoe atau hotspot' });
+
+        step = 'cek_username';
+        const existing = await queryOne('SELECT id FROM pelanggan WHERE username = ?', [username]);
+        if (existing) return res.status(400).json({ error: 'Username sudah digunakan' });
+
+        step = 'ambil_paket';
+        const paket = await queryOne('SELECT * FROM paket WHERE id = ?', [paket_id]);
+        if (!paket) return res.status(400).json({ error: 'Paket tidak ditemukan' });
+
+        step = 'siapkan_data';
+        // masa berlaku dihitung via hitungExpired
+        const tgl_aktif    = dayjs().format('YYYY-MM-DD');
+        const tgl_expired  = hitungExpired(paket.masa_aktif, paket.satuan_masa).format('YYYY-MM-DD');
+        const hash         = await bcrypt.hash(password, 12);
+
+        step = 'insert_pelanggan';
+        const result = await query(`
+            INSERT INTO pelanggan (nama, username, password, no_hp, email, alamat,
+                paket_id, tipe_koneksi, tgl_aktif, tgl_expired, ip_tetap, notes)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+        `, [nama, username, hash, no_hp, email || null, alamat || null,
+            paket_id, tipe_koneksi, tgl_aktif, tgl_expired, ip_tetap || null, notes || null]);
+
+        step = 'sync_radius';
+        // Sync ke FreeRADIUS — jika gagal, hapus dulu baris pelanggan agar tidak ada data
+        // pelanggan "hantu" yang tidak punya akses internet sama sekali.
+        try {
+            await radiusService.tambahUser(username, password, paket, tipe_koneksi, ip_tetap);
+        } catch (radiusErr) {
+            step = 'rollback_setelah_radius_gagal';
+            await query('DELETE FROM pelanggan WHERE id = ?', [result.insertId]);
+            throw new Error(`Gagal sinkronisasi RADIUS: ${radiusErr.message}`);
+        }
+
+        res.status(201).json({
+            pesan: 'Pelanggan berhasil ditambahkan',
+            id: result.insertId
+        });
+    } catch (e) {
+        if (e.code === 'ER_DUP_ENTRY')
+            return res.status(400).json({ error: 'Username sudah digunakan' });
+        // Sertakan info langkah yang gagal agar mudah didiagnosis dari log server,
+        // tanpa membocorkan detail teknis ke response client.
+        console.error(`[PELANGGAN] Gagal pada langkah '${step}':`, e.message);
+        e.message = `[${step}] ${e.message}`;
+        next(e);
+    }
+});
+
+// PUT /api/pelanggan/:id — edit pelanggan
+router.put('/:id', async (req, res, next) => {
+    try {
+        const { nama, no_hp, email, alamat, paket_id, tipe_koneksi, notes, username, password } = req.body;
+        if (!nama || !no_hp)
+            return res.status(400).json({ error: 'nama dan no_hp wajib diisi' });
+
+        const p = await queryOne('SELECT * FROM pelanggan WHERE id = ?', [req.params.id]);
+        if (!p) return res.status(404).json({ error: 'Pelanggan tidak ditemukan' });
+
+        const paketIdBaru = paket_id !== undefined && paket_id !== null && paket_id !== ''
+            ? parseInt(paket_id) : p.paket_id;
+        const tipeBaru    = tipe_koneksi || p.tipe_koneksi;
+        const usernameBaru = username || p.username;
+
+        // Ubah password di RADIUS jika password baru diberikan
+        if (password) {
+            const hash = await bcrypt.hash(password, 12);
+            await query('UPDATE pelanggan SET password=? WHERE id=?', [hash, req.params.id]);
+            // Update radcheck
+            await query(`
+                INSERT INTO radcheck (username, attribute, op, value)
+                VALUES (?, 'Cleartext-Password', ':=', ?)
+                ON DUPLICATE KEY UPDATE value = VALUES(value)
+            `, [usernameBaru, password]);
+        }
+
+        // Ubah username di RADIUS jika username berubah
+        if (usernameBaru !== p.username) {
+            // Cek duplikat
+            const cek = await queryOne('SELECT id FROM pelanggan WHERE username=? AND id!=?', [usernameBaru, p.id]);
+            if (cek) return res.status(400).json({ error: 'Username sudah digunakan pelanggan lain' });
+            // Update radcheck — rename username
+            await query('UPDATE radcheck SET username=? WHERE username=?', [usernameBaru, p.username]);
+            await query('UPDATE radreply SET username=? WHERE username=?', [usernameBaru, p.username]);
+            await query('UPDATE radusergroup SET username=? WHERE username=?', [usernameBaru, p.username]);
+        }
+
+        await query(`
+            UPDATE pelanggan SET nama=?, no_hp=?, email=?, alamat=?,
+                paket_id=?, tipe_koneksi=?, notes=?, username=?
+            WHERE id = ?
+        `, [nama, no_hp, email || null, alamat || null, paketIdBaru, tipeBaru,
+            notes || null, usernameBaru, req.params.id]);
+
+        // Update atribut RADIUS jika paket berubah
+        if (paketIdBaru !== p.paket_id) {
+            const paket = await queryOne('SELECT * FROM paket WHERE id = ?', [paketIdBaru]);
+            if (!paket) return res.status(400).json({ error: 'Paket baru tidak ditemukan' });
+            await radiusService.updatePaket(usernameBaru, paket, tipeBaru);
+        }
+
+        res.json({ pesan: 'Data pelanggan diperbarui' });
+    } catch (e) { next(e); }
+});
+
+// POST /api/pelanggan/:id/suspend — suspend pelanggan
+router.post('/:id/suspend', async (req, res, next) => {
+    try {
+        const p = await queryOne('SELECT * FROM pelanggan WHERE id = ?', [req.params.id]);
+        if (!p) return res.status(404).json({ error: 'Pelanggan tidak ditemukan' });
+
+        await query('UPDATE pelanggan SET status = ? WHERE id = ?', ['suspended', req.params.id]);
+        await radiusService.suspendUser(p.username);
+
+        // Kirim WA notifikasi suspend
+        const waService = require('../services/whatsapp');
+        await waService.kirimSuspend(p);
+
+        res.json({ pesan: `${p.nama} berhasil disuspend` });
+    } catch (e) { next(e); }
+});
+
+// POST /api/pelanggan/:id/aktifkan — reaktivasi
+router.post('/:id/aktifkan', async (req, res, next) => {
+    try {
+        const p = await queryOne(`
+            SELECT pl.*, pk.* FROM pelanggan pl
+            JOIN paket pk ON pl.paket_id = pk.id WHERE pl.id = ?
+        `, [req.params.id]);
+        if (!p) return res.status(404).json({ error: 'Pelanggan tidak ditemukan' });
+
+        const tgl_expired = hitungExpired(p.masa_aktif, p.satuan_masa).format('YYYY-MM-DD HH:mm:ss');
+        await query('UPDATE pelanggan SET status = ?, tgl_expired = ? WHERE id = ?',
+            ['aktif', tgl_expired, req.params.id]);
+        await radiusService.aktifkanUser(p.username);
+
+        res.json({ pesan: `${p.nama} berhasil diaktifkan` });
+    } catch (e) { next(e); }
+});
+
+// GET /api/pelanggan/:id/sesi — sesi RADIUS aktif
+router.get('/:id/sesi', async (req, res, next) => {
+    try {
+        const p = await queryOne('SELECT username FROM pelanggan WHERE id = ?', [req.params.id]);
+        if (!p) return res.status(404).json({ error: 'Tidak ditemukan' });
+        const sesi = await radiusService.getSesi(p.username);
+        res.json(sesi);
+    } catch (e) { next(e); }
+});
+
+// DELETE /api/pelanggan/:id — hapus pelanggan
+router.delete('/:id', async (req, res, next) => {
+    try {
+        const p = await queryOne('SELECT * FROM pelanggan WHERE id = ?', [req.params.id]);
+        if (!p) return res.status(404).json({ error: 'Tidak ditemukan' });
+
+        await radiusService.hapusUser(p.username);
+        await query('DELETE FROM pelanggan WHERE id = ?', [req.params.id]);
+
+        res.json({ pesan: 'Pelanggan dihapus' });
+    } catch (e) { next(e); }
+});
+
+module.exports = router;

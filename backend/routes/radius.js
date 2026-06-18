@@ -1,0 +1,674 @@
+// routes/radius.js
+const router = require('express').Router();
+const { query, queryOne } = require('../config/db');
+const { authMiddleware } = require('../middleware/auth');
+const radiusService = require('../services/radius');
+
+router.use(authMiddleware);
+
+router.get('/status', async (req, res, next) => {
+    try {
+        // Cek koneksi RADIUS dengan query ke tabel radacct.
+        // Kalau query berhasil → RADIUS DB terhubung.
+        // Kalau gagal (tabel tidak ada / DB error) → RADIUS bermasalah.
+        const [{ sesi_aktif }] = await query(
+            `SELECT COUNT(*) AS sesi_aktif FROM radacct WHERE acctstoptime IS NULL`
+        );
+        res.json({ online: true, sesi_aktif });
+    } catch (e) {
+        // Tidak throw ke next(e) — cukup kembalikan status offline
+        console.warn('[RADIUS] Status check gagal:', e.message);
+        res.json({ online: false, sesi_aktif: 0, error: e.message });
+    }
+});
+
+router.get('/sesi-aktif', async (req, res, next) => {
+    try {
+        const sesi = await radiusService.semuaSesiAktif();
+        res.json(sesi);
+    } catch (e) { next(e); }
+});
+
+router.post('/putus/:username', async (req, res, next) => {
+    try {
+        const hasil = await radiusService.putusKoneksi(req.params.username);
+        res.json(hasil);
+    } catch (e) { next(e); }
+});
+
+router.get('/nas', async (req, res, next) => {
+    try {
+        const rows = await query(`
+            SELECT n.*,
+                (SELECT COUNT(DISTINCT username) FROM radacct
+                 WHERE nasipaddress = n.nasname AND acctstoptime IS NULL) AS jumlah_user,
+                (SELECT MAX(acctstarttime) FROM radacct
+                 WHERE nasipaddress = n.nasname) AS last_seen
+            FROM nas n ORDER BY n.id
+        `);
+
+        // Cek status online via ping (1 packet, timeout 1 detik)
+        const { exec } = require('child_process');
+        const pingPromises = rows.map(n => new Promise(resolve => {
+            exec(`ping -c 1 -W 1 ${n.nasname} 2>/dev/null`, (err) => {
+                resolve({ ...n, online: !err });
+            });
+        }));
+        const result = await Promise.all(pingPromises);
+        res.json(result);
+    } catch (e) { next(e); }
+});
+
+// ── Sync tabel nas → /etc/freeradius/3.0/clients.conf ──────
+async function syncClientsConf() {
+    try {
+        const rows = await query('SELECT nasname, shortname, secret FROM nas');
+        const CLIENTS_CONF = '/etc/freeradius/3.0/clients.conf';
+
+        // Baca file asli, hapus semua blok client yang pernah ditambahkan billing
+        let original = fs.existsSync(CLIENTS_CONF)
+            ? fs.readFileSync(CLIENTS_CONF, 'utf8') : '';
+
+        // Hapus blok dari marker billing sampai akhir
+        const MARKER = '\n# === NETBILL AUTO-GENERATED ===';
+        const markerIdx = original.indexOf(MARKER);
+        if (markerIdx !== -1) original = original.slice(0, markerIdx);
+
+        // Tulis ulang dengan semua NAS dari DB
+        const blocks = rows.map(n => {
+            const name = (n.shortname || n.nasname).replace(/[^a-zA-Z0-9_]/g, '_');
+            return `\nclient ${name} {\n    ipaddr = ${n.nasname}\n    secret = ${n.secret}\n    shortname = ${name}\n}`;
+        }).join('\n');
+
+        fs.writeFileSync(CLIENTS_CONF,
+            original + MARKER + '\n' + blocks + '\n# === END NETBILL ===\n',
+            { mode: 0o640 });
+
+        // Reload FreeRADIUS agar langsung aktif
+        execP('systemctl reload freeradius 2>/dev/null || systemctl restart freeradius 2>/dev/null')
+            .catch(() => {});
+
+        console.log(`[clients.conf] Synced ${rows.length} NAS`);
+    } catch(e) {
+        console.warn('[clients.conf] Sync gagal:', e.message);
+    }
+}
+
+router.post('/nas', async (req, res, next) => {
+    try {
+        const { nasname, shortname, type, secret, description } = req.body;
+        if (!nasname || !secret)
+            return res.status(400).json({ error: 'nasname dan secret wajib diisi' });
+
+        await query(
+            `INSERT INTO nas (nasname, shortname, type, secret, description) VALUES (?,?,?,?,?)`,
+            [nasname, shortname || null, type || 'other', secret, description || shortname || null]
+        );
+
+        // Sync ke clients.conf agar FreeRADIUS langsung mengenali NAS baru
+        syncClientsConf();
+
+        res.status(201).json({ pesan: 'NAS ditambahkan' });
+    } catch (e) { next(e); }
+});
+
+// PUT /api/radius/nas/:id — edit NAS
+router.put('/nas/:id', async (req, res, next) => {
+    try {
+        const { nasname, shortname, type, secret, description } = req.body;
+        if (!nasname || !secret)
+            return res.status(400).json({ error: 'nasname dan secret wajib diisi' });
+        await query(
+            `UPDATE nas SET nasname=?, shortname=?, type=?, secret=?, description=? WHERE id=?`,
+            [nasname, shortname || null, type || 'other', secret, description || shortname || null, req.params.id]
+        );
+        // Sync clients.conf
+        syncClientsConf();
+        res.json({ pesan: 'NAS diperbarui' });
+    } catch (e) { next(e); }
+});
+
+router.delete('/nas/:id', async (req, res, next) => {
+    try {
+        await query('DELETE FROM nas WHERE id=?', [req.params.id]);
+
+        // Sync ke clients.conf agar NAS yang dihapus tidak bisa autentikasi lagi
+        syncClientsConf();
+
+        res.json({ pesan: 'NAS dihapus' });
+    } catch (e) { next(e); }
+});
+
+// ============================================================
+// VPN ACCOUNTS
+// ============================================================
+
+// GET /api/radius/vpn — list semua akun VPN
+router.get('/vpn', authMiddleware, async (req, res, next) => {
+    try {
+        const rows = await query(`
+            SELECT v.*, n.shortname AS nas_nama
+            FROM vpn_account v
+            LEFT JOIN nas n ON v.nas_id = n.id
+            ORDER BY v.created_at DESC
+        `);
+        // Sensor password & PSK
+        const safe = rows.map(r => ({
+            ...r,
+            password:  r.password  ? '••••••' : '',
+            ipsec_psk: r.ipsec_psk ? '••••••' : ''
+        }));
+        res.json(safe);
+    } catch (e) { next(e); }
+});
+
+// POST /api/radius/vpn — tambah akun VPN
+router.post('/vpn', authMiddleware, async (req, res, next) => {
+    try {
+        const { nama, protokol, server, port, username, password,
+                pubkey, allowed_ips, ipsec_psk, nas_id, catatan } = req.body;
+        if (!nama || !server || !username)
+            return res.status(400).json({ error: 'nama, server, username wajib diisi' });
+        const result = await query(`
+            INSERT INTO vpn_account
+              (nama, protokol, server, port, username, password, pubkey, allowed_ips, ipsec_psk, nas_id, catatan)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)
+        `, [nama, protokol||'wireguard', server, port||51820, username,
+            password||null, pubkey||null, allowed_ips||'0.0.0.0/0',
+            ipsec_psk||null, nas_id||null, catatan||null]);
+        res.json({ id: result.insertId, pesan: 'Akun VPN berhasil ditambahkan' });
+    } catch (e) { next(e); }
+});
+
+// PUT /api/radius/vpn/:id — update status (aktif/nonaktif)
+router.put('/vpn/:id', authMiddleware, async (req, res, next) => {
+    try {
+        const { status } = req.body;
+        await query('UPDATE vpn_account SET status=? WHERE id=?', [status, req.params.id]);
+        res.json({ pesan: 'Status VPN diperbarui' });
+    } catch (e) { next(e); }
+});
+
+// DELETE /api/radius/vpn/:id — hapus akun VPN
+router.delete('/vpn/:id', authMiddleware, async (req, res, next) => {
+    try {
+        await query('DELETE FROM vpn_account WHERE id=?', [req.params.id]);
+        res.json({ pesan: 'Akun VPN dihapus' });
+    } catch (e) { next(e); }
+});
+
+// ============================================================
+// VPN SERVER MANAGEMENT — WireGuard & L2TP/IPSec
+// ============================================================
+const { exec, execSync } = require('child_process');
+const fs   = require('fs');
+const path = require('path');
+
+const WG_IFACE     = 'wg0';
+const WG_SUBNET    = '10.10.28';
+const WG_PORT      = 51820;
+const WG_CONF      = `/etc/wireguard/${WG_IFACE}.conf`;
+const L2TP_SECRETS = '/etc/ppp/chap-secrets';
+const IPSEC_CONF   = '/etc/ipsec.secrets';
+
+function execP(cmd, opts={}) {
+    return new Promise((res, rej) => {
+        exec(cmd, { timeout: 60000, ...opts }, (err, stdout, stderr) => {
+            if (err) rej(new Error(stderr || err.message));
+            else res(stdout.trim());
+        });
+    });
+}
+
+function isInstalled(bin) {
+    try { execSync(`which ${bin}`, {stdio:'pipe'}); return true; } catch { return false; }
+}
+
+function isRunning(service) {
+    try {
+        const out = execSync(`systemctl is-active ${service} 2>/dev/null`, {stdio:'pipe'}).toString().trim();
+        return out === 'active';
+    } catch { return false; }
+}
+
+// GET /api/radius/vpn/mikrotik-script/:id — generate RouterOS script
+router.get('/vpn/mikrotik-script/:id', authMiddleware, async (req, res, next) => {
+    try {
+        const row = await queryOne('SELECT * FROM vpn_account WHERE id=?', [req.params.id]);
+        if (!row) return res.status(404).json({ error: 'VPN tidak ditemukan' });
+
+        // Ambil IP server VPS (dari env atau otomatis)
+        const serverIp = process.env.VPS_PUBLIC_IP || row.server || '(IP-SERVER-VPS)';
+        let script = '';
+
+        if (row.protokol === 'l2tp') {
+            script = `/interface l2tp-client
+remove [find name="l2tp-netbill"]
+/interface l2tp-client
+add name="l2tp-netbill" \\
+    connect-to=${serverIp} \\
+    user="${row.username}" \\
+    password="${row.password || '(password)'}" \\
+    profile=default \\
+    use-ipsec=no \\
+    disabled=no`;
+        } else if (row.protokol === 'wireguard') {
+            // Baca server public key dari setting
+            let serverPubkey = '(SERVER-PUBLIC-KEY)';
+            try {
+                const setting = await queryOne("SELECT nilai FROM setting WHERE kunci='wg_server_pubkey'");
+                if (setting) serverPubkey = setting.nilai;
+            } catch {}
+
+            const tunnelIp = (row.allowed_ips || '10.10.28.2/32').split(',')[0].trim();
+
+            script = `/interface wireguard
+remove [find name="wg-netbill"]
+/ip address
+remove [find comment="netbill-wg-ip"]
+/interface wireguard peers
+remove [find comment="netbill-wg-peer"]
+
+/interface wireguard
+add name="wg-netbill" private-key="${row.password || '(PRIVATE-KEY-PEER)'}" listen-port=13231
+
+/ip address
+add address=${tunnelIp} interface="wg-netbill" comment="netbill-wg-ip"
+
+/interface wireguard peers
+add interface="wg-netbill" \\
+    public-key="${serverPubkey}" \\
+    endpoint-address=${serverIp} \\
+    endpoint-port=${row.port || WG_PORT} \\
+    allowed-address=${row.allowed_ips || '10.10.28.0/24'} \\
+    persistent-keepalive=25 \\
+    comment="netbill-wg-peer"`;
+        }
+
+        res.json({ script, protokol: row.protokol, nama: row.nama });
+    } catch(e) { next(e); }
+});
+
+// GET /api/radius/vpn/wg/status
+router.get('/vpn/wg/status', authMiddleware, async (req, res) => {
+    const installed = isInstalled('wg');
+    const running   = installed && isRunning(`wg-quick@${WG_IFACE}`);
+    let peers = [];
+    if (running) {
+        try {
+            const raw = execSync(`wg show ${WG_IFACE} dump`, {stdio:'pipe'}).toString().trim().split('\n').slice(1);
+            peers = raw.filter(Boolean).map(line => {
+                const [pubkey,,,,allowed,latest,rx,tx] = line.split('\t');
+                return { pubkey, allowed, latest: latest==='0'?'Belum pernah':new Date(+latest*1000).toLocaleString('id-ID'), rx, tx };
+            });
+        } catch {}
+    }
+    res.json({ installed, running, peers });
+});
+
+// GET /api/radius/vpn/l2tp/status
+router.get('/vpn/l2tp/status', authMiddleware, async (req, res) => {
+    const installed = isInstalled('xl2tpd') && isInstalled('ipsec');
+    const swanRunning = isRunning('strongswan-starter') || isRunning('ipsec') || isRunning('strongswan');
+    const running   = installed && isRunning('xl2tpd') && swanRunning;
+
+    // Ambil user dari DB (lebih reliable dari parsing file)
+    let users = [];
+    try {
+        const rows = await query(`SELECT username, password, catatan FROM vpn_account WHERE protokol='l2tp' AND status='aktif' ORDER BY id`);
+        // Baca IP & password dari chap-secrets sebagai fallback
+        const ipMap  = {};
+        const pwMap  = {};
+        if (fs.existsSync(L2TP_SECRETS)) {
+            fs.readFileSync(L2TP_SECRETS,'utf8').split('\n')
+              .filter(l => l.trim() && !l.startsWith('#'))
+              .forEach(l => {
+                  const p = l.trim().split(/\s+/);
+                  if (p[0]) {
+                      pwMap[p[0]] = p[2] || '';   // kolom ke-3 = password
+                      ipMap[p[0]] = p[3] || '*';  // kolom ke-4 = ip
+                  }
+              });
+        }
+        users = rows.map(r => ({
+            id:       r.id,
+            username: r.username,
+            password: r.password || pwMap[r.username] || '',
+            ip:       ipMap[r.username] || '*'
+        }));
+
+        // Update password di DB kalau ada yang kosong tapi ada di file
+        for (const r of rows) {
+            if (!r.password && pwMap[r.username]) {
+                await query(`UPDATE vpn_account SET password=? WHERE username=? AND protokol='l2tp'`,
+                    [pwMap[r.username], r.username]).catch(()=>{});
+            }
+        }
+    } catch(e) {
+        // DB tabel belum ada — baca dari file saja
+        if (fs.existsSync(L2TP_SECRETS)) {
+            const lines = fs.readFileSync(L2TP_SECRETS,'utf8').split('\n');
+            users = lines.filter(l => l.trim() && !l.startsWith('#'))
+                .map(l => { const p=l.trim().split(/\s+/); return { username:p[0], password:p[2]||'', ip:p[3]||'*' }; });
+        }
+    }
+    res.json({ installed, running, users });
+});
+
+// POST /api/radius/vpn/wg/install
+router.post('/vpn/wg/install', authMiddleware, async (req, res, next) => {
+    try {
+        res.json({ pesan: 'Instalasi WireGuard dimulai di background...' });
+        // Jalankan async setelah response terkirim
+        setImmediate(async () => {
+            try {
+                await execP('apt-get update -qq && apt-get install -y wireguard wireguard-tools 2>&1');
+                // Generate server keys kalau belum ada
+                if (!fs.existsSync(WG_CONF)) {
+                    const privkey = execSync('wg genkey').toString().trim();
+                    const pubkey  = execSync(`echo "${privkey}" | wg pubkey`).toString().trim();
+                    // Deteksi interface utama
+                    const mainIface = execSync("ip route | grep default | awk '{print $5}' | head -1").toString().trim() || 'eth0';
+                    const conf = `[Interface]
+PrivateKey = ${privkey}
+Address = ${WG_SUBNET}.1/24
+ListenPort = ${WG_PORT}
+PostUp = iptables -A FORWARD -i ${WG_IFACE} -j ACCEPT; iptables -t nat -A POSTROUTING -o ${mainIface} -j MASQUERADE
+PostDown = iptables -D FORWARD -i ${WG_IFACE} -j ACCEPT; iptables -t nat -D POSTROUTING -o ${mainIface} -j MASQUERADE
+`;
+                    fs.writeFileSync(WG_CONF, conf, {mode:0o600});
+                    // Simpan pubkey server ke setting
+                    const { query } = require('../config/db');
+                    await query(`INSERT INTO setting (kunci,nilai,deskripsi) VALUES ('wg_server_pubkey',?,'WireGuard server public key') ON DUPLICATE KEY UPDATE nilai=?`, [pubkey,pubkey]);
+                }
+                await execP(`systemctl enable wg-quick@${WG_IFACE} && systemctl start wg-quick@${WG_IFACE}`);
+                console.log('[WireGuard] Install & start selesai');
+            } catch(e) { console.error('[WireGuard install]', e.message); }
+        });
+    } catch(e) { next(e); }
+});
+
+// POST /api/radius/vpn/wg/toggle — start/stop
+router.post('/vpn/wg/toggle', authMiddleware, async (req, res, next) => {
+    try {
+        const action = req.body.action === 'start' ? 'start' : 'stop';
+        await execP(`systemctl ${action} wg-quick@${WG_IFACE}`);
+        res.json({ pesan: `WireGuard ${action === 'start' ? 'diaktifkan' : 'dimatikan'}` });
+    } catch(e) { next(e); }
+});
+
+// POST /api/radius/vpn/wg/peer — tambah peer
+router.post('/vpn/wg/peer', authMiddleware, async (req, res, next) => {
+    try {
+        const { nama, ip_tunnel, pubkey, allowed_ips, catatan } = req.body;
+        if (!nama || !ip_tunnel || !pubkey)
+            return res.status(400).json({ error: 'nama, ip_tunnel, pubkey wajib diisi' });
+
+        const peerConf = `\n# Peer: ${nama}${catatan?' — '+catatan:''}\n[Peer]\nPublicKey = ${pubkey}\nAllowedIPs = ${ip_tunnel}\n`;
+        fs.appendFileSync(WG_CONF, peerConf);
+
+        // Hot-reload kalau interface sedang jalan
+        if (isRunning(`wg-quick@${WG_IFACE}`)) {
+            await execP(`wg addconf ${WG_IFACE} <(wg-quick strip ${WG_IFACE})`).catch(async () => {
+                await execP(`wg syncconf ${WG_IFACE} <(wg-quick strip ${WG_IFACE})`).catch(()=>{});
+            });
+        }
+
+        // Simpan ke DB juga
+        await query(`INSERT INTO vpn_account (nama,protokol,server,port,username,pubkey,allowed_ips,catatan,status) VALUES (?,?,?,?,?,?,?,?,'aktif')`,
+            [nama,'wireguard',WG_SUBNET+'.1',WG_PORT,nama,pubkey,allowed_ips||ip_tunnel,catatan||null]);
+
+        res.json({ pesan: `Peer "${nama}" berhasil ditambahkan` });
+    } catch(e) { next(e); }
+});
+
+// DELETE /api/radius/vpn/wg/peer/:pubkey — hapus peer
+router.delete('/vpn/wg/peer/:id', authMiddleware, async (req, res, next) => {
+    try {
+        // Ambil pubkey dari DB
+        const row = await queryOne('SELECT * FROM vpn_account WHERE id=? AND protokol=?', [req.params.id,'wireguard']);
+        if (!row) return res.status(404).json({ error: 'Peer tidak ditemukan' });
+
+        // Hapus dari konfigurasi file
+        if (fs.existsSync(WG_CONF)) {
+            let conf = fs.readFileSync(WG_CONF,'utf8');
+            // Hapus blok [Peer] yang mengandung public key ini
+            conf = conf.replace(new RegExp(`\\n# Peer:.*?\\n\\[Peer\\]\\nPublicKey = ${row.pubkey.replace(/[+/]/g,'\\$&')}[^\\[]*`,'s'),'');
+            fs.writeFileSync(WG_CONF, conf, {mode:0o600});
+        }
+        // Hot-remove
+        if (isRunning(`wg-quick@${WG_IFACE}`)) {
+            await execP(`wg set ${WG_IFACE} peer ${row.pubkey} remove`).catch(()=>{});
+        }
+        await query('DELETE FROM vpn_account WHERE id=?', [req.params.id]);
+        res.json({ pesan: `Peer berhasil dihapus` });
+    } catch(e) { next(e); }
+});
+
+// POST /api/radius/vpn/l2tp/install
+router.post('/vpn/l2tp/install', authMiddleware, async (req, res, next) => {
+    try {
+        res.json({ pesan: 'Instalasi L2TP/IPSec dimulai di background...' });
+        setImmediate(async () => {
+            try {
+                await execP('apt-get update -qq && apt-get install -y xl2tpd strongswan strongswan-pki libstrongswan-standard-plugins 2>&1');
+                // Konfigurasi dasar IPSec
+                const ipsecConf = `config setup\n    charondebug="ike 1, knl 1, cfg 0"\nconn L2TP-PSK\n    authby=secret\n    left=%any\n    right=%any\n    auto=add\n`;
+                if (!fs.existsSync('/etc/ipsec.conf')) fs.writeFileSync('/etc/ipsec.conf', ipsecConf);
+                if (!fs.existsSync(IPSEC_CONF)) fs.writeFileSync(IPSEC_CONF, `: PSK "changeme_psk"\n`, {mode:0o600});
+                // xl2tpd config dasar
+                const xl2tpConf = `[global]\n[lns default]\n  ip range = 10.10.29.10-10.10.29.100\n  local ip = 10.10.29.1\n  require chap = yes\n  refuse pap = no\n  require authentication = yes\n  ppp debug = yes\n  pppoptfile = /etc/ppp/options.l2tpd.lns\n  length bit = yes\n`;
+                // Selalu timpa xl2tpd.conf dengan konfigurasi bersih (bawaan Ubuntu penuh comment)
+                fs.mkdirSync('/etc/xl2tpd', {recursive:true});
+                fs.writeFileSync('/etc/xl2tpd/xl2tpd.conf', xl2tpConf);
+                console.log('[L2TP] xl2tpd.conf ditulis ulang');
+                // Buat file options PPP
+                const pppOpts = `ipcp-accept-local\nipcp-accept-remote\nms-dns 8.8.8.8\nms-dns 8.8.4.4\nnoccp\nauth\ncrtscts\nidle 1800\nmtu 1410\nmru 1410\nnodefaultroute\ndebug\nlock\nproxyarp\nconnect-delay 5000\n`;
+                if (!fs.existsSync('/etc/ppp/options.l2tpd.lns')) {
+                    fs.writeFileSync('/etc/ppp/options.l2tpd.lns', pppOpts);
+                    console.log('[L2TP] File options.l2tpd.lns dibuat');
+                }
+                // Enable & start — deteksi nama service strongswan
+                const swanSvc = (() => {
+                    try { execSync('systemctl list-unit-files strongswan-starter.service 2>/dev/null | grep enabled', {stdio:'pipe'}); return 'strongswan-starter'; }
+                    catch { return 'strongswan-starter'; } // Ubuntu 22/24 default
+                })();
+                await execP(`systemctl enable xl2tpd ${swanSvc} && systemctl start xl2tpd ${swanSvc}`);
+                console.log('[L2TP] Install & start selesai, service: '+swanSvc);
+            } catch(e) { console.error('[L2TP install]', e.message); }
+        });
+    } catch(e) { next(e); }
+});
+
+// POST /api/radius/vpn/l2tp/toggle
+router.post('/vpn/l2tp/toggle', authMiddleware, async (req, res, next) => {
+    try {
+        const action = req.body.action === 'start' ? 'start' : 'stop';
+        // Ubuntu 22/24 pakai strongswan-starter, versi lama pakai strongswan/ipsec
+        const swanService = (() => {
+            try { execSync('systemctl list-units --type=service | grep strongswan-starter', {stdio:'pipe'}); return 'strongswan-starter'; }
+            catch { try { execSync('systemctl list-units --type=service | grep ipsec', {stdio:'pipe'}); return 'ipsec'; }
+            catch { return 'strongswan'; } }
+        })();
+        await execP(`systemctl ${action} xl2tpd ${swanService}`);
+        res.json({ pesan: `L2TP/IPSec ${action === 'start' ? 'diaktifkan' : 'dimatikan'} (${swanService})` });
+    } catch(e) { next(e); }
+});
+
+// POST /api/radius/vpn/l2tp/user — tambah user L2TP
+router.post('/vpn/l2tp/user', authMiddleware, async (req, res, next) => {
+    try {
+        const { username, password, ip } = req.body;
+        if (!username || !password) return res.status(400).json({ error: 'username dan password wajib' });
+
+        // Pastikan direktori /etc/ppp ada
+        const secretsDir = path.dirname(L2TP_SECRETS);
+        if (!fs.existsSync(secretsDir)) {
+            fs.mkdirSync(secretsDir, { recursive: true });
+            console.log('[L2TP] Direktori /etc/ppp dibuat');
+        }
+
+        // Buat file chap-secrets dengan header jika belum ada
+        if (!fs.existsSync(L2TP_SECRETS)) {
+            fs.writeFileSync(L2TP_SECRETS,
+                '# Secrets for L2TP VPN\n# username  server  password  ip\n',
+                { mode: 0o600 });
+            console.log('[L2TP] File chap-secrets dibuat baru');
+        }
+
+        // Cek duplikat
+        const existing = fs.readFileSync(L2TP_SECRETS, 'utf8');
+        if (existing.split('\n').some(l => l.trim().startsWith(username + ' '))) {
+            return res.status(409).json({ error: `Username "${username}" sudah ada` });
+        }
+
+        // Tulis ke chap-secrets — format: username * password ip
+        const ipValue = (ip && ip !== '*') ? ip : '*';
+        const line = `${username} * ${password} ${ipValue}\n`;
+        fs.appendFileSync(L2TP_SECRETS, line, { mode: 0o600 });
+
+        // Verifikasi berhasil ditulis
+        const verify = fs.readFileSync(L2TP_SECRETS, 'utf8');
+        if (!verify.includes(username)) {
+            return res.status(500).json({ error: 'Gagal menulis ke /etc/ppp/chap-secrets' });
+        }
+        console.log(`[L2TP] User "${username}" ditambahkan ke chap-secrets`);
+
+        // Reload xl2tpd agar user langsung aktif tanpa restart
+        execP('systemctl reload xl2tpd 2>/dev/null || systemctl restart xl2tpd 2>/dev/null')
+            .catch(e => console.warn('[L2TP] Reload gagal:', e.message));
+
+        // Simpan ke DB
+        try {
+            await query(`INSERT INTO vpn_account (nama,protokol,server,port,username,password,status) VALUES (?,?,?,?,?,?,'aktif')`,
+                [username, 'l2tp', '127.0.0.1', 1701, username, password]);
+        } catch (dbErr) {
+            if (dbErr.message && dbErr.message.includes('vpn_account')) {
+                await query(`CREATE TABLE IF NOT EXISTS vpn_account (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    nama VARCHAR(100) NOT NULL,
+                    protokol ENUM('wireguard','l2tp') NOT NULL DEFAULT 'wireguard',
+                    server VARCHAR(255) NOT NULL,
+                    port INT NOT NULL DEFAULT 51820,
+                    username VARCHAR(100) NOT NULL,
+                    password TEXT,
+                    pubkey TEXT,
+                    allowed_ips VARCHAR(255) DEFAULT '0.0.0.0/0',
+                    ipsec_psk TEXT,
+                    nas_id INT DEFAULT NULL,
+                    status ENUM('aktif','nonaktif') NOT NULL DEFAULT 'aktif',
+                    catatan TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB`);
+                await query(`INSERT INTO vpn_account (nama,protokol,server,port,username,password,status) VALUES (?,?,?,?,?,?,'aktif')`,
+                    [username, 'l2tp', '127.0.0.1', 1701, username, password]);
+            } else { throw dbErr; }
+        }
+
+        res.json({ pesan: `User "${username}" berhasil ditambahkan dan xl2tpd direload` });
+    } catch(e) { next(e); }
+});
+
+// DELETE /api/radius/vpn/l2tp/user/:id
+router.delete('/vpn/l2tp/user/:id', authMiddleware, async (req, res, next) => {
+    try {
+        const row = await queryOne('SELECT * FROM vpn_account WHERE id=? AND protokol=?', [req.params.id,'l2tp']);
+        if (!row) return res.status(404).json({ error: 'User tidak ditemukan' });
+
+        // Hapus dari chap-secrets
+        if (fs.existsSync(L2TP_SECRETS)) {
+            const lines = fs.readFileSync(L2TP_SECRETS,'utf8').split('\n')
+                .filter(l => !l.trim().startsWith(row.username + ' '));
+            fs.writeFileSync(L2TP_SECRETS, lines.join('\n'));
+        }
+
+        // Reload xl2tpd
+        execP('systemctl reload xl2tpd 2>/dev/null || systemctl restart xl2tpd 2>/dev/null')
+            .catch(e => console.warn('[L2TP] Reload gagal:', e.message));
+
+        await query('DELETE FROM vpn_account WHERE id=?', [req.params.id]);
+        res.json({ pesan: `User "${row.username}" berhasil dihapus` });
+    } catch(e) { next(e); }
+});
+
+// POST /api/radius/vpn/wg/genkey — generate keypair server-side
+router.post('/vpn/wg/genkey', authMiddleware, async (req, res, next) => {
+    try {
+        const privkey = (await execP('wg genkey')).trim();
+        const pubkey  = (await execP(`echo "${privkey}" | wg pubkey`)).trim();
+        res.json({ privkey, pubkey });
+    } catch(e) {
+        // WireGuard belum install
+        res.status(503).json({ error: 'WireGuard belum terinstall. Install dulu dari panel VPN.' });
+    }
+});
+
+// POST /api/radius/single-session — aktifkan/nonaktifkan single session enforcement
+// Cara kerja: insert/delete atribut Simultaneous-Use := 1 di tabel radcheck
+// untuk semua username yang terdaftar di tabel pelanggan.
+router.post('/single-session', authMiddleware, async (req, res, next) => {
+    try {
+        const enabled = req.body.enabled === true || req.body.enabled === 'true';
+
+        if (enabled) {
+            // Hapus entry lama dulu (hindari duplikat), lalu insert untuk semua pelanggan aktif
+            await query(`DELETE FROM radcheck WHERE attribute = 'Simultaneous-Use'`);
+            await query(`
+                INSERT INTO radcheck (username, attribute, op, value)
+                SELECT username, 'Simultaneous-Use', ':=', '1'
+                FROM pelanggan
+                WHERE status = 'aktif' AND username IS NOT NULL AND username != ''
+            `);
+            const [{ total }] = await query(`SELECT COUNT(*) AS total FROM radcheck WHERE attribute = 'Simultaneous-Use'`);
+            res.json({ pesan: `Single session enabled — ${total} user diterapkan`, total });
+        } else {
+            const [{ total }] = await query(`SELECT COUNT(*) AS total FROM radcheck WHERE attribute = 'Simultaneous-Use'`);
+            await query(`DELETE FROM radcheck WHERE attribute = 'Simultaneous-Use'`);
+            res.json({ pesan: `Single session disabled — ${total} entry dihapus`, total });
+        }
+    } catch (e) { next(e); }
+});
+
+// POST /api/radius/sync-radcheck — sync semua pelanggan ke radcheck
+router.post('/sync-radcheck', authMiddleware, async (req, res, next) => {
+    try {
+        const { decryptPassword } = require('../services/radius');
+        const rows = await query(`SELECT username, radius_password_enc FROM pelanggan WHERE status='aktif' AND radius_password_enc IS NOT NULL`);
+        let sukses = 0, gagal = 0;
+        for (const r of rows) {
+            try {
+                const plain = decryptPassword(r.radius_password_enc);
+                if (!plain) { gagal++; continue; }
+                await query(`
+                    INSERT INTO radcheck (username, attribute, op, value)
+                    VALUES (?, 'Cleartext-Password', ':=', ?)
+                    ON DUPLICATE KEY UPDATE value = VALUES(value)
+                `, [r.username, plain]);
+                sukses++;
+            } catch(e) { gagal++; }
+        }
+        res.json({ pesan: `Sync selesai — ${sukses} berhasil, ${gagal} gagal (password belum diset)`, sukses, gagal });
+    } catch(e) { next(e); }
+});
+
+// POST /api/radius/restart — restart FreeRADIUS service
+router.post('/restart', authMiddleware, async (req, res, next) => {
+    try {
+        const { exec } = require('child_process');
+        // Coba systemctl dulu, lalu service sebagai fallback
+        const cmd = 'sudo systemctl restart freeradius 2>/dev/null || sudo service freeradius restart 2>/dev/null || sudo systemctl restart radiusd 2>/dev/null';
+        exec(cmd, { timeout: 15000 }, (err, stdout, stderr) => {
+            if (err) {
+                console.warn('[RADIUS restart]', err.message, stderr);
+                return res.status(500).json({
+                    error: 'Gagal restart RADIUS: ' + (stderr || err.message) +
+                           '. Pastikan user Node.js punya sudo tanpa password untuk perintah ini.'
+                });
+            }
+            console.log('[RADIUS restart] Berhasil:', stdout || 'ok');
+            res.json({ pesan: 'FreeRADIUS berhasil direstart' });
+        });
+    } catch (e) { next(e); }
+});
+
+module.exports = router;
