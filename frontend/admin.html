@@ -535,6 +535,7 @@ body.dark .toggle-thumb{left:18px}
     <div class="sb-section">Sistem</div>
     <div class="sb-item" onclick="goto('radius',this)"><span class="icon">📡</span> RADIUS / NAS</div>
     <div class="sb-item" onclick="goto('laporan',this)"><span class="icon">📈</span> Laporan</div>
+    <div class="sb-item" onclick="goto('acs',this)"><span class="icon">📡</span> ACS TR-069</div>
     <div class="sb-item" onclick="goto('setting',this)"><span class="icon">⚙️</span> Setting</div>
 
     <div class="sb-bottom">
@@ -1106,6 +1107,64 @@ body.dark .toggle-thumb{left:18px}
         </div>
       </div>
 
+      <!-- ══ ACS TR-069 ══ -->
+      <div class="page" id="p-acs">
+
+        <!-- Stats bar -->
+        <div class="metric-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+          <div class="metric blue"><div class="metric-ico">📡</div><div class="val" id="acs-total">—</div><div class="lbl">Total Device</div></div>
+          <div class="metric green"><div class="metric-ico">🟢</div><div class="val" id="acs-online">—</div><div class="lbl">Online</div></div>
+          <div class="metric red"><div class="metric-ico">🔴</div><div class="val" id="acs-offline">—</div><div class="lbl">Offline</div></div>
+          <div class="metric amber"><div class="metric-ico">⏳</div><div class="val" id="acs-pending">—</div><div class="lbl">Task Pending</div></div>
+        </div>
+
+        <!-- ACS URL info -->
+        <div class="card" style="margin-bottom:10px">
+          <div class="card-title">📡 Konfigurasi Router ke ACS</div>
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:monospace;font-size:13px;color:var(--text);margin-bottom:8px" id="acs-url-display">http://&lt;IP-VPS&gt;:7547/</div>
+          <div style="font-size:12px;color:var(--text2)">Set URL di atas sebagai <b>ACS URL</b> di menu TR-069/CWMP router pelanggan. Username/password bisa dikosongkan.</div>
+        </div>
+
+        <!-- Device list -->
+        <div class="card">
+          <div class="card-title">Daftar Device TR-069
+            <div style="display:flex;gap:6px">
+              <button class="btn sm" onclick="loadACS()">🔄 Refresh</button>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Serial Number</th>
+                <th>Vendor</th>
+                <th>IP</th>
+                <th>SW Version</th>
+                <th>Pelanggan</th>
+                <th>Last Inform</th>
+                <th>Status</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tbl-acs-device">
+              <tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">Belum ada device terdaftar</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Task log -->
+        <div class="card" style="margin-top:10px">
+          <div class="card-title">Log Task Terakhir
+            <button class="btn sm" onclick="loadACSTask()">🔄</button>
+          </div>
+          <table>
+            <thead><tr><th>Device</th><th>Task</th><th>Status</th><th>Waktu</th><th>Hasil</th></tr></thead>
+            <tbody id="tbl-acs-task">
+              <tr><td colspan="5" style="text-align:center;color:var(--text3);padding:16px">Tidak ada task</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- ══ SETTING ══ -->
       <div class="page" id="p-setting">
         <div class="grid2">
@@ -1293,6 +1352,57 @@ body.dark .toggle-thumb{left:18px}
         </div>
       </div>
       <div class="modal-foot"><button class="btn" onclick="closeModal('m-edit-nas')">Batal</button><button class="btn primary" onclick="apiEditNAS()">💾 Simpan</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ACS: Detail Device ══ -->
+<div class="overlay" id="m-acs-detail">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-hdr"><h3 id="acs-detail-title">📡 Detail Device</h3><button class="btn-x" onclick="closeModal('m-acs-detail')">✕</button></div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px" id="acs-detail-info"></div>
+      <div class="fg"><label>Link ke Pelanggan</label>
+        <select id="acs-pel-select" style="width:100%">
+          <option value="">— Tidak ditautkan —</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <button class="btn sm primary" onclick="acsLinkPelanggan()">💾 Simpan Link</button>
+        <button class="btn sm" onclick="acsRefresh()">🔄 Ambil Status</button>
+        <button class="btn sm" onclick="acsReboot()">🔁 Reboot Router</button>
+        <button class="btn sm primary" onclick="bukaModalWifi()" style="background:#1D9E75;border-color:#1D9E75">📶 Ganti Password WiFi</button>
+        <button class="btn sm danger" onclick="acsHapus()">🗑️ Hapus</button>
+      </div>
+      <!-- Status params -->
+      <div class="card-title" style="font-size:12px;margin-bottom:8px">Status Terakhir</div>
+      <div id="acs-param-list" style="font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:4px"></div>
+      <!-- Task log device ini -->
+      <div class="card-title" style="font-size:12px;margin:12px 0 8px">Task Log</div>
+      <div id="acs-task-mini" style="font-size:12px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ACS: Ganti WiFi ══ -->
+<div class="overlay" id="m-acs-wifi">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-hdr"><h3>📶 Ganti Password WiFi</h3><button class="btn-x" onclick="closeModal('m-acs-wifi')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label>SSID (Nama WiFi) — kosongkan jika tidak diganti</label><input id="acs-wifi-ssid" placeholder="Nama WiFi baru..."></div>
+      <div class="fg"><label>Password WiFi Baru <span style="color:var(--red)">*</span></label>
+        <div style="position:relative">
+          <input id="acs-wifi-pw" type="password" placeholder="Minimal 8 karakter" style="padding-right:34px;width:100%;box-sizing:border-box">
+          <button type="button" onclick="togglePwVis('acs-wifi-pw',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding:0;line-height:1">👁</button>
+        </div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:12px;color:var(--text2);margin-bottom:14px">
+        ⚠️ Perubahan akan aktif saat router polling ke ACS berikutnya (maks 5 menit). Router akan restart WiFi sebentar.
+      </div>
+      <div class="modal-foot">
+        <button class="btn" onclick="closeModal('m-acs-wifi')">Batal</button>
+        <button class="btn primary" onclick="acsGantiWifi()">📤 Kirim Perintah</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1530,7 +1640,203 @@ let TOKEN = localStorage.getItem('nb_token') || '';
 let ADMIN = JSON.parse(localStorage.getItem('nb_admin') || '{}');
 
 // ── UTILS ──
-// ── DARK MODE ──────────────────────────────────────────────────
+// ── ACS TR-069 ─────────────────────────────────────────────────
+let _acsDeviceId = null;
+
+async function loadACS() {
+  await Promise.all([loadACSStats(), loadACSDevices(), loadACSTask()]);
+  // Tampilkan ACS URL
+  const appUrl = window.location.origin;
+  const urlEl = document.getElementById('acs-url-display');
+  if (urlEl) urlEl.textContent = appUrl.replace(/:\d+/, ':7547') + '/';
+}
+
+async function loadACSStats() {
+  try {
+    const d = await apiFetch('/api/acs/stats');
+    document.getElementById('acs-total').textContent   = d.total;
+    document.getElementById('acs-online').textContent  = d.online;
+    document.getElementById('acs-offline').textContent = d.offline;
+    document.getElementById('acs-pending').textContent = d.pending_tasks;
+  } catch(e) {}
+}
+
+async function loadACSDevices() {
+  const t = document.getElementById('tbl-acs-device');
+  try {
+    const rows = await apiFetch('/api/acs/devices');
+    if (!rows.length) {
+      t.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">Belum ada device terdaftar. Arahkan router ke ACS URL di atas.</td></tr>';
+      return;
+    }
+    t.innerHTML = rows.map(d => {
+      const online = d.status === 'online' && d.last_inform && (Date.now() - new Date(d.last_inform)) < 600000;
+      const dotCls = online ? 'dot-green' : 'dot-red';
+      const stLabel = online ? '<span class="badge green">Online</span>' : '<span class="badge red">Offline</span>';
+      const lastInform = d.last_inform ? new Date(d.last_inform).toLocaleString('id-ID') : '—';
+      return `<tr>
+        <td><span class="status-dot ${dotCls}"></span>${d.serial_number}</td>
+        <td>${d.manufacturer||'—'} ${d.product_class||''}</td>
+        <td style="font-size:11px">${d.ip_address||'—'}</td>
+        <td style="font-size:11px">${d.software_version||'—'}</td>
+        <td>${d.pelanggan_nama ? `<span class="badge blue">${d.pelanggan_nama}</span>` : '<span style="color:var(--text3)">—</span>'}</td>
+        <td style="font-size:11px">${lastInform}</td>
+        <td>${stLabel}</td>
+        <td><button class="btn sm" onclick="bukaACSDetail(${d.id})">Detail</button></td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    t.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--red);padding:16px">❌ ${e.message}</td></tr>`;
+  }
+}
+
+async function loadACSTask() {
+  const t = document.getElementById('tbl-acs-task');
+  try {
+    const rows = await apiFetch('/api/acs/tasks');
+    if (!rows.length) { t.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:16px">Tidak ada task</td></tr>'; return; }
+    t.innerHTML = rows.map(r => {
+      const stCls = r.status === 'done' ? 'green' : r.status === 'failed' ? 'red' : r.status === 'running' ? 'blue' : 'amber';
+      return `<tr>
+        <td style="font-size:11px">${r.serial_number}</td>
+        <td>${r.type}</td>
+        <td><span class="badge ${stCls}">${r.status}</span></td>
+        <td style="font-size:11px">${new Date(r.created_at).toLocaleString('id-ID')}</td>
+        <td style="font-size:11px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.result||'—'}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) {}
+}
+
+async function bukaACSDetail(id) {
+  _acsDeviceId = id;
+  try {
+    const d = await apiFetch(`/api/acs/devices/${id}`);
+    document.getElementById('acs-detail-title').textContent = `📡 ${d.serial_number}`;
+
+    // Info grid
+    const infoItems = [
+      ['Vendor', (d.manufacturer||'—') + ' ' + (d.product_class||'')],
+      ['IP Address', d.ip_address||'—'],
+      ['SW Version', d.software_version||'—'],
+      ['HW Version', d.hardware_version||'—'],
+      ['Last Inform', d.last_inform ? new Date(d.last_inform).toLocaleString('id-ID') : '—'],
+      ['Status', d.status === 'online' ? '🟢 Online' : '🔴 Offline'],
+    ];
+    document.getElementById('acs-detail-info').innerHTML = infoItems.map(([l,v]) =>
+      `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 10px"><div style="font-size:10px;color:var(--text3);margin-bottom:2px">${l}</div><div style="font-size:12px;font-weight:500">${v}</div></div>`
+    ).join('');
+
+    // Param cache
+    const params = d.param_cache || {};
+    const paramKeys = Object.keys(params);
+    const paramHtml = document.getElementById('acs-param-list');
+    if (!paramKeys.length) {
+      paramHtml.innerHTML = '<div style="color:var(--text3);grid-column:1/-1">Belum ada data — klik Ambil Status</div>';
+    } else {
+      paramHtml.innerHTML = paramKeys.slice(0, 20).map(k => {
+        const shortKey = k.split('.').slice(-2).join('.');
+        return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 8px;overflow:hidden"><div style="font-size:9px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${k}">${shortKey}</div><div style="font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${params[k]||'—'}</div></div>`;
+      }).join('');
+    }
+
+    // Task mini log
+    const taskHtml = document.getElementById('acs-task-mini');
+    if (!d.tasks || !d.tasks.length) {
+      taskHtml.innerHTML = '<div style="color:var(--text3)">Belum ada task</div>';
+    } else {
+      taskHtml.innerHTML = d.tasks.map(t => {
+        const stCls = t.status === 'done' ? 'green' : t.status === 'failed' ? 'red' : t.status === 'running' ? 'blue' : 'amber';
+        return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border)">
+          <span class="badge ${stCls}" style="font-size:10px">${t.status}</span>
+          <span style="flex:1">${t.type}</span>
+          <span style="color:var(--text3);font-size:10px">${new Date(t.created_at).toLocaleTimeString('id-ID')}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // Dropdown pelanggan
+    const sel = document.getElementById('acs-pel-select');
+    sel.innerHTML = '<option value="">— Tidak ditautkan —</option>';
+    try {
+      const pels = await apiFetch('/api/pelanggan?limit=200');
+      const list = Array.isArray(pels) ? pels : (pels.data || []);
+      list.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.nama + ' (' + p.username + ')';
+        if (d.pelanggan_id == p.id) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    } catch(e) {}
+
+    openModal('m-acs-detail');
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+
+async function acsLinkPelanggan() {
+  if (!_acsDeviceId) return;
+  const pelId = document.getElementById('acs-pel-select').value;
+  try {
+    await apiFetch(`/api/acs/devices/${_acsDeviceId}`, {
+      method: 'PUT', body: JSON.stringify({ pelanggan_id: pelId || null })
+    });
+    toast('✅ Link pelanggan disimpan');
+    loadACSDevices();
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+
+async function acsRefresh() {
+  if (!_acsDeviceId) return;
+  try {
+    const d = await apiFetch(`/api/acs/devices/${_acsDeviceId}/refresh`, { method: 'POST' });
+    toast('✅ ' + d.pesan);
+    loadACSTask();
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+
+async function acsReboot() {
+  if (!_acsDeviceId) return;
+  if (!confirm('Yakin ingin reboot router ini?')) return;
+  try {
+    const d = await apiFetch(`/api/acs/devices/${_acsDeviceId}/reboot`, { method: 'POST' });
+    toast('✅ ' + d.pesan);
+    loadACSTask();
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+
+async function acsHapus() {
+  if (!_acsDeviceId) return;
+  if (!confirm('Hapus device ini dari ACS?')) return;
+  try {
+    await apiFetch(`/api/acs/devices/${_acsDeviceId}`, { method: 'DELETE' });
+    toast('✅ Device dihapus');
+    closeModal('m-acs-detail');
+    loadACSDevices();
+    loadACSStats();
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+
+function bukaModalWifi() { openModal('m-acs-wifi'); }
+
+async function acsGantiWifi() {
+  if (!_acsDeviceId) return;
+  const ssid = document.getElementById('acs-wifi-ssid').value.trim();
+  const pw   = document.getElementById('acs-wifi-pw').value;
+  if (!pw || pw.length < 8) { toast('❌ Password minimal 8 karakter', true); return; }
+  try {
+    const d = await apiFetch(`/api/acs/devices/${_acsDeviceId}/wifi`, {
+      method: 'POST', body: JSON.stringify({ ssid: ssid || undefined, password: pw })
+    });
+    toast('✅ ' + d.pesan);
+    closeModal('m-acs-wifi');
+    document.getElementById('acs-wifi-ssid').value = '';
+    document.getElementById('acs-wifi-pw').value   = '';
+    loadACSTask();
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+
+// ── END ACS ─────────────────────────────────────────────────
 function toggleDarkMode() {
   const isDark = document.body.classList.toggle('dark');
   localStorage.setItem('adminDarkMode', isDark ? '1' : '0');
@@ -1698,14 +2004,15 @@ const titles = {
   paket:'Paket Internet', invoice:'Invoice & Tagihan',
   voucher:'Voucher Online', whatsapp:'WhatsApp Gateway',
   payment:'Payment Gateway', radius:'RADIUS / NAS',
-  laporan:'Laporan', setting:'Setting Sistem'
+  laporan:'Laporan', acs:'ACS TR-069', setting:'Setting Sistem'
 };
 const loaders = {
   dashboard: loadDashboard, pelanggan: loadPelanggan,
   paket: loadPaket, invoice: loadInvoice,
   voucher: loadVoucher, whatsapp: loadWALog,
   payment: loadPayment, radius: loadRadius,
-  laporan: loadLaporan, reseller: loadReseller, setting: loadSetting
+  laporan: loadLaporan, reseller: loadReseller,
+  acs: loadACS, setting: loadSetting
 };
 
 function toggleSidebar() {

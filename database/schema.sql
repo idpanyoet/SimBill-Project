@@ -330,7 +330,8 @@ INSERT INTO setting (kunci, nilai, deskripsi) VALUES
 ('invoice_prefix',  'INV',                       'Prefix nomor invoice'),
 ('pajak_persen',    '0',                         'PPN dalam persen (0 = tidak ada)'),
 ('radius_auth_mode','pap,mschapv2',              'Mode autentikasi RADIUS yang diizinkan (pap,chap,mschapv1,mschapv2)'),
-('radius_single_session','1',                    'Single session enforcement: 1=aktif, 0=nonaktif');
+('radius_single_session','1',                    'Single session enforcement: 1=aktif, 0=nonaktif'),
+('admin_no_hp',          '',                      'Nomor HP admin untuk notifikasi tiket');
 
 INSERT INTO paket (nama, kecepatan_up, kecepatan_dn, harga, pool_name, tipe) VALUES
 ('Paket Hemat 5Mbps',   5,  5,  100000, 'pool-5mbps',  'keduanya'),
@@ -522,3 +523,73 @@ CREATE TABLE IF NOT EXISTS vpn_account (
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     KEY vpn_nas (nas_id)
 ) ENGINE=InnoDB COMMENT='Akun VPN untuk koneksi NAS/Mikrotik';
+
+-- ============================================================
+-- CLIENT PORTAL
+-- ============================================================
+CREATE TABLE IF NOT EXISTS client_otp (
+    no_hp       VARCHAR(20) PRIMARY KEY,
+    otp         VARCHAR(6) NOT NULL,
+    expired_at  DATETIME NOT NULL,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS tiket (
+    id           INT AUTO_INCREMENT PRIMARY KEY,
+    pelanggan_id INT NOT NULL,
+    judul        VARCHAR(200) NOT NULL,
+    pesan        TEXT NOT NULL,
+    kategori     ENUM('umum','gangguan','billing','lainnya') DEFAULT 'umum',
+    foto         VARCHAR(255) DEFAULT NULL,
+    status       ENUM('open','proses','selesai') DEFAULT 'open',
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY tiket_pelanggan (pelanggan_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS tiket_reply (
+    id           INT AUTO_INCREMENT PRIMARY KEY,
+    tiket_id     INT NOT NULL,
+    dari         ENUM('pelanggan','admin') DEFAULT 'admin',
+    pesan        TEXT NOT NULL,
+    foto         VARCHAR(255) DEFAULT NULL,
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    KEY reply_tiket (tiket_id)
+) ENGINE=InnoDB;
+
+-- ============================================================
+-- ACS TR-069 TABLES
+-- ============================================================
+CREATE TABLE IF NOT EXISTS acs_device (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    serial_number   VARCHAR(100) NOT NULL UNIQUE,
+    product_class   VARCHAR(100),
+    manufacturer    VARCHAR(100),
+    oui             VARCHAR(20),
+    software_version VARCHAR(50),
+    hardware_version VARCHAR(50),
+    ip_address      VARCHAR(45),
+    mac_address     VARCHAR(20),
+    connection_url  VARCHAR(255),
+    pelanggan_id    INT DEFAULT NULL,
+    last_inform     DATETIME,
+    status          ENUM('online','offline') DEFAULT 'offline',
+    inform_interval INT DEFAULT 300,
+    param_cache     LONGTEXT COMMENT 'JSON cache parameter device',
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY acs_pelanggan (pelanggan_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS acs_task (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    device_id       INT NOT NULL,
+    type            VARCHAR(50) NOT NULL COMMENT 'SetParameterValues, Reboot, GetParameterValues',
+    params          TEXT COMMENT 'JSON params untuk task',
+    status          ENUM('pending','running','done','failed') DEFAULT 'pending',
+    result          TEXT,
+    created_by      VARCHAR(50) DEFAULT 'admin',
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    done_at         DATETIME DEFAULT NULL,
+    KEY acs_task_device (device_id)
+) ENGINE=InnoDB;

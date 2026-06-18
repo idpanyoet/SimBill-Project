@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Portal Pelanggan — NetBilling</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#403f3d;--bg2:rgba(255,255,255,.07);--bg3:rgba(255,255,255,.04);
+  --border:rgba(255,255,255,.1);--border2:rgba(255,255,255,.18);
+  --accent:#3b82f6;--accent2:#1d4ed8;
+  --green:#4ade80;--red:#f87171;--amber:#fbbf24;
+  --text:#f1ede8;--text2:#b0aba5;--text3:#6b6560;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;min-height:100vh}
+
+/* NAV */
+nav{background:rgba(30,29,27,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100}
+.brand{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--text)}
+.brand-ico{width:28px;height:28px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:14px}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-nama{font-size:12px;color:var(--text2)}
+.btn-logout-nav{font-size:11px;padding:5px 10px;background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:6px;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-logout-nav:hover{background:rgba(255,255,255,.14);color:var(--text)}
+
+/* PAGES */
+.page{display:none;padding:20px;max-width:900px;margin:0 auto}
+.page.active{display:block}
+
+/* BOTTOM NAV */
+.bot-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(30,29,27,.97);border-top:1px solid var(--border);display:flex;z-index:100}
+.bot-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 5px;cursor:pointer;color:var(--text3);font-size:10px;transition:color .15s;border:none;background:none;font-family:inherit}
+.bot-item.active{color:var(--accent)}
+.bot-item .ico{font-size:20px;line-height:1}
+body{padding-bottom:70px}
+
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:32px 28px;width:100%;max-width:380px}
+.login-logo{text-align:center;margin-bottom:24px}
+.login-logo .ico{width:52px;height:52px;border-radius:14px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 10px}
+.login-logo h2{font-size:18px;font-weight:600}
+.login-logo p{font-size:12px;color:var(--text2);margin-top:4px}
+.step{display:none}
+.step.active{display:block}
+
+/* FORM */
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.fg input,.fg select,.fg textarea{width:100%;padding:10px 13px;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:14px;font-family:inherit;transition:border-color .2s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+.fg input::placeholder,.fg textarea::placeholder{color:var(--text3)}
+.fg textarea{resize:vertical;min-height:90px}
+.fg select option{background:#2a2a28;color:var(--text)}
+
+/* BUTTONS */
+.btn{padding:10px 18px;border:1px solid var(--border);border-radius:9px;color:var(--text2);background:var(--bg2);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn:hover{border-color:var(--border2);color:var(--text)}
+.btn.primary{background:var(--accent);color:#fff;border-color:transparent}
+.btn.primary:hover{background:var(--accent2)}
+.btn.primary:disabled{opacity:.6;cursor:not-allowed}
+.btn.danger{background:rgba(248,113,113,.1);color:var(--red);border-color:rgba(248,113,113,.2)}
+.btn.full{width:100%;display:flex;align-items:center;justify-content:center;gap:7px}
+.btn.sm{padding:5px 12px;font-size:11px;border-radius:7px}
+
+/* CARD */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
+.card-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.card-title .sub{font-size:11px;color:var(--text3);font-weight:400}
+
+/* STATUS */
+.status-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+.status-row:last-child{border-bottom:none}
+.status-row .lbl{color:var(--text2)}
+.status-row .val{font-weight:500}
+.tag{display:inline-flex;align-items:center;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500}
+.tag.aktif{background:rgba(74,222,128,.1);color:var(--green)}
+.tag.suspend{background:rgba(248,113,113,.1);color:var(--red)}
+.tag.unpaid{background:rgba(251,191,36,.1);color:var(--amber)}
+.tag.paid{background:rgba(74,222,128,.1);color:var(--green)}
+.tag.open{background:rgba(59,130,246,.1);color:#60a5fa}
+.tag.proses{background:rgba(251,191,36,.1);color:var(--amber)}
+.tag.selesai{background:rgba(74,222,128,.1);color:var(--green)}
+.tag.overdue{background:rgba(248,113,113,.1);color:var(--red)}
+
+/* METRIC MINI */
+.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
+.metric{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px}
+.metric .ico{font-size:22px;margin-bottom:6px}
+.metric .val{font-size:20px;font-weight:700}
+.metric .lbl{font-size:11px;color:var(--text2);margin-top:2px}
+
+/* INVOICE LIST */
+.inv-item{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.inv-item:last-child{border-bottom:none}
+.inv-left .no{font-size:12px;font-weight:600;color:var(--text)}
+.inv-left .tgl{font-size:11px;color:var(--text3);margin-top:2px}
+.inv-right{text-align:right}
+.inv-right .harga{font-size:14px;font-weight:600}
+.inv-right .aksi{margin-top:5px}
+
+/* TIKET */
+.tiket-item{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:13px;margin-bottom:8px;cursor:pointer;transition:border-color .15s}
+.tiket-item:hover{border-color:var(--border2)}
+.tiket-judul{font-size:13px;font-weight:500;margin-bottom:4px}
+.tiket-meta{font-size:11px;color:var(--text3);display:flex;gap:10px}
+
+/* TIKET DETAIL */
+.chat-wrap{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;max-height:350px;overflow-y:auto}
+.chat-msg{max-width:80%;padding:10px 13px;border-radius:12px;font-size:13px;line-height:1.5}
+.chat-msg.admin{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.2);align-self:flex-start}
+.chat-msg.pelanggan{background:rgba(255,255,255,.08);border:1px solid var(--border);align-self:flex-end}
+.chat-msg .sender{font-size:10px;font-weight:600;margin-bottom:4px;color:var(--text3)}
+.chat-msg .waktu{font-size:10px;color:var(--text3);margin-top:4px;text-align:right}
+.chat-foto{max-width:200px;border-radius:8px;margin-top:6px;cursor:pointer}
+
+/* OTP INPUT */
+.otp-wrap{display:flex;gap:8px;justify-content:center;margin:16px 0}
+.otp-wrap input{width:44px;height:50px;text-align:center;font-size:20px;font-weight:700;background:rgba(255,255,255,.07);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit}
+.otp-wrap input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+
+/* UPLOAD */
+.upload-area{border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative}
+.upload-area:hover{border-color:var(--border2)}
+.upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upload-area .ico{font-size:28px;margin-bottom:6px}
+.upload-area p{font-size:12px;color:var(--text2)}
+.preview-foto{max-width:100%;border-radius:8px;margin-top:10px;display:none}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:40px 20px;color:var(--text3)}
+.empty .ico{font-size:36px;margin-bottom:10px}
+.empty p{font-size:13px}
+
+/* TOAST */
+.toast-el{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--text);color:#1a1a1a;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;display:none;align-items:center;gap:8px;z-index:400;white-space:nowrap;max-width:90vw;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.toast-el.show{display:flex}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);z-index:200;display:none;align-items:flex-end;justify-content:center;padding:0}
+.overlay.open{display:flex}
+.modal{background:#2a2927;border:1px solid var(--border);border-radius:16px 16px 0 0;width:100%;max-width:500px;max-height:85vh;overflow-y:auto;animation:slideUp .2s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:none}}
+.modal-hdr{padding:16px 18px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;position:sticky;top:0;background:#2a2927;z-index:1;border-bottom:1px solid var(--border);padding-bottom:12px}
+.modal-hdr h3{font-size:15px;font-weight:600}
+.btn-x{width:28px;height:28px;border-radius:7px;background:var(--bg2);border:1px solid var(--border);color:var(--text2);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.modal-body{padding:0 18px 24px}
+
+/* SESI */
+.sesi-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:12px}
+.sesi-item:last-child{border-bottom:none}
+.sesi-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0}
+.sesi-info{flex:1}
+.sesi-info .ip{font-weight:500}
+.sesi-info .meta{color:var(--text3);margin-top:1px}
+
+@media(min-width:600px){
+  .metrics{grid-template-columns:repeat(4,1fr)}
+  .overlay{align-items:center;padding:20px}
+  .modal{border-radius:16px;max-height:90vh}
+  @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="app-login" class="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="ico">⚡</div>
+      <h2>Portal Pelanggan</h2>
+      <p>Login dengan nomor WhatsApp Anda</p>
+    </div>
+
+    <!-- Step 1: No HP -->
+    <div class="step active" id="step-hp">
+      <div class="fg">
+        <label>Nomor WhatsApp</label>
+        <input type="tel" id="inp-hp" placeholder="08xxxxxxxxxx atau 628xxxxxxxxx" maxlength="15">
+      </div>
+      <button class="btn primary full" onclick="kirimOTP()" id="btn-kirim-otp">
+        📲 Kirim OTP via WhatsApp
+      </button>
+      <p style="text-align:center;font-size:11px;color:var(--text3);margin-top:12px">
+        OTP akan dikirim ke WhatsApp terdaftar
+      </p>
+    </div>
+
+    <!-- Step 2: OTP -->
+    <div class="step" id="step-otp">
+      <p style="text-align:center;font-size:13px;color:var(--text2);margin-bottom:4px">Masukkan kode OTP yang dikirim ke</p>
+      <p style="text-align:center;font-size:14px;font-weight:600;margin-bottom:16px" id="otp-nohp-display">—</p>
+      <div class="otp-wrap" id="otp-inputs">
+        <input type="number" maxlength="1" oninput="otpInput(this,0)">
+        <input type="number" maxlength="1" oninput="otpInput(this,1)">
+        <input type="number" maxlength="1" oninput="otpInput(this,2)">
+        <input type="number" maxlength="1" oninput="otpInput(this,3)">
+        <input type="number" maxlength="1" oninput="otpInput(this,4)">
+        <input type="number" maxlength="1" oninput="otpInput(this,5)">
+      </div>
+      <button class="btn primary full" onclick="verifikasiOTP()" id="btn-verif">✅ Verifikasi</button>
+      <button class="btn full" style="margin-top:8px" onclick="showStep('hp')">← Ganti Nomor</button>
+      <p style="text-align:center;font-size:11px;color:var(--text3);margin-top:12px">
+        OTP berlaku 5 menit · <span id="resend-countdown"></span>
+        <span id="resend-btn" style="display:none;color:var(--accent);cursor:pointer" onclick="kirimOTP()">Kirim ulang</span>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app-main" style="display:none">
+  <nav>
+    <div class="brand"><div class="brand-ico">⚡</div>NetBilling</div>
+    <div class="nav-right">
+      <span class="nav-nama" id="nav-nama">—</span>
+      <button class="btn-logout-nav" onclick="logout()">Keluar</button>
+    </div>
+  </nav>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="pg-dashboard">
+    <div class="metrics">
+      <div class="metric"><div class="ico">📶</div><div class="val" id="m-status">—</div><div class="lbl">Status</div></div>
+      <div class="metric"><div class="ico">📦</div><div class="val" id="m-paket">—</div><div class="lbl">Paket</div></div>
+      <div class="metric"><div class="ico">📅</div><div class="val" id="m-expired">—</div><div class="lbl">Jatuh Tempo</div></div>
+      <div class="metric"><div class="ico">🖥️</div><div class="val" id="m-sesi">—</div><div class="lbl">Sesi Aktif</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Info Koneksi</div>
+      <div class="status-row"><span class="lbl">Username</span><span class="val" id="d-username">—</span></div>
+      <div class="status-row"><span class="lbl">Tipe</span><span class="val" id="d-tipe">—</span></div>
+      <div class="status-row"><span class="lbl">Kecepatan</span><span class="val" id="d-speed">—</span></div>
+      <div class="status-row"><span class="lbl">Status</span><span class="val" id="d-status-tag">—</span></div>
+    </div>
+
+    <div class="card" id="card-sesi">
+      <div class="card-title">Sesi Aktif <span class="sub" id="sesi-count"></span></div>
+      <div id="sesi-list"><div class="empty"><div class="ico">📡</div><p>Tidak ada sesi aktif</p></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Tagihan Terakhir</div>
+      <div id="tagihan-mini"></div>
+    </div>
+  </div>
+
+  <!-- TAGIHAN -->
+  <div class="page" id="pg-tagihan">
+    <div class="card">
+      <div class="card-title">Invoice & Tagihan</div>
+      <div id="tagihan-list"><div class="empty"><div class="ico">🧾</div><p>Memuat...</p></div></div>
+    </div>
+  </div>
+
+  <!-- REQUEST GANTI PASSWORD -->
+  <div class="page" id="pg-password">
+    <div class="card">
+      <div class="card-title">🔑 Request Ganti Password WiFi</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6">Masukkan password WiFi baru yang Anda inginkan. Admin akan memproses permintaan dan mengubah password di perangkat router Anda.</p>
+      <div class="fg"><label>Password WiFi Baru</label>
+        <div style="position:relative">
+          <input type="password" id="inp-pw-baru" placeholder="Minimal 6 karakter" style="padding-right:38px">
+          <button type="button" onclick="togglePw('inp-pw-baru',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px">👁</button>
+        </div>
+      </div>
+      <div class="fg"><label>Konfirmasi Password</label>
+        <div style="position:relative">
+          <input type="password" id="inp-pw-konf" placeholder="Ulangi password baru" style="padding-right:38px">
+          <button type="button" onclick="togglePw('inp-pw-konf',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px">👁</button>
+        </div>
+      </div>
+      <div class="fg"><label>Catatan (opsional)</label>
+        <textarea id="inp-pw-catatan" placeholder="Misal: perangkat saya di lantai 2..." style="min-height:70px"></textarea>
+      </div>
+      <button class="btn primary full" onclick="requestGantiPassword()" id="btn-req-pw">📤 Kirim Permintaan</button>
+    </div>
+
+    <div class="card" id="card-req-pw">
+      <div class="card-title">Riwayat Permintaan</div>
+      <div id="list-req-pw"><div class="empty"><div class="ico">⏳</div><p>Memuat...</p></div></div>
+    </div>
+  </div>
+
+  <!-- TIKET -->
+  <div class="page" id="pg-tiket">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:15px;font-weight:600">🎫 Tiket Laporan</div>
+      <button class="btn sm primary" onclick="bukaModalTiket()">+ Buat Tiket</button>
+    </div>
+    <div id="tiket-list"><div class="empty"><div class="ico">🎫</div><p>Belum ada tiket</p></div></div>
+  </div>
+
+  <!-- PROFIL -->
+  <div class="page" id="pg-profil">
+    <div class="card">
+      <div class="card-title">👤 Profil Saya</div>
+      <div class="status-row"><span class="lbl">Nama</span><span class="val" id="p-nama">—</span></div>
+      <div class="status-row"><span class="lbl">Nomor HP</span><span class="val" id="p-nohp">—</span></div>
+      <div class="status-row"><span class="lbl">Email</span><span class="val" id="p-email">—</span></div>
+      <div class="status-row"><span class="lbl">Alamat</span><span class="val" id="p-alamat">—</span></div>
+      <div class="status-row"><span class="lbl">Username</span><span class="val" id="p-username">—</span></div>
+      <div class="status-row"><span class="lbl">Paket</span><span class="val" id="p-paket">—</span></div>
+    </div>
+    <button class="btn danger full" onclick="logout()">🚪 Keluar</button>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bot-nav">
+    <button class="bot-item active" onclick="showPage('dashboard',this)"><span class="ico">🏠</span>Beranda</button>
+    <button class="bot-item" onclick="showPage('tagihan',this)"><span class="ico">🧾</span>Tagihan</button>
+    <button class="bot-item" onclick="showPage('password',this)"><span class="ico">🔑</span>Password</button>
+    <button class="bot-item" onclick="showPage('tiket',this)"><span class="ico">🎫</span>Tiket</button>
+    <button class="bot-item" onclick="showPage('profil',this)"><span class="ico">👤</span>Profil</button>
+  </div>
+</div>
+
+<!-- MODAL BUAT TIKET -->
+<div class="overlay" id="ov-tiket">
+  <div class="modal">
+    <div class="modal-hdr"><h3>🎫 Buat Tiket</h3><button class="btn-x" onclick="tutupModal('ov-tiket')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label>Kategori</label>
+        <select id="tk-kategori">
+          <option value="gangguan">📡 Gangguan Internet</option>
+          <option value="billing">💳 Masalah Tagihan</option>
+          <option value="umum">💬 Pertanyaan Umum</option>
+          <option value="lainnya">🔧 Lainnya</option>
+        </select>
+      </div>
+      <div class="fg"><label>Judul</label><input type="text" id="tk-judul" placeholder="Singkat dan jelas..."></div>
+      <div class="fg"><label>Deskripsi</label><textarea id="tk-pesan" placeholder="Jelaskan masalah Anda..."></textarea></div>
+      <div class="fg">
+        <label>Foto (opsional)</label>
+        <div class="upload-area" id="upload-area">
+          <input type="file" id="tk-foto" accept="image/*" onchange="previewFoto(this)">
+          <div class="ico">📷</div>
+          <p>Klik atau tap untuk upload foto</p>
+        </div>
+        <img id="preview-foto" class="preview-foto">
+      </div>
+      <button class="btn primary full" onclick="kirimTiket()" id="btn-kirim-tiket">📤 Kirim Tiket</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETAIL TIKET -->
+<div class="overlay" id="ov-tiket-detail">
+  <div class="modal">
+    <div class="modal-hdr"><h3 id="detail-judul">Detail Tiket</h3><button class="btn-x" onclick="tutupModal('ov-tiket-detail')">✕</button></div>
+    <div class="modal-body">
+      <div id="detail-meta" style="margin-bottom:12px;font-size:12px;color:var(--text3)"></div>
+      <div class="chat-wrap" id="chat-wrap"></div>
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+        <div class="fg" style="margin-bottom:8px">
+          <textarea id="reply-pesan" placeholder="Tulis balasan..." style="min-height:70px"></textarea>
+        </div>
+        <button class="btn primary full" onclick="kirimBalasan()" id="btn-balas">📤 Kirim Balasan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-el" id="toast-el"></div>
+
+<script>
+const TOKEN_KEY   = 'nb_client_token';
+const PROFIL_KEY  = 'nb_client_profil';
+let profil        = null;
+let noHpLogin     = '';
+let tiketAktifId  = null;
+let countdown     = null;
+
+// ── INIT ─────────────────────────────────────────────────────
+window.addEventListener('load', function() {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) {
+    profil = JSON.parse(localStorage.getItem(PROFIL_KEY) || '{}');
+    tampilkanApp();
+    loadDashboard();
+  }
+  // OTP box — auto move focus
+  document.querySelectorAll('.otp-wrap input').forEach(function(inp, i, arr) {
+    inp.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' && !inp.value && i > 0) arr[i-1].focus();
+    });
+  });
+});
+
+// ── HELPER ───────────────────────────────────────────────────
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+
+async function apiFetch(path, opts) {
+  opts = opts || {};
+  opts.headers = opts.headers || {};
+  const token = getToken();
+  if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+  const r = await fetch(path, opts);
+  if (!r.ok) {
+    const err = await r.json().catch(function() { return { error: 'Error ' + r.status }; });
+    throw new Error(err.error || 'Terjadi kesalahan');
+  }
+  return r.json();
+}
+
+function toast(msg) {
+  var el = document.getElementById('toast-el');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(el._t); el._t = setTimeout(function() { el.classList.remove('show'); }, 3500);
+}
+
+function tutupModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function togglePw(id, btn) {
+  var el = document.getElementById(id);
+  var show = el.type === 'password';
+  el.type = show ? 'text' : 'password';
+  btn.textContent = show ? '🙈' : '👁';
+}
+
+function fmt(n) {
+  return 'Rp ' + Number(n).toLocaleString('id-ID');
+}
+
+function fmtTgl(s) {
+  if (!s) return '—';
+  return new Date(s).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────
+function showStep(step) {
+  document.querySelectorAll('.step').forEach(function(s) { s.classList.remove('active'); });
+  document.getElementById('step-' + step).classList.add('active');
+}
+
+function otpInput(el, idx) {
+  var v = el.value.replace(/\D/g,'').slice(-1);
+  el.value = v;
+  var inputs = document.querySelectorAll('.otp-wrap input');
+  if (v && idx < 5) inputs[idx+1].focus();
+  if (idx === 5 && v) verifikasiOTP();
+}
+
+async function kirimOTP() {
+  var nohp = document.getElementById('inp-hp').value.trim();
+  if (!nohp) { toast('❗ Masukkan nomor WhatsApp'); return; }
+  noHpLogin = nohp;
+  var btn = document.getElementById('btn-kirim-otp');
+  btn.disabled = true; btn.textContent = '⏳ Mengirim...';
+  try {
+    var d = await apiFetch('/api/client/otp/kirim', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ no_hp: nohp })
+    });
+    toast('✅ OTP dikirim ke ' + nohp);
+    document.getElementById('otp-nohp-display').textContent = nohp;
+    document.querySelectorAll('.otp-wrap input').forEach(function(i) { i.value = ''; });
+    document.querySelectorAll('.otp-wrap input')[0].focus();
+    showStep('otp');
+    startCountdown();
+  } catch(e) { toast('❌ ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = '📲 Kirim OTP via WhatsApp'; }
+}
+
+function startCountdown() {
+  var sisa = 60;
+  var el = document.getElementById('resend-countdown');
+  var elBtn = document.getElementById('resend-btn');
+  elBtn.style.display = 'none';
+  clearInterval(countdown);
+  countdown = setInterval(function() {
+    sisa--;
+    el.textContent = sisa + 'd ';
+    if (sisa <= 0) {
+      clearInterval(countdown);
+      el.textContent = '';
+      elBtn.style.display = 'inline';
+    }
+  }, 1000);
+}
+
+async function verifikasiOTP() {
+  var inputs = document.querySelectorAll('.otp-wrap input');
+  var otp = Array.from(inputs).map(function(i) { return i.value; }).join('');
+  if (otp.length < 6) { toast('❗ Masukkan 6 digit OTP'); return; }
+  var btn = document.getElementById('btn-verif');
+  btn.disabled = true; btn.textContent = '⏳ Memverifikasi...';
+  try {
+    var d = await apiFetch('/api/client/otp/verifikasi', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ no_hp: noHpLogin, otp: otp })
+    });
+    localStorage.setItem(TOKEN_KEY, d.token);
+    localStorage.setItem(PROFIL_KEY, JSON.stringify(d.pelanggan));
+    profil = d.pelanggan;
+    toast('✅ Login berhasil, selamat datang ' + d.pelanggan.nama);
+    tampilkanApp();
+    loadDashboard();
+  } catch(e) { toast('❌ ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = '✅ Verifikasi'; }
+}
+
+function tampilkanApp() {
+  document.getElementById('app-login').style.display = 'none';
+  document.getElementById('app-main').style.display  = 'block';
+  if (profil) document.getElementById('nav-nama').textContent = profil.nama || '—';
+}
+
+function logout() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(PROFIL_KEY);
+  profil = null;
+  document.getElementById('app-login').style.display = 'flex';
+  document.getElementById('app-main').style.display  = 'none';
+  showStep('hp');
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+  document.getElementById('pg-' + name).classList.add('active');
+  document.querySelectorAll('.bot-item').forEach(function(b) { b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  // Lazy load
+  if (name === 'tagihan') loadTagihan();
+  if (name === 'tiket') loadTiket();
+  if (name === 'password') loadRequestPw();
+  if (name === 'profil') loadProfil();
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    var d = await apiFetch('/api/client/profil');
+    profil = d;
+    document.getElementById('nav-nama').textContent = d.nama;
+    document.getElementById('m-status').innerHTML  = '<span class="tag ' + d.status + '">' + (d.status==='aktif'?'Aktif':'Suspend') + '</span>';
+    document.getElementById('m-paket').textContent  = d.nama_paket || '—';
+    document.getElementById('m-expired').textContent = fmtTgl(d.tgl_expired);
+    document.getElementById('d-username').textContent = d.username || '—';
+    document.getElementById('d-tipe').textContent     = d.tipe_koneksi === 'pppoe' ? 'PPPoE' : 'Hotspot';
+    document.getElementById('d-speed').textContent    = d.kecepatan_dn ? d.kecepatan_dn + ' / ' + d.kecepatan_up + ' Mbps' : '—';
+    document.getElementById('d-status-tag').innerHTML = '<span class="tag ' + d.status + '">' + d.status + '</span>';
+  } catch(e) { console.warn('profil:', e.message); }
+
+  try {
+    var sesi = await apiFetch('/api/client/sesi');
+    document.getElementById('m-sesi').textContent = sesi.length;
+    document.getElementById('sesi-count').textContent = sesi.length + ' sesi';
+    var sl = document.getElementById('sesi-list');
+    if (!sesi.length) {
+      sl.innerHTML = '<div class="empty"><div class="ico">📡</div><p>Tidak ada sesi aktif</p></div>';
+    } else {
+      sl.innerHTML = sesi.map(function(s) {
+        return '<div class="sesi-item"><div class="sesi-dot"></div><div class="sesi-info"><div class="ip">' + (s.framedipaddress||'—') + '</div><div class="meta">' + (s.durasi_menit||0) + ' mnt · ' + (s.total_mb||0) + ' MB</div></div></div>';
+      }).join('');
+    }
+  } catch(e) {}
+
+  try {
+    var inv = await apiFetch('/api/client/tagihan');
+    var mini = document.getElementById('tagihan-mini');
+    var unpaid = inv.filter(function(i) { return i.status !== 'paid'; }).slice(0, 3);
+    if (!unpaid.length) {
+      mini.innerHTML = '<div class="empty"><div class="ico">✅</div><p>Semua tagihan lunas</p></div>';
+    } else {
+      mini.innerHTML = unpaid.map(function(i) { return renderInvItem(i); }).join('');
+    }
+  } catch(e) {}
+}
+
+function renderInvItem(i) {
+  var st = i.status === 'paid' ? 'paid' : (new Date(i.tgl_jatuh_tempo) < new Date() ? 'overdue' : 'unpaid');
+  var stLabel = st === 'paid' ? 'Lunas' : st === 'overdue' ? 'Jatuh Tempo' : 'Belum Bayar';
+  var bayarBtn = st !== 'paid' ? '<button class="btn sm primary" onclick="bayarInvoice(' + i.id + ')">Bayar</button>' : '';
+  return '<div class="inv-item"><div class="inv-left"><div class="no">' + i.no_invoice + '</div><div class="tgl">' + fmtTgl(i.tgl_invoice) + ' · ' + (i.nama_paket||'—') + '</div></div><div class="inv-right"><div class="harga" style="color:' + (st==='overdue'?'var(--red)':st==='paid'?'var(--green)':'var(--text)') + '">' + fmt(i.jumlah) + '</div><div class="aksi"><span class="tag ' + st + '">' + stLabel + '</span> ' + bayarBtn + '</div></div></div>';
+}
+
+// ── TAGIHAN ───────────────────────────────────────────────────
+async function loadTagihan() {
+  var el = document.getElementById('tagihan-list');
+  el.innerHTML = '<div class="empty"><div class="ico">⏳</div><p>Memuat...</p></div>';
+  try {
+    var rows = await apiFetch('/api/client/tagihan');
+    if (!rows.length) { el.innerHTML = '<div class="empty"><div class="ico">🧾</div><p>Belum ada tagihan</p></div>'; return; }
+    el.innerHTML = rows.map(function(i) { return renderInvItem(i); }).join('');
+  } catch(e) { el.innerHTML = '<div class="empty"><p>❌ ' + e.message + '</p></div>'; }
+}
+
+async function bayarInvoice(id) {
+  toast('⏳ Membuat link pembayaran...');
+  try {
+    var d = await apiFetch('/api/client/tagihan/' + id + '/bayar', { method: 'POST' });
+    if (d.payment_url) { window.location.href = d.payment_url; }
+    else toast('❌ Gagal membuat link bayar');
+  } catch(e) { toast('❌ ' + e.message); }
+}
+
+// ── REQUEST GANTI PASSWORD ────────────────────────────────────
+async function requestGantiPassword() {
+  var pw1 = document.getElementById('inp-pw-baru').value;
+  var pw2 = document.getElementById('inp-pw-konf').value;
+  var cat = document.getElementById('inp-pw-catatan').value.trim();
+  if (!pw1 || pw1.length < 6) { toast('❗ Password minimal 6 karakter'); return; }
+  if (pw1 !== pw2) { toast('❗ Password tidak sama'); return; }
+
+  var btn = document.getElementById('btn-req-pw');
+  btn.disabled = true; btn.textContent = '⏳ Mengirim...';
+
+  try {
+    var fd = new FormData();
+    fd.append('judul', 'Request Ganti Password WiFi');
+    fd.append('kategori', 'lainnya');
+    fd.append('pesan', 'Pelanggan meminta ganti password WiFi.\n\nPassword baru: ' + pw1 + (cat ? '\n\nCatatan: ' + cat : ''));
+
+    var r = await fetch('/api/client/tiket', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + getToken() },
+      body: fd
+    });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+
+    toast('✅ Permintaan terkirim! Admin akan memproses segera.');
+    document.getElementById('inp-pw-baru').value = '';
+    document.getElementById('inp-pw-konf').value = '';
+    document.getElementById('inp-pw-catatan').value = '';
+    loadRequestPw();
+  } catch(e) { toast('❌ ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = '📤 Kirim Permintaan'; }
+}
+
+async function loadRequestPw() {
+  var el = document.getElementById('list-req-pw');
+  try {
+    var rows = await apiFetch('/api/client/tiket');
+    var pwReqs = rows.filter(function(t) { return t.judul.includes('Password WiFi'); });
+    if (!pwReqs.length) {
+      el.innerHTML = '<div class="empty"><div class="ico">📋</div><p>Belum ada permintaan</p></div>';
+      return;
+    }
+    el.innerHTML = pwReqs.map(function(t) {
+      return '<div class="tiket-item" onclick="lihatTiket(' + t.id + ')">'
+        + '<div class="tiket-judul">' + escHtml(t.judul) + '</div>'
+        + '<div class="tiket-meta"><span class="tag ' + t.status + '">' + t.status + '</span>'
+        + '<span>' + fmtTgl(t.created_at) + '</span></div>'
+        + '</div>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty"><p>—</p></div>';
+  }
+}
+
+// ── TIKET ─────────────────────────────────────────────────────
+async function loadTiket() {
+  var el = document.getElementById('tiket-list');
+  el.innerHTML = '<div class="empty"><div class="ico">⏳</div><p>Memuat...</p></div>';
+  try {
+    var rows = await apiFetch('/api/client/tiket');
+    if (!rows.length) { el.innerHTML = '<div class="empty"><div class="ico">🎫</div><p>Belum ada tiket</p></div>'; return; }
+    el.innerHTML = rows.map(function(t) {
+      return '<div class="tiket-item" onclick="lihatTiket(' + t.id + ')">'
+        + '<div class="tiket-judul">' + escHtml(t.judul) + '</div>'
+        + '<div class="tiket-meta"><span class="tag ' + t.status + '">' + t.status + '</span><span>' + fmtTgl(t.created_at) + '</span><span>' + (t.jumlah_reply||0) + ' balasan</span></div>'
+        + '</div>';
+    }).join('');
+  } catch(e) { el.innerHTML = '<div class="empty"><p>❌ ' + e.message + '</p></div>'; }
+}
+
+function bukaModalTiket() {
+  document.getElementById('tk-judul').value = '';
+  document.getElementById('tk-pesan').value = '';
+  document.getElementById('tk-foto').value = '';
+  document.getElementById('preview-foto').style.display = 'none';
+  document.getElementById('ov-tiket').classList.add('open');
+}
+
+function previewFoto(inp) {
+  if (!inp.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = document.getElementById('preview-foto');
+    img.src = e.target.result;
+    img.style.display = 'block';
+  };
+  reader.readAsDataURL(inp.files[0]);
+}
+
+async function kirimTiket() {
+  var judul    = document.getElementById('tk-judul').value.trim();
+  var pesan    = document.getElementById('tk-pesan').value.trim();
+  var kategori = document.getElementById('tk-kategori').value;
+  var foto     = document.getElementById('tk-foto').files[0];
+  if (!judul || !pesan) { toast('❗ Judul dan deskripsi wajib diisi'); return; }
+
+  var fd = new FormData();
+  fd.append('judul', judul);
+  fd.append('pesan', pesan);
+  fd.append('kategori', kategori);
+  if (foto) fd.append('foto', foto);
+
+  var btn = document.getElementById('btn-kirim-tiket');
+  btn.disabled = true; btn.textContent = '⏳ Mengirim...';
+  try {
+    var r = await fetch('/api/client/tiket', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + getToken() },
+      body: fd
+    });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    toast('✅ Tiket berhasil dikirim');
+    tutupModal('ov-tiket');
+    loadTiket();
+  } catch(e) { toast('❌ ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = '📤 Kirim Tiket'; }
+}
+
+async function lihatTiket(id) {
+  tiketAktifId = id;
+  try {
+    var d = await apiFetch('/api/client/tiket/' + id);
+    document.getElementById('detail-judul').textContent = d.judul;
+    document.getElementById('detail-meta').innerHTML = '<span class="tag ' + d.status + '">' + d.status + '</span> &nbsp;' + fmtTgl(d.created_at);
+    var wrap = document.getElementById('chat-wrap');
+    var msgs = [{dari:'pelanggan', pesan:d.pesan, foto:d.foto, created_at:d.created_at}].concat(d.reply||[]);
+    wrap.innerHTML = msgs.map(function(m) {
+      var cls = m.dari === 'admin' ? 'admin' : 'pelanggan';
+      var fotoHtml = m.foto ? '<img src="' + m.foto + '" class="chat-foto" onclick="window.open(\'' + m.foto + '\',\'_blank\')">' : '';
+      return '<div class="chat-msg ' + cls + '"><div class="sender">' + (m.dari==='admin'?'👨‍💼 Admin':'👤 Anda') + '</div>' + escHtml(m.pesan) + fotoHtml + '<div class="waktu">' + fmtTgl(m.created_at) + '</div></div>';
+    }).join('');
+    wrap.scrollTop = wrap.scrollHeight;
+    document.getElementById('reply-pesan').value = '';
+    document.getElementById('ov-tiket-detail').classList.add('open');
+  } catch(e) { toast('❌ ' + e.message); }
+}
+
+async function kirimBalasan() {
+  var pesan = document.getElementById('reply-pesan').value.trim();
+  if (!pesan) { toast('❗ Tulis balasan dulu'); return; }
+  var btn = document.getElementById('btn-balas');
+  btn.disabled = true;
+  try {
+    await apiFetch('/api/client/tiket/' + tiketAktifId + '/reply', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ pesan: pesan, dari: 'pelanggan' })
+    });
+    await lihatTiket(tiketAktifId);
+  } catch(e) { toast('❌ ' + e.message); }
+  finally { btn.disabled = false; }
+}
+
+// ── PROFIL ────────────────────────────────────────────────────
+async function loadProfil() {
+  try {
+    var d = await apiFetch('/api/client/profil');
+    document.getElementById('p-nama').textContent    = d.nama || '—';
+    document.getElementById('p-nohp').textContent    = d.no_hp || '—';
+    document.getElementById('p-email').textContent   = d.email || '—';
+    document.getElementById('p-alamat').textContent  = d.alamat || '—';
+    document.getElementById('p-username').textContent = d.username || '—';
+    document.getElementById('p-paket').textContent   = d.nama_paket ? d.nama_paket + ' (' + d.kecepatan_dn + '/' + d.kecepatan_up + ' Mbps)' : '—';
+  } catch(e) {}
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>

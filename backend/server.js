@@ -47,6 +47,31 @@ async function jalankanMigration() {
             nama: 'setting.radius_single_session'
         },
         {
+            cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='acs_device'`,
+            sql:  `CREATE TABLE IF NOT EXISTS acs_device (id INT AUTO_INCREMENT PRIMARY KEY, serial_number VARCHAR(100) NOT NULL UNIQUE, product_class VARCHAR(100), manufacturer VARCHAR(100), oui VARCHAR(20), software_version VARCHAR(50), hardware_version VARCHAR(50), ip_address VARCHAR(45), mac_address VARCHAR(20), connection_url VARCHAR(255), pelanggan_id INT DEFAULT NULL, last_inform DATETIME, status ENUM('online','offline') DEFAULT 'offline', inform_interval INT DEFAULT 300, param_cache LONGTEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, KEY acs_pelanggan (pelanggan_id)) ENGINE=InnoDB`,
+            nama: 'table.acs_device'
+        },
+        {
+            cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='acs_task'`,
+            sql:  `CREATE TABLE IF NOT EXISTS acs_task (id INT AUTO_INCREMENT PRIMARY KEY, device_id INT NOT NULL, type VARCHAR(50) NOT NULL, params TEXT, status ENUM('pending','running','done','failed') DEFAULT 'pending', result TEXT, created_by VARCHAR(50) DEFAULT 'admin', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, done_at DATETIME DEFAULT NULL, KEY acs_task_device (device_id)) ENGINE=InnoDB`,
+            nama: 'table.acs_task'
+        },
+        {
+            cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='client_otp'`,
+            sql:  `CREATE TABLE IF NOT EXISTS client_otp (no_hp VARCHAR(20) PRIMARY KEY, otp VARCHAR(6) NOT NULL, expired_at DATETIME NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB`,
+            nama: 'table.client_otp'
+        },
+        {
+            cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='tiket'`,
+            sql:  `CREATE TABLE IF NOT EXISTS tiket (id INT AUTO_INCREMENT PRIMARY KEY, pelanggan_id INT NOT NULL, judul VARCHAR(200) NOT NULL, pesan TEXT NOT NULL, kategori ENUM('umum','gangguan','billing','lainnya') DEFAULT 'umum', foto VARCHAR(255) DEFAULT NULL, status ENUM('open','proses','selesai') DEFAULT 'open', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, KEY tiket_pelanggan (pelanggan_id)) ENGINE=InnoDB`,
+            nama: 'table.tiket'
+        },
+        {
+            cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='tiket_reply'`,
+            sql:  `CREATE TABLE IF NOT EXISTS tiket_reply (id INT AUTO_INCREMENT PRIMARY KEY, tiket_id INT NOT NULL, dari ENUM('pelanggan','admin') DEFAULT 'admin', pesan TEXT NOT NULL, foto VARCHAR(255) DEFAULT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, KEY reply_tiket (tiket_id)) ENGINE=InnoDB`,
+            nama: 'table.tiket_reply'
+        },
+        {
             cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='pelanggan' AND COLUMN_NAME='radius_password_enc'`,
             sql:  `ALTER TABLE pelanggan ADD COLUMN radius_password_enc TEXT DEFAULT NULL AFTER password`,
             nama: 'pelanggan.radius_password_enc'
@@ -147,6 +172,10 @@ app.get('/admin', (req, res) => {
 app.get('/reseller', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/reseller.html'));
 });
+app.get('/client', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/client.html'));
+});
+app.use('/uploads', express.static(path.join(__dirname, '../frontend/uploads')));
 
 // --- API Routes ---
 app.use('/api/auth',      require('./routes/auth'));
@@ -158,6 +187,18 @@ app.use('/api/payment',   require('./routes/payment'));
 app.use('/api/radius',    require('./routes/radius'));
 app.use('/api/laporan',   require('./routes/laporan'));
 app.use('/api/setting',   require('./routes/setting'));
+app.use('/api/client',    require('./routes/client'));
+app.use('/api/acs',       require('./routes/acs'));
+
+// ── ACS CWMP Server (TR-069) port 7547 ───────────────────────
+const { createCwmpRouter } = require('./services/acs');
+const cwmpApp = express();
+cwmpApp.use(createCwmpRouter());
+const ACS_PORT = process.env.ACS_PORT || 7547;
+cwmpApp.listen(ACS_PORT, () => {
+    console.log(`[ACS] CWMP server aktif di port ${ACS_PORT}`);
+    console.log(`[ACS] URL untuk router: http://<IP-VPS>:${ACS_PORT}/`);
+});
 
 // Voucher: publik (tanpa auth) + admin (dengan auth)
 const voucherPublik  = require('./routes/voucher-publik');
