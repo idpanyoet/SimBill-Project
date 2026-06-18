@@ -773,10 +773,22 @@ body.dark .toggle-thumb{left:18px}
           <button class="btn" onclick="apiReminderMassal()">💬 Reminder Massal</button>
           <button class="btn" onclick="apiGenerateBulanan()">⚡ Generate Tagihan Otomatis</button>
         </div>
+
+        <!-- Tab bar -->
+        <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:12px">
+          <button id="inv-tab-pppoe" onclick="switchInvTab('pppoe')" style="padding:8px 20px;font-size:13px;font-weight:500;border:none;background:none;border-bottom:2px solid var(--accent);margin-bottom:-2px;color:var(--accent);cursor:pointer">📡 PPPoE</button>
+          <button id="inv-tab-hotspot" onclick="switchInvTab('hotspot')" style="padding:8px 20px;font-size:13px;font-weight:500;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text2);cursor:pointer">📶 Hotspot</button>
+        </div>
+
         <div class="card">
           <div class="search-bar">
-            <input placeholder="Cari no. invoice atau pelanggan..." oninput="filterTbl('tbl-invoice',this.value)">
-            <select><option>Semua Status</option><option>Unpaid</option><option>Paid</option><option>Overdue</option></select>
+            <input id="inv-search" placeholder="Cari no. invoice atau pelanggan..." oninput="filterTbl('tbl-invoice',this.value)">
+            <select id="inv-filter-status" onchange="loadInvoice()">
+              <option value="">Semua Status</option>
+              <option value="unpaid">Unpaid</option>
+              <option value="paid">Paid</option>
+              <option value="overdue">Overdue</option>
+            </select>
           </div>
           <table><thead><tr><th>No. Invoice</th><th>Pelanggan</th><th>Paket</th><th>Jumlah</th><th>Jatuh Tempo</th><th>Status</th><th>Aksi</th></tr></thead>
           <tbody id="tbl-invoice">
@@ -3167,10 +3179,31 @@ async function apiHapusPaket(id, nama) {
 // ================================================================
 // INVOICE
 // ================================================================
+let _invTab = 'pppoe';
+
+function switchInvTab(tab) {
+  _invTab = tab;
+  ['pppoe','hotspot'].forEach(function(t) {
+    const btn = document.getElementById('inv-tab-' + t);
+    if (t === tab) {
+      btn.style.borderBottomColor = 'var(--accent)';
+      btn.style.color = 'var(--accent)';
+    } else {
+      btn.style.borderBottomColor = 'transparent';
+      btn.style.color = 'var(--text2)';
+    }
+  });
+  loadInvoice();
+}
+
 async function loadInvoice() {
   try {
-    const data = await apiFetch('/api/invoice?limit=30');
-    renderTblInvoice(data.data||data);
+    const status = document.getElementById('inv-filter-status')?.value || '';
+    const tipe   = _invTab === 'pppoe' ? 'pppoe' : 'hotspot';
+    const params = new URLSearchParams({ limit: 100, tipe_koneksi: tipe });
+    if (status) params.append('status', status);
+    const data = await apiFetch('/api/invoice?' + params.toString());
+    renderTblInvoice(data.data || data);
   } catch(e) { console.warn('Invoice API:', e.message); }
 }
 

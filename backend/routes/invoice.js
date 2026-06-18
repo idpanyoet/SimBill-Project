@@ -13,21 +13,22 @@ const INVOICE_PREFIX = process.env.INVOICE_PREFIX || 'INV';
 // GET /api/invoice
 router.get('/', async (req, res, next) => {
     try {
-        const { status, pelanggan_id, dari, sampai, halaman = 1, limit = 20 } = req.query;
+        const { status, pelanggan_id, dari, sampai, tipe_koneksi, halaman = 1, limit = 20 } = req.query;
         const offset = (parseInt(halaman) - 1) * parseInt(limit);
 
         let where = ['1=1'];
         let params = [];
 
-        if (status)       { where.push('i.status = ?'); params.push(status); }
-        if (pelanggan_id) { where.push('i.pelanggan_id = ?'); params.push(pelanggan_id); }
-        if (dari)         { where.push('i.tgl_invoice >= ?'); params.push(dari); }
-        if (sampai)       { where.push('i.tgl_invoice <= ?'); params.push(sampai); }
+        if (status)        { where.push('i.status = ?'); params.push(status); }
+        if (pelanggan_id)  { where.push('i.pelanggan_id = ?'); params.push(pelanggan_id); }
+        if (dari)          { where.push('i.tgl_invoice >= ?'); params.push(dari); }
+        if (sampai)        { where.push('i.tgl_invoice <= ?'); params.push(sampai); }
+        if (tipe_koneksi)  { where.push('p.tipe_koneksi = ?'); params.push(tipe_koneksi); }
 
         const rows = await query(`
             SELECT i.*,
                 COALESCE(p.nama, 'Pembeli Voucher') AS nama_pelanggan,
-                p.no_hp, pk.nama AS nama_paket
+                p.no_hp, p.tipe_koneksi, pk.nama AS nama_paket
             FROM invoice i
             LEFT JOIN pelanggan p ON i.pelanggan_id = p.id
             JOIN paket pk ON i.paket_id = pk.id
