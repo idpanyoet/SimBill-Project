@@ -541,7 +541,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 
       <!-- ══ PAKET ══ -->
       <div class="page" id="p-paket">
-        <div class="action-bar"><button class="btn primary" onclick="openModal('m-add-paket')">+ Tambah Paket</button></div>
+        <div class="action-bar"><button class="btn primary" onclick="bukaTambahPaket()">+ Tambah Paket</button></div>
         <div class="card" style="padding:0;overflow:hidden">
           <table id="plan-grid">
             <thead>
@@ -1236,17 +1236,109 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 </div>
 
 <div class="overlay" id="m-add-paket">
-  <div class="modal">
-    <div class="modal-hdr"><h3>➕ Tambah Paket</h3><button class="btn-x" onclick="closeModal('m-add-paket')">✕</button></div>
-    <div class="modal-body">
-      <div class="fg-row"><div class="fg"><label>Nama Paket</label><input id="fp-nama" placeholder="Paket Fiber 100Mbps"></div><div class="fg"><label>Kecepatan (Mbps)</label><input id="fp-speed" type="number" placeholder="100"></div></div>
-      <div class="fg-row"><div class="fg"><label>Harga</label><input id="fp-harga" placeholder="500000"></div><div class="fg"><label>Pool RADIUS</label><input id="fp-pool" placeholder="pool-100mbps"></div></div>
-      <div class="fg-row">
-        <div class="fg"><label>Masa Berlaku</label><input id="fp-masa" type="number" min="1" value="30" placeholder="30"></div>
-        <div class="fg"><label>Satuan</label><select id="fp-satuan"><option value="jam">Jam</option><option value="hari" selected>Hari</option><option value="bulan">Bulan</option></select></div>
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hdr" style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#FAEEDA;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-package" style="font-size:20px;color:#BA7517" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:#0f172a">Tambah Paket Internet</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:1px">Buat paket baru untuk pelanggan</div>
+        </div>
       </div>
-      <div class="fg"><label>Tipe Koneksi</label><select id="fp-tipe"><option value="pppoe">PPPoE saja</option><option value="hotspot">Hotspot saja</option><option value="keduanya" selected>Keduanya (PPPoE & Hotspot)</option></select><small style="color:var(--text3);font-size:11px;display:block;margin-top:4px">Paket akan muncul di storefront voucher jika tipe = Hotspot atau Keduanya</small></div>
-      <div class="modal-foot"><button class="btn" onclick="closeModal('m-add-paket')">Batal</button><button class="btn primary" onclick="apiSimpanPaket()">Simpan</button></div>
+      <button class="btn-x" onclick="closeModal('m-add-paket')">✕</button>
+    </div>
+
+    <!-- Tipe Koneksi -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px 20px;border-bottom:1px solid #f1f5f9">
+      <div id="fp-tipe-card-pppoe" onclick="pilihTipePaket('pppoe')" style="border:2px solid #378ADD;border-radius:10px;padding:10px;cursor:pointer;text-align:center;background:#E6F1FB;transition:all .15s">
+        <i class="ti ti-router" style="font-size:20px;color:#378ADD;display:block;margin-bottom:5px" aria-hidden="true"></i>
+        <div style="font-size:11px;font-weight:600;color:#334155">PPPoE</div>
+        <div style="font-size:9px;color:#94a3b8;margin-top:2px">Kabel / Fiber</div>
+      </div>
+      <div id="fp-tipe-card-hotspot" onclick="pilihTipePaket('hotspot')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px;cursor:pointer;text-align:center;transition:all .15s">
+        <i class="ti ti-wifi" style="font-size:20px;color:#1D9E75;display:block;margin-bottom:5px" aria-hidden="true"></i>
+        <div style="font-size:11px;font-weight:600;color:#334155">Hotspot</div>
+        <div style="font-size:9px;color:#94a3b8;margin-top:2px">WiFi / Voucher</div>
+      </div>
+      <div id="fp-tipe-card-keduanya" onclick="pilihTipePaket('keduanya')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px;cursor:pointer;text-align:center;transition:all .15s">
+        <i class="ti ti-arrows-exchange" style="font-size:20px;color:#7F77DD;display:block;margin-bottom:5px" aria-hidden="true"></i>
+        <div style="font-size:11px;font-weight:600;color:#334155">Keduanya</div>
+        <div style="font-size:9px;color:#94a3b8;margin-top:2px">PPPoE & Hotspot</div>
+      </div>
+      <input type="hidden" id="fp-tipe" value="pppoe">
+    </div>
+
+    <div class="modal-body" style="padding:14px 20px;display:flex;flex-direction:column;gap:12px">
+      <div class="fg">
+        <label>Nama Paket</label>
+        <input id="fp-nama" placeholder="cth: Paket Fiber 100Mbps">
+      </div>
+
+      <div class="fg-row">
+        <div class="fg">
+          <label>Kecepatan Download (Mbps)</label>
+          <input id="fp-speed" type="number" placeholder="100" oninput="updateSpeedPreview()">
+          <div style="margin-top:5px;display:flex;align-items:center;gap:5px">
+            <span id="fp-speed-preview" style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:#E6F1FB;color:#0C447C">
+              <i class="ti ti-arrow-down" style="font-size:10px" aria-hidden="true"></i> — Mbps
+            </span>
+          </div>
+        </div>
+        <div class="fg">
+          <label>Kecepatan Upload (Mbps)</label>
+          <input id="fp-speed-up" type="number" placeholder="50" oninput="updateSpeedPreview()">
+          <div style="margin-top:5px">
+            <span id="fp-speed-up-preview" style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:#E1F5EE;color:#085041">
+              <i class="ti ti-arrow-up" style="font-size:10px" aria-hidden="true"></i> — Mbps
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="fg-row">
+        <div class="fg">
+          <label>Harga (Rp)</label>
+          <input id="fp-harga" type="number" placeholder="500000" oninput="updateHargaPreview()">
+          <div id="fp-harga-preview" style="font-size:16px;font-weight:700;color:#BA7517;margin-top:4px">—</div>
+          <div style="font-size:10px;color:#94a3b8">per periode masa aktif</div>
+        </div>
+        <div class="fg">
+          <label>Pool RADIUS</label>
+          <input id="fp-pool" placeholder="pool-100mbps">
+        </div>
+      </div>
+
+      <div class="fg-row">
+        <div class="fg">
+          <label>Masa Berlaku</label>
+          <input id="fp-masa" type="number" min="1" value="30" placeholder="30">
+        </div>
+        <div class="fg">
+          <label>Satuan</label>
+          <select id="fp-satuan">
+            <option value="jam">Jam</option>
+            <option value="hari" selected>Hari</option>
+            <option value="bulan">Bulan</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label>Deskripsi (opsional)</label>
+        <input id="fp-deskripsi" placeholder="cth: Cocok untuk streaming & gaming">
+      </div>
+
+      <div style="background:#FAEEDA;border:1px solid rgba(186,117,23,.2);border-radius:8px;padding:8px 12px;font-size:11px;color:#854F0B;display:flex;align-items:flex-start;gap:6px">
+        <i class="ti ti-info-circle" style="font-size:14px;margin-top:1px;flex-shrink:0" aria-hidden="true"></i>
+        <span>Paket akan muncul di storefront voucher jika tipe = <b>Hotspot</b> atau <b>Keduanya</b></span>
+      </div>
+
+      <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
+        <button class="btn" onclick="closeModal('m-add-paket')">Batal</button>
+        <button class="btn primary" onclick="apiSimpanPaket()">Simpan Paket</button>
+      </div>
     </div>
   </div>
 </div>
@@ -3050,24 +3142,84 @@ async function apiUpdatePaketGrid() {
   } catch(e) { toast('❌ '+e.message, true); }
 }
 
+function bukaTambahPaket() {
+  // Reset semua field
+  ['fp-nama','fp-speed','fp-speed-up','fp-harga','fp-pool','fp-deskripsi'].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const masa = document.getElementById('fp-masa');
+  if (masa) masa.value = '30';
+  const satuan = document.getElementById('fp-satuan');
+  if (satuan) satuan.value = 'hari';
+  // Reset tipe ke pppoe
+  pilihTipePaket('pppoe');
+  // Reset preview
+  const prevDn = document.getElementById('fp-speed-preview');
+  const prevUp = document.getElementById('fp-speed-up-preview');
+  const prevHarga = document.getElementById('fp-harga-preview');
+  if (prevDn) prevDn.innerHTML = '<i class="ti ti-arrow-down" style="font-size:10px"></i> — Mbps';
+  if (prevUp) prevUp.innerHTML = '<i class="ti ti-arrow-up" style="font-size:10px"></i> — Mbps';
+  if (prevHarga) prevHarga.textContent = '—';
+  openModal('m-add-paket');
+}
+
+function pilihTipePaket(tipe) {
+  document.getElementById('fp-tipe').value = tipe;
+  const cfg = {
+    pppoe:    { border:'#378ADD', bg:'#E6F1FB' },
+    hotspot:  { border:'#1D9E75', bg:'#E1F5EE' },
+    keduanya: { border:'#7F77DD', bg:'#EEEDFE' }
+  };
+  ['pppoe','hotspot','keduanya'].forEach(function(t) {
+    const el = document.getElementById('fp-tipe-card-' + t);
+    if (!el) return;
+    if (t === tipe) {
+      el.style.borderColor = cfg[t].border;
+      el.style.background  = cfg[t].bg;
+    } else {
+      el.style.borderColor = '#e2e7ef';
+      el.style.background  = 'transparent';
+    }
+  });
+}
+
+function updateSpeedPreview() {
+  const dn = document.getElementById('fp-speed')?.value;
+  const up = document.getElementById('fp-speed-up')?.value;
+  const prevDn = document.getElementById('fp-speed-preview');
+  const prevUp = document.getElementById('fp-speed-up-preview');
+  if (prevDn) prevDn.innerHTML = `<i class="ti ti-arrow-down" style="font-size:10px"></i> ${dn || '—'} Mbps`;
+  if (prevUp) prevUp.innerHTML = `<i class="ti ti-arrow-up" style="font-size:10px"></i> ${up || '—'} Mbps`;
+}
+
+function updateHargaPreview() {
+  const val = parseInt(document.getElementById('fp-harga')?.value) || 0;
+  const el  = document.getElementById('fp-harga-preview');
+  if (el) el.textContent = val ? 'Rp ' + val.toLocaleString('id-ID') : '—';
+}
+
 async function apiSimpanPaket() {
   const nama         = document.getElementById('fp-nama').value.trim();
   const kecepatan_dn = parseInt(document.getElementById('fp-speed').value);
+  const kecepatan_up = parseInt(document.getElementById('fp-speed-up').value) || kecepatan_dn;
   const harga        = parseInt(document.getElementById('fp-harga').value);
   const pool_name    = document.getElementById('fp-pool').value.trim();
   const tipe         = document.getElementById('fp-tipe').value;
   const masa_aktif   = parseInt(document.getElementById('fp-masa').value) || 30;
   const satuan_masa  = document.getElementById('fp-satuan').value;
-  if (!nama||!kecepatan_dn||!harga) return toast('❌ Nama, kecepatan, harga wajib diisi', true);
+  const deskripsi    = document.getElementById('fp-deskripsi')?.value.trim() || '';
+  if (!nama || !kecepatan_dn || !harga) return toast('❌ Nama, kecepatan, harga wajib diisi', true);
   try {
     await apiFetch('/api/paket', {method:'POST',
-      body: JSON.stringify({nama, kecepatan_up:kecepatan_dn, kecepatan_dn, harga, pool_name, tipe, masa_aktif, satuan_masa})
+      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi})
     });
     toast('✅ Paket ditambahkan');
     closeModal('m-add-paket');
     loadPaket();
   } catch(e) { toast('❌ '+e.message, true); }
 }
+
 
 
 // ── POPULATE SEMUA DROPDOWN DARI API ────────────────────────
