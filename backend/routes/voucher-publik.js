@@ -88,7 +88,7 @@ router.post('/beli', limitBeli, async (req, res, next) => {
 
     const username = _acakUsername();
     const password = username; // pembelian online pakai mode username=password agar mudah diingat pembeli
-    const order_id = `VCR-${Date.now()}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;
+    const order_id = `VCR${Date.now().toString(36).toUpperCase()}`;
     const tahun    = new Date().getFullYear();
     const tglJatuh = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 

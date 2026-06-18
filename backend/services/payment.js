@@ -208,12 +208,13 @@ async function _duitkuBuat(order_id, gross_amount, pelanggan, cfg) {
 
     const merchantOrderId = order_id;
     const signature = crypto.createHash('md5')
-        .update(`${cfg.merchantCode}${merchantOrderId}${gross_amount}${cfg.apiKey}`)
+        .update(`${cfg.merchantCode}${merchantOrderId}${Math.round(gross_amount)}${cfg.apiKey}`)
         .digest('hex');
 
     const resp = await axios.post(baseUrl, {
         merchantCode: cfg.merchantCode,
         paymentAmount: Math.round(gross_amount),
+        paymentMethod: 'VC',
         merchantOrderId,
         productDetails: `Tagihan Internet ${pelanggan.nama}`,
         email:    pelanggan.email || `${pelanggan.username}@customer.id`,
@@ -242,7 +243,7 @@ async function _tripayBuat(order_id, gross_amount, pelanggan, cfg) {
         : 'https://tripay.co.id/api/transaction/create';
 
     const signature = crypto.createHmac('sha256', cfg.privateKey)
-        .update(`${cfg.merchantCode}${order_id}${gross_amount}`)
+        .update(`${cfg.merchantCode}${order_id}${Math.round(gross_amount)}`)
         .digest('hex');
 
     const resp = await axios.post(baseUrl, {
