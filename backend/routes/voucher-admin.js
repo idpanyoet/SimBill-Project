@@ -10,12 +10,13 @@ router.use(authMiddleware);
 // GET /api/voucher — daftar voucher
 router.get('/', async (req, res, next) => {
   try {
-    const { status, paket_id, halaman = 1, limit = 30 } = req.query;
+    const { status, paket_id, batch_id, halaman = 1, limit = 30 } = req.query;
     const offset = (parseInt(halaman)-1) * parseInt(limit);
 
     let where = ['1=1'], params = [];
     if (status)   { where.push('v.status=?');   params.push(status); }
     if (paket_id) { where.push('v.paket_id=?'); params.push(paket_id); }
+    if (batch_id) { where.push('v.batch_id=?'); params.push(batch_id); }
 
     const rows = await query(`
       SELECT v.*, p.nama AS nama_paket, p.kecepatan_dn, p.harga
@@ -23,6 +24,9 @@ router.get('/', async (req, res, next) => {
       WHERE ${where.join(' AND ')}
       ORDER BY v.created_at DESC LIMIT ? OFFSET ?
     `, [...params, parseInt(limit), offset]);
+
+    // Jika filter batch_id, kembalikan array langsung (bukan paginasi)
+    if (batch_id) return res.json(rows);
 
     const [{ total }] = await query(
       `SELECT COUNT(*) AS total FROM voucher v WHERE ${where.join(' AND ')}`, params
@@ -61,6 +65,9 @@ router.post('/generate', async (req, res, next) => {
     const paket = await queryOne('SELECT * FROM paket WHERE id=?', [paket_id]);
     if (!paket) return res.status(404).json({ error: 'Paket tidak ditemukan' });
 
+    // Generate batch ID unik untuk kelompok voucher ini
+    const batchId = 'BATCH-' + Date.now().toString(36).toUpperCase();
+
     const hasil = [];
     for (let i = 0; i < jumlah; i++) {
       // Coba sampai dapat username yang belum dipakai (sangat jarang
@@ -79,9 +86,9 @@ router.post('/generate', async (req, res, next) => {
       const password = mode === 'sama' ? username : _acak(charset, panjangAcak);
 
       await query(`
-        INSERT INTO voucher (username, password, paket_id, tgl_expired)
-        VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 365 DAY))
-      `, [username, password, paket_id]);
+        INSERT INTO voucher (username, password, paket_id, tgl_expired, batch_id)
+        VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 365 DAY), ?)
+      `, [username, password, paket_id, batchId]);
 
       hasil.push({ username, password });
     }
@@ -90,10 +97,11 @@ router.post('/generate', async (req, res, next) => {
     radiusService.syncVoucher().catch(e => console.warn('[sync]', e.message));
 
     res.status(201).json({
-      pesan:   `${hasil.length} voucher berhasil dibuat`,
-      paket:   paket.nama,
+      pesan:    `${hasil.length} voucher berhasil dibuat`,
+      paket:    paket.nama,
       mode,
-      voucher: hasil
+      batch_id: batchId,
+      voucher:  hasil
     });
   } catch (e) { next(e); }
 });

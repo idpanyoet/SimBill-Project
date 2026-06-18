@@ -47,6 +47,11 @@ async function jalankanMigration() {
             nama: 'setting.radius_single_session'
         },
         {
+            cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='voucher' AND COLUMN_NAME='batch_id'`,
+            sql:  `ALTER TABLE voucher ADD COLUMN batch_id VARCHAR(30) DEFAULT NULL AFTER paket_id`,
+            nama: 'voucher.batch_id'
+        },
+        {
             cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='acs_device'`,
             sql:  `CREATE TABLE IF NOT EXISTS acs_device (id INT AUTO_INCREMENT PRIMARY KEY, serial_number VARCHAR(100) NOT NULL UNIQUE, product_class VARCHAR(100), manufacturer VARCHAR(100), oui VARCHAR(20), software_version VARCHAR(50), hardware_version VARCHAR(50), ip_address VARCHAR(45), mac_address VARCHAR(20), connection_url VARCHAR(255), pelanggan_id INT DEFAULT NULL, last_inform DATETIME, status ENUM('online','offline') DEFAULT 'offline', inform_interval INT DEFAULT 300, param_cache LONGTEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, KEY acs_pelanggan (pelanggan_id)) ENGINE=InnoDB`,
             nama: 'table.acs_device'
