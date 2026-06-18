@@ -216,7 +216,41 @@ body.dark .toggle-thumb{left:14px}
 .plan-card .price{font-size:13px;color:#64748b}
 .pagination-bar{display:flex;align-items:center;justify-content:space-between;margin-top:14px;gap:10px;flex-wrap:wrap;font-size:13px}
 .pagination-bar select{padding:5px 10px;border:1px solid #e2e7ef;border-radius:7px;background:#fff;color:#0f172a;font-size:12px}
-/* ── GENERATE VOUCHER MODAL ── */
+/* ── RESELLER MODAL ── */
+.rs-info-box{background:#f3e8ff;border:1px solid #e9d5ff;border-radius:8px;padding:9px 12px;font-size:11px;color:#6d28d9;display:flex;align-items:flex-start;gap:7px}
+body.dark .rs-info-box{background:rgba(124,58,237,.12);border-color:rgba(124,58,237,.25);color:#c4b5fd}
+body.dark #rs-level-silver,body.dark #rs-level-gold,body.dark #rs-level-platinum{background:#1c2128;border-color:#30363d}
+body.dark #nr-komisi{background:#0d1117!important;border-color:#30363d!important;color:#c4b5fd!important}
+body.dark #nr-komisi-range{accent-color:#a78bfa}
+body.dark #rs-komisi-lbl{color:#a78bfa!important}
+body.dark .btn[style*="background:#7c3aed"]{background:#7c3aed!important}
+
+/* ── L2TP MODAL ── */
+.l2tp-ip-box{background:#f8fafc;border:1px solid #e2e7ef;border-radius:10px;padding:12px 14px}
+.l2tp-info-box{background:#ede9fe;border:1px solid #ddd6fe;border-radius:8px;padding:9px 12px;font-size:11px;color:#5b21b6;display:flex;align-items:flex-start;gap:7px}
+.l2tp-subnet-chip{background:#ede9fe;color:#6d28d9;font-size:10px;font-weight:600;padding:3px 9px;border-radius:99px;font-family:monospace}
+.btn-saran-ip{padding:0 12px;border:1px solid #e2e7ef;border-radius:8px;background:#fff;font-size:11px;font-weight:600;color:#6366f1;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;transition:all .15s;font-family:inherit}
+.btn-saran-ip:hover{background:#eef2ff;border-color:#a5b4fc}
+body.dark .l2tp-ip-box{background:#1c2128;border-color:#30363d}
+body.dark .l2tp-info-box{background:rgba(99,102,241,.12);border-color:rgba(99,102,241,.25);color:#a5b4fc}
+body.dark .l2tp-subnet-chip{background:rgba(99,102,241,.15);color:#a5b4fc}
+body.dark .btn-saran-ip{background:#21262d;border-color:#30363d;color:#818cf8}
+body.dark .btn-saran-ip:hover{background:#30363d}
+body.dark #l2p-ip{background:#0d1117;border-color:#30363d;color:#e6edf3}
+/* ── NAS MODAL ── */
+.nas-snmp-box{background:#f8fafc;border:1px solid #e2e7ef;border-radius:10px;padding:12px 14px}
+.nas-info-box{background:#e0f2fe;border:1px solid #bae6fd;border-radius:8px;padding:8px 12px;font-size:11px;color:#0369a1;display:flex;align-items:flex-start;gap:6px}
+body.dark .nas-snmp-box{background:#1c2128;border-color:#30363d}
+body.dark .nas-info-box{background:rgba(14,165,233,.1);border-color:rgba(14,165,233,.25);color:#38bdf8}
+/* ── RESELLER MODAL ── */
+body.dark #nr-level-card-silver,body.dark #nr-level-card-gold,body.dark #nr-level-card-platinum{background:#1c2128;border-color:#30363d}
+body.dark #nr-level-card-gold.rs-active{background:rgba(217,119,6,.15);border-color:#d97706}
+body.dark #nr-level-card-silver.rs-active{background:rgba(100,116,139,.15);border-color:#94a3b8}
+body.dark #nr-level-card-platinum.rs-active{background:rgba(124,58,237,.15);border-color:#7c3aed}
+body.dark [style*="background:#f3e8ff"]{background:rgba(124,58,237,.12)!important;border-color:rgba(124,58,237,.25)!important}
+body.dark [style*="color:#6d28d9"]{color:#a78bfa!important}
+body.dark #nr-komisi{background:#0d1117!important;border-color:#30363d!important;color:#a78bfa!important}
+body.dark #nr-komisi-lbl{color:#a78bfa!important}
 .gv-cs-chip{padding:5px 12px;border-radius:8px;border:1.5px solid #e2e7ef;font-size:11px;font-weight:600;cursor:pointer;color:#64748b;background:#fff;transition:all .15s;font-family:monospace}
 .gv-cs-chip:hover{border-color:#d97706;color:#d97706}
 .gv-cs-active{border-color:#d97706!important;background:#fef3c7!important;color:#b45309!important}
@@ -1493,60 +1527,153 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 </div>
 
 <div class="overlay" id="m-add-nas">
-  <div class="modal">
-    <div class="modal-hdr"><h3>📡 Tambah NAS</h3><button class="btn-x" onclick="closeModal('m-add-nas')">✕</button></div>
-    <div class="modal-body">
-      <div class="fg-row"><div class="fg"><label>Nama NAS</label><input id="fn-nama" placeholder="MikroTik-Selatan"></div><div class="fg"><label>IP Address</label><input id="fn-ip" placeholder="192.168.88.x"></div></div>
+  <div class="modal" style="max-width:480px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#e0f2fe;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-server" style="font-size:20px;color:#0ea5e9" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="td-text-main" style="font-size:15px;font-weight:700">Tambah NAS</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Network Access Server / MikroTik</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-add-nas')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
+
       <div class="fg-row">
-        <div class="fg"><label>Secret</label>
-          <div style="position:relative">
-            <input id="fn-secret" type="password" placeholder="radius-secret" style="padding-right:34px;width:100%;box-sizing:border-box">
-            <button type="button" onclick="togglePwVis('fn-secret',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding:0;line-height:1">👁</button>
+        <div class="fg"><label>Nama NAS</label><input id="fn-nama" placeholder="MikroTik-Selatan"></div>
+        <div class="fg"><label>IP Address</label><input id="fn-ip" placeholder="192.168.88.1"></div>
+      </div>
+
+      <div class="fg">
+        <label>RADIUS Secret</label>
+        <div style="position:relative">
+          <input id="fn-secret" type="password" placeholder="radius-secret" style="padding-right:36px">
+          <button type="button" onclick="togglePwVis('fn-secret',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0;line-height:1">👁</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="fg-label">Tipe Koneksi</label>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:2px">
+          <div id="fn-tipe-card-pppoe" onclick="nasSetTipe('fn','pppoe')" style="border:2px solid #0ea5e9;background:#e0f2fe;border-radius:10px;padding:9px 8px;cursor:pointer;text-align:center;transition:all .15s">
+            <i class="ti ti-router" style="font-size:20px;color:#0ea5e9;display:block;margin-bottom:4px" aria-hidden="true"></i>
+            <div class="nas-tipe-lbl" style="font-size:11px;font-weight:700;color:#0369a1">PPPoE</div>
+            <div class="td-text-sub" style="font-size:9px;margin-top:2px">Kabel / Fiber</div>
+          </div>
+          <div id="fn-tipe-card-hotspot" onclick="nasSetTipe('fn','hotspot')" style="border:2px solid #e2e7ef;border-radius:10px;padding:9px 8px;cursor:pointer;text-align:center;transition:all .15s">
+            <i class="ti ti-wifi" style="font-size:20px;color:#8b5cf6;display:block;margin-bottom:4px" aria-hidden="true"></i>
+            <div class="nas-tipe-lbl td-text-main" style="font-size:11px;font-weight:700">Hotspot</div>
+            <div class="td-text-sub" style="font-size:9px;margin-top:2px">WiFi</div>
+          </div>
+          <div id="fn-tipe-card-keduanya" onclick="nasSetTipe('fn','keduanya')" style="border:2px solid #e2e7ef;border-radius:10px;padding:9px 8px;cursor:pointer;text-align:center;transition:all .15s">
+            <i class="ti ti-network" style="font-size:20px;color:#059669;display:block;margin-bottom:4px" aria-hidden="true"></i>
+            <div class="nas-tipe-lbl td-text-main" style="font-size:11px;font-weight:700">Keduanya</div>
+            <div class="td-text-sub" style="font-size:9px;margin-top:2px">PPPoE & Hotspot</div>
           </div>
         </div>
-        <div class="fg"><label>Tipe</label>
-          <select id="fn-tipe">
-            <option value="pppoe">PPPoE</option>
-            <option value="hotspot">Hotspot</option>
-            <option value="keduanya">PPPoE/Hotspot</option>
-          </select>
+        <input type="hidden" id="fn-tipe" value="pppoe">
+      </div>
+
+      <div class="nas-snmp-box">
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+          <i class="ti ti-chart-line" style="font-size:13px" aria-hidden="true"></i>
+          Konfigurasi SNMP
+          <span style="background:#e0f2fe;color:#0369a1;font-size:9px;font-weight:600;padding:1px 7px;border-radius:99px">Opsional</span>
+        </div>
+        <div class="fg-row">
+          <div class="fg"><label>Community</label><input id="fn-community" placeholder="public" value="public"></div>
+          <div class="fg"><label>Interface ID</label><input id="fn-ports" type="number" placeholder="95"></div>
         </div>
       </div>
-      <div class="fg-row">
-        <div class="fg"><label>SNMP Community</label><input id="fn-community" placeholder="public"></div>
-        <div class="fg"><label>SNMP Interface ID</label><input id="fn-ports" placeholder="1" type="number"></div>
+
+      <div class="nas-info-box">
+        <i class="ti ti-info-circle" style="font-size:14px;margin-top:1px;flex-shrink:0" aria-hidden="true"></i>
+        <span>NAS akan otomatis ditambahkan ke <b>clients.conf</b> FreeRADIUS dan diaktifkan</span>
       </div>
-      <div class="modal-foot"><button class="btn" onclick="closeModal('m-add-nas')">Batal</button><button class="btn primary" onclick="apiTambahNAS()">Simpan</button></div>
+
+      <div class="modal-foot" style="padding:0;border:none;margin-top:2px">
+        <button class="btn" onclick="closeModal('m-add-nas')">Batal</button>
+        <button class="btn primary" style="background:#0ea5e9;box-shadow:0 2px 6px rgba(14,165,233,.3)" onclick="apiTambahNAS()">
+          <i class="ti ti-device-floppy" style="font-size:14px" aria-hidden="true"></i> Simpan NAS
+        </button>
+      </div>
     </div>
   </div>
 </div>
 
 <div class="overlay" id="m-edit-nas">
-  <div class="modal">
-    <div class="modal-hdr"><h3>✏️ Edit NAS</h3><button class="btn-x" onclick="closeModal('m-edit-nas')">✕</button></div>
-    <div class="modal-body">
+  <div class="modal" style="max-width:480px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#fef3c7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-server" style="font-size:20px;color:#d97706" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="td-text-main" style="font-size:15px;font-weight:700">Edit NAS</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Ubah konfigurasi Network Access Server</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-edit-nas')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
       <input type="hidden" id="en-id">
-      <div class="fg-row"><div class="fg"><label>Nama NAS</label><input id="en-nama" placeholder="MikroTik-Selatan"></div><div class="fg"><label>IP Address</label><input id="en-ip" placeholder="192.168.88.x"></div></div>
+
       <div class="fg-row">
-        <div class="fg"><label>Secret</label>
-          <div style="position:relative">
-            <input id="en-secret" type="password" placeholder="radius-secret" style="padding-right:34px;width:100%;box-sizing:border-box">
-            <button type="button" onclick="togglePwVis('en-secret',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding:0;line-height:1">👁</button>
+        <div class="fg"><label>Nama NAS</label><input id="en-nama" placeholder="MikroTik-Selatan"></div>
+        <div class="fg"><label>IP Address</label><input id="en-ip" placeholder="192.168.88.1"></div>
+      </div>
+
+      <div class="fg">
+        <label>RADIUS Secret</label>
+        <div style="position:relative">
+          <input id="en-secret" type="password" placeholder="radius-secret" style="padding-right:36px">
+          <button type="button" onclick="togglePwVis('en-secret',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0;line-height:1">👁</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="fg-label">Tipe Koneksi</label>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:2px">
+          <div id="en-tipe-card-pppoe" onclick="nasSetTipe('en','pppoe')" style="border:2px solid #0ea5e9;background:#e0f2fe;border-radius:10px;padding:9px 8px;cursor:pointer;text-align:center;transition:all .15s">
+            <i class="ti ti-router" style="font-size:20px;color:#0ea5e9;display:block;margin-bottom:4px" aria-hidden="true"></i>
+            <div class="nas-tipe-lbl" style="font-size:11px;font-weight:700;color:#0369a1">PPPoE</div>
+            <div class="td-text-sub" style="font-size:9px;margin-top:2px">Kabel / Fiber</div>
+          </div>
+          <div id="en-tipe-card-hotspot" onclick="nasSetTipe('en','hotspot')" style="border:2px solid #e2e7ef;border-radius:10px;padding:9px 8px;cursor:pointer;text-align:center;transition:all .15s">
+            <i class="ti ti-wifi" style="font-size:20px;color:#8b5cf6;display:block;margin-bottom:4px" aria-hidden="true"></i>
+            <div class="nas-tipe-lbl td-text-main" style="font-size:11px;font-weight:700">Hotspot</div>
+            <div class="td-text-sub" style="font-size:9px;margin-top:2px">WiFi</div>
+          </div>
+          <div id="en-tipe-card-keduanya" onclick="nasSetTipe('en','keduanya')" style="border:2px solid #e2e7ef;border-radius:10px;padding:9px 8px;cursor:pointer;text-align:center;transition:all .15s">
+            <i class="ti ti-network" style="font-size:20px;color:#059669;display:block;margin-bottom:4px" aria-hidden="true"></i>
+            <div class="nas-tipe-lbl td-text-main" style="font-size:11px;font-weight:700">Keduanya</div>
+            <div class="td-text-sub" style="font-size:9px;margin-top:2px">PPPoE & Hotspot</div>
           </div>
         </div>
-        <div class="fg"><label>Tipe</label>
-          <select id="en-tipe">
-            <option value="pppoe">PPPoE</option>
-            <option value="hotspot">Hotspot</option>
-            <option value="keduanya">PPPoE/Hotspot</option>
-          </select>
+        <input type="hidden" id="en-tipe" value="pppoe">
+      </div>
+
+      <div class="nas-snmp-box">
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+          <i class="ti ti-chart-line" style="font-size:13px" aria-hidden="true"></i>
+          Konfigurasi SNMP
+          <span style="background:#e0f2fe;color:#0369a1;font-size:9px;font-weight:600;padding:1px 7px;border-radius:99px">Opsional</span>
+        </div>
+        <div class="fg-row">
+          <div class="fg"><label>Community</label><input id="en-community" placeholder="public"></div>
+          <div class="fg"><label>Interface ID</label><input id="en-ports" type="number" placeholder="95"></div>
         </div>
       </div>
-      <div class="fg-row">
-        <div class="fg"><label>SNMP Community</label><input id="en-community" placeholder="public"></div>
-        <div class="fg"><label>SNMP Interface ID</label><input id="en-ports" placeholder="1" type="number"></div>
+
+      <div class="modal-foot" style="padding:0;border:none;margin-top:2px">
+        <button class="btn" onclick="closeModal('m-edit-nas')">Batal</button>
+        <button class="btn primary" style="background:#d97706;box-shadow:0 2px 6px rgba(217,119,6,.3)" onclick="apiEditNAS()">
+          <i class="ti ti-device-floppy" style="font-size:14px" aria-hidden="true"></i> Simpan Perubahan
+        </button>
       </div>
-      <div class="modal-foot"><button class="btn" onclick="closeModal('m-edit-nas')">Batal</button><button class="btn primary" onclick="apiEditNAS()">💾 Simpan</button></div>
     </div>
   </div>
 </div>
@@ -1643,33 +1770,74 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 </div>
 
 <div class="overlay" id="m-add-l2tp-user">
-  <div class="modal" style="max-width:440px">
-    <div class="modal-hdr"><h3>🔐 Tambah User L2TP</h3><button class="btn-x" onclick="closeModal('m-add-l2tp-user')">✕</button></div>
-    <div class="modal-body">
+  <div class="modal" style="max-width:460px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#ede9fe;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-lock" style="font-size:20px;color:#6366f1" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="td-text-main" style="font-size:15px;font-weight:700">Tambah User L2TP</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">VPN L2TP/IPSec tunnel user</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-add-l2tp-user')">✕</button>
+    </div>
+
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
+
+      <!-- Username & Password -->
       <div class="fg-row">
-        <div class="fg"><label>Username</label><input id="l2p-user" placeholder="vpnuser"></div>
-        <div class="fg"><label>Password</label>
+        <div class="fg">
+          <label>Username</label>
+          <input id="l2p-user" placeholder="vpnuser">
+        </div>
+        <div class="fg">
+          <label>Password</label>
           <div style="position:relative">
-            <input id="l2p-pass" type="password" placeholder="Password" style="padding-right:34px;width:100%;box-sizing:border-box">
-            <button type="button" onclick="togglePwVis('l2p-pass',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding:0">👁</button>
+            <input id="l2p-pass" type="password" placeholder="••••••••" style="padding-right:36px">
+            <button type="button" onclick="togglePwVis('l2p-pass',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0;line-height:1">👁</button>
           </div>
         </div>
       </div>
-      <div class="fg"><label>IP Statis <small style="font-weight:400;color:var(--text3)">(opsional — kosongkan untuk DHCP)</small></label>
-        <div style="display:flex;gap:6px">
+
+      <!-- IP Statis -->
+      <div class="l2tp-ip-box">
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+          <i class="ti ti-network" style="font-size:13px" aria-hidden="true"></i>
+          IP Address Statis
+          <span style="background:#ede9fe;color:#6d28d9;font-size:9px;font-weight:600;padding:1px 7px;border-radius:99px">Opsional</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:stretch">
           <input id="l2p-ip" placeholder="10.10.29.x" list="l2p-ip-list" autocomplete="off" style="flex:1">
-          <button type="button" class="btn sm" onclick="saranIPL2tp(false)">💡 Saran IP</button>
+          <button type="button" onclick="saranIPL2tp(false)" class="btn-saran-ip">
+            <i class="ti ti-bulb" style="font-size:13px" aria-hidden="true"></i> Saran IP
+          </button>
         </div>
         <datalist id="l2p-ip-list"></datalist>
-        <small id="l2p-ip-hint" style="font-size:11px;color:var(--text3);margin-top:3px;display:block"></small>
+        <div style="display:flex;gap:8px;margin-top:7px;flex-wrap:wrap">
+          <span class="l2tp-subnet-chip">Subnet: 10.10.29.0/24</span>
+          <span class="l2tp-subnet-chip">Gateway: 10.10.29.1</span>
+        </div>
+        <div id="l2p-ip-hint" class="td-text-sub" style="font-size:11px;margin-top:5px;min-height:16px">Kosongkan untuk IP otomatis dari pool DHCP</div>
       </div>
-      <div class="modal-foot">
+
+      <!-- Info -->
+      <div class="l2tp-info-box">
+        <i class="ti ti-shield-check" style="font-size:14px;margin-top:1px;flex-shrink:0" aria-hidden="true"></i>
+        <span>User langsung aktif dan dapat terkoneksi via <b>L2TP/IPSec</b> dengan pre-shared key yang sudah dikonfigurasi</span>
+      </div>
+
+      <div class="modal-foot" style="padding:0;border:none;margin-top:2px">
         <button class="btn" onclick="closeModal('m-add-l2tp-user')">Batal</button>
-        <button class="btn primary" onclick="apiTambahL2tpUser()">💾 Tambah User</button>
+        <button class="btn primary" style="background:#6366f1;box-shadow:0 2px 6px rgba(99,102,241,.3)" onclick="apiTambahL2tpUser()">
+          <i class="ti ti-user-plus" style="font-size:14px" aria-hidden="true"></i> Tambah User
+        </button>
       </div>
     </div>
   </div>
 </div>
+
 
 <div class="overlay" id="m-gen-voucher">
   <div class="modal" style="max-width:500px">
@@ -1796,31 +1964,95 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 
 <!-- MODAL TAMBAH RESELLER -->
 <div class="overlay" id="m-add-reseller">
-  <div class="modal" style="max-width:440px">
-    <div class="modal-hdr"><h3>🏪 Tambah Reseller</h3><button class="btn-x" onclick="closeModal('m-add-reseller')">✕</button></div>
-    <div class="modal-body">
-      <div class="fg-row">
-        <div class="fg"><label>Nama / Nama Toko</label><input id="nr-nama" placeholder="Nama lengkap"></div>
-        <div class="fg"><label>Username</label><input id="nr-username" placeholder="username unik"></div>
-      </div>
-      <div class="fg-row">
-        <div class="fg"><label>No. HP (WA)</label><input id="nr-nohp" placeholder="628xxx"></div>
-        <div class="fg"><label>Password</label><input id="nr-password" type="password" placeholder="Min. 8 karakter"></div>
-      </div>
-      <div class="fg-row">
-        <div class="fg"><label>Komisi / Diskon (%)</label><input id="nr-komisi" type="number" value="10" min="0" max="80"></div>
-        <div class="fg"><label>Level</label>
-          <select id="nr-level">
-            <option value="silver">Silver</option>
-            <option value="gold">Gold</option>
-            <option value="platinum">Platinum</option>
-          </select>
+  <div class="modal" style="max-width:460px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#f3e8ff;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-building-store" style="font-size:20px;color:#7c3aed" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="td-text-main" style="font-size:15px;font-weight:700">Tambah Reseller</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Daftarkan mitra penjualan baru</div>
         </div>
       </div>
-      <p style="font-size:11px;color:var(--text3);margin-top:-4px">Reseller akan langsung diaktifkan dan bisa login ke <code>/reseller</code></p>
-      <div class="modal-foot">
+      <button class="btn-x" onclick="closeModal('m-add-reseller')">✕</button>
+    </div>
+
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
+
+      <!-- Nama & Username -->
+      <div class="fg-row">
+        <div class="fg">
+          <label>Nama / Toko</label>
+          <input id="nr-nama" placeholder="Nama lengkap / toko">
+        </div>
+        <div class="fg">
+          <label>Username</label>
+          <input id="nr-username" placeholder="username unik">
+        </div>
+      </div>
+
+      <!-- HP & Password -->
+      <div class="fg-row">
+        <div class="fg">
+          <label>No. WhatsApp</label>
+          <input id="nr-nohp" placeholder="628xxxxxxxx">
+        </div>
+        <div class="fg">
+          <label>Password</label>
+          <input id="nr-password" type="password" placeholder="Min. 8 karakter">
+        </div>
+      </div>
+
+      <!-- Level -->
+      <div>
+        <label class="fg-label">Level Reseller</label>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+          <div id="rs-level-silver" onclick="rsSetLevel('silver')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all .15s">
+            <span style="font-size:22px;display:block;margin-bottom:5px">🥈</span>
+            <div class="td-text-main" style="font-size:12px;font-weight:700">Silver</div>
+            <div class="td-text-sub" style="font-size:9px;margin-top:2px">Dasar</div>
+          </div>
+          <div id="rs-level-gold" onclick="rsSetLevel('gold')" style="border:2px solid #d97706;background:#fef3c7;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all .15s">
+            <span style="font-size:22px;display:block;margin-bottom:5px">🥇</span>
+            <div style="font-size:12px;font-weight:700;color:#b45309">Gold</div>
+            <div style="font-size:9px;color:#d97706;margin-top:2px">Menengah</div>
+          </div>
+          <div id="rs-level-platinum" onclick="rsSetLevel('platinum')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all .15s">
+            <span style="font-size:22px;display:block;margin-bottom:5px">💎</span>
+            <div class="td-text-main" style="font-size:12px;font-weight:700">Platinum</div>
+            <div class="td-text-sub" style="font-size:9px;margin-top:2px">Premium</div>
+          </div>
+        </div>
+        <input type="hidden" id="nr-level" value="gold">
+      </div>
+
+      <!-- Komisi -->
+      <div>
+        <label class="fg-label">Komisi / Diskon — <span id="rs-komisi-lbl" style="color:#7c3aed;font-weight:700">10%</span></label>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="range" id="nr-komisi-range" min="0" max="80" value="10" oninput="rsSyncKomisi('range')" style="flex:1;height:5px;cursor:pointer;accent-color:#7c3aed">
+          <div style="display:flex;align-items:center;gap:4px">
+            <input type="number" id="nr-komisi" min="0" max="80" value="10" oninput="rsSyncKomisi('input')" style="width:56px;padding:6px 8px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#7c3aed;font-size:15px;font-weight:700;text-align:center;font-family:inherit">
+            <span class="td-text-sub" style="font-size:13px">%</span>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;margin-top:3px">
+          <span class="td-text-sub">0%</span><span class="td-text-sub">Maks. 80%</span>
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div class="rs-info-box">
+        <i class="ti ti-info-circle" style="font-size:14px;margin-top:1px;flex-shrink:0" aria-hidden="true"></i>
+        <span>Reseller langsung aktif dan bisa login di portal <b>/reseller</b></span>
+      </div>
+
+      <div class="modal-foot" style="padding:0;border:none;margin-top:2px">
         <button class="btn" onclick="closeModal('m-add-reseller')">Batal</button>
-        <button class="btn primary" onclick="apiTambahReseller()">💾 Simpan & Aktifkan</button>
+        <button class="btn primary" style="background:#7c3aed;box-shadow:0 2px 6px rgba(124,58,237,.3)" onclick="apiTambahReseller()">
+          <i class="ti ti-check" style="font-size:14px" aria-hidden="true"></i> Simpan & Aktifkan
+        </button>
       </div>
     </div>
   </div>
@@ -2542,9 +2774,30 @@ function openModal(id) {
       c.classList.toggle('active', i === 0);
     });
   }
-  if (id === 'm-gen-voucher') {
-    // Reset jumlah dan preview
-    const range = document.getElementById('fv-jml-range');
+  if (id === 'm-add-reseller') {
+    ['nr-nama','nr-username','nr-nohp','nr-password'].forEach(function(f) {
+      const el = document.getElementById(f); if (el) el.value = '';
+    });
+    const r = document.getElementById('nr-komisi-range');
+    const i = document.getElementById('nr-komisi');
+    if (r) r.value = 10; if (i) i.value = 10;
+    const lbl = document.getElementById('rs-komisi-lbl');
+    if (lbl) lbl.textContent = '10%';
+    rsSetLevel('gold');
+  }
+  if (id === 'm-add-reseller') {
+    ['nr-nama','nr-username','nr-nohp','nr-password'].forEach(function(id) {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    rsSetLevel('gold');
+    const range = document.getElementById('nr-komisi-range');
+    const input = document.getElementById('nr-komisi');
+    const lbl   = document.getElementById('nr-komisi-lbl');
+    if (range) range.value = 10;
+    if (input) input.value = 10;
+    if (lbl)   lbl.textContent = '10%';
+  }
+  if (id === 'm-gen-voucher') {    const range = document.getElementById('fv-jml-range');
     const input = document.getElementById('fv-jml');
     if (range) range.value = 50;
     if (input) input.value = 50;
@@ -3498,7 +3751,73 @@ async function apiHapusPaket(id, nama) {
   } catch(e) { toast('❌ '+e.message, true); }
 }
 
-// ── GENERATE VOUCHER MODAL HELPERS ──────────────────────────
+// ── NAS MODAL HELPERS ───────────────────────────────────────
+function nasSetTipe(prefix, tipe) {
+  document.getElementById(prefix + '-tipe').value = tipe;
+  const isDark = document.body.classList.contains('dark');
+  const cfg = {
+    pppoe:    { border:'#0ea5e9', bg:'#e0f2fe', bgD:'rgba(14,165,233,.15)',  title:'#0369a1' },
+    hotspot:  { border:'#8b5cf6', bg:'#ede9fe', bgD:'rgba(139,92,246,.15)',  title:'#6d28d9' },
+    keduanya: { border:'#059669', bg:'#d1fae5', bgD:'rgba(5,150,105,.15)',   title:'#065f46' }
+  };
+  ['pppoe','hotspot','keduanya'].forEach(function(t) {
+    const el = document.getElementById(prefix + '-tipe-card-' + t);
+    if (!el) return;
+    const lbl = el.querySelector('.nas-tipe-lbl');
+    if (t === tipe) {
+      el.style.borderColor = cfg[t].border;
+      el.style.background  = isDark ? cfg[t].bgD : cfg[t].bg;
+      if (lbl) { lbl.style.color = cfg[t].title; lbl.classList.remove('td-text-main'); }
+    } else {
+      el.style.borderColor = isDark ? '#30363d' : '#e2e7ef';
+      el.style.background  = isDark ? '#1c2128' : 'transparent';
+      if (lbl) { lbl.style.color = ''; lbl.classList.add('td-text-main'); }
+    }
+  });
+}
+// ── NAS MODAL HELPERS END ────────────────────────────────────
+
+// ── RESELLER MODAL HELPERS ──────────────────────────────────
+function rsSetLevel(level) {
+  document.getElementById('nr-level').value = level;
+  const isDark = document.body.classList.contains('dark');
+  const cfg = {
+    silver:   { border:'#94a3b8', bg: isDark ? 'rgba(148,163,184,.15)' : '#f8fafc',  titleColor: isDark ? '#94a3b8' : '#64748b',  descColor: isDark ? '#64748b' : '#94a3b8' },
+    gold:     { border:'#d97706', bg: isDark ? 'rgba(217,119,6,.15)'   : '#fef3c7',  titleColor: isDark ? '#fbbf24' : '#b45309',  descColor: isDark ? '#d97706' : '#d97706' },
+    platinum: { border:'#7c3aed', bg: isDark ? 'rgba(124,58,237,.15)'  : '#f3e8ff',  titleColor: isDark ? '#c4b5fd' : '#6d28d9',  descColor: isDark ? '#a78bfa' : '#7c3aed' }
+  };
+  ['silver','gold','platinum'].forEach(function(l) {
+    const el = document.getElementById('rs-level-' + l);
+    if (!el) return;
+    if (l === level) {
+      el.style.borderColor = cfg[l].border;
+      el.style.background  = cfg[l].bg;
+      const title = el.querySelector('[style*="font-weight:700"]');
+      const desc  = el.querySelector('[style*="font-size:9px"]');
+      if (title) title.style.color = cfg[l].titleColor;
+      if (desc)  desc.style.color  = cfg[l].descColor;
+    } else {
+      el.style.borderColor = isDark ? '#30363d' : '#e2e7ef';
+      el.style.background  = isDark ? '#1c2128' : 'transparent';
+      const title = el.querySelector('[style*="font-weight:700"]');
+      const desc  = el.querySelector('[style*="font-size:9px"]');
+      if (title) title.style.color = '';
+      if (desc)  desc.style.color  = '';
+    }
+  });
+}
+
+function rsSyncKomisi(src) {
+  const range = document.getElementById('nr-komisi-range');
+  const input = document.getElementById('nr-komisi');
+  const lbl   = document.getElementById('rs-komisi-lbl');
+  if (!range || !input) return;
+  if (src === 'range') input.value = range.value;
+  else { range.value = Math.min(80, Math.max(0, input.value)); input.value = range.value; }
+  if (lbl) lbl.textContent = input.value + '%';
+}
+// ── RESELLER MODAL HELPERS END ──────────────────────────────
+
 const GV_CHARSETS = {
   angka: '0123456789',
   angka_kecil: 'abcdefghjkmnpqrstuvwxyz23456789',
@@ -3601,6 +3920,47 @@ function gvUpdateSummary() {
 }
 
 // ── GENERATE VOUCHER MODAL HELPERS END ──────────────────────
+
+// ── RESELLER MODAL HELPERS ──────────────────────────────────
+function rsSetLevel(level) {
+  document.getElementById('nr-level').value = level;
+  const isDark = document.body.classList.contains('dark');
+  const cfg = {
+    silver:   { border:'#94a3b8', bg:'#f8fafc', bgD:'rgba(100,116,139,.15)', title:'#64748b', desc:'#94a3b8' },
+    gold:     { border:'#d97706', bg:'#fef3c7', bgD:'rgba(217,119,6,.15)',   title:'#b45309', desc:'#d97706' },
+    platinum: { border:'#7c3aed', bg:'#f3e8ff', bgD:'rgba(124,58,237,.15)',  title:'#6d28d9', desc:'#7c3aed' }
+  };
+  ['silver','gold','platinum'].forEach(function(l) {
+    const el = document.getElementById('nr-level-card-' + l);
+    if (!el) return;
+    if (l === level) {
+      el.style.borderColor = cfg[l].border;
+      el.style.background  = isDark ? cfg[l].bgD : cfg[l].bg;
+      el.classList.add('rs-active');
+      const divs = el.querySelectorAll('div');
+      if (divs[0]) { divs[0].style.color = cfg[l].title; divs[0].classList.remove('td-text-main'); }
+      if (divs[1]) { divs[1].style.color = cfg[l].desc;  divs[1].classList.remove('td-text-sub'); }
+    } else {
+      el.style.borderColor = isDark ? '#30363d' : '#e2e7ef';
+      el.style.background  = isDark ? '#1c2128' : 'transparent';
+      el.classList.remove('rs-active');
+      const divs = el.querySelectorAll('div');
+      if (divs[0]) { divs[0].style.color = ''; divs[0].classList.add('td-text-main'); }
+      if (divs[1]) { divs[1].style.color = ''; divs[1].classList.add('td-text-sub'); }
+    }
+  });
+}
+
+function rsSyncKomisi(src) {
+  const range = document.getElementById('nr-komisi-range');
+  const input = document.getElementById('nr-komisi');
+  const lbl   = document.getElementById('nr-komisi-lbl');
+  if (!range || !input) return;
+  if (src === 'range') input.value = range.value;
+  else { const v = Math.min(80, Math.max(0, parseInt(input.value)||0)); input.value = v; range.value = v; }
+  if (lbl) lbl.textContent = input.value + '%';
+}
+// ── RESELLER MODAL HELPERS END ──────────────────────────────
 
 let PELANGGAN_LIST_CACHE = [];
 
@@ -5037,10 +5397,10 @@ function bukaEditNAS(id, nama, ip, secret, tipe, community, ports) {
   document.getElementById('en-nama').value      = nama;
   document.getElementById('en-ip').value        = ip;
   document.getElementById('en-secret').value    = secret;
-  document.getElementById('en-tipe').value      = tipe;
   document.getElementById('en-community').value = community || '';
   document.getElementById('en-ports').value     = ports || '';
   openModal('m-edit-nas');
+  nasSetTipe('en', tipe || 'pppoe');
 }
 
 async function apiEditNAS() {
