@@ -4338,24 +4338,32 @@ function nasChartMulai(nasIp, nasId, ifIdx) {
   let dotState = true;
   async function poll() {
     try {
-      // Ambil data SNMP dari NAS
       const snmpData = await apiFetch('/api/radius/snmp-traffic?nas_id=' + nasId + '&if_index=' + ifIdx);
 
-      const totalIn  = snmpData.in_octets  / 1048576; // bytes → MB
+      const totalIn  = snmpData.in_octets  / 1048576;
       const totalOut = snmpData.out_octets / 1048576;
 
       const prev = _nasPrevBytes[nasIp];
       if (prev) {
-        // Rate = selisih MB / interval 5 detik × 8 = Mbps
-        const dl = Math.max(0, +((totalIn  - prev.in)  / 5 * 8).toFixed(2));
-        const ul = Math.max(0, +((totalOut - prev.out) / 5 * 8).toFixed(2));
+        // Handle counter wraparound (Counter32 max ~4096 MB)
+        let diffIn  = totalIn  - prev.in;
+        let diffOut = totalOut - prev.out;
+        if (diffIn  < 0) diffIn  += 4096;
+        if (diffOut < 0) diffOut += 4096;
 
-        _nasChart.data.datasets[0].data.push(dl); _nasChart.data.datasets[0].data.shift();
-        _nasChart.data.datasets[1].data.push(ul); _nasChart.data.datasets[1].data.shift();
-        _nasChart.update('none');
+        // Rate Mbps — interval 15 detik
+        const dl = Math.max(0, +((diffIn  / 15 * 8)).toFixed(2));
+        const ul = Math.max(0, +((diffOut / 15 * 8)).toFixed(2));
 
-        document.getElementById('nas-s-dl').textContent = dl.toFixed(1) + ' Mbps';
-        document.getElementById('nas-s-ul').textContent = ul.toFixed(1) + ' Mbps';
+        // Abaikan lonjakan tidak wajar (>10 Gbps)
+        if (dl < 10000 && ul < 10000) {
+          _nasChart.data.datasets[0].data.push(dl); _nasChart.data.datasets[0].data.shift();
+          _nasChart.data.datasets[1].data.push(ul); _nasChart.data.datasets[1].data.shift();
+          _nasChart.update('none');
+
+          document.getElementById('nas-s-dl').textContent = dl.toFixed(1) + ' Mbps';
+          document.getElementById('nas-s-ul').textContent = ul.toFixed(1) + ' Mbps';
+        }
       }
       _nasPrevBytes[nasIp] = { in: totalIn, out: totalOut };
 
@@ -4370,7 +4378,6 @@ function nasChartMulai(nasIp, nasId, ifIdx) {
       if (dot) { dot.style.opacity = dotState ? '1' : '0.2'; dotState = !dotState; }
     } catch(e) {
       console.warn('[NAS chart SNMP]', e.message);
-      // Fallback: tampilkan error kecil
       document.getElementById('nas-s-dl').textContent = '—';
       document.getElementById('nas-s-ul').textContent = '—';
     }
