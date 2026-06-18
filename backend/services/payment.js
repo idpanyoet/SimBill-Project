@@ -23,35 +23,39 @@ async function getConfig() {
           'pg_secret_key','pg_webhook_token','pg_merchant_code',
           'pg_merchant_code_duitku','pg_merchant_code_tripay',
           'pg_merchant_code_midtrans','pg_merchant_code_xendit',
-          'pg_api_key','pg_private_key','app_url')`
+          'pg_api_key','pg_api_key_duitku','pg_api_key_tripay',
+          'pg_server_key_midtrans','pg_client_key_midtrans',
+          'pg_secret_key_xendit','pg_webhook_token_xendit',
+          'pg_private_key','pg_private_key_tripay','app_url')`
     );
     const map = {};
     rows.forEach(r => map[r.kunci] = r.nilai);
 
     const provider = map.pg_provider || 'midtrans';
 
-    // Merchant code per provider — fallback ke pg_merchant_code lama
     const merchantCode = provider === 'duitku'
-        ? (map.pg_merchant_code_duitku  || map.pg_merchant_code || '')
+        ? (map.pg_merchant_code_duitku   || map.pg_merchant_code || '')
         : provider === 'tripay'
-        ? (map.pg_merchant_code_tripay  || map.pg_merchant_code || '')
+        ? (map.pg_merchant_code_tripay   || map.pg_merchant_code || '')
         : provider === 'midtrans'
-        ? (map.pg_merchant_code_midtrans|| map.pg_merchant_code || '')
+        ? (map.pg_merchant_code_midtrans || map.pg_merchant_code || '')
         : provider === 'xendit'
-        ? (map.pg_merchant_code_xendit  || map.pg_merchant_code || '')
+        ? (map.pg_merchant_code_xendit   || map.pg_merchant_code || '')
         : (map.pg_merchant_code || '');
 
     _cache = {
         provider,
-        sandbox:       map.pg_sandbox       !== '0',
-        serverKey:     map.pg_server_key    || '',
-        clientKey:     map.pg_client_key    || '',
-        secretKey:     map.pg_secret_key    || '',
-        webhookToken:  map.pg_webhook_token || '',
+        sandbox:       map.pg_sandbox !== '0',
+        serverKey:     map.pg_server_key_midtrans  || map.pg_server_key    || '',
+        clientKey:     map.pg_client_key_midtrans  || map.pg_client_key    || '',
+        secretKey:     map.pg_secret_key_xendit    || map.pg_secret_key    || '',
+        webhookToken:  map.pg_webhook_token_xendit || map.pg_webhook_token || '',
         merchantCode,
-        apiKey:        map.pg_api_key       || '',
-        privateKey:    map.pg_private_key   || '',
-        appUrl:        map.app_url          || process.env.APP_URL || 'http://localhost:3000'
+        apiKey:        provider === 'duitku'
+                         ? (map.pg_api_key_duitku || map.pg_api_key || '')
+                         : (map.pg_api_key_tripay || map.pg_api_key || ''),
+        privateKey:    map.pg_private_key_tripay   || map.pg_private_key   || '',
+        appUrl:        map.app_url || process.env.APP_URL || 'http://localhost:3000'
     };
     _cacheAt = now;
     return _cache;
