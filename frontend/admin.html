@@ -3068,11 +3068,8 @@ function renderPaket(rows) {
   }).join('');
 
 
-  // Populate dropdown paket di form tambah pelanggan
-  const sel = document.getElementById('f-paket');
-  if (sel) {
-    filterPaketByTipe(); // filter sesuai tipe yang dipilih
-  }
+  // Populate dropdown paket di form tambah pelanggan — filter by tipe
+  filterPaketByTipe();
 }
 
 function filterEditPaketByTipe() {
@@ -3161,19 +3158,15 @@ async function apiSimpanPaket() {
 async function populateDropdowns() {
   try {
     const paketList = await apiFetch('/api/paket');
-    const paketOpts = '<option value="">-- pilih paket --</option>'
-      + paketList.map(p => `<option value="${p.id}">${p.nama} — ${fmt(p.harga)}/bln</option>`).join('');
-    // Dropdown paket di form tambah pelanggan
-    const selPelPaket = document.getElementById('f-paket');
-    if (selPelPaket) selPelPaket.innerHTML = paketOpts;
-    // Dropdown paket di form EDIT pelanggan
-    const selEditPaket = document.getElementById('ep-paket');
-    if (selEditPaket) {
-      const curVal = selEditPaket.value;
-      selEditPaket.innerHTML = paketOpts;
-      if (curVal) selEditPaket.value = curVal;
-    }
-    // Dropdown paket di generate voucher
+    LAST_PAKET_LIST = paketList;
+
+    // Dropdown paket di form tambah pelanggan — filter by tipe terpilih
+    filterPaketByTipe();
+
+    // Dropdown paket di form EDIT pelanggan — filter by tipe terpilih
+    filterEditPaketByTipe();
+
+    // Dropdown paket di generate voucher (hotspot/keduanya saja)
     const selVcrPaket = document.getElementById('fv-paket');
     if (selVcrPaket) {
       selVcrPaket.innerHTML = '<option value="">-- pilih paket --</option>'
