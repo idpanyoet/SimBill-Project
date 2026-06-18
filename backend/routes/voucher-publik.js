@@ -150,4 +150,93 @@ router.post('/beli', limitBeli, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// ── GET /voucher/cek?username= ──────────────────────────────
+router.get('/cek', async (req, res, next) => {
+  try {
+    const username = req.query.username || req.query.kode;
+    if (!username) return res.status(400).json({ error: 'username wajib' });
+    const v = await queryOne(
+      `SELECT v.*, p.nama AS nama_paket, p.kecepatan_dn, p.masa_aktif, p.satuan_masa
+       FROM voucher v JOIN paket p ON v.paket_id = p.id
+       WHERE v.username = ?`, [username]
+    );
+    if (!v) return res.status(404).json({ error: 'Voucher tidak ditemukan' });
+    res.json(v);
+  } catch(e) { next(e); }
+});
+
+// GET /voucher/stats
+router.get('/stats', async (req, res, next) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    try {
+        const [pelanggan] = await query(
+            `SELECT COUNT(*) AS total FROM pelanggan WHERE status != 'nonaktif'`
+        );
+        const [online] = await query(
+            `SELECT COUNT(DISTINCT username) AS total FROM radacct WHERE acctstoptime IS NULL`
+        );
+        res.json({
+            total_pelanggan: pelanggan.total || 0,
+            aktif_online:    online.total    || 0
+        });
+    } catch(e) {
+        try {
+            const [pelanggan] = await query(
+                `SELECT COUNT(*) AS total FROM pelanggan WHERE status != 'nonaktif'`
+            );
+            res.json({ total_pelanggan: pelanggan.total || 0, aktif_online: 0 });
+        } catch(e2) { next(e2); }
+    }
+});
+
+function _acakUsername() {
+  const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({ length: 10 }, () => c[Math.floor(Math.random() * c.length)]).join('');
+}
+
+async function _aktivasiVoucher(username, noHp, nama, paket) {
+  const existing = await queryOne('SELECT id FROM voucher WHERE username = ?', [username]);
+  if (!existing) {
+    await query(`
+      INSERT INTO voucher (username, password, paket_id, status, tgl_digunakan, digunakan_oleh)
+      VALUES (?, ?, ?, 'used', NOW(), ?)
+    `, [username, username, paket.id, noHp]);
+  } else {
+    await query(`
+      UPDATE voucher SET status='used', digunakan_oleh=?, tgl_digunakan=NOW()
+      WHERE username=?
+    `, [noHp, username]);
+  }
+
+  radiusService.syncVoucher(username).catch(e => console.warn('[sync]', e.message));
+
+  const v = await queryOne('SELECT password FROM voucher WHERE username = ?', [username]);
+  const loginInfo = (v && v.password === username)
+    ? `🔑 Username/Password: *${username}*`
+    : `🔑 Username: *${username}*\n🔒 Password: *${v?.password || username}*`;
+
+  const satuan = paket.satuan_masa === 'jam' ? 'Jam' : paket.satuan_masa === 'bulan' ? 'Bulan' : 'Hari';
+  const pesan =
+`Halo *${nama}*,
+
+Terima kasih! Pembayaran diterima ✅
+
+Berikut voucher internet Anda:
+
+${loginInfo}
+📦 Paket: ${paket.nama}
+⏱ Berlaku: ${paket.masa_aktif} ${satuan}
+🚀 Kecepatan: ${paket.kecepatan_dn} Mbps
+
+Cara pakai:
+1️⃣ Sambungkan ke WiFi hotspot
+2️⃣ Buka browser
+3️⃣ Masuk halaman login hotspot
+4️⃣ Masukkan username & password di atas
+
+Selamat menikmati! 🌐`;
+
+  await waService.kirimPesan(noHp, pesan, null, 'otp');
+}
+
 module.exports = { router, _aktivasiVoucher, _acakUsername };
