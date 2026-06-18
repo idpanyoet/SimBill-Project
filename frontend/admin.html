@@ -3746,6 +3746,14 @@ async function loadPayment() {
     if (map.pg_merchant_code_tripay)   document.getElementById('pg-merchant-code-tripay').value   = map.pg_merchant_code_tripay;
     if (map.pg_merchant_code_midtrans) document.getElementById('pg-merchant-code-midtrans').value = map.pg_merchant_code_midtrans;
     if (map.pg_merchant_code_xendit)   document.getElementById('pg-merchant-code-xendit').value   = map.pg_merchant_code_xendit;
+    // Load API key per provider — tampilkan placeholder *** jika sudah ada
+    if (map.pg_api_key_duitku)       document.getElementById('pg-api-key-duitku').placeholder    = '••••••••••••• (tersimpan)';
+    if (map.pg_api_key_tripay)       document.getElementById('pg-api-key-tripay').placeholder    = '••••••••••••• (tersimpan)';
+    if (map.pg_private_key_tripay)   document.getElementById('pg-private-key').placeholder       = '••••••••••••• (tersimpan)';
+    if (map.pg_server_key_midtrans)  document.getElementById('pg-server-key').placeholder        = '••••••••••••• (tersimpan)';
+    if (map.pg_client_key_midtrans)  document.getElementById('pg-client-key').placeholder        = '••••••••••••• (tersimpan)';
+    if (map.pg_secret_key_xendit)    document.getElementById('pg-secret-key').placeholder        = '••••••••••••• (tersimpan)';
+    if (map.pg_webhook_token_xendit) document.getElementById('pg-webhook-token').placeholder     = '••••••••••••• (tersimpan)';
     // Tanda bahwa kredensial sudah ada (tidak perlu isi ulang saat ganti provider)
     const credByProvider = {
       midtrans: !!(map.pg_server_key_midtrans || map.pg_server_key),
@@ -3807,7 +3815,11 @@ async function apiSimpanConfigPG() {
   const provider = document.getElementById('pg-provider').value;
   const sandbox  = document.getElementById('pg-sandbox').checked;
   const body = { pg_provider: provider, pg_sandbox: sandbox ? '1' : '0' };
-  const sudahAdaKredensial = document.getElementById('p-payment').dataset.hasCred === provider;
+  const sudahAdaKredensial = document.getElementById('p-payment').dataset.hasCred === provider
+    || document.getElementById('pg-api-key-tripay')?.placeholder.includes('tersimpan')
+    || document.getElementById('pg-server-key')?.placeholder.includes('tersimpan')
+    || document.getElementById('pg-secret-key')?.placeholder.includes('tersimpan')
+    || document.getElementById('pg-api-key-duitku')?.placeholder.includes('tersimpan');
 
   if (provider === 'midtrans') {
     const merchantId = document.getElementById('pg-merchant-code-midtrans').value.trim();
