@@ -3503,6 +3503,161 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#111;font-siz
 .vcr-footer{border-top:0.5px solid #e5e9f0;padding-top:7px;font-size:9px;color:#aaa}
 .badge{font-size:9px;padding:2px 7px;border-radius:20px;font-weight:600;background:#dcfce7;color:#166534}
 @media print{body{padding:8px}.no-print{display:none!important}.vcr{break-inside:avoid}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+
+/* ════ DARK MODE KOMPREHENSIF ════ */
+body.dark{background:#0d1117;color:#e6edf3}
+body.dark .main{background:#0d1117}
+
+/* Topbar */
+body.dark .topbar{background:#161b22;border-color:#30363d}
+body.dark .topbar h1{color:#e6edf3}
+
+/* Cards */
+body.dark .card{background:#161b22;border-color:#30363d}
+body.dark .card-title{color:#e6edf3}
+body.dark .card-title .sub{color:#8b949e}
+
+/* Tables */
+body.dark table{color:#c9d1d9}
+body.dark th{color:#8b949e;border-color:#30363d}
+body.dark td{color:#c9d1d9;border-color:#21262d}
+body.dark thead tr{border-color:#30363d}
+body.dark tr:hover td{background:#1c2128}
+
+/* Buttons */
+body.dark .btn{background:#21262d;border-color:#30363d;color:#c9d1d9}
+body.dark .btn:hover{background:#30363d;border-color:#484f58}
+body.dark .btn.primary{background:#BA7517;color:#fff;border-color:transparent}
+body.dark .btn.primary:hover{background:#854F0B}
+body.dark .btn.danger{color:#f85149;border-color:rgba(248,81,73,.25);background:transparent}
+body.dark .btn.danger:hover{background:rgba(248,81,73,.1)}
+body.dark .btn.sm{background:#21262d;border-color:#30363d;color:#c9d1d9}
+
+/* Forms */
+body.dark .fg input,body.dark .fg select,body.dark .fg textarea{background:#0d1117;border-color:#30363d;color:#e6edf3}
+body.dark .fg input:focus,body.dark .fg select:focus,body.dark .fg textarea:focus{border-color:#BA7517;background:#0d1117}
+body.dark .fg label{color:#8b949e}
+body.dark .search-bar input,body.dark .search-bar select{background:#161b22;border-color:#30363d;color:#e6edf3}
+body.dark .search-bar input:focus,body.dark .search-bar select:focus{border-color:#BA7517}
+
+/* Modal */
+body.dark .modal{background:#161b22;border-color:#30363d;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+body.dark .modal-hdr h3{color:#e6edf3}
+body.dark .modal-hdr{border-color:#30363d}
+body.dark .btn-x{background:#21262d;border-color:#30363d;color:#8b949e}
+body.dark .btn-x:hover{background:#30363d;color:#e6edf3}
+body.dark .modal-foot{border-color:#21262d}
+
+/* Stat rows */
+body.dark .stat-row{border-color:#21262d}
+body.dark .stat-row .lbl{color:#8b949e}
+body.dark .stat-row .val{color:#e6edf3}
+
+/* Divider */
+body.dark .divider{background:#21262d}
+
+/* Toast */
+body.dark .toast{background:#21262d;color:#e6edf3;border:1px solid #30363d}
+
+/* Inv item */
+body.dark .inv-item{background:#1c2128;border-color:#30363d;color:#c9d1d9}
+body.dark .inv-item:hover{background:#21262d}
+
+/* WA chat */
+body.dark .wa-chat{background:#0b141a}
+body.dark .wa-msg.out{background:#005c4b;color:#e9edef}
+body.dark .wa-msg.in{background:#1f2c34;color:#e9edef}
+body.dark .wa-msg .time{color:#8696a0}
+
+/* Dark toggle */
+body.dark .dark-toggle{background:#161b22;border-color:#30363d;color:#8b949e}
+body.dark .toggle-track{background:#BA7517}
+body.dark .toggle-thumb{left:14px}
+
+/* Pagination */
+body.dark .pagination-bar select{background:#161b22;border-color:#30363d;color:#e6edf3}
+body.dark .pagination-bar{color:#8b949e}
+
+/* Progress */
+body.dark .progress{background:#21262d}
+
+/* Auth mode */
+body.dark .auth-mode-item{border-color:#30363d;color:#c9d1d9}
+body.dark .auth-mode-item:hover{background:rgba(186,117,23,.1);border-color:#BA7517}
+body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);border-color:#BA7517}
+
+/* Plan cards */
+body.dark .plan-card{background:#161b22;border-color:#30363d;color:#c9d1d9}
+body.dark .plan-card:hover{border-color:#BA7517}
+body.dark .plan-card .price{color:#8b949e}
+
+/* Search bar bg */
+body.dark .action-bar .btn{background:#21262d;border-color:#30363d;color:#c9d1d9}
+
+/* Voucher kode */
+body.dark .vcr-kode{background:rgba(186,117,23,.15);border-color:rgba(186,117,23,.4);color:#EF9F27}
+
+/* Inline style text overrides for dark mode */
+body.dark [style*="color:#0f172a"]{color:#e6edf3!important}
+body.dark [style*="color:#334155"]{color:#c9d1d9!important}
+body.dark [style*="color:#475569"]{color:#8b949e!important}
+body.dark [style*="color:#64748b"]{color:#8b949e!important}
+body.dark [style*="color:#94a3b8"]{color:#6e7681!important}
+body.dark [style*="color:#0C447C"]{color:#60a5fa!important}
+body.dark [style*="color:#27500A"]{color:#4ade80!important}
+body.dark [style*="color:#633806"]{color:#fbbf24!important}
+body.dark [style*="color:#791F1F"]{color:#f87171!important}
+body.dark [style*="color:#3C3489"]{color:#a78bfa!important}
+body.dark [style*="color:#085041"]{color:#34d399!important}
+body.dark [style*="color:#157A59"]{color:#34d399!important}
+body.dark [style*="color:#185FA5"]{color:#60a5fa!important}
+body.dark [style*="color:#3B6D11"]{color:#4ade80!important}
+body.dark [style*="color:#854F0B"]{color:#fbbf24!important}
+body.dark [style*="color:#A32D2D"]{color:#f87171!important}
+body.dark [style*="color:#534AB7"]{color:#a78bfa!important}
+body.dark [style*="color:#0F6E56"]{color:#34d399!important}
+body.dark [style*="color:var(--text))"]{color:#e6edf3!important}
+body.dark [style*="color:var(--text2)"]{color:#8b949e!important}
+body.dark [style*="color:var(--text3)"]{color:#6e7681!important}
+
+/* Background overrides for inline styles */
+body.dark [style*="background:var(--bg)"]{background:#0d1117!important}
+body.dark [style*="background:var(--bg2)"]{background:#161b22!important}
+body.dark [style*="background:var(--bg3)"]{background:#1c2128!important}
+body.dark [style*="background:#fff"]{background:#161b22!important}
+body.dark [style*="background:#f8fafc"]{background:#1c2128!important}
+body.dark [style*="background:#f1f5f9"]{background:#21262d!important}
+body.dark [style*="background:#f4f6f9"]{background:#0d1117!important}
+body.dark [style*="border-color:#e2e7ef"]{border-color:#30363d!important}
+body.dark [style*="border:#e2e7ef"]{border-color:#30363d!important}
+body.dark [style*="border-bottom:1px solid #e2e7ef"]{border-color:#30363d!important}
+body.dark [style*="border-bottom:1px solid #f"]{border-color:#21262d!important}
+
+/* NAS stat boxes */
+body.dark .nas-stat,body.dark [style*="background:var(--bg3);"]{background:#1c2128!important;border-color:#30363d!important}
+
+/* Dropdown menu */
+body.dark .dropdown-menu{background:#161b22;border-color:#30363d}
+body.dark .dropdown-item{color:#c9d1d9}
+body.dark .dropdown-item:hover{background:#21262d}
+
+/* Tag dark overrides */  
+body.dark .tag.paid{background:rgba(22,163,74,.15);color:#4ade80}
+body.dark .tag.unpaid{background:rgba(217,119,6,.15);color:#fbbf24}
+body.dark .tag.overdue,body.dark .tag.suspended{background:rgba(248,81,73,.15);color:#f87171}
+body.dark .tag.aktif{background:rgba(22,163,74,.15);color:#4ade80}
+
+/* Badge dark */
+body.dark .badge.green{background:rgba(22,163,74,.15);color:#4ade80}
+body.dark .badge.red{background:rgba(248,81,73,.15);color:#f87171}
+body.dark .badge.blue{background:rgba(37,99,235,.15);color:#60a5fa}
+body.dark .badge.amber{background:rgba(217,119,6,.15);color:#fbbf24}
+
+/* Select in various contexts */
+body.dark select{background:#161b22;border-color:#30363d;color:#e6edf3}
+body.dark input[type=text],body.dark input[type=password],body.dark input[type=email],body.dark input[type=number]{background:#161b22;border-color:#30363d;color:#e6edf3}
+body.dark textarea{background:#161b22;border-color:#30363d;color:#e6edf3}
+/* ════ END DARK MODE ════ */
 </style>
 </head>
 <body>
