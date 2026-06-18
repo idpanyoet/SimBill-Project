@@ -331,7 +331,8 @@ INSERT INTO setting (kunci, nilai, deskripsi) VALUES
 ('pajak_persen',    '0',                         'PPN dalam persen (0 = tidak ada)'),
 ('radius_auth_mode','pap,mschapv2',              'Mode autentikasi RADIUS yang diizinkan (pap,chap,mschapv1,mschapv2)'),
 ('radius_single_session','1',                    'Single session enforcement: 1=aktif, 0=nonaktif'),
-('admin_no_hp',          '',                      'Nomor HP admin untuk notifikasi tiket');
+('admin_no_hp',          '',                      'Nomor HP admin untuk notifikasi tiket'),
+('acs_url',              '',                      'URL ACS TR-069 untuk konfigurasi router pelanggan');
 
 INSERT INTO paket (nama, kecepatan_up, kecepatan_dn, harga, pool_name, tipe) VALUES
 ('Paket Hemat 5Mbps',   5,  5,  100000, 'pool-5mbps',  'keduanya'),

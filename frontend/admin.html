@@ -1120,8 +1120,13 @@ body.dark .toggle-thumb{left:18px}
 
         <!-- ACS URL info -->
         <div class="card" style="margin-bottom:10px">
-          <div class="card-title">📡 Konfigurasi Router ke ACS</div>
-          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:monospace;font-size:13px;color:var(--text);margin-bottom:8px" id="acs-url-display">http://&lt;IP-VPS&gt;:7547/</div>
+          <div class="card-title">📡 Konfigurasi Router ke ACS
+            <button class="btn sm" onclick="simpanACSUrl()">💾 Simpan</button>
+          </div>
+          <div class="fg" style="margin-bottom:8px">
+            <label>ACS URL (arahkan router pelanggan ke URL ini)</label>
+            <input id="acs-url-input" type="text" placeholder="http://IP-VPS:7547/" style="font-family:monospace;font-size:13px">
+          </div>
           <div style="font-size:12px;color:var(--text2)">Set URL di atas sebagai <b>ACS URL</b> di menu TR-069/CWMP router pelanggan. Username/password bisa dikosongkan.</div>
         </div>
 
@@ -1645,10 +1650,28 @@ let _acsDeviceId = null;
 
 async function loadACS() {
   await Promise.all([loadACSStats(), loadACSDevices(), loadACSTask()]);
-  // Tampilkan ACS URL
-  const appUrl = window.location.origin;
-  const urlEl = document.getElementById('acs-url-display');
-  if (urlEl) urlEl.textContent = appUrl.replace(/:\d+/, ':7547') + '/';
+  // Load ACS URL dari setting
+  try {
+    const s = await apiFetch('/api/setting');
+    const url = s.acs_url || (window.location.protocol + '//' + window.location.hostname + ':7547/');
+    const inp = document.getElementById('acs-url-input');
+    if (inp) inp.value = url;
+  } catch(e) {
+    const inp = document.getElementById('acs-url-input');
+    if (inp) inp.value = window.location.protocol + '//' + window.location.hostname + ':7547/';
+  }
+}
+
+async function simpanACSUrl() {
+  const url = document.getElementById('acs-url-input').value.trim();
+  if (!url) { toast('❌ URL tidak boleh kosong', true); return; }
+  try {
+    await apiFetch('/api/setting', {
+      method: 'PUT',
+      body: JSON.stringify({ acs_url: url })
+    });
+    toast('✅ ACS URL disimpan');
+  } catch(e) { toast('❌ ' + e.message, true); }
 }
 
 async function loadACSStats() {
