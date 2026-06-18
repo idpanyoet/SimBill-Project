@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nexbill — Admin Panel</title>
+<title>SimBill — Admin Panel</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -398,8 +398,8 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 <div id="login-screen">
   <div class="login-box">
     <div class="login-logo">
-      <svg width="48" height="48" viewBox="0 0 48 48" style="margin:0 auto 8px;display:block"><rect width="48" height="48" rx="12" fill="#BA7517"/><circle cx="12" cy="32" r="5" fill="#fff" opacity=".35"/><circle cx="24" cy="14" r="5" fill="#fff" opacity=".65"/><circle cx="36" cy="32" r="5" fill="#fff"/><line x1="12" y1="32" x2="24" y2="14" stroke="#fff" stroke-width="2.5" opacity=".5"/><line x1="24" y1="14" x2="36" y2="32" stroke="#fff" stroke-width="2.5" opacity=".85"/></svg>
-      <h2><span style="color:#BA7517">Nex</span>bill Admin</h2>
+      <svg width="48" height="48" viewBox="0 0 48 48" style="margin:0 auto 8px;display:block"><rect width="48" height="48" rx="12" fill="#BA7517"/><circle cx="24" cy="31" r="4" fill="#fff"/><path d="M15 24 Q24 16 33 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M10 19 Q24 9 38 19" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2.5" stroke-linecap="round"/></svg>
+      <h2><span style="color:#BA7517">Sim</span>Bill Admin</h2>
       <p>Masuk untuk mengelola sistem</p>
     </div>
     <div class="login-err" id="login-err"></div>
@@ -418,9 +418,9 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sb-logo">
-      <svg width="32" height="32" viewBox="0 0 32 32" style="flex-shrink:0"><rect width="32" height="32" rx="8" fill="#BA7517"/><circle cx="8" cy="22" r="3.5" fill="#fff" opacity=".35"/><circle cx="16" cy="11" r="3.5" fill="#fff" opacity=".7"/><circle cx="24" cy="22" r="3.5" fill="#fff"/><line x1="8" y1="22" x2="16" y2="11" stroke="#fff" stroke-width="2" opacity=".55"/><line x1="16" y1="11" x2="24" y2="22" stroke="#fff" stroke-width="2" opacity=".9"/></svg>
+      <svg width="32" height="32" viewBox="0 0 32 32" style="flex-shrink:0"><rect width="32" height="32" rx="8" fill="#BA7517"/><circle cx="16" cy="21" r="2.8" fill="#fff"/><path d="M10.5 16.5 Q16 11 21.5 16.5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M7 13 Q16 6 25 13" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2" stroke-linecap="round"/></svg>
       <div style="min-width:0">
-        <div style="font-size:16px;font-weight:700;line-height:1.1;color:#fff"><span style="color:#EF9F27">Nex</span>bill</div>
+        <div style="font-size:16px;font-weight:700;line-height:1.1;color:#fff"><span style="color:#EF9F27">Sim</span>Bill</div>
         <small style="font-size:9px;color:rgba(255,255,255,.35);letter-spacing:.06em;text-transform:uppercase">Admin Panel</small>
       </div>
     </div>
@@ -1315,7 +1315,7 @@ Selamat menikmati! 🌐</textarea>
         <div class="grid2">
           <div class="card">
             <div class="card-title">⚙️ Setting Umum</div>
-            <div class="fg"><label>Nama Aplikasi</label><input id="s-app_name" placeholder="Nexbill"></div>
+            <div class="fg"><label>Nama Aplikasi</label><input id="s-app_name" placeholder="SimBill"></div>
             <div class="fg"><label>URL Aplikasi</label><input id="s-app_url" placeholder="https://billing.anda.id"></div>
             <div class="fg-row">
               <div class="fg"><label>Prefix Invoice</label><input id="s-invoice_prefix" placeholder="INV"></div>
@@ -2843,7 +2843,7 @@ function vtBaru() {
   document.getElementById('vt-select').value = '';
   document.getElementById('vt-nama').value = 'Template Baru';
   document.getElementById('vt-header').value = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Segoe UI,Arial,sans-serif;padding:16px;background:#fff}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}@media print{.noprint{display:none}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><div class="noprint" style="text-align:center;padding:0 0 12px"><button onclick="window.print()" style="padding:7px 22px;background:#3b82f6;color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer;font-weight:600">Print</button> <button onclick="window.close()" style="padding:7px 14px;background:#f1f4f8;color:#333;border:none;border-radius:7px;font-size:13px;cursor:pointer;margin-left:8px">Tutup</button></div><div class="grid">';
-  document.getElementById('vt-row').value = '<div style="border:0.5px solid #d0d7e3;border-radius:10px;overflow:hidden;page-break-inside:avoid"><div style="padding:9px 12px;background:#185FA5;display:flex;align-items:center;justify-content:space-between"><span style="font-size:11px;font-weight:700;color:#fff">Nexbill</span><span style="font-size:9px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,.2);color:#fff">Aktif</span></div><div style="padding:9px 12px"><div style="font-size:10px;color:#888;margin-bottom:4px">%profile% &nbsp;·&nbsp; %validity%</div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#aaa;margin-bottom:3px">Kode Voucher</div><div style="font-size:20px;font-weight:700;letter-spacing:.1em;font-family:Courier New,monospace;color:#185FA5;margin-bottom:7px">%username%</div><div style="border-top:0.5px dashed #e5e9f0;padding-top:6px;font-size:9px;color:#aaa">Sambung WiFi lalu masukkan kode</div></div></div>';
+  document.getElementById('vt-row').value = '<div style="border:0.5px solid #d0d7e3;border-radius:10px;overflow:hidden;page-break-inside:avoid"><div style="padding:9px 12px;background:#185FA5;display:flex;align-items:center;justify-content:space-between"><span style="font-size:11px;font-weight:700;color:#fff">SimBill</span><span style="font-size:9px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,.2);color:#fff">Aktif</span></div><div style="padding:9px 12px"><div style="font-size:10px;color:#888;margin-bottom:4px">%profile% &nbsp;·&nbsp; %validity%</div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#aaa;margin-bottom:3px">Kode Voucher</div><div style="font-size:20px;font-weight:700;letter-spacing:.1em;font-family:Courier New,monospace;color:#185FA5;margin-bottom:7px">%username%</div><div style="border-top:0.5px dashed #e5e9f0;padding-top:6px;font-size:9px;color:#aaa">Sambung WiFi lalu masukkan kode</div></div></div>';
   document.getElementById('vt-footer').value = '</div></body></html>';
   document.getElementById('vt-is-default').checked = false;
   document.getElementById('vt-badge-default').style.display = 'none';
@@ -2901,7 +2901,7 @@ async function printBatchDenganTemplate(vouchers, autoPrint) {
   if (autoPrint === undefined) autoPrint = true;
   try {
     const tpl = await apiFetch('/api/voucher-template/default/get');
-    if (!tpl) { bukaWindowPrint(document.querySelector('.sidebar-brand span')?.textContent||'Nexbill', vouchers); return; }
+    if (!tpl) { bukaWindowPrint(document.querySelector('.sidebar-brand span')?.textContent||'SimBill', vouchers); return; }
 
     const rows = vouchers.map(function(v, i) {
       return vtReplaceVar(tpl.row_html, {
@@ -2945,7 +2945,7 @@ async function printBatchDenganTemplate(vouchers, autoPrint) {
     win.document.close();
   } catch(e) {
     console.error('printBatchDenganTemplate:', e);
-    bukaWindowPrint(document.querySelector('.sidebar-brand span')?.textContent||'Nexbill', vouchers);
+    bukaWindowPrint(document.querySelector('.sidebar-brand span')?.textContent||'SimBill', vouchers);
   }
 }
 
@@ -4186,7 +4186,7 @@ async function apiKirimWAPelanggan(id, nama) {
       // Tidak ada invoice unpaid, kirim WA manual
       const p = await apiFetch(`/api/pelanggan/${id}`);
       await apiFetch('/api/whatsapp/kirim', {method:'POST',
-        body:JSON.stringify({no_hp:p.no_hp, pesan:`Halo *${p.nama}*, ada informasi dari admin Nexbill.`})
+        body:JSON.stringify({no_hp:p.no_hp, pesan:`Halo *${p.nama}*, ada informasi dari admin SimBill.`})
       });
     }
     toast(`✅ WA terkirim ke ${nama}`);
@@ -6461,7 +6461,7 @@ async function apiExportExcelLaporan() {
     const a    = document.createElement('a');
     const tgl  = new Date().toISOString().slice(0,10).replace(/-/g,'');
     a.href     = url;
-    a.download = `Laporan_Nexbill_${tgl}.xlsx`;
+    a.download = `Laporan_SimBill_${tgl}.xlsx`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

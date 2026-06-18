@@ -59,7 +59,7 @@ router.post('/otp/kirim', async (req, res, next) => {
         `, [noHpNormal, otp, expired, otp, expired]);
 
         // Kirim via WhatsApp
-        const pesan = `*Kode OTP Login Nexbill*\n\nKode Anda: *${otp}*\n\nBerlaku 5 menit. Jangan bagikan ke siapapun.`;
+        const pesan = `*Kode OTP Login SimBill*\n\nKode Anda: *${otp}*\n\nBerlaku 5 menit. Jangan bagikan ke siapapun.`;
         await waService.kirimPesan(noHpNormal, pesan, pel.id, 'otp');
 
         res.json({ pesan: 'OTP dikirim ke WhatsApp', nama: pel.nama });
@@ -321,7 +321,7 @@ router.post('/tiket', clientAuth, upload.single('foto'), async (req, res, next) 
             const map = {};
             cfg.forEach(c => map[c.kunci] = c.nilai);
             if (map.admin_no_hp) {
-                const notif = `🎫 *Tiket Baru - ${map.app_name || 'Nexbill'}*\n\nDari: ${pel.nama} (${pel.username})\nKategori: ${kategori || 'umum'}\nJudul: ${judul}\n\nSegera cek dashboard admin.`;
+                const notif = `🎫 *Tiket Baru - ${map.app_name || 'SimBill'}*\n\nDari: ${pel.nama} (${pel.username})\nKategori: ${kategori || 'umum'}\nJudul: ${judul}\n\nSegera cek dashboard admin.`;
                 await waService.kirimPesan(map.admin_no_hp, notif, pel.id || null, 'tiket');
             }
         } catch(notifErr) { console.warn('[tiket] Notif WA gagal:', notifErr.message); }

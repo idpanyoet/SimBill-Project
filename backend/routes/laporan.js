@@ -171,7 +171,7 @@ router.get('/export-excel', async (req, res, next) => {
         }
 
         const wb = new ExcelJS.Workbook();
-        wb.creator   = 'Nexbill';
+        wb.creator   = 'SimBill';
         wb.created   = new Date();
         wb.modified  = new Date();
 
@@ -319,7 +319,7 @@ router.get('/export-excel', async (req, res, next) => {
         // ════════════════════════════════════════════════════════
         const tglStr = new Date().toISOString().slice(0,10).replace(/-/g,'');
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', `attachment; filename="Laporan_Nexbill_${tglStr}.xlsx"`);
+        res.setHeader('Content-Disposition', `attachment; filename="Laporan_SimBill_${tglStr}.xlsx"`);
         await wb.xlsx.write(res);
         res.end();
 
