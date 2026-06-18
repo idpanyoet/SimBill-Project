@@ -225,6 +225,13 @@ body.dark #nr-komisi-range{accent-color:#a78bfa}
 body.dark #rs-komisi-lbl{color:#a78bfa!important}
 body.dark .btn[style*="background:#7c3aed"]{background:#7c3aed!important}
 
+/* ── EDIT PELANGGAN MODAL ── */
+.ep-info-card{background:#f8fafc;border:1px solid #e2e7ef}
+body.dark .ep-info-card{background:#1c2128;border-color:#30363d}
+body.dark #ep-status-card-aktif,body.dark #ep-status-card-suspended,body.dark #ep-status-card-nonaktif{background:#1c2128;border-color:#30363d}
+body.dark #ep-tipe-card-pppoe,body.dark #ep-tipe-card-hotspot{background:#1c2128;border-color:#30363d}
+body.dark #ep-paket-grid [data-pid]{background:#1c2128!important;border-color:#30363d!important}
+body.dark #ep-username,body.dark #ep-password{background:#0d1117!important;border-color:#30363d!important;color:#e6edf3!important}
 /* ── L2TP MODAL ── */
 .l2tp-ip-box{background:#f8fafc;border:1px solid #e2e7ef;border-radius:10px;padding:12px 14px}
 .l2tp-info-box{background:#ede9fe;border:1px solid #ddd6fe;border-radius:8px;padding:9px 12px;font-size:11px;color:#5b21b6;display:flex;align-items:flex-start;gap:7px}
@@ -1307,7 +1314,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
       <input type="hidden" id="ep-id">
 
       <!-- Info card pelanggan -->
-      <div id="ep-info-card" style="display:flex;align-items:center;gap:12px;background:#f8fafc;border:1px solid #e2e7ef;border-radius:10px;padding:11px 14px">
+      <div id="ep-info-card" class="ep-info-card" style="display:flex;align-items:center;gap:12px;border-radius:10px;padding:11px 14px">
         <div id="ep-avatar" style="width:40px;height:40px;border-radius:10px;background:#7F77DD;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">—</div>
         <div style="flex:1;min-width:0">
           <div id="ep-info-nama" class="td-text-main" style="font-size:13px;font-weight:700"></div>
