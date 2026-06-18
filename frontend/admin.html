@@ -1341,7 +1341,7 @@ body.dark .toggle-thumb{left:18px}
     <div class="modal-body">
       <div class="fg-row"><div class="fg"><label>Nama Lengkap</label><input id="f-nama" placeholder="Nama"></div><div class="fg"><label>No. HP (WA)</label><input id="f-nohp" placeholder="628xxx"></div></div>
       <div class="fg-row"><div class="fg"><label>Username RADIUS</label><input id="f-username" placeholder="user.nama"></div><div class="fg"><label>Password</label><input id="f-password" type="password" placeholder="Password"></div></div>
-      <div class="fg-row"><div class="fg"><label>Paket</label><select id="f-paket"><option value="">-- pilih paket --</option></select></div><div class="fg"><label>Tipe Koneksi</label><select id="f-tipe"><option value="pppoe">PPPoE</option><option value="hotspot">Hotspot</option></select></div></div>
+      <div class="fg-row"><div class="fg"><label>Tipe Koneksi</label><select id="f-tipe" onchange="filterPaketByTipe()"><option value="pppoe">PPPoE</option><option value="hotspot">Hotspot</option></select></div><div class="fg"><label>Paket</label><select id="f-paket"><option value="">-- pilih paket --</option></select></div></div>
       <div class="fg"><label>Alamat</label><input id="f-alamat" placeholder="Alamat lengkap"></div>
       <div class="fg"><label style="display:flex;align-items:center;gap:6px"><input type="checkbox" checked> Buat invoice & kirim WA otomatis</label></div>
       <div class="modal-foot"><button class="btn" onclick="closeModal('m-add-pelanggan')">Batal</button><button class="btn primary" onclick="apiSimpanPelanggan()">Simpan & Aktifkan</button></div>
@@ -1371,12 +1371,12 @@ body.dark .toggle-thumb{left:18px}
           <option value="nonaktif">Nonaktif</option>
         </select>
       </div></div>
-      <div class="fg-row"><div class="fg"><label>Paket</label><select id="ep-paket"><option value="">-- pilih paket --</option></select></div><div class="fg"><label>Tipe Koneksi</label>
-        <select id="ep-tipe">
+      <div class="fg-row"><div class="fg"><label>Tipe Koneksi</label>
+        <select id="ep-tipe" onchange="filterEditPaketByTipe()">
           <option value="pppoe">PPPoE</option>
           <option value="hotspot">Hotspot</option>
         </select>
-      </div></div>
+</div><div class="fg"><label>Paket</label><select id="ep-paket"><option value="">-- pilih paket --</option></select></div></div>
       <div class="fg"><label>Alamat</label><input id="ep-alamat" placeholder="Alamat lengkap"></div>
       <div class="fg"><label>Catatan</label><input id="ep-notes" placeholder="Catatan internal (opsional)"></div>
       <div class="modal-foot"><button class="btn" onclick="closeModal('m-edit-pelanggan')">Batal</button><button class="btn primary" onclick="apiUpdatePelanggan()">💾 Simpan Perubahan</button></div>
@@ -2889,9 +2889,10 @@ async function bukaModalEdit(id) {
     document.getElementById('ep-tipe').value     = p.tipe_koneksi || 'pppoe';
     document.getElementById('ep-status').value   = p.status || 'aktif';
     document.getElementById('ep-username').value = p.username || '';
-    document.getElementById('ep-password').value = ''; // kosong — isi hanya jika mau ubah
-    // Populate dropdown paket lalu set nilai
+    document.getElementById('ep-password').value = '';
+    // Populate dropdown paket lalu filter by tipe dan set nilai
     await populateDropdowns();
+    filterEditPaketByTipe();
     const selPaket = document.getElementById('ep-paket');
     if (selPaket) selPaket.value = p.paket_id || '';
     // Tampilkan header modal dengan nama pelanggan
@@ -3070,8 +3071,35 @@ function renderPaket(rows) {
   // Populate dropdown paket di form tambah pelanggan
   const sel = document.getElementById('f-paket');
   if (sel) {
-    sel.innerHTML = rows.map(p=>`<option value="${p.id}">${p.nama} — ${fmt(p.harga)}</option>`).join('');
+    filterPaketByTipe(); // filter sesuai tipe yang dipilih
   }
+}
+
+function filterEditPaketByTipe() {
+  const tipe = document.getElementById('ep-tipe')?.value || 'pppoe';
+  const sel  = document.getElementById('ep-paket');
+  if (!sel || !LAST_PAKET_LIST) return;
+  const curVal = sel.value;
+  const filtered = LAST_PAKET_LIST.filter(function(p) {
+    return p.tipe === tipe || p.tipe === 'keduanya';
+  });
+  sel.innerHTML = '<option value="">-- pilih paket --</option>' +
+    filtered.map(function(p) {
+      return `<option value="${p.id}" ${p.id == curVal ? 'selected' : ''}>${p.nama} — ${fmt(p.harga)}</option>`;
+    }).join('');
+}
+
+function filterPaketByTipe() {
+  const tipe = document.getElementById('f-tipe')?.value || 'pppoe';
+  const sel  = document.getElementById('f-paket');
+  if (!sel || !LAST_PAKET_LIST) return;
+  const filtered = LAST_PAKET_LIST.filter(function(p) {
+    return p.tipe === tipe || p.tipe === 'keduanya';
+  });
+  sel.innerHTML = '<option value="">-- pilih paket --</option>' +
+    filtered.map(function(p) {
+      return `<option value="${p.id}">${p.nama} — ${fmt(p.harga)}</option>`;
+    }).join('');
 }
 
 function bukaEditPaket(id) {
