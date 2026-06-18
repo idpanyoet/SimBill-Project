@@ -257,32 +257,46 @@ body{padding-bottom:70px}
     </div>
   </div>
 
-  <!-- REQUEST GANTI PASSWORD -->
+  <!-- GANTI PASSWORD WIFI via TR-069 -->
   <div class="page" id="pg-password">
-    <div class="card">
-      <div class="card-title">🔑 Request Ganti Password WiFi</div>
-      <p style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6">Masukkan password WiFi baru yang Anda inginkan. Admin akan memproses permintaan dan mengubah password di perangkat router Anda.</p>
-      <div class="fg"><label>Password WiFi Baru</label>
+    <div class="card" id="card-acs-status" style="margin-bottom:12px;display:none">
+      <div class="card-title">📡 Router Terdeteksi</div>
+      <div id="acs-device-info"></div>
+    </div>
+
+    <div class="card" id="card-no-acs" style="margin-bottom:12px;display:none">
+      <div style="text-align:center;padding:16px 0">
+        <div style="font-size:32px;margin-bottom:8px">⚠️</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:6px">Router belum terhubung ke ACS</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">Router Anda belum terdaftar di sistem manajemen kami. Hubungi admin untuk mengaktifkan fitur ini.</div>
+      </div>
+    </div>
+
+    <div class="card" id="card-pw-form">
+      <div class="card-title">🔑 Ganti Password WiFi</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6">Masukkan password WiFi baru. Jika router Anda sudah terdaftar di sistem kami, perubahan akan langsung dikirim ke router. Jika belum, permintaan akan diteruskan ke admin.</p>
+      <div class="fg">
+        <label>SSID (Nama WiFi) — kosongkan jika tidak diganti</label>
+        <input type="text" id="inp-ssid" placeholder="Nama WiFi baru (opsional)">
+      </div>
+      <div class="fg"><label>Password WiFi Baru <span style="color:var(--red)">*</span></label>
         <div style="position:relative">
-          <input type="password" id="inp-pw-baru" placeholder="Minimal 6 karakter" style="padding-right:38px">
+          <input type="password" id="inp-pw-baru" placeholder="Minimal 8 karakter" style="padding-right:38px">
           <button type="button" onclick="togglePw('inp-pw-baru',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px">👁</button>
         </div>
       </div>
-      <div class="fg"><label>Konfirmasi Password</label>
+      <div class="fg"><label>Konfirmasi Password <span style="color:var(--red)">*</span></label>
         <div style="position:relative">
           <input type="password" id="inp-pw-konf" placeholder="Ulangi password baru" style="padding-right:38px">
           <button type="button" onclick="togglePw('inp-pw-konf',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px">👁</button>
         </div>
       </div>
-      <div class="fg"><label>Catatan (opsional)</label>
-        <textarea id="inp-pw-catatan" placeholder="Misal: perangkat saya di lantai 2..." style="min-height:70px"></textarea>
-      </div>
-      <button class="btn primary full" onclick="requestGantiPassword()" id="btn-req-pw">📤 Kirim Permintaan</button>
+      <button class="btn primary full" onclick="gantiPasswordWifi()" id="btn-ganti-pw">📶 Ganti Password WiFi</button>
     </div>
 
-    <div class="card" id="card-req-pw">
+    <div class="card" id="card-pw-history">
       <div class="card-title">Riwayat Permintaan</div>
-      <div id="list-req-pw"><div class="empty"><div class="ico">⏳</div><p>Memuat...</p></div></div>
+      <div id="list-pw-history"><div class="empty"><div class="ico">📋</div><p>Memuat...</p></div></div>
     </div>
   </div>
 
@@ -528,7 +542,7 @@ function showPage(name, btn) {
   // Lazy load
   if (name === 'tagihan') loadTagihan();
   if (name === 'tiket') loadTiket();
-  if (name === 'password') loadRequestPw();
+  if (name === 'password') loadPasswordPage();
   if (name === 'profil') loadProfil();
 }
 
@@ -600,56 +614,85 @@ async function bayarInvoice(id) {
   } catch(e) { toast('❌ ' + e.message); }
 }
 
-// ── REQUEST GANTI PASSWORD ────────────────────────────────────
-async function requestGantiPassword() {
-  var pw1 = document.getElementById('inp-pw-baru').value;
-  var pw2 = document.getElementById('inp-pw-konf').value;
-  var cat = document.getElementById('inp-pw-catatan').value.trim();
-  if (!pw1 || pw1.length < 6) { toast('❗ Password minimal 6 karakter'); return; }
-  if (pw1 !== pw2) { toast('❗ Password tidak sama'); return; }
+// ── GANTI PASSWORD WIFI (TR-069 / Tiket fallback) ────────────
+let _acsDevice = null;
 
-  var btn = document.getElementById('btn-req-pw');
-  btn.disabled = true; btn.textContent = '⏳ Mengirim...';
-
+async function loadPasswordPage() {
+  // Cek apakah pelanggan punya ACS device
   try {
-    var fd = new FormData();
-    fd.append('judul', 'Request Ganti Password WiFi');
-    fd.append('kategori', 'lainnya');
-    fd.append('pesan', 'Pelanggan meminta ganti password WiFi.\n\nPassword baru: ' + pw1 + (cat ? '\n\nCatatan: ' + cat : ''));
+    const d = await apiFetch('/api/client/acs-device');
+    _acsDevice = d;
+    const cardAcs  = document.getElementById('card-acs-status');
+    const cardNoAcs = document.getElementById('card-no-acs');
 
-    var r = await fetch('/api/client/tiket', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + getToken() },
-      body: fd
-    });
-    var d = await r.json();
-    if (!r.ok) throw new Error(d.error);
-
-    toast('✅ Permintaan terkirim! Admin akan memproses segera.');
-    document.getElementById('inp-pw-baru').value = '';
-    document.getElementById('inp-pw-konf').value = '';
-    document.getElementById('inp-pw-catatan').value = '';
-    loadRequestPw();
-  } catch(e) { toast('❌ ' + e.message); }
-  finally { btn.disabled = false; btn.textContent = '📤 Kirim Permintaan'; }
+    if (d) {
+      const online = d.status === 'online';
+      cardAcs.style.display = 'block';
+      cardNoAcs.style.display = 'none';
+      document.getElementById('acs-device-info').innerHTML =
+        `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+          <div><span style="color:var(--text2)">Vendor</span><br><b>${d.manufacturer||'—'} ${d.product_class||''}</b></div>
+          <div><span style="color:var(--text2)">IP Router</span><br><b>${d.ip_address||'—'}</b></div>
+          <div><span style="color:var(--text2)">Versi SW</span><br><b>${d.software_version||'—'}</b></div>
+          <div><span style="color:var(--text2)">Status</span><br><b>${online?'<span style="color:var(--green)">🟢 Online</span>':'<span style="color:var(--red)">🔴 Offline</span>'}</b></div>
+        </div>`;
+      document.getElementById('btn-ganti-pw').textContent = '📶 Kirim ke Router';
+    } else {
+      cardAcs.style.display = 'none';
+      cardNoAcs.style.display = 'block';
+      document.getElementById('btn-ganti-pw').textContent = '📤 Kirim ke Admin';
+    }
+  } catch(e) {
+    document.getElementById('card-no-acs').style.display = 'block';
+  }
+  loadWifiHistory();
 }
 
-async function loadRequestPw() {
-  var el = document.getElementById('list-req-pw');
+async function gantiPasswordWifi() {
+  var ssid = document.getElementById('inp-ssid').value.trim();
+  var pw1  = document.getElementById('inp-pw-baru').value;
+  var pw2  = document.getElementById('inp-pw-konf').value;
+  if (!pw1 || pw1.length < 8) { toast('❗ Password minimal 8 karakter'); return; }
+  if (pw1 !== pw2) { toast('❗ Password tidak sama'); return; }
+
+  var btn = document.getElementById('btn-ganti-pw');
+  btn.disabled = true; btn.textContent = '⏳ Mengirim...';
   try {
-    var rows = await apiFetch('/api/client/tiket');
-    var pwReqs = rows.filter(function(t) { return t.judul.includes('Password WiFi'); });
-    if (!pwReqs.length) {
-      el.innerHTML = '<div class="empty"><div class="ico">📋</div><p>Belum ada permintaan</p></div>';
+    var d = await apiFetch('/api/client/wifi', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ ssid: ssid || undefined, password: pw1 })
+    });
+    toast('✅ ' + d.pesan);
+    document.getElementById('inp-ssid').value    = '';
+    document.getElementById('inp-pw-baru').value = '';
+    document.getElementById('inp-pw-konf').value = '';
+    loadWifiHistory();
+  } catch(e) { toast('❌ ' + e.message); }
+  finally {
+    btn.disabled = false;
+    btn.textContent = _acsDevice ? '📶 Kirim ke Router' : '📤 Kirim ke Admin';
+  }
+}
+
+async function loadWifiHistory() {
+  var el = document.getElementById('list-pw-history');
+  try {
+    var d = await apiFetch('/api/client/wifi-tasks');
+    if (!d.items || !d.items.length) {
+      el.innerHTML = '<div class="empty"><div class="ico">📋</div><p>Belum ada riwayat</p></div>';
       return;
     }
-    el.innerHTML = pwReqs.map(function(t) {
-      return '<div class="tiket-item" onclick="lihatTiket(' + t.id + ')">'
-        + '<div class="tiket-judul">' + escHtml(t.judul) + '</div>'
-        + '<div class="tiket-meta"><span class="tag ' + t.status + '">' + t.status + '</span>'
-        + '<span>' + fmtTgl(t.created_at) + '</span></div>'
-        + '</div>';
-    }).join('');
+    if (d.via === 'acs') {
+      el.innerHTML = d.items.map(function(t) {
+        var stCls = t.status === 'done' ? 'aktif' : t.status === 'failed' ? 'suspend' : 'open';
+        var stLabel = t.status === 'done' ? 'Berhasil' : t.status === 'failed' ? 'Gagal' : t.status === 'running' ? 'Diproses' : 'Menunggu';
+        return '<div class="inv-item"><div class="inv-left"><div class="no">Ganti Password WiFi via Router</div><div class="tgl">' + fmtTgl(t.created_at) + '</div></div><div class="inv-right"><div class="aksi"><span class="tag ' + stCls + '">' + stLabel + '</span></div></div></div>';
+      }).join('');
+    } else {
+      el.innerHTML = d.items.map(function(t) {
+        return '<div class="tiket-item" onclick="lihatTiket(' + t.id + ')"><div class="tiket-judul">' + escHtml(t.judul) + '</div><div class="tiket-meta"><span class="tag ' + t.status + '">' + t.status + '</span><span>' + fmtTgl(t.created_at) + '</span></div></div>';
+      }).join('');
+    }
   } catch(e) {
     el.innerHTML = '<div class="empty"><p>—</p></div>';
   }

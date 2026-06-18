@@ -212,6 +212,96 @@ router.get('/tiket', clientAuth, async (req, res, next) => {
     } catch(e) { next(e); }
 });
 
+// ── GET /api/client/acs-device — cek router pelanggan di ACS ──
+router.get('/acs-device', clientAuth, async (req, res, next) => {
+    try {
+        const device = await queryOne(
+            'SELECT id, serial_number, manufacturer, product_class, ip_address, software_version, status, last_inform FROM acs_device WHERE pelanggan_id=? ORDER BY last_inform DESC LIMIT 1',
+            [req.client.id]
+        );
+        res.json(device || null);
+    } catch(e) { next(e); }
+});
+
+// ── POST /api/client/wifi — ganti password WiFi via ACS ───────
+router.post('/wifi', clientAuth, async (req, res, next) => {
+    try {
+        const { ssid, password } = req.body;
+        if (!password || password.length < 8)
+            return res.status(400).json({ error: 'Password minimal 8 karakter' });
+
+        // Cek apakah pelanggan punya device ACS
+        const device = await queryOne(
+            'SELECT * FROM acs_device WHERE pelanggan_id=? ORDER BY last_inform DESC LIMIT 1',
+            [req.client.id]
+        );
+
+        if (device) {
+            // Kirim via ACS TR-069
+            const { getWifiParams } = require('../services/acs');
+            const wifiParams = getWifiParams(device.manufacturer);
+            const pairs = [];
+            if (ssid) pairs.push({ name: wifiParams.ssid, value: ssid });
+            pairs.push({ name: wifiParams.password, value: password });
+
+            await query('INSERT INTO acs_task (device_id, type, params, status, created_by) VALUES (?,?,?,?,?)',
+                [device.id, 'SetParameterValues', JSON.stringify(pairs), 'pending', 'pelanggan']);
+
+            res.json({
+                sukses: true,
+                via: 'acs',
+                pesan: 'Perintah dikirim ke router. Password akan berubah dalam beberapa menit (saat router polling ke ACS).'
+            });
+        } else {
+            // Fallback: buat tiket
+            const pel = await queryOne('SELECT nama, no_hp, username FROM pelanggan WHERE id=?', [req.client.id]);
+            const pesanTiket = `Pelanggan meminta ganti password WiFi.\n\nSSID baru: ${ssid || '(tidak diganti)'}\nPassword baru: ${password}`;
+            const result = await query(
+                `INSERT INTO tiket (pelanggan_id, judul, pesan, kategori, status) VALUES (?, 'Ganti Password WiFi', ?, 'lainnya', 'open')`,
+                [req.client.id, pesanTiket]
+            );
+
+            // Notif admin
+            try {
+                const cfg = await query("SELECT kunci, nilai FROM setting WHERE kunci IN ('admin_no_hp','app_name')");
+                const map = {};
+                cfg.forEach(c => map[c.kunci] = c.nilai);
+                if (map.admin_no_hp) {
+                    const notif = `🔑 *Request Ganti Password WiFi*\n\nDari: ${pel.nama} (${pel.username})\nSSID: ${ssid || '-'}\nPassword: ${password}\n\nSegera proses di dashboard admin.`;
+                    await waService.kirimPesan(map.admin_no_hp, notif, req.client.id, 'tiket');
+                }
+            } catch(e) {}
+
+            res.json({
+                sukses: true,
+                via: 'tiket',
+                tiket_id: result.insertId,
+                pesan: 'Router Anda belum terhubung ke ACS. Permintaan sudah diteruskan ke admin dan akan diproses segera.'
+            });
+        }
+    } catch(e) { next(e); }
+});
+
+// ── GET /api/client/wifi-tasks — riwayat task WiFi pelanggan ──
+router.get('/wifi-tasks', clientAuth, async (req, res, next) => {
+    try {
+        const device = await queryOne('SELECT id FROM acs_device WHERE pelanggan_id=? ORDER BY last_inform DESC LIMIT 1', [req.client.id]);
+        if (!device) {
+            // Ambil dari tiket
+            const tikets = await query(
+                `SELECT id, judul, status, created_at FROM tiket WHERE pelanggan_id=? AND judul LIKE '%Password WiFi%' ORDER BY created_at DESC LIMIT 5`,
+                [req.client.id]
+            );
+            return res.json({ via: 'tiket', items: tikets });
+        }
+        const tasks = await query(
+            `SELECT * FROM acs_task WHERE device_id=? AND type='SetParameterValues' ORDER BY id DESC LIMIT 5`,
+            [device.id]
+        );
+        res.json({ via: 'acs', items: tasks });
+    } catch(e) { next(e); }
+});
+
 // ── POST /api/client/tiket ────────────────────────────────────
 router.post('/tiket', clientAuth, upload.single('foto'), async (req, res, next) => {
     try {
