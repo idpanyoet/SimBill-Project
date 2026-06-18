@@ -148,13 +148,15 @@ app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting
 app.use('/api/', rateLimit({
+    validate: {xForwardedForHeader: false},
     windowMs: 15 * 60 * 1000,
-    max: 200,
+    max: 500,
     message: { error: 'Terlalu banyak permintaan, coba lagi nanti.' }
 }));
 app.use('/api/auth/', rateLimit({
+    validate: {xForwardedForHeader: false},
     windowMs: 15 * 60 * 1000,
-    max: 20,
+    max: 50,
     message: { error: 'Terlalu banyak percobaan login.' }
 }));
 

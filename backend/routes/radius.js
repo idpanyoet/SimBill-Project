@@ -674,7 +674,9 @@ router.post('/restart', authMiddleware, async (req, res, next) => {
 // ── GET /api/radius/snmp-traffic — ambil data SNMP dari NAS ──
 router.get('/snmp-traffic', async (req, res, next) => {
     try {
-        const nasId = req.query.nas_id;
+        const nasId   = req.query.nas_id;
+        const ifIndex = req.query.if_index || null; // index interface dari query param
+
         let nas;
         if (nasId) {
             nas = await queryOne('SELECT * FROM nas WHERE id=?', [nasId]);
@@ -686,14 +688,15 @@ router.get('/snmp-traffic', async (req, res, next) => {
         const community = nas.community || 'public';
         const host      = nas.nasname;
 
-        // OID standar untuk traffic interface (ifIndex 1 = interface utama)
-        // ifInOctets  = 1.3.6.1.2.1.2.2.1.10.1
-        // ifOutOctets = 1.3.6.1.2.1.2.2.1.16.1
+        // Pakai ifIndex dari query, dari setting NAS, atau default 95 (Ether1-Metroe)
+        const idx = ifIndex || nas.ports || '95';
+
         const oids = [
-            '1.3.6.1.2.1.2.2.1.10.1',  // ifInOctets
-            '1.3.6.1.2.1.2.2.1.16.1',  // ifOutOctets
-            '1.3.6.1.2.1.2.2.1.5.1',   // ifSpeed
-            '1.3.6.1.2.1.1.3.0',        // sysUpTime
+            `1.3.6.1.2.1.2.2.1.10.${idx}`,  // ifInOctets
+            `1.3.6.1.2.1.2.2.1.16.${idx}`,  // ifOutOctets
+            `1.3.6.1.2.1.2.2.1.5.${idx}`,   // ifSpeed
+            `1.3.6.1.2.1.2.2.1.2.${idx}`,   // ifDescr (nama interface)
+            '1.3.6.1.2.1.1.3.0',             // sysUpTime
         ];
 
         const snmp = require('net-snmp');
@@ -718,12 +721,49 @@ router.get('/snmp-traffic', async (req, res, next) => {
                 nas_id:      nas.id,
                 nas_name:    nas.shortname,
                 host:        host,
-                in_octets:   parseInt(result['1.3.6.1.2.1.2.2.1.10.1'] || 0),
-                out_octets:  parseInt(result['1.3.6.1.2.1.2.2.1.16.1'] || 0),
-                if_speed:    parseInt(result['1.3.6.1.2.1.2.2.1.5.1']  || 0),
+                if_index:    idx,
+                if_name:     result[`1.3.6.1.2.1.2.2.1.2.${idx}`] || `if${idx}`,
+                in_octets:   parseInt(result[`1.3.6.1.2.1.2.2.1.10.${idx}`] || 0),
+                out_octets:  parseInt(result[`1.3.6.1.2.1.2.2.1.16.${idx}`] || 0),
+                if_speed:    parseInt(result[`1.3.6.1.2.1.2.2.1.5.${idx}`]  || 0),
                 uptime:      result['1.3.6.1.2.1.1.3.0'] || 0,
                 timestamp:   Date.now()
             });
+        });
+    } catch(e) { next(e); }
+});
+
+// ── GET /api/radius/snmp-interfaces — list semua interface ────
+router.get('/snmp-interfaces', async (req, res, next) => {
+    try {
+        const nasId = req.query.nas_id;
+        let nas;
+        if (nasId) {
+            nas = await queryOne('SELECT * FROM nas WHERE id=?', [nasId]);
+        } else {
+            nas = await queryOne('SELECT * FROM nas LIMIT 1');
+        }
+        if (!nas) return res.status(404).json({ error: 'NAS tidak ditemukan' });
+
+        const snmp = require('net-snmp');
+        const session = snmp.createSession(nas.nasname, nas.community || 'public', {
+            timeout: 5000, retries: 1, version: snmp.Version2c
+        });
+
+        const oid = '1.3.6.1.2.1.2.2.1.2'; // ifDescr
+        const ifaces = [];
+
+        session.subtree(oid, 20, function(varbinds) {
+            varbinds.forEach(function(vb) {
+                if (!snmp.isVarbindError(vb)) {
+                    const idx = vb.oid.split('.').pop();
+                    ifaces.push({ index: idx, name: vb.value.toString() });
+                }
+            });
+        }, function(error) {
+            session.close();
+            if (error) return res.status(502).json({ error: error.message });
+            res.json(ifaces);
         });
     } catch(e) { next(e); }
 });

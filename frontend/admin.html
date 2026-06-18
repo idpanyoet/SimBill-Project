@@ -685,9 +685,12 @@ body.dark .toggle-thumb{left:18px}
                 <div style="font-size:11px;color:var(--text3)">Traffic real-time per NAS</div>
               </div>
             </div>
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-              <select id="nas-chart-select" style="flex:1;font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)" onchange="nasChartGantiNAS()">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+              <select id="nas-chart-select" style="flex:1;min-width:120px;font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)" onchange="nasChartGantiNAS()">
                 <option value="">— Pilih NAS —</option>
+              </select>
+              <select id="nas-if-select" style="flex:1;min-width:120px;font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)" onchange="nasChartGantiNAS()">
+                <option value="95">Ether1-Metroe (95)</option>
               </select>
               <div style="display:flex;gap:12px;font-size:11px;color:var(--text3);flex-shrink:0">
                 <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:3px;border-radius:2px;background:#378ADD;display:inline-block"></span>Unduh</span>
@@ -4268,22 +4271,41 @@ function nasChartInit(nasList) {
   });
   if (nasList.length > 0) {
     sel.value = nasList[0].nasname;
-    nasChartMulai(nasList[0].nasname, nasList[0].id);
+    nasChartMulai(nasList[0].nasname, nasList[0].id, '95');
+    loadSNMPInterfaces(nasList[0].id);
   }
 }
 
 function nasChartGantiNAS() {
-  const sel = document.getElementById('nas-chart-select');
-  const ip  = sel.value;
-  const id  = sel.options[sel.selectedIndex]?.dataset?.id || '';
+  const sel   = document.getElementById('nas-chart-select');
+  const ifSel = document.getElementById('nas-if-select');
+  const ip    = sel.value;
+  const id    = sel.options[sel.selectedIndex]?.dataset?.id || '';
+  const ifIdx = ifSel?.value || '95';
   if (!ip) return;
   _nasPrevBytes = {};
-  nasChartMulai(ip, id);
+  nasChartMulai(ip, id, ifIdx);
+  // Load interfaces untuk NAS ini
+  loadSNMPInterfaces(id);
 }
 
-function nasChartMulai(nasIp, nasId) {
+async function loadSNMPInterfaces(nasId) {
+  const ifSel = document.getElementById('nas-if-select');
+  if (!ifSel || !nasId) return;
+  try {
+    const ifaces = await apiFetch('/api/radius/snmp-interfaces?nas_id=' + nasId);
+    const curVal = ifSel.value;
+    ifSel.innerHTML = ifaces.map(f =>
+      `<option value="${f.index}" ${f.index === curVal ? 'selected' : ''}>${f.name} (${f.index})</option>`
+    ).join('');
+    if (!ifSel.value) ifSel.value = '95';
+  } catch(e) { console.warn('SNMP interfaces:', e.message); }
+}
+
+function nasChartMulai(nasIp, nasId, ifIdx) {
   if (_nasTimer) clearInterval(_nasTimer);
   nasId = nasId || '';
+  ifIdx = ifIdx || document.getElementById('nas-if-select')?.value || '95';
 
   const dlData = Array(NAS_POINTS).fill(0);
   const ulData = Array(NAS_POINTS).fill(0);
@@ -4317,7 +4339,7 @@ function nasChartMulai(nasIp, nasId) {
   async function poll() {
     try {
       // Ambil data SNMP dari NAS
-      const snmpData = await apiFetch('/api/radius/snmp-traffic?nas_id=' + nasId);
+      const snmpData = await apiFetch('/api/radius/snmp-traffic?nas_id=' + nasId + '&if_index=' + ifIdx);
 
       const totalIn  = snmpData.in_octets  / 1048576; // bytes → MB
       const totalOut = snmpData.out_octets / 1048576;
@@ -4355,7 +4377,7 @@ function nasChartMulai(nasIp, nasId) {
   }
 
   poll();
-  _nasTimer = setInterval(poll, 5000);
+  _nasTimer = setInterval(poll, 15000);
 }
 </script>
 </body>
