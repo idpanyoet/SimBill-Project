@@ -3199,13 +3199,18 @@ function switchInvTab(tab) {
 }
 
 async function loadInvoice() {
+  const t = document.getElementById('tbl-invoice');
+  if (t) t.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">Memuat...</td></tr>';
   try {
     const status = document.getElementById('inv-filter-status')?.value || '';
     const params = new URLSearchParams({ limit: 100, tipe_koneksi: _invTab });
     if (status) params.append('status', status);
     const data = await apiFetch('/api/invoice?' + params.toString());
     renderTblInvoice(data.data || data);
-  } catch(e) { console.warn('Invoice API:', e.message); }
+  } catch(e) {
+    console.warn('Invoice API:', e.message);
+    if (t) t.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">Gagal memuat data</td></tr>';
+  }
 }
 
 function renderTblInvoice(rows) {
