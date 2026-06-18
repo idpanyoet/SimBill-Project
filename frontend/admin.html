@@ -825,7 +825,9 @@ body.dark .toggle-thumb{left:18px}
         </div>
         <div class="grid2">
           <div class="card">
-            <div class="card-title">Daftar Voucher <span class="sub">Klik untuk kirim WA</span></div>
+            <div class="card-title">Daftar Voucher <span class="sub">Klik untuk kirim WA</span>
+              <button class="btn sm" onclick="printVoucher()">🖨️ Print Voucher</button>
+            </div>
             <table><thead><tr><th style="width:28px"><input type="checkbox" id="vcr-pilih-semua" onchange="toggleSemuaVoucher(this)"></th><th>Username</th><th>Password</th><th>Paket</th><th>Status</th><th>Aksi</th></tr></thead>
             <tbody id="tbl-voucher">
               <tr><td colspan="6" style="text-align:center;color:var(--text3);padding:16px">Tidak ada data</td></tr>
@@ -2878,6 +2880,97 @@ async function apiBuatInvoice() {
 let vcrHalaman = 1;
 let vcrLimit   = 25;
 let vcrTotal   = 0;
+
+function printVoucher() {
+  // Ambil semua voucher dari tabel yang sedang tampil
+  const rows = document.querySelectorAll('#tbl-voucher tr');
+  if (!rows.length) { toast('❌ Tidak ada voucher untuk diprint', true); return; }
+
+  // Kumpulkan data voucher
+  const vouchers = [];
+  rows.forEach(function(row) {
+    const cols = row.querySelectorAll('td');
+    if (cols.length < 5) return;
+    const username = cols[1]?.textContent?.trim();
+    const password = cols[2]?.textContent?.trim();
+    const paket    = cols[3]?.textContent?.trim();
+    const status   = cols[4]?.textContent?.trim();
+    if (username && username !== '—') {
+      vouchers.push({ username, password, paket, status });
+    }
+  });
+
+  if (!vouchers.length) { toast('❌ Tidak ada data voucher', true); return; }
+
+  // Ambil nama app
+  const appName = document.getElementById('topbar-title')?.textContent || 'NetBilling';
+
+  // Buka jendela print
+  const win = window.open('', '_blank', 'width=900,height=700');
+  win.document.write(`<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Print Voucher — ${appName}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff; color: #111; font-size: 12px; }
+  .header { text-align: center; padding: 16px; border-bottom: 2px solid #333; margin-bottom: 16px; }
+  .header h1 { font-size: 18px; font-weight: 700; }
+  .header p { font-size: 11px; color: #666; margin-top: 4px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 16px 16px; }
+  .card { border: 1.5px solid #333; border-radius: 8px; padding: 10px 12px; page-break-inside: avoid; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .brand { font-size: 11px; font-weight: 700; color: #444; }
+  .status { font-size: 9px; padding: 2px 6px; border-radius: 10px; font-weight: 600; }
+  .status.unused { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+  .status.used   { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+  .paket { font-size: 10px; color: #666; margin-bottom: 6px; }
+  .label { font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2px; }
+  .value { font-size: 14px; font-weight: 700; letter-spacing: .05em; margin-bottom: 6px; font-family: monospace; }
+  .pw-label { font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2px; }
+  .pw-value { font-size: 13px; font-weight: 600; font-family: monospace; }
+  .divider { border-top: 1px dashed #ccc; margin: 8px 0; }
+  .footer { font-size: 9px; color: #999; text-align: center; margin-top: 6px; }
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .no-print { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🎟️ ${appName} — Voucher Internet</h1>
+  <p>Dicetak: ${new Date().toLocaleString('id-ID')} · Total: ${vouchers.length} voucher</p>
+</div>
+<div class="no-print" style="text-align:center;padding:10px 0">
+  <button onclick="window.print()" style="padding:8px 24px;background:#3b82f6;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-weight:600">🖨️ Print</button>
+  <button onclick="window.close()" style="padding:8px 16px;background:#eee;color:#333;border:none;border-radius:6px;font-size:14px;cursor:pointer;margin-left:8px">✕ Tutup</button>
+</div>
+<div class="grid">
+${vouchers.map(function(v) {
+  const stCls = v.status === 'used' ? 'used' : 'unused';
+  const stLabel = v.status === 'used' ? 'Terpakai' : 'Aktif';
+  return `<div class="card">
+    <div class="card-header">
+      <span class="brand">${appName}</span>
+      <span class="status ${stCls}">${stLabel}</span>
+    </div>
+    <div class="paket">📦 ${v.paket || '—'}</div>
+    <div class="divider"></div>
+    <div class="label">Username</div>
+    <div class="value">${v.username}</div>
+    <div class="pw-label">Password</div>
+    <div class="pw-value">${v.password}</div>
+    <div class="divider"></div>
+    <div class="footer">Scan WiFi → Login → Masukkan kode di atas</div>
+  </div>`;
+}).join('')}
+</div>
+</body>
+</html>`);
+  win.document.close();
+}
 
 async function loadVoucher() {
   try {
