@@ -53,7 +53,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;background:#f4f6
 .sb-item{display:flex;align-items:center;gap:9px;padding:8px 10px;margin:1px 8px;cursor:pointer;border-radius:8px;font-size:13px;color:rgba(255,255,255,.45);transition:all .12s}
 .sb-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.8)}
 .sb-item.active{background:rgba(186,117,23,.18);color:#EF9F27;font-weight:600}
-.sb-item .icon{font-size:15px;width:20px;text-align:center}
+.sb-item .icon{font-size:17px;width:20px;text-align:center;flex-shrink:0}
 .sb-bottom{margin-top:auto;padding:12px;border-top:1px solid rgba(255,255,255,.06)}
 .sb-user{display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px;border-radius:8px}
 .sb-user:hover{background:rgba(255,255,255,.06)}
@@ -81,7 +81,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;background:#f4f6
 /* ── METRICS ── */
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
 .metric{border-radius:12px;padding:16px;display:flex;align-items:center;gap:14px}
-.metric-ico{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px}
+.metric-ico{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px}
 .metric.blue   .metric-ico{background:#378ADD;color:#fff}
 .metric.green  .metric-ico{background:#639922;color:#fff}
 .metric.amber  .metric-ico{background:#BA7517;color:#fff}
@@ -265,7 +265,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
   <div class="login-box">
     <div class="login-logo">
       <svg width="48" height="48" viewBox="0 0 48 48" style="margin:0 auto 8px;display:block"><rect width="48" height="48" rx="12" fill="#BA7517"/><circle cx="12" cy="32" r="5" fill="#fff" opacity=".35"/><circle cx="24" cy="14" r="5" fill="#fff" opacity=".65"/><circle cx="36" cy="32" r="5" fill="#fff"/><line x1="12" y1="32" x2="24" y2="14" stroke="#fff" stroke-width="2.5" opacity=".5"/><line x1="24" y1="14" x2="36" y2="32" stroke="#fff" stroke-width="2.5" opacity=".85"/></svg>
-      <h2>Nexbill Admin</h2>
+      <h2><span style="color:#BA7517">Nex</span>bill Admin</h2>
       <p>Masuk untuk mengelola sistem</p>
     </div>
     <div class="login-err" id="login-err"></div>
@@ -284,31 +284,31 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sb-logo">
-      <svg width="28" height="28" viewBox="0 0 28 28" style="flex-shrink:0"><rect width="28" height="28" rx="7" fill="#BA7517"/><circle cx="7" cy="19" r="3" fill="#fff" opacity=".35"/><circle cx="14" cy="10" r="3" fill="#fff" opacity=".65"/><circle cx="21" cy="19" r="3" fill="#fff"/><line x1="7" y1="19" x2="14" y2="10" stroke="#fff" stroke-width="1.8" opacity=".5"/><line x1="14" y1="10" x2="21" y2="19" stroke="#fff" stroke-width="1.8" opacity=".85"/></svg>
+      <svg width="32" height="32" viewBox="0 0 32 32" style="flex-shrink:0"><rect width="32" height="32" rx="8" fill="#BA7517"/><circle cx="8" cy="22" r="3.5" fill="#fff" opacity=".35"/><circle cx="16" cy="11" r="3.5" fill="#fff" opacity=".7"/><circle cx="24" cy="22" r="3.5" fill="#fff"/><line x1="8" y1="22" x2="16" y2="11" stroke="#fff" stroke-width="2" opacity=".55"/><line x1="16" y1="11" x2="24" y2="22" stroke="#fff" stroke-width="2" opacity=".9"/></svg>
       <div style="min-width:0">
-        <div style="font-size:15px;font-weight:700;line-height:1.1"><span style="color:#EF9F27">Nex</span><span class="sidebar-brand" style="color:var(--text);font-weight:400">bill</span></div>
-        <small style="font-size:9px;color:var(--text3);letter-spacing:.04em;text-transform:uppercase">Admin Panel</small>
+        <div style="font-size:16px;font-weight:700;line-height:1.1;color:#fff"><span style="color:#EF9F27">Nex</span>bill</div>
+        <small style="font-size:9px;color:rgba(255,255,255,.35);letter-spacing:.06em;text-transform:uppercase">Admin Panel</small>
       </div>
     </div>
 
     <div class="sb-section">Utama</div>
-    <div class="sb-item active" onclick="goto('dashboard',this)"><span class="icon">📊</span> Dashboard</div>
-    <div class="sb-item" onclick="goto('pelanggan',this)"><span class="icon">👥</span> Pelanggan</div>
-    <div class="sb-item" onclick="goto('paket',this)"><span class="icon">📦</span> Paket Internet</div>
-    <div class="sb-item" onclick="goto('invoice',this)"><span class="icon">🧾</span> Invoice</div>
-    <div class="sb-item" onclick="goto('voucher',this)"><span class="icon">🎟️</span> Voucher Online</div>
+    <div class="sb-item active" onclick="goto('dashboard',this)"><i class="ti ti-layout-dashboard icon" aria-hidden="true"></i> Dashboard</div>
+    <div class="sb-item" onclick="goto('pelanggan',this)"><i class="ti ti-users icon" aria-hidden="true"></i> Pelanggan</div>
+    <div class="sb-item" onclick="goto('paket',this)"><i class="ti ti-package icon" aria-hidden="true"></i> Paket Internet</div>
+    <div class="sb-item" onclick="goto('invoice',this)"><i class="ti ti-receipt icon" aria-hidden="true"></i> Invoice</div>
+    <div class="sb-item" onclick="goto('voucher',this)"><i class="ti ti-ticket icon" aria-hidden="true"></i> Voucher Online</div>
 
-    <div class="sb-item" onclick="goto('reseller',this)"><span class="icon">🏪</span> Reseller</div>
+    <div class="sb-item" onclick="goto('reseller',this)"><i class="ti ti-building-store icon" aria-hidden="true"></i> Reseller</div>
     <div class="sb-section">Gateway</div>
-    <div class="sb-item" onclick="goto('whatsapp',this)"><span class="icon">💬</span> WhatsApp</div>
-    <div class="sb-item" onclick="goto('payment',this)"><span class="icon">💳</span> Payment</div>
+    <div class="sb-item" onclick="goto('whatsapp',this)"><i class="ti ti-brand-whatsapp icon" aria-hidden="true"></i> WhatsApp</div>
+    <div class="sb-item" onclick="goto('payment',this)"><i class="ti ti-credit-card icon" aria-hidden="true"></i> Payment</div>
 
     <div class="sb-section">Sistem</div>
-    <div class="sb-item" onclick="goto('radius',this)"><span class="icon">📡</span> RADIUS / NAS</div>
-    <div class="sb-item" onclick="goto('laporan',this)"><span class="icon">📈</span> Laporan</div>
-    <div class="sb-item" onclick="goto('voucher-template',this)"><span class="icon">🎨</span> Template Voucher</div>
-    <div class="sb-item" onclick="goto('acs',this)"><span class="icon">📡</span> ACS TR-069</div>
-    <div class="sb-item" onclick="goto('setting',this)"><span class="icon">⚙️</span> Setting</div>
+    <div class="sb-item" onclick="goto('radius',this)"><i class="ti ti-server icon" aria-hidden="true"></i> RADIUS / NAS</div>
+    <div class="sb-item" onclick="goto('laporan',this)"><i class="ti ti-chart-bar icon" aria-hidden="true"></i> Laporan</div>
+    <div class="sb-item" onclick="goto('voucher-template',this)"><i class="ti ti-palette icon" aria-hidden="true"></i> Template Voucher</div>
+    <div class="sb-item" onclick="goto('acs',this)"><i class="ti ti-router icon" aria-hidden="true"></i> ACS TR-069</div>
+    <div class="sb-item" onclick="goto('setting',this)"><i class="ti ti-settings icon" aria-hidden="true"></i> Setting</div>
 
     <div class="sb-bottom">
       <div class="sb-user">
