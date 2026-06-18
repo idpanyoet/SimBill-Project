@@ -1336,15 +1336,69 @@ body.dark .toggle-thumb{left:18px}
 
 <!-- ══ MODALS ══ -->
 <div class="overlay" id="m-add-pelanggan">
-  <div class="modal">
-    <div class="modal-hdr"><h3>➕ Tambah Pelanggan</h3><button class="btn-x" onclick="closeModal('m-add-pelanggan')">✕</button></div>
-    <div class="modal-body">
-      <div class="fg-row"><div class="fg"><label>Nama Lengkap</label><input id="f-nama" placeholder="Nama"></div><div class="fg"><label>No. HP (WA)</label><input id="f-nohp" placeholder="628xxx"></div></div>
-      <div class="fg-row"><div class="fg"><label>Username RADIUS</label><input id="f-username" placeholder="user.nama"></div><div class="fg"><label>Password</label><input id="f-password" type="password" placeholder="Password"></div></div>
-      <div class="fg-row"><div class="fg"><label>Tipe Koneksi</label><select id="f-tipe" onchange="filterPaketByTipe()"><option value="pppoe">PPPoE</option><option value="hotspot">Hotspot</option></select></div><div class="fg"><label>Paket</label><select id="f-paket"><option value="">-- pilih paket --</option></select></div></div>
-      <div class="fg"><label>Alamat</label><input id="f-alamat" placeholder="Alamat lengkap"></div>
-      <div class="fg"><label style="display:flex;align-items:center;gap:6px"><input type="checkbox" checked> Buat invoice & kirim WA otomatis</label></div>
-      <div class="modal-foot"><button class="btn" onclick="closeModal('m-add-pelanggan')">Batal</button><button class="btn primary" onclick="apiSimpanPelanggan()">Simpan & Aktifkan</button></div>
+  <div class="modal" style="max-width:540px">
+    <div class="modal-hdr" style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:9px;background:rgba(186,117,23,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-user-plus" style="font-size:18px;color:#BA7517" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:500;color:var(--text)">Tambah Pelanggan</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:1px">Isi data lengkap untuk aktivasi akun</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-add-pelanggan')">✕</button>
+    </div>
+
+    <!-- Pilih Tipe Koneksi -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:14px 20px;border-bottom:1px solid var(--border)">
+      <div id="f-tipe-card-pppoe" onclick="pilihTipePelanggan('pppoe')" style="border:2px solid #BA7517;border-radius:9px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;background:rgba(186,117,23,.06);transition:all .15s">
+        <div style="width:32px;height:32px;border-radius:7px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-router" style="font-size:16px;color:#185FA5" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--text)">PPPoE</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:1px">Koneksi kabel fiber</div>
+        </div>
+      </div>
+      <div id="f-tipe-card-hotspot" onclick="pilihTipePelanggan('hotspot')" style="border:2px solid var(--border);border-radius:9px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .15s">
+        <div style="width:32px;height:32px;border-radius:7px;background:#E1F5EE;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-wifi" style="font-size:16px;color:#0F6E56" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--text)">Hotspot</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:1px">Koneksi WiFi / voucher</div>
+        </div>
+      </div>
+      <input type="hidden" id="f-tipe" value="pppoe">
+    </div>
+
+    <div class="modal-body" style="padding:14px 20px;display:flex;flex-direction:column;gap:12px">
+      <div class="fg-row">
+        <div class="fg"><label>Nama Lengkap</label><input id="f-nama" placeholder="Nama pelanggan"></div>
+        <div class="fg"><label>No. WhatsApp</label><input id="f-nohp" placeholder="628xxxxxxxx"></div>
+      </div>
+      <div class="fg-row">
+        <div class="fg"><label>Username RADIUS</label><input id="f-username" placeholder="user.nama"></div>
+        <div class="fg"><label>Password</label><input id="f-password" type="password" placeholder="••••••••"></div>
+      </div>
+
+      <!-- Pilih Paket sebagai card grid -->
+      <div class="fg">
+        <label>Pilih Paket</label>
+        <div id="f-paket-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:2px"></div>
+        <input type="hidden" id="f-paket">
+      </div>
+
+      <div class="fg"><label>Alamat</label><input id="f-alamat" placeholder="Alamat lengkap (opsional)"></div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)">
+        <input type="checkbox" id="f-kirim-wa" checked style="width:15px;height:15px;accent-color:#BA7517;cursor:pointer">
+        <label for="f-kirim-wa">Buat invoice & kirim notifikasi WA otomatis setelah simpan</label>
+      </div>
+      <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
+        <button class="btn" onclick="closeModal('m-add-pelanggan')">Batal</button>
+        <button class="btn primary" onclick="apiSimpanPelanggan()">Simpan & Aktifkan</button>
+      </div>
     </div>
   </div>
 </div>
@@ -3086,17 +3140,85 @@ function filterEditPaketByTipe() {
     }).join('');
 }
 
+function pilihTipePelanggan(tipe) {
+  document.getElementById('f-tipe').value = tipe;
+  // Update card visual
+  ['pppoe','hotspot'].forEach(function(t) {
+    const card = document.getElementById('f-tipe-card-' + t);
+    if (!card) return;
+    if (t === tipe) {
+      card.style.borderColor = '#BA7517';
+      card.style.background  = 'rgba(186,117,23,.06)';
+    } else {
+      card.style.borderColor = 'var(--border)';
+      card.style.background  = 'transparent';
+    }
+  });
+  filterPaketByTipe();
+}
+
 function filterPaketByTipe() {
-  const tipe = document.getElementById('f-tipe')?.value || 'pppoe';
-  const sel  = document.getElementById('f-paket');
-  if (!sel || !LAST_PAKET_LIST) return;
+  const tipe  = document.getElementById('f-tipe')?.value || 'pppoe';
+  const grid  = document.getElementById('f-paket-grid');
+  const input = document.getElementById('f-paket');
+  if (!LAST_PAKET_LIST || !LAST_PAKET_LIST.length) return;
+
   const filtered = LAST_PAKET_LIST.filter(function(p) {
     return p.tipe === tipe || p.tipe === 'keduanya';
   });
-  sel.innerHTML = '<option value="">-- pilih paket --</option>' +
-    filtered.map(function(p) {
-      return `<option value="${p.id}">${p.nama} — ${fmt(p.harga)}</option>`;
-    }).join('');
+
+  if (!grid) {
+    // Fallback: select biasa jika grid tidak ada
+    const sel = document.getElementById('f-paket');
+    if (sel) {
+      sel.innerHTML = '<option value="">-- pilih paket --</option>' +
+        filtered.map(function(p) {
+          return `<option value="${p.id}">${p.nama} — ${fmt(p.harga)}</option>`;
+        }).join('');
+    }
+    return;
+  }
+
+  // Render card grid
+  if (!filtered.length) {
+    grid.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px 0">Tidak ada paket untuk tipe ini</div>';
+    if (input) input.value = '';
+    return;
+  }
+
+  const curVal = input?.value || '';
+  grid.innerHTML = filtered.map(function(p) {
+    const satuan = p.satuan_masa === 'jam' ? 'Jam' : p.satuan_masa === 'bulan' ? 'Bulan' : 'Hari';
+    const active = String(p.id) === String(curVal) ? 'border-color:#BA7517;background:rgba(186,117,23,.08)' : 'border-color:var(--border)';
+    return `<div onclick="pilihPaketCard(${p.id},this)" style="border:2px solid;${active};border-radius:8px;padding:8px 10px;cursor:pointer;transition:all .15s" data-paket-id="${p.id}">
+      <div style="font-size:12px;font-weight:500;color:var(--text)">${p.nama}</div>
+      <div style="font-size:11px;color:#854F0B;margin-top:2px">${fmt(p.harga)} / bln</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:1px">${p.kecepatan_dn} Mbps · ${p.masa_aktif || 30} ${satuan}</div>
+    </div>`;
+  }).join('');
+
+  // Auto-pilih pertama jika belum ada yang dipilih
+  if (!curVal && filtered.length) {
+    pilihPaketCard(filtered[0].id, grid.querySelector('[data-paket-id]'));
+  }
+}
+
+function pilihPaketCard(id, el) {
+  const input = document.getElementById('f-paket');
+  if (input) input.value = id;
+  // Reset semua card
+  const grid = document.getElementById('f-paket-grid');
+  if (grid) {
+    grid.querySelectorAll('[data-paket-id]').forEach(function(c) {
+      c.style.borderColor = 'var(--border)';
+      c.style.background  = 'transparent';
+    });
+  }
+  // Aktifkan yang dipilih
+  if (el) {
+    el.style.borderColor = '#BA7517';
+    el.style.background  = 'rgba(186,117,23,.08)';
+  }
 }
 
 function bukaEditPaket(id) {
