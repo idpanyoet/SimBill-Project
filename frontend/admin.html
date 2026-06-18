@@ -3203,20 +3203,25 @@ async function printVoucher() {
   const rows = document.querySelectorAll('#tbl-voucher tr');
   if (!rows.length) { toast('❌ Tidak ada voucher untuk diprint', true); return; }
 
-  const vouchers = [];
+  // Kumpulkan username dari tabel
+  const usernames = [];
   rows.forEach(function(row) {
     const cols = row.querySelectorAll('td');
     if (cols.length < 5) return;
     const username = cols[1]?.textContent?.trim();
-    const paket    = cols[3]?.textContent?.trim();
-    const status   = cols[4]?.textContent?.trim();
-    if (username && username !== '—') {
-      vouchers.push({ username, password: username, nama_paket: paket, status });
-    }
+    if (username && username !== '—') usernames.push(username);
   });
 
-  if (!vouchers.length) { toast('❌ Tidak ada data voucher', true); return; }
-  await printBatchDenganTemplate(vouchers, false); // false = tidak auto-print, tampil tombol dulu
+  if (!usernames.length) { toast('❌ Tidak ada data voucher', true); return; }
+
+  toast('⏳ Menyiapkan data voucher...');
+  try {
+    // Ambil data lengkap dari API dengan limit sesuai halaman saat ini
+    const data = await apiFetch(`/api/voucher?limit=${usernames.length}&halaman=${vcrHalaman}`);
+    const list = Array.isArray(data) ? data : (data.data || []);
+    if (!list.length) { toast('❌ Tidak ada data voucher', true); return; }
+    await printBatchDenganTemplate(list, false);
+  } catch(e) { toast('❌ ' + e.message, true); }
 }
 
 
