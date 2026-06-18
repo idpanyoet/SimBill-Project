@@ -211,30 +211,50 @@ async function _aktivasiVoucher(username, noHp, nama, paket) {
   radiusService.syncVoucher(username).catch(e => console.warn('[sync]', e.message));
 
   const v = await queryOne('SELECT password FROM voucher WHERE username = ?', [username]);
-  const loginInfo = (v && v.password === username)
-    ? `🔑 Username/Password: *${username}*`
-    : `🔑 Username: *${username}*\n🔒 Password: *${v?.password || username}*`;
+  const satuan    = paket.satuan_masa === 'jam' ? 'Jam' : paket.satuan_masa === 'bulan' ? 'Bulan' : 'Hari';
+  const masaAktif = `${paket.masa_aktif} ${satuan}`;
+  const kecepatan = `${paket.kecepatan_dn} Mbps`;
+  const displayPw = (v && v.password !== username) ? v.password : username;
 
-  const satuan = paket.satuan_masa === 'jam' ? 'Jam' : paket.satuan_masa === 'bulan' ? 'Bulan' : 'Hari';
-  const pesan =
+  // Ambil template dari DB, fallback ke default
+  let tpl = '';
+  try {
+    const [row] = await query(`SELECT nilai FROM setting WHERE kunci = 'wa_tpl_voucher_sukses'`);
+    tpl = row?.nilai || '';
+  } catch(e) { /* gunakan default */ }
+
+  let pesan;
+  if (tpl) {
+    pesan = tpl
+      .replace(/{nama}/g,      nama)
+      .replace(/{username}/g,  username)
+      .replace(/{password}/g,  displayPw)
+      .replace(/{paket}/g,     paket.nama)
+      .replace(/{masa_aktif}/g, masaAktif)
+      .replace(/{kecepatan}/g, kecepatan);
+  } else {
+    const loginInfo = (v && v.password === username)
+      ? `🔑 Username/Password: *${username}*`
+      : `🔑 Username: *${username}*\n🔒 Password: *${displayPw}*`;
+    pesan =
 `Halo *${nama}*,
 
-Terima kasih! Pembayaran diterima ✅
+Terima kasih! Pembayaran voucher diterima ✅
 
 Berikut voucher internet Anda:
 
 ${loginInfo}
 📦 Paket: ${paket.nama}
-⏱ Berlaku: ${paket.masa_aktif} ${satuan}
-🚀 Kecepatan: ${paket.kecepatan_dn} Mbps
+⏱ Berlaku: ${masaAktif}
+🚀 Kecepatan: ${kecepatan}
 
 Cara pakai:
 1️⃣ Sambungkan ke WiFi hotspot
-2️⃣ Buka browser
-3️⃣ Masuk halaman login hotspot
-4️⃣ Masukkan username & password di atas
+2️⃣ Buka browser, masuk halaman login
+3️⃣ Masukkan username & password di atas
 
 Selamat menikmati! 🌐`;
+  }
 
   await waService.kirimPesan(noHp, pesan, null, 'otp');
 }

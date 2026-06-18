@@ -180,8 +180,8 @@ body.dark .tag.hotspot{background:rgba(124,58,237,.15);color:#a78bfa}
 .toast.show{display:flex}
 
 /* ── WA CHAT ── */
-.wa-chat{background:#e5ddd5;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto}
-.wa-msg{padding:7px 10px;border-radius:9px;font-size:12px;max-width:82%;line-height:1.45}
+.wa-chat{background:#e5ddd5;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:300px;max-height:480px;overflow-y:auto}
+.wa-msg{padding:8px 12px;border-radius:10px;font-size:13px;max-width:78%;line-height:1.55;word-break:break-word}
 .wa-msg.out{background:#d9fdd3;align-self:flex-end;border-radius:9px 9px 2px 9px}
 .wa-msg.in{background:#fff;align-self:flex-start;border-radius:9px 9px 9px 2px}
 .wa-msg .time{font-size:10px;color:#667781;margin-top:3px;text-align:right}
@@ -852,6 +852,23 @@ Pembayaran Anda telah kami terima! ✅
 📅 Aktif hingga: *{tgl_expired}*
 
 Internet Anda sudah aktif kembali. Terima kasih! 🙏</textarea>
+            <textarea id="wa-tpl-voucher_sukses" style="display:none">Halo *{nama}*,
+
+Terima kasih! Pembayaran voucher diterima ✅
+
+Berikut voucher internet Anda:
+
+🔑 Username/Password: *{username}*
+📦 Paket: *{paket}*
+⏱ Berlaku: *{masa_aktif}*
+🚀 Kecepatan: *{kecepatan}*
+
+Cara pakai:
+1️⃣ Sambungkan ke WiFi hotspot
+2️⃣ Buka browser, masuk halaman login
+3️⃣ Masukkan username & password di atas
+
+Selamat menikmati! 🌐</textarea>
 
             <!-- Dropdown pilih template -->
             <div class="fg" style="margin-bottom:10px">
@@ -861,6 +878,7 @@ Internet Anda sudah aktif kembali. Terima kasih! 🙏</textarea>
                 <option value="reminder">Reminder Jatuh Tempo</option>
                 <option value="suspend">Notifikasi Suspend</option>
                 <option value="konfirmasi">Konfirmasi Pembayaran</option>
+                <option value="voucher_sukses">🎟️ Voucher Online Sukses</option>
               </select>
             </div>
 
@@ -900,8 +918,12 @@ Internet Anda sudah aktif kembali. Terima kasih! 🙏</textarea>
             <div class="fg"><label>Nomor Tujuan</label><input id="wa-to" placeholder="628xxx"></div>
             <div class="fg"><label>Pesan</label><textarea id="wa-pesan" placeholder="Tulis pesan..."></textarea></div>
             <button class="btn primary" onclick="sendWATest()" style="margin-bottom:14px">📤 Kirim Test</button>
-            <div class="card-title">Preview Chat <span class="sub">Delivery rate: <b id="wa-delivery-rate">—</b></span></div>
-            <div class="wa-chat" id="wa-chat"></div>
+            <div class="card-title">Preview Chat <span class="sub">Delivery rate: <b id="wa-delivery-rate">—</b></span>
+              <button class="btn sm" onclick="document.getElementById('wa-chat').innerHTML=''" title="Bersihkan chat"><i class="ti ti-trash" aria-hidden="true"></i></button>
+            </div>
+            <div class="wa-chat" id="wa-chat">
+              <div style="text-align:center;color:#aaa;font-size:12px;margin:auto;padding:20px 0">Kirim pesan test untuk melihat preview</div>
+            </div>
             <div class="divider"></div>
             <div class="card-title">Broadcast Massal</div>
             <div class="fg"><label>Target</label><select id="wa-broadcast-target"><option value="unpaid">Semua belum bayar</option><option value="overdue">Sudah terlambat</option><option value="semua">Semua pelanggan</option></select></div>
@@ -5509,6 +5531,12 @@ const TPL_META = {
     slug:  'wa_tpl_konfirmasi',
     placeholders: ['{nama}','{jumlah}','{tgl_expired}'],
     default: `Halo *{nama}*,\n\nPembayaran Anda telah kami terima! ✅\n\n💰 Jumlah: *Rp {jumlah}*\n📅 Aktif hingga: *{tgl_expired}*\n\nInternet Anda sudah aktif kembali. Terima kasih! 🙏`
+  },
+  voucher_sukses: {
+    title: 'Voucher Online Sukses',
+    slug:  'wa_tpl_voucher_sukses',
+    placeholders: ['{nama}','{username}','{paket}','{masa_aktif}','{kecepatan}'],
+    default: `Halo *{nama}*,\n\nTerima kasih! Pembayaran voucher diterima ✅\n\nBerikut voucher internet Anda:\n\n🔑 Username/Password: *{username}*\n📦 Paket: *{paket}*\n⏱ Berlaku: *{masa_aktif}*\n🚀 Kecepatan: *{kecepatan}*\n\nCara pakai:\n1️⃣ Sambungkan ke WiFi hotspot\n2️⃣ Buka browser, masuk halaman login\n3️⃣ Masukkan username & password di atas\n\nSelamat menikmati! 🌐`
   }
 };
 
@@ -5585,10 +5613,11 @@ async function loadWALog() {
     if (map.wa_sender)   document.getElementById('wa-sender').value   = map.wa_sender;
     if (map.wa_phone_id) document.getElementById('wa-phone-id').value = map.wa_phone_id;
     // Load template pesan
-    if (map.wa_tpl_daftar)     document.getElementById('wa-tpl-daftar').value     = map.wa_tpl_daftar;
-    if (map.wa_tpl_reminder)   document.getElementById('wa-tpl-reminder').value   = map.wa_tpl_reminder;
-    if (map.wa_tpl_suspend)    document.getElementById('wa-tpl-suspend').value    = map.wa_tpl_suspend;
-    if (map.wa_tpl_konfirmasi) document.getElementById('wa-tpl-konfirmasi').value = map.wa_tpl_konfirmasi;
+    if (map.wa_tpl_daftar)          document.getElementById('wa-tpl-daftar').value          = map.wa_tpl_daftar;
+    if (map.wa_tpl_reminder)        document.getElementById('wa-tpl-reminder').value        = map.wa_tpl_reminder;
+    if (map.wa_tpl_suspend)         document.getElementById('wa-tpl-suspend').value         = map.wa_tpl_suspend;
+    if (map.wa_tpl_konfirmasi)      document.getElementById('wa-tpl-konfirmasi').value      = map.wa_tpl_konfirmasi;
+    if (map.wa_tpl_voucher_sukses)  document.getElementById('wa-tpl-voucher_sukses').value  = map.wa_tpl_voucher_sukses;
     // Init template editor dengan template pertama
     tplLoad(document.getElementById('wa-tpl-select')?.value || 'daftar');
     // Tampilkan field Phone ID hanya untuk WA Business API

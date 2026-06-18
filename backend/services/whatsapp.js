@@ -19,20 +19,22 @@ async function getConfig() {
     const rows = await query(
         `SELECT kunci, nilai FROM setting WHERE kunci IN
          ('wa_provider','wa_token','wa_sender','wa_phone_id',
-          'wa_tpl_daftar','wa_tpl_reminder','wa_tpl_suspend','wa_tpl_konfirmasi')`
+          'wa_tpl_daftar','wa_tpl_reminder','wa_tpl_suspend',
+          'wa_tpl_konfirmasi','wa_tpl_voucher_sukses')`
     );
     const map = {};
     rows.forEach(r => map[r.kunci] = r.nilai);
 
     _cache = {
-        provider:         map.wa_provider       || 'fonnte',
-        token:            map.wa_token           || '',
-        sender:           map.wa_sender          || '',
-        phoneId:          map.wa_phone_id        || '',
-        wa_tpl_daftar:    map.wa_tpl_daftar      || '',
-        wa_tpl_reminder:  map.wa_tpl_reminder    || '',
-        wa_tpl_suspend:   map.wa_tpl_suspend     || '',
-        wa_tpl_konfirmasi:map.wa_tpl_konfirmasi  || ''
+        provider:              map.wa_provider            || 'fonnte',
+        token:                 map.wa_token               || '',
+        sender:                map.wa_sender              || '',
+        phoneId:               map.wa_phone_id            || '',
+        wa_tpl_daftar:         map.wa_tpl_daftar          || '',
+        wa_tpl_reminder:       map.wa_tpl_reminder        || '',
+        wa_tpl_suspend:        map.wa_tpl_suspend         || '',
+        wa_tpl_konfirmasi:     map.wa_tpl_konfirmasi      || '',
+        wa_tpl_voucher_sukses: map.wa_tpl_voucher_sukses  || ''
     };
     _cacheAt = now;
     return _cache;
