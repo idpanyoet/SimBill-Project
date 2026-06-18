@@ -229,4 +229,89 @@ router.delete('/:id', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// ── GET /api/pelanggan/export/csv ─────────────────────────────
+router.get('/export/csv', async (req, res, next) => {
+    try {
+        const rows = await query(`
+            SELECT p.nama, p.username, p.no_hp, p.email, p.alamat,
+                   p.tipe_koneksi, p.status, p.tgl_aktif, p.tgl_expired,
+                   p.ip_tetap, p.notes,
+                   pk.nama AS nama_paket, pk.id AS paket_id
+            FROM pelanggan p
+            JOIN paket pk ON p.paket_id = pk.id
+            ORDER BY p.created_at DESC
+        `);
+
+        const header = ['nama','username','no_hp','email','alamat','tipe_koneksi',
+                        'status','tgl_aktif','tgl_expired','ip_tetap','notes',
+                        'nama_paket','paket_id'];
+        const esc = (v) => {
+            if (v == null) return '';
+            const s = String(v);
+            return s.includes(',') || s.includes('"') || s.includes('\n')
+                ? `"${s.replace(/"/g, '""')}"` : s;
+        };
+        const csv = [
+            header.join(','),
+            ...rows.map(r => header.map(k => esc(r[k])).join(','))
+        ].join('\r\n');
+
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="pelanggan-${new Date().toISOString().slice(0,10)}.csv"`);
+        res.send('\uFEFF' + csv); // BOM agar Excel baca UTF-8 dengan benar
+    } catch (e) { next(e); }
+});
+
+// ── POST /api/pelanggan/import/csv ────────────────────────────
+router.post('/import/csv', async (req, res, next) => {
+    try {
+        const { rows } = req.body; // array of objects dari frontend
+        if (!Array.isArray(rows) || !rows.length)
+            return res.status(400).json({ error: 'Data kosong' });
+
+        let sukses = 0, gagal = 0;
+        const errors = [];
+
+        for (const row of rows) {
+            try {
+                const { nama, username, password, no_hp, tipe_koneksi, paket_id, email, alamat, notes } = row;
+                if (!nama || !username || !password || !no_hp || !paket_id)
+                    throw new Error('Kolom wajib tidak lengkap');
+                if (!['pppoe','hotspot'].includes(tipe_koneksi))
+                    throw new Error(`tipe_koneksi tidak valid: ${tipe_koneksi}`);
+
+                const existing = await queryOne('SELECT id FROM pelanggan WHERE username = ?', [username]);
+                if (existing) throw new Error(`Username '${username}' sudah ada`);
+
+                const paket = await queryOne('SELECT * FROM paket WHERE id = ?', [parseInt(paket_id)]);
+                if (!paket) throw new Error(`Paket id ${paket_id} tidak ditemukan`);
+
+                const tgl_aktif   = dayjs().format('YYYY-MM-DD');
+                const tgl_expired = hitungExpired(paket.masa_aktif, paket.satuan_masa).format('YYYY-MM-DD');
+                const hash        = await bcrypt.hash(password, 10);
+
+                const result = await query(`
+                    INSERT INTO pelanggan (nama, username, password, no_hp, email, alamat,
+                        paket_id, tipe_koneksi, tgl_aktif, tgl_expired, notes)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                `, [nama, username, hash, no_hp, email||null, alamat||null,
+                    paket.id, tipe_koneksi, tgl_aktif, tgl_expired, notes||null]);
+
+                await radiusService.tambahUser(username, password, paket, tipe_koneksi, null)
+                    .catch(e => {
+                        query('DELETE FROM pelanggan WHERE id = ?', [result.insertId]).catch(()=>{});
+                        throw new Error(`RADIUS gagal: ${e.message}`);
+                    });
+
+                sukses++;
+            } catch(e) {
+                gagal++;
+                errors.push({ row: row.username || '?', error: e.message });
+            }
+        }
+
+        res.json({ sukses, gagal, errors });
+    } catch (e) { next(e); }
+});
+
 module.exports = router;

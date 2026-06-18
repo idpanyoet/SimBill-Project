@@ -237,6 +237,9 @@ body.dark .l2tp-subnet-chip{background:rgba(99,102,241,.15);color:#a5b4fc}
 body.dark .btn-saran-ip{background:#21262d;border-color:#30363d;color:#818cf8}
 body.dark .btn-saran-ip:hover{background:#30363d}
 body.dark #l2p-ip{background:#0d1117;border-color:#30363d;color:#e6edf3}
+body.dark #er-level-card-silver,body.dark #er-level-card-gold,body.dark #er-level-card-platinum,body.dark #er-status-card-aktif,body.dark #er-status-card-nonaktif,body.dark #er-status-card-suspend{background:#1c2128;border-color:#30363d}
+body.dark #er-komisi{background:#0d1117!important;border-color:#30363d!important;color:#a78bfa!important}
+body.dark #er-komisi-lbl{color:#a78bfa!important}
 /* ── NAS MODAL ── */
 .nas-snmp-box{background:#f8fafc;border:1px solid #e2e7ef;border-radius:10px;padding:12px 14px}
 .nas-info-box{background:#e0f2fe;border:1px solid #bae6fd;border-radius:8px;padding:8px 12px;font-size:11px;color:#0369a1;display:flex;align-items:flex-start;gap:6px}
@@ -601,8 +604,8 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
       <div class="page" id="p-pelanggan">
         <div class="action-bar">
           <button class="btn primary" onclick="openModal('m-add-pelanggan')">+ Tambah Pelanggan</button>
-          <button class="btn" onclick="toast('✅ Export berhasil')">⬇ Export CSV</button>
-          <button class="btn" onclick="toast('✅ Import selesai — 12 pelanggan')">⬆ Import CSV</button>
+          <button class="btn" onclick="apiExportPelangganCSV()"><i class="ti ti-download" aria-hidden="true"></i> Export CSV</button>
+          <button class="btn" onclick="bukaImportCSV()"><i class="ti ti-upload" aria-hidden="true"></i> Import CSV</button>
         </div>
         <div class="card">
           <div class="search-bar">
@@ -1285,36 +1288,126 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 </div>
 
 <div class="overlay" id="m-edit-pelanggan">
-  <div class="modal">
-    <div class="modal-hdr"><h3 id="ep-title">✏️ Edit Pelanggan</h3><button class="btn-x" onclick="closeModal('m-edit-pelanggan')">✕</button></div>
-    <div class="modal-body">
+  <div class="modal" style="max-width:520px">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#FAEEDA;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-user-edit" style="font-size:20px;color:#BA7517" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div id="ep-title" class="td-text-main" style="font-size:15px;font-weight:700">Edit Pelanggan</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Perbarui data &amp; konfigurasi akun</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-edit-pelanggan')">✕</button>
+    </div>
+
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
       <input type="hidden" id="ep-id">
-      <div class="fg-row"><div class="fg"><label>Nama Lengkap</label><input id="ep-nama" placeholder="Nama"></div><div class="fg"><label>No. HP (WA)</label><input id="ep-nohp" placeholder="628xxx"></div></div>
+
+      <!-- Info card pelanggan -->
+      <div id="ep-info-card" style="display:flex;align-items:center;gap:12px;background:#f8fafc;border:1px solid #e2e7ef;border-radius:10px;padding:11px 14px">
+        <div id="ep-avatar" style="width:40px;height:40px;border-radius:10px;background:#7F77DD;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">—</div>
+        <div style="flex:1;min-width:0">
+          <div id="ep-info-nama" class="td-text-main" style="font-size:13px;font-weight:700"></div>
+          <div style="font-size:11px;margin-top:2px;display:flex;gap:6px;align-items:center">
+            <span id="ep-info-hp" class="td-text-sub"></span>
+            <span id="ep-info-tipe" class="tag pppoe" style="font-size:9px;padding:1px 6px"></span>
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div class="td-text-sub" style="font-size:10px">Paket aktif</div>
+          <div id="ep-info-paket" class="td-text-main" style="font-size:11px;font-weight:600"></div>
+        </div>
+      </div>
+
+      <!-- Nama & HP -->
       <div class="fg-row">
-        <div class="fg"><label>Username PPPoE</label><input id="ep-username" placeholder="username.pppoe"></div>
-        <div class="fg"><label>Password PPPoE</label>
-          <div style="position:relative">
-            <input id="ep-password" type="password" placeholder="Kosongkan jika tidak diubah" style="padding-right:34px;width:100%;box-sizing:border-box">
-            <button type="button" onclick="togglePwVis('ep-password',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding:0;line-height:1">👁</button>
+        <div class="fg"><label>Nama Lengkap</label><input id="ep-nama" placeholder="Nama"></div>
+        <div class="fg"><label>No. WhatsApp</label><input id="ep-nohp" placeholder="628xxxxxxxx"></div>
+      </div>
+
+      <!-- Status -->
+      <div>
+        <label class="fg-label">Status Akun</label>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:4px">
+          <div id="ep-status-card-aktif" onclick="epSetStatus('aktif')" style="border:2px solid #16a34a;background:#dcfce7;border-radius:9px;padding:8px;cursor:pointer;text-align:center;transition:all .15s">
+            <i class="ti ti-circle-check" style="font-size:17px;color:#16a34a;display:block;margin-bottom:3px" aria-hidden="true"></i>
+            <div class="ep-status-lbl" style="font-size:11px;font-weight:700;color:#15803d">Aktif</div>
+          </div>
+          <div id="ep-status-card-suspended" onclick="epSetStatus('suspended')" style="border:2px solid #e2e7ef;border-radius:9px;padding:8px;cursor:pointer;text-align:center;transition:all .15s">
+            <i class="ti ti-clock-pause" style="font-size:17px;color:#94a3b8;display:block;margin-bottom:3px" aria-hidden="true"></i>
+            <div class="ep-status-lbl td-text-main" style="font-size:11px;font-weight:700">Suspend</div>
+          </div>
+          <div id="ep-status-card-nonaktif" onclick="epSetStatus('nonaktif')" style="border:2px solid #e2e7ef;border-radius:9px;padding:8px;cursor:pointer;text-align:center;transition:all .15s">
+            <i class="ti ti-circle-x" style="font-size:17px;color:#94a3b8;display:block;margin-bottom:3px" aria-hidden="true"></i>
+            <div class="ep-status-lbl td-text-main" style="font-size:11px;font-weight:700">Nonaktif</div>
+          </div>
+        </div>
+        <input type="hidden" id="ep-status" value="aktif">
+      </div>
+
+      <!-- Tipe Koneksi -->
+      <div>
+        <label class="fg-label">Tipe Koneksi</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+          <div id="ep-tipe-card-pppoe" onclick="epSetTipe('pppoe')" style="border:2px solid #378ADD;background:#E6F1FB;border-radius:9px;padding:9px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s">
+            <i class="ti ti-router" style="font-size:17px;color:#378ADD" aria-hidden="true"></i>
+            <div>
+              <div class="ep-tipe-lbl" style="font-size:12px;font-weight:600;color:#0369a1">PPPoE</div>
+              <div class="td-text-sub" style="font-size:10px">Kabel / Fiber</div>
+            </div>
+          </div>
+          <div id="ep-tipe-card-hotspot" onclick="epSetTipe('hotspot')" style="border:2px solid #e2e7ef;border-radius:9px;padding:9px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s">
+            <i class="ti ti-wifi" style="font-size:17px;color:#1D9E75" aria-hidden="true"></i>
+            <div>
+              <div class="ep-tipe-lbl td-text-main" style="font-size:12px;font-weight:600">Hotspot</div>
+              <div class="td-text-sub" style="font-size:10px">WiFi</div>
+            </div>
+          </div>
+        </div>
+        <input type="hidden" id="ep-tipe" value="pppoe">
+      </div>
+
+      <!-- Paket -->
+      <div>
+        <label class="fg-label">Pilih Paket</label>
+        <div id="ep-paket-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px"></div>
+        <input type="hidden" id="ep-paket">
+      </div>
+
+      <!-- Kredensial RADIUS -->
+      <div class="nas-snmp-box">
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px;display:flex;align-items:center;gap:6px">
+          <i class="ti ti-lock" style="font-size:13px" aria-hidden="true"></i>
+          Kredensial RADIUS
+        </div>
+        <div class="fg-row">
+          <div class="fg"><label>Username</label><input id="ep-username" placeholder="username"></div>
+          <div class="fg">
+            <label>Password baru <span class="td-text-sub" style="font-weight:400;font-size:10px">(opsional)</span></label>
+            <div style="position:relative">
+              <input id="ep-password" type="password" placeholder="Kosongkan jika tidak diubah" style="padding-right:36px">
+              <button type="button" onclick="togglePwVis('ep-password',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0;line-height:1">👁</button>
+            </div>
           </div>
         </div>
       </div>
-      <div class="fg-row"><div class="fg"><label>Email</label><input id="ep-email" type="email" placeholder="email@domain.com"></div><div class="fg"><label>Status</label>
-        <select id="ep-status">
-          <option value="aktif">Aktif</option>
-          <option value="suspended">Suspended</option>
-          <option value="nonaktif">Nonaktif</option>
-        </select>
-      </div></div>
-      <div class="fg-row"><div class="fg"><label>Tipe Koneksi</label>
-        <select id="ep-tipe" onchange="filterEditPaketByTipe()">
-          <option value="pppoe">PPPoE</option>
-          <option value="hotspot">Hotspot</option>
-        </select>
-</div><div class="fg"><label>Paket</label><select id="ep-paket"><option value="">-- pilih paket --</option></select></div></div>
-      <div class="fg"><label>Alamat</label><input id="ep-alamat" placeholder="Alamat lengkap"></div>
-      <div class="fg"><label>Catatan</label><input id="ep-notes" placeholder="Catatan internal (opsional)"></div>
-      <div class="modal-foot"><button class="btn" onclick="closeModal('m-edit-pelanggan')">Batal</button><button class="btn primary" onclick="apiUpdatePelanggan()">💾 Simpan Perubahan</button></div>
+
+      <!-- Alamat, Email, Catatan -->
+      <div class="fg-row">
+        <div class="fg"><label>Alamat</label><input id="ep-alamat" placeholder="Alamat lengkap"></div>
+        <div class="fg"><label>Email</label><input id="ep-email" type="email" placeholder="email@domain.com"></div>
+      </div>
+      <div class="fg"><label>Catatan Internal</label><input id="ep-notes" placeholder="Catatan internal (opsional)"></div>
+
+      <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
+        <button class="btn" onclick="closeModal('m-edit-pelanggan')">Batal</button>
+        <button class="btn primary" onclick="apiUpdatePelanggan()">
+          <i class="ti ti-device-floppy" style="font-size:14px" aria-hidden="true"></i> Simpan Perubahan
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -1968,6 +2061,74 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 </div>
 
 
+<!-- MODAL IMPORT CSV PELANGGAN -->
+<div class="overlay" id="m-import-csv">
+  <div class="modal" style="max-width:520px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#e0f2fe;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-upload" style="font-size:20px;color:#0ea5e9" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="td-text-main" style="font-size:15px;font-weight:700">Import Pelanggan CSV</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Upload file CSV untuk import massal</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-import-csv')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
+
+      <!-- Info format -->
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:12px;color:#166534">
+        <div style="font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px">
+          <i class="ti ti-info-circle" style="font-size:14px" aria-hidden="true"></i> Format kolom CSV (header wajib ada):
+        </div>
+        <div style="font-family:monospace;font-size:11px;background:#dcfce7;padding:6px 10px;border-radius:6px;line-height:1.8">
+          nama, username, password, no_hp, tipe_koneksi, paket_id<br>
+          <span style="opacity:.7">email, alamat, notes (opsional)</span>
+        </div>
+        <div style="margin-top:6px;font-size:11px;opacity:.8">
+          • tipe_koneksi: <b>pppoe</b> atau <b>hotspot</b><br>
+          • paket_id: nomor ID paket (lihat di halaman Paket Internet)<br>
+          • Password akan di-hash otomatis
+        </div>
+      </div>
+
+      <!-- Upload area -->
+      <div id="csv-drop-area" style="border:2px dashed #e2e7ef;border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:all .15s" onclick="document.getElementById('csv-file-input').click()" ondragover="csvDragOver(event)" ondragleave="csvDragLeave(event)" ondrop="csvDrop(event)">
+        <i class="ti ti-file-text" style="font-size:36px;color:#94a3b8;display:block;margin-bottom:8px" aria-hidden="true"></i>
+        <div class="td-text-main" style="font-size:13px;font-weight:500">Klik atau drag & drop file CSV</div>
+        <div class="td-text-sub" style="font-size:11px;margin-top:3px">Format: .csv, maks. 5MB</div>
+        <input type="file" id="csv-file-input" accept=".csv" style="display:none" onchange="csvFileSelected(this)">
+      </div>
+
+      <!-- Preview -->
+      <div id="csv-preview" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div class="td-text-main" style="font-size:13px;font-weight:600">Preview data (<span id="csv-row-count">0</span> baris)</div>
+          <button class="btn sm danger" onclick="csvReset()"><i class="ti ti-x" aria-hidden="true"></i> Batal</button>
+        </div>
+        <div style="max-height:200px;overflow:auto;border:1px solid #e2e7ef;border-radius:8px">
+          <table style="width:100%;font-size:11px">
+            <thead id="csv-thead" style="position:sticky;top:0;background:#f8fafc"></thead>
+            <tbody id="csv-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Error/result -->
+      <div id="csv-result" style="display:none"></div>
+
+      <div class="modal-foot" style="padding:0;border:none;margin-top:2px">
+        <button class="btn" onclick="closeModal('m-import-csv')">Tutup</button>
+        <button id="csv-btn-import" class="btn primary" style="background:#0ea5e9;box-shadow:0 2px 6px rgba(14,165,233,.3);display:none" onclick="apiImportCSV()">
+          <i class="ti ti-upload" style="font-size:14px" aria-hidden="true"></i> Import Sekarang
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL TAMBAH RESELLER -->
 <div class="overlay" id="m-add-reseller">
   <div class="modal" style="max-width:460px">
@@ -2066,37 +2227,103 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 
 <!-- MODAL EDIT RESELLER -->
 <div class="overlay" id="m-edit-reseller">
-  <div class="modal" style="max-width:440px">
-    <div class="modal-hdr"><h3 id="er-title">Edit Reseller</h3><button class="btn-x" onclick="closeModal('m-edit-reseller')">✕</button></div>
-    <div class="modal-body">
-      <input type="hidden" id="er-id">
-      <div class="fg-row">
-        <div class="fg"><label>Komisi / Diskon (%)</label><input id="er-komisi" type="number" min="0" max="80"></div>
-        <div class="fg"><label>Level</label>
-          <select id="er-level">
-            <option value="silver">Silver</option>
-            <option value="gold">Gold</option>
-            <option value="platinum">Platinum</option>
-          </select>
+  <div class="modal" style="max-width:480px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#fef3c7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-building-store" style="font-size:20px;color:#d97706" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div id="er-title" class="td-text-main" style="font-size:15px;font-weight:700">Edit Reseller</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Ubah level, komisi, dan status</div>
         </div>
       </div>
-      <div class="fg"><label>Status</label>
-        <select id="er-status">
-          <option value="aktif">Aktif</option>
-          <option value="nonaktif">Nonaktif</option>
-          <option value="suspend">Suspend</option>
-        </select>
+      <button class="btn-x" onclick="closeModal('m-edit-reseller')">✕</button>
+    </div>
+
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
+      <input type="hidden" id="er-id">
+
+      <!-- Level -->
+      <div>
+        <label class="fg-label">Level Reseller</label>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:2px">
+          <div id="er-level-card-silver" onclick="erSetLevel('silver')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all .15s">
+            <span style="font-size:22px;display:block;margin-bottom:5px">🥈</span>
+            <div class="td-text-main" style="font-size:12px;font-weight:700">Silver</div>
+            <div class="td-text-sub" style="font-size:9px;margin-top:2px">Dasar</div>
+          </div>
+          <div id="er-level-card-gold" onclick="erSetLevel('gold')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all .15s">
+            <span style="font-size:22px;display:block;margin-bottom:5px">🥇</span>
+            <div class="td-text-main" style="font-size:12px;font-weight:700">Gold</div>
+            <div class="td-text-sub" style="font-size:9px;margin-top:2px">Menengah</div>
+          </div>
+          <div id="er-level-card-platinum" onclick="erSetLevel('platinum')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all .15s">
+            <span style="font-size:22px;display:block;margin-bottom:5px">💎</span>
+            <div class="td-text-main" style="font-size:12px;font-weight:700">Platinum</div>
+            <div class="td-text-sub" style="font-size:9px;margin-top:2px">Premium</div>
+          </div>
+        </div>
+        <input type="hidden" id="er-level" value="gold">
       </div>
-      <div class="divider"></div>
-      <div class="sec-title" style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;margin-bottom:8px">Koreksi Saldo Manual</div>
-      <div class="fg-row">
-        <div class="fg"><label>Jumlah (+/-)</label><input id="er-saldo-koreksi" type="number" placeholder="cth: 50000 atau -20000"></div>
-        <div class="fg"><label>Keterangan</label><input id="er-ket-koreksi" placeholder="Alasan koreksi"></div>
+
+      <!-- Komisi -->
+      <div>
+        <label class="fg-label">Komisi / Diskon — <span id="er-komisi-lbl" style="color:#7c3aed;font-weight:700">10%</span></label>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="range" id="er-komisi-range" min="0" max="80" value="10" oninput="erSyncKomisi('range')" style="flex:1;height:5px;cursor:pointer;accent-color:#7c3aed">
+          <input type="number" id="er-komisi" min="0" max="80" value="10" oninput="erSyncKomisi('input')" style="width:64px;padding:7px 10px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;font-size:15px;font-weight:700;text-align:center;color:#7c3aed;font-family:inherit">
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;margin-top:3px">
+          <span class="td-text-sub">0%</span><span class="td-text-sub">Maks. 80%</span>
+        </div>
       </div>
-      <p style="font-size:11px;color:var(--text3);margin-top:-4px">Kosongkan jika tidak ada koreksi saldo</p>
-      <div class="modal-foot">
+
+      <!-- Status -->
+      <div>
+        <label class="fg-label">Status Akun</label>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:2px">
+          <div id="er-status-card-aktif" onclick="erSetStatus('aktif')" style="border:2px solid #16a34a;background:#dcfce7;border-radius:9px;padding:9px;cursor:pointer;text-align:center;transition:all .15s">
+            <i class="ti ti-circle-check" style="font-size:18px;color:#16a34a;display:block;margin-bottom:3px" aria-hidden="true"></i>
+            <div style="font-size:11px;font-weight:700;color:#15803d">Aktif</div>
+          </div>
+          <div id="er-status-card-nonaktif" onclick="erSetStatus('nonaktif')" style="border:2px solid #e2e7ef;border-radius:9px;padding:9px;cursor:pointer;text-align:center;transition:all .15s">
+            <i class="ti ti-circle-x" style="font-size:18px;color:#94a3b8;display:block;margin-bottom:3px" aria-hidden="true"></i>
+            <div class="td-text-main" style="font-size:11px;font-weight:700">Nonaktif</div>
+          </div>
+          <div id="er-status-card-suspend" onclick="erSetStatus('suspend')" style="border:2px solid #e2e7ef;border-radius:9px;padding:9px;cursor:pointer;text-align:center;transition:all .15s">
+            <i class="ti ti-ban" style="font-size:18px;color:#94a3b8;display:block;margin-bottom:3px" aria-hidden="true"></i>
+            <div class="td-text-main" style="font-size:11px;font-weight:700">Suspend</div>
+          </div>
+        </div>
+        <input type="hidden" id="er-status" value="aktif">
+      </div>
+
+      <!-- Koreksi Saldo -->
+      <div class="nas-snmp-box">
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+          <i class="ti ti-coins" style="font-size:13px" aria-hidden="true"></i>
+          Koreksi Saldo Manual
+          <span style="background:#f3e8ff;color:#7c3aed;font-size:9px;font-weight:600;padding:1px 7px;border-radius:99px">Opsional</span>
+        </div>
+        <div class="fg-row">
+          <div class="fg">
+            <label>Jumlah (+/-)</label>
+            <input id="er-saldo-koreksi" type="number" placeholder="cth: 50000 atau -20000">
+          </div>
+          <div class="fg">
+            <label>Keterangan</label>
+            <input id="er-ket-koreksi" placeholder="Alasan koreksi">
+          </div>
+        </div>
+        <div class="td-text-sub" style="font-size:11px;margin-top:4px">Kosongkan jika tidak ada koreksi saldo</div>
+      </div>
+
+      <div class="modal-foot" style="padding:0;border:none;margin-top:2px">
         <button class="btn" onclick="closeModal('m-edit-reseller')">Batal</button>
-        <button class="btn primary" onclick="apiUpdateReseller()">💾 Simpan Perubahan</button>
+        <button class="btn primary" style="background:#7c3aed;box-shadow:0 2px 6px rgba(124,58,237,.3)" onclick="apiUpdateReseller()">
+          <i class="ti ti-device-floppy" style="font-size:14px" aria-hidden="true"></i> Simpan Perubahan
+        </button>
       </div>
     </div>
   </div>
@@ -3272,6 +3499,154 @@ async function kirimReminderMassal() {
 // ================================================================
 // PELANGGAN
 // ================================================================
+// ── EXPORT / IMPORT CSV PELANGGAN ────────────────────────────
+async function apiExportPelangganCSV() {
+  try {
+    toast('⏳ Menyiapkan file CSV...');
+    const resp = await fetch('/api/pelanggan/export/csv', {
+      headers: { 'Authorization': `Bearer ${TOKEN}` }
+    });
+    if (!resp.ok) throw new Error('Gagal export');
+    const blob = await resp.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `pelanggan-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('✅ Export CSV berhasil');
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+
+let _csvData = [];
+
+function bukaImportCSV() {
+  csvReset();
+  openModal('m-import-csv');
+}
+
+function csvReset() {
+  _csvData = [];
+  document.getElementById('csv-file-input').value = '';
+  document.getElementById('csv-drop-area').style.display = 'block';
+  document.getElementById('csv-preview').style.display = 'none';
+  document.getElementById('csv-result').style.display = 'none';
+  document.getElementById('csv-btn-import').style.display = 'none';
+  const da = document.getElementById('csv-drop-area');
+  da.style.borderColor = '#e2e7ef';
+  da.style.background  = 'transparent';
+}
+
+function csvDragOver(e) {
+  e.preventDefault();
+  const da = document.getElementById('csv-drop-area');
+  da.style.borderColor = '#0ea5e9';
+  da.style.background  = '#f0f9ff';
+}
+function csvDragLeave(e) {
+  const da = document.getElementById('csv-drop-area');
+  da.style.borderColor = '#e2e7ef';
+  da.style.background  = 'transparent';
+}
+function csvDrop(e) {
+  e.preventDefault();
+  csvDragLeave(e);
+  const file = e.dataTransfer.files[0];
+  if (file) csvParse(file);
+}
+function csvFileSelected(input) {
+  if (input.files[0]) csvParse(input.files[0]);
+}
+
+function csvParse(file) {
+  if (!file.name.endsWith('.csv') && file.type !== 'text/csv') {
+    return toast('❌ Pilih file .csv', true);
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text   = e.target.result.replace(/^\uFEFF/, ''); // hapus BOM
+    const lines  = text.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) return toast('❌ File CSV kosong atau hanya header', true);
+
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+    const required = ['nama','username','password','no_hp','tipe_koneksi','paket_id'];
+    const missing  = required.filter(r => !headers.includes(r));
+    if (missing.length) {
+      return toast(`❌ Kolom wajib tidak ada: ${missing.join(', ')}`, true);
+    }
+
+    _csvData = lines.slice(1).map(function(line) {
+      // Parse CSV dengan support quoted fields
+      const vals = [];
+      let cur = '', inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        if (line[i] === '"') { inQ = !inQ; }
+        else if (line[i] === ',' && !inQ) { vals.push(cur.trim()); cur = ''; }
+        else cur += line[i];
+      }
+      vals.push(cur.trim());
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = vals[i] || ''; });
+      return obj;
+    }).filter(r => r.nama || r.username);
+
+    // Render preview
+    const thead = document.getElementById('csv-thead');
+    const tbody = document.getElementById('csv-tbody');
+    const showCols = ['nama','username','no_hp','tipe_koneksi','paket_id'];
+    thead.innerHTML = '<tr>' + showCols.map(h =>
+      `<th style="padding:5px 10px;background:#f8fafc;color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e2e7ef">${h}</th>`
+    ).join('') + '</tr>';
+    tbody.innerHTML = _csvData.slice(0, 10).map(r =>
+      '<tr>' + showCols.map(h =>
+        `<td style="padding:5px 10px;border-bottom:1px solid #f8fafc;font-size:11px">${r[h]||'—'}</td>`
+      ).join('') + '</tr>'
+    ).join('');
+
+    document.getElementById('csv-row-count').textContent = _csvData.length;
+    document.getElementById('csv-drop-area').style.display = 'none';
+    document.getElementById('csv-preview').style.display = 'block';
+    document.getElementById('csv-result').style.display = 'none';
+    document.getElementById('csv-btn-import').style.display = 'inline-flex';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+async function apiImportCSV() {
+  if (!_csvData.length) return toast('❌ Tidak ada data', true);
+  const btn = document.getElementById('csv-btn-import');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader" aria-hidden="true"></i> Mengimport...';
+  try {
+    const d = await apiFetch('/api/pelanggan/import/csv', {
+      method: 'POST',
+      body: JSON.stringify({ rows: _csvData })
+    });
+    const resEl = document.getElementById('csv-result');
+    resEl.style.display = 'block';
+    resEl.innerHTML = `
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px 14px">
+        <div style="font-size:14px;font-weight:700;color:#15803d;margin-bottom:6px">
+          ✅ Import selesai: ${d.sukses} berhasil${d.gagal ? `, ${d.gagal} gagal` : ''}
+        </div>
+        ${d.errors?.length ? `<div style="font-size:11px;color:#dc2626;margin-top:4px">
+          ${d.errors.map(e => `• ${e.row}: ${e.error}`).join('<br>')}
+        </div>` : ''}
+      </div>`;
+    if (d.sukses > 0) {
+      toast(`✅ ${d.sukses} pelanggan berhasil diimport`);
+      loadPelanggan();
+    }
+  } catch(e) { toast('❌ ' + e.message, true); }
+  finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-upload" style="font-size:14px"></i> Import Sekarang';
+    _csvData = [];
+    document.getElementById('csv-btn-import').style.display = 'none';
+  }
+}
+// ── END EXPORT / IMPORT CSV ───────────────────────────────────
+
 async function loadPelanggan() {
   try {
     const data = await apiFetch('/api/pelanggan?limit=50');
@@ -3304,29 +3679,127 @@ function renderTblPelanggan(rows) {
 }
 
 
-// ================================================================
-// EDIT & HAPUS PELANGGAN
-// ================================================================
+// ── EDIT PELANGGAN MODAL HELPERS ────────────────────────────
+function epSetStatus(status) {
+  document.getElementById('ep-status').value = status;
+  const isDark = document.body.classList.contains('dark');
+  const cfg = {
+    aktif:     { border:'#16a34a', bg:'#dcfce7', bgD:'rgba(22,163,74,.15)',  color:'#15803d', icon:'#16a34a' },
+    suspended: { border:'#d97706', bg:'#fef3c7', bgD:'rgba(217,119,6,.15)',  color:'#b45309', icon:'#d97706' },
+    nonaktif:  { border:'#dc2626', bg:'#fee2e2', bgD:'rgba(220,38,38,.15)',  color:'#b91c1c', icon:'#dc2626' }
+  };
+  ['aktif','suspended','nonaktif'].forEach(function(s) {
+    const el  = document.getElementById('ep-status-card-' + s);
+    if (!el) return;
+    const ico = el.querySelector('i');
+    const lbl = el.querySelector('.ep-status-lbl');
+    if (s === status) {
+      el.style.borderColor = cfg[s].border;
+      el.style.background  = isDark ? cfg[s].bgD : cfg[s].bg;
+      if (ico) ico.style.color = cfg[s].icon;
+      if (lbl) { lbl.style.color = cfg[s].color; lbl.classList.remove('td-text-main'); }
+    } else {
+      el.style.borderColor = isDark ? '#30363d' : '#e2e7ef';
+      el.style.background  = isDark ? '#1c2128' : 'transparent';
+      if (ico) ico.style.color = '#94a3b8';
+      if (lbl) { lbl.style.color = ''; lbl.classList.add('td-text-main'); }
+    }
+  });
+}
+
+function epSetTipe(tipe) {
+  document.getElementById('ep-tipe').value = tipe;
+  const isDark = document.body.classList.contains('dark');
+  const cfg = {
+    pppoe:   { border:'#378ADD', bg:'#E6F1FB', bgD:'rgba(37,99,235,.15)', color:'#0369a1' },
+    hotspot: { border:'#1D9E75', bg:'#E1F5EE', bgD:'rgba(20,184,166,.15)', color:'#0F6E56' }
+  };
+  ['pppoe','hotspot'].forEach(function(t) {
+    const el  = document.getElementById('ep-tipe-card-' + t);
+    if (!el) return;
+    const lbl = el.querySelector('.ep-tipe-lbl');
+    if (t === tipe) {
+      el.style.borderColor = cfg[t].border;
+      el.style.background  = isDark ? cfg[t].bgD : cfg[t].bg;
+      if (lbl) { lbl.style.color = cfg[t].color; lbl.classList.remove('td-text-main'); }
+    } else {
+      el.style.borderColor = isDark ? '#30363d' : '#e2e7ef';
+      el.style.background  = isDark ? '#1c2128' : 'transparent';
+      if (lbl) { lbl.style.color = ''; lbl.classList.add('td-text-main'); }
+    }
+  });
+  epRenderPaketGrid(document.getElementById('ep-paket').value);
+}
+
+function epRenderPaketGrid(selectedPaketId) {
+  const tipe   = document.getElementById('ep-tipe').value || 'pppoe';
+  const grid   = document.getElementById('ep-paket-grid');
+  const input  = document.getElementById('ep-paket');
+  if (!grid || !LAST_PAKET_LIST) return;
+  const filtered = LAST_PAKET_LIST.filter(p => p.tipe === tipe || p.tipe === 'keduanya');
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="td-text-sub" style="font-size:12px;padding:6px 0">Tidak ada paket untuk tipe ini</div>';
+    return;
+  }
+  const curVal = selectedPaketId || input.value || '';
+  grid.innerHTML = filtered.map(function(p) {
+    const satuan  = p.satuan_masa === 'jam' ? 'Jam' : p.satuan_masa === 'bulan' ? 'Bulan' : 'Hari';
+    const active  = String(p.id) === String(curVal);
+    const borderC = active ? '#BA7517' : 'var(--border)';
+    const bg      = active ? 'rgba(186,117,23,.08)' : 'transparent';
+    return `<div onclick="epPilihPaket(${p.id},this)" data-pid="${p.id}" style="border:2px solid ${borderC};background:${bg};border-radius:8px;padding:8px 10px;cursor:pointer;transition:all .15s">
+      <div class="td-text-main" style="font-size:12px;font-weight:600">${p.nama}</div>
+      <div class="td-accent-bold" style="font-size:11px;margin-top:2px">${fmt(p.harga)}</div>
+      <div class="td-text-sub" style="font-size:10px;margin-top:1px">${p.kecepatan_dn} Mbps · ${p.masa_aktif||30} ${satuan}</div>
+    </div>`;
+  }).join('');
+  // Auto-pilih jika belum ada
+  if (!curVal && filtered.length) {
+    epPilihPaket(filtered[0].id, grid.querySelector('[data-pid]'));
+  }
+}
+
+function epPilihPaket(id, el) {
+  document.getElementById('ep-paket').value = id;
+  const grid = document.getElementById('ep-paket-grid');
+  if (grid) grid.querySelectorAll('[data-pid]').forEach(function(c) {
+    c.style.borderColor = 'var(--border)';
+    c.style.background  = 'transparent';
+  });
+  if (el) { el.style.borderColor = '#BA7517'; el.style.background = 'rgba(186,117,23,.08)'; }
+}
+// ── EDIT PELANGGAN MODAL HELPERS END ────────────────────────
+
 async function bukaModalEdit(id) {
   try {
     const p = await apiFetch('/api/pelanggan/' + id);
-    // Isi form edit
     document.getElementById('ep-id').value       = p.id;
     document.getElementById('ep-nama').value     = p.nama || '';
     document.getElementById('ep-nohp').value     = p.no_hp || '';
     document.getElementById('ep-email').value    = p.email || '';
     document.getElementById('ep-alamat').value   = p.alamat || '';
     document.getElementById('ep-notes').value    = p.notes || '';
-    document.getElementById('ep-tipe').value     = p.tipe_koneksi || 'pppoe';
-    document.getElementById('ep-status').value   = p.status || 'aktif';
     document.getElementById('ep-username').value = p.username || '';
     document.getElementById('ep-password').value = '';
-    // Populate dropdown paket lalu filter by tipe dan set nilai
+
+    // Update info card
+    const initials = (p.nama||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    document.getElementById('ep-avatar').textContent         = initials;
+    document.getElementById('ep-info-nama').textContent      = p.nama || '';
+    document.getElementById('ep-info-hp').textContent        = p.no_hp || '';
+    const tipeEl = document.getElementById('ep-info-tipe');
+    tipeEl.textContent = p.tipe_koneksi === 'hotspot' ? 'Hotspot' : 'PPPoE';
+    tipeEl.className   = 'tag ' + (p.tipe_koneksi || 'pppoe');
+    document.getElementById('ep-info-paket').textContent     = p.nama_paket || '—';
+
+    // Set status, tipe cards
+    epSetStatus(p.status || 'aktif');
+    epSetTipe(p.tipe_koneksi || 'pppoe');
+
+    // Populate & filter paket grid
     await populateDropdowns();
-    filterEditPaketByTipe();
-    const selPaket = document.getElementById('ep-paket');
-    if (selPaket) selPaket.value = p.paket_id || '';
-    // Tampilkan header modal dengan nama pelanggan
+    epRenderPaketGrid(p.paket_id);
+
     document.getElementById('ep-title').textContent = 'Edit: ' + p.nama;
     openModal('m-edit-pelanggan');
   } catch(e) {
@@ -3350,16 +3823,16 @@ async function apiUpdatePelanggan() {
   if (!nama || !no_hp || !paket_id)
     return toast('❌ Nama, nomor HP, dan paket wajib diisi', true);
   if (!username)
-    return toast('❌ Username PPPoE wajib diisi', true);
+    return toast('❌ Username RADIUS wajib diisi', true);
 
   const body = { nama, no_hp, email, alamat,
     paket_id: parseInt(paket_id), tipe_koneksi: tipe, notes, username };
-  if (password) body.password = password; // hanya kirim jika diisi
+  if (password) body.password = password;
 
   try {
     await apiFetch('/api/pelanggan/' + id, { method: 'PUT', body: JSON.stringify(body) });
 
-    // Jika status berubah, panggil endpoint suspend/aktifkan
+    // Handle perubahan status
     const p = await apiFetch('/api/pelanggan/' + id);
     if (status === 'suspended' && p.status !== 'suspended') {
       await apiFetch('/api/pelanggan/' + id + '/suspend', { method: 'POST' });
@@ -5818,12 +6291,82 @@ async function apiApproveReseller(id, nama) {
 }
 
 function bukaEditReseller(id, nama, komisi, level, status) {
-  document.getElementById('er-id').value     = id;
-  document.getElementById('er-komisi').value = komisi;
-  document.getElementById('er-level').value  = level;
-  document.getElementById('er-status').value = status;
-  document.getElementById('er-title').textContent = 'Edit Reseller: '+nama;
+  document.getElementById('er-id').value = id;
+  document.getElementById('er-saldo-koreksi').value = '';
+  document.getElementById('er-ket-koreksi').value   = '';
+  document.getElementById('er-title').textContent   = 'Edit: ' + nama;
+  erSetLevel(level || 'gold');
+  erSetStatus(status || 'aktif');
+  // set komisi
+  const k = parseFloat(komisi) || 0;
+  document.getElementById('er-komisi').value       = k;
+  document.getElementById('er-komisi-range').value = k;
+  document.getElementById('er-komisi-lbl').textContent = k + '%';
   openModal('m-edit-reseller');
+}
+
+function erSetLevel(level) {
+  document.getElementById('er-level').value = level;
+  const isDark = document.body.classList.contains('dark');
+  const cfg = {
+    silver:   { border:'#94a3b8', bg:'#f8fafc', bgD:'rgba(100,116,139,.15)', title:'#64748b', desc:'#94a3b8' },
+    gold:     { border:'#d97706', bg:'#fef3c7', bgD:'rgba(217,119,6,.15)',   title:'#b45309', desc:'#d97706' },
+    platinum: { border:'#7c3aed', bg:'#f3e8ff', bgD:'rgba(124,58,237,.15)',  title:'#6d28d9', desc:'#7c3aed' }
+  };
+  ['silver','gold','platinum'].forEach(function(l) {
+    const el = document.getElementById('er-level-card-' + l);
+    if (!el) return;
+    const divs = el.querySelectorAll('div');
+    if (l === level) {
+      el.style.borderColor = cfg[l].border;
+      el.style.background  = isDark ? cfg[l].bgD : cfg[l].bg;
+      if (divs[0]) { divs[0].style.color = cfg[l].title; divs[0].classList.remove('td-text-main'); }
+      if (divs[1]) { divs[1].style.color = cfg[l].desc;  divs[1].classList.remove('td-text-sub'); }
+    } else {
+      el.style.borderColor = isDark ? '#30363d' : '#e2e7ef';
+      el.style.background  = isDark ? '#1c2128' : 'transparent';
+      if (divs[0]) { divs[0].style.color = ''; divs[0].classList.add('td-text-main'); }
+      if (divs[1]) { divs[1].style.color = ''; divs[1].classList.add('td-text-sub'); }
+    }
+  });
+}
+
+function erSetStatus(status) {
+  document.getElementById('er-status').value = status;
+  const isDark = document.body.classList.contains('dark');
+  const cfg = {
+    aktif:    { border:'#16a34a', bg:'#dcfce7', bgD:'rgba(22,163,74,.15)',  color:'#15803d' },
+    nonaktif: { border:'#94a3b8', bg:'#f1f5f9', bgD:'rgba(100,116,139,.15)', color:'#64748b' },
+    suspend:  { border:'#dc2626', bg:'#fee2e2', bgD:'rgba(220,38,38,.15)',  color:'#b91c1c' }
+  };
+  const icons = { aktif:'ti-circle-check', nonaktif:'ti-circle-x', suspend:'ti-ban' };
+  ['aktif','nonaktif','suspend'].forEach(function(s) {
+    const el = document.getElementById('er-status-card-' + s);
+    if (!el) return;
+    const ico = el.querySelector('i');
+    const lbl = el.querySelector('div');
+    if (s === status) {
+      el.style.borderColor = cfg[s].border;
+      el.style.background  = isDark ? cfg[s].bgD : cfg[s].bg;
+      if (ico) ico.style.color = cfg[s].color;
+      if (lbl) { lbl.style.color = cfg[s].color; lbl.classList.remove('td-text-main'); }
+    } else {
+      el.style.borderColor = isDark ? '#30363d' : '#e2e7ef';
+      el.style.background  = isDark ? '#1c2128' : 'transparent';
+      if (ico) ico.style.color = '#94a3b8';
+      if (lbl) { lbl.style.color = ''; lbl.classList.add('td-text-main'); }
+    }
+  });
+}
+
+function erSyncKomisi(src) {
+  const range = document.getElementById('er-komisi-range');
+  const input = document.getElementById('er-komisi');
+  const lbl   = document.getElementById('er-komisi-lbl');
+  if (!range || !input) return;
+  if (src === 'range') input.value = range.value;
+  else { const v = Math.min(80, Math.max(0, parseInt(input.value)||0)); input.value = v; range.value = v; }
+  if (lbl) lbl.textContent = input.value + '%';
 }
 
 async function apiUpdateReseller() {
