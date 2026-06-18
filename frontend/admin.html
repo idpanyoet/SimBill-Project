@@ -3747,8 +3747,8 @@ async function loadPayment() {
     const credByProvider = {
       midtrans: !!(map.pg_server_key_midtrans || map.pg_server_key),
       xendit:   !!(map.pg_secret_key_xendit   || map.pg_secret_key),
-      duitku:   !!(map.pg_api_key_duitku      || map.pg_api_key),
-      tripay:   !!(map.pg_api_key_tripay      || map.pg_api_key)
+      duitku:   !!(map.pg_api_key_duitku),
+      tripay:   !!(map.pg_api_key_tripay)
     };
     document.getElementById('pg-webhook-url').value =
       (map.app_url || window.location.origin) + '/webhook/' + provider;
@@ -3821,9 +3821,8 @@ async function apiSimpanConfigPG() {
     const apiKey = document.getElementById('pg-api-key-duitku').value.trim();
     if (!merchantCode) return toast('❌ Merchant code wajib diisi', true);
     if (!apiKey && !sudahAdaKredensial) return toast('❌ API key wajib diisi', true);
-    body.pg_merchant_code = merchantCode;
     body.pg_merchant_code_duitku = merchantCode;
-    if (apiKey) { body.pg_api_key = apiKey; body.pg_api_key_duitku = apiKey; }
+    if (apiKey) body.pg_api_key_duitku = apiKey;
 
   } else if (provider === 'tripay') {
     const merchantCode = document.getElementById('pg-merchant-code-tripay').value.trim();
@@ -3831,10 +3830,9 @@ async function apiSimpanConfigPG() {
     const privateKey = document.getElementById('pg-private-key').value.trim();
     if (!merchantCode) return toast('❌ Merchant code wajib diisi', true);
     if ((!apiKey || !privateKey) && !sudahAdaKredensial) return toast('❌ API key dan private key wajib diisi', true);
-    body.pg_merchant_code = merchantCode;
     body.pg_merchant_code_tripay = merchantCode;
-    if (apiKey) { body.pg_api_key = apiKey; body.pg_api_key_tripay = apiKey; }
-    if (privateKey) { body.pg_private_key = privateKey; body.pg_private_key_tripay = privateKey; }
+    if (apiKey) body.pg_api_key_tripay = apiKey;
+    if (privateKey) body.pg_private_key_tripay = privateKey;
   }
 
   try {

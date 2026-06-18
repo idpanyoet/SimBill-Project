@@ -52,8 +52,10 @@ async function getConfig() {
         webhookToken:  map.pg_webhook_token_xendit || map.pg_webhook_token || '',
         merchantCode,
         apiKey:        provider === 'duitku'
-                         ? (map.pg_api_key_duitku || map.pg_api_key || '')
-                         : (map.pg_api_key_tripay || map.pg_api_key || ''),
+                         ? (map.pg_api_key_duitku  || '')
+                         : provider === 'tripay'
+                         ? (map.pg_api_key_tripay  || '')
+                         : '',
         privateKey:    map.pg_private_key_tripay   || map.pg_private_key   || '',
         appUrl:        map.app_url || process.env.APP_URL || 'http://localhost:3000'
     };
