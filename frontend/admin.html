@@ -1836,9 +1836,12 @@ async function apiSimpanMetodeAktif() {
   }).map(function(m) { return m.code; });
 
   try {
+    const body = {};
+    body['pg_metode_aktif_' + provider] = aktif.join(',');
+    body.pg_metode_aktif = aktif.join(','); // aktif provider saat ini
     await apiFetch('/api/setting', {
       method: 'PUT',
-      body: JSON.stringify({ pg_metode_aktif: aktif.join(',') })
+      body: JSON.stringify(body)
     });
     toast('✅ Metode aktif disimpan');
   } catch(e) { toast('❌ ' + e.message, true); }
@@ -3756,8 +3759,9 @@ async function loadPayment() {
     document.getElementById('p-payment').dataset.hasCred = credByProvider[provider] ? provider : '';
 
     ubahProviderPG(provider);
-    // Load metode aktif tersimpan
-    _metodeAktif = map.pg_metode_aktif ? map.pg_metode_aktif.split(',').filter(Boolean) : [];
+    // Load metode aktif tersimpan per provider
+    const metodeKey = 'pg_metode_aktif_' + provider;
+    _metodeAktif = (map[metodeKey] || map.pg_metode_aktif || '').split(',').filter(Boolean);
     renderMetodeAktif(provider);
   } catch(e) { console.warn('Setting PG:', e.message); }
 
@@ -3789,7 +3793,14 @@ function ubahProviderPG(forceProvider) {
   });
   document.getElementById('pg-webhook-url').value =
     window.location.origin + '/webhook/' + provider;
-  renderMetodeAktif(provider);
+  // Load metode aktif untuk provider yang dipilih
+  apiFetch('/api/setting').then(function(settings) {
+    const map = {};
+    settings.forEach(function(s) { map[s.kunci] = s.nilai; });
+    const key = 'pg_metode_aktif_' + provider;
+    _metodeAktif = (map[key] || '').split(',').filter(Boolean);
+    renderMetodeAktif(provider);
+  }).catch(function() { renderMetodeAktif(provider); });
 }
 
 async function apiSimpanConfigPG() {

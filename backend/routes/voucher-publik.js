@@ -16,9 +16,18 @@ const limitBeli = rateLimit({
 // ── GET /voucher/info ── info publik storefront ──────────────
 router.get('/info', async (req, res, next) => {
   try {
-    const rows = await query(`SELECT kunci, nilai FROM setting WHERE kunci IN ('app_name','wa_number','alamat','pg_metode_aktif')`);
+    const rows = await query(`SELECT kunci, nilai FROM setting WHERE kunci IN (
+      'app_name','wa_number','alamat','pg_provider',
+      'pg_metode_aktif',
+      'pg_metode_aktif_tripay','pg_metode_aktif_duitku',
+      'pg_metode_aktif_midtrans','pg_metode_aktif_xendit'
+    )`);
     const map = {};
     rows.forEach(r => map[r.kunci] = r.nilai);
+    // Kirim metode aktif sesuai provider yang sedang aktif
+    const provider = map.pg_provider || 'tripay';
+    const metodeKey = 'pg_metode_aktif_' + provider;
+    map.pg_metode_aktif = map[metodeKey] || map.pg_metode_aktif || '';
     res.json(map);
   } catch(e) { next(e); }
 });
