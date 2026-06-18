@@ -1927,23 +1927,49 @@ async function printBatchDenganTemplate(vouchers, autoPrint) {
   try {
     const tpl = await apiFetch('/api/voucher-template/default/get');
     if (!tpl) { bukaWindowPrint(document.querySelector('.sidebar-brand span')?.textContent||'NetBilling', vouchers); return; }
+
     const rows = vouchers.map(function(v, i) {
       return vtReplaceVar(tpl.row_html, {
         username: v.username || v.kode || '',
         password: v.password || v.username || '',
         profile:  v.nama_paket || v.paket || '—',
-        validity: v.satuan_masa ? ((v.masa_aktif||'?')+' '+(v.satuan_masa==='jam'?'Jam':v.satuan_masa==='bulan'?'Bulan':'Hari')) : '—',
+        validity: v.masa_aktif ? ((v.masa_aktif)+' '+(v.satuan_masa==='jam'?'Jam':v.satuan_masa==='bulan'?'Bulan':'Hari')) : '—',
         price:    v.harga ? 'Rp '+Number(v.harga).toLocaleString('id-ID') : '—',
         no_urut:  String(i+1).padStart(3,'0')
       });
     }).join('');
 
-    const autoPrintScript = autoPrint ? '<script>window.onload=function(){window.print();}<\/script>' : '';
-    const html = (tpl.header_html||'') + rows + autoPrintScript + (tpl.footer_html||'');
+    // Tombol print selalu ada, auto-print via setTimeout agar sempat render
+    const printBar = `<div class="noprint" style="text-align:center;padding:0 0 12px">
+      <button onclick="window.print()" style="padding:7px 22px;background:#3b82f6;color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer;font-weight:600">🖨️ Print</button>
+      <button onclick="window.close()" style="padding:7px 14px;background:#f1f4f8;color:#333;border:none;border-radius:7px;font-size:13px;cursor:pointer;margin-left:8px">✕ Tutup</button>
+    </div>`;
+
+    const autoPrintScript = autoPrint
+      ? `<script>window.addEventListener('load',function(){setTimeout(function(){window.print();},500);});<\/script>`
+      : '';
+
+    // Sisipkan tombol print setelah <body> di header
+    let header = tpl.header_html || '';
+    const bodyIdx = header.toLowerCase().indexOf('<body');
+    const bodyEnd = bodyIdx >= 0 ? header.indexOf('>', bodyIdx) + 1 : -1;
+    if (bodyEnd > 0) {
+      header = header.slice(0, bodyEnd) + '\n' + printBar + header.slice(bodyEnd);
+    } else {
+      header = printBar + header;
+    }
+
+    // Tambah CSS noprint jika belum ada
+    if (!header.includes('.noprint') && !header.includes('noprint')) {
+      header = header.replace('</style>', '.noprint{} @media print{.noprint{display:none!important}}</style>');
+    }
+
+    const html = autoPrintScript + header + rows + (tpl.footer_html||'');
     const win = window.open('','_blank','width=960,height=700');
     win.document.write(html);
     win.document.close();
   } catch(e) {
+    console.error('printBatchDenganTemplate:', e);
     bukaWindowPrint(document.querySelector('.sidebar-brand span')?.textContent||'NetBilling', vouchers);
   }
 }
