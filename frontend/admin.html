@@ -216,7 +216,19 @@ body.dark .toggle-thumb{left:14px}
 .plan-card .price{font-size:13px;color:#64748b}
 .pagination-bar{display:flex;align-items:center;justify-content:space-between;margin-top:14px;gap:10px;flex-wrap:wrap;font-size:13px}
 .pagination-bar select{padding:5px 10px;border:1px solid #e2e7ef;border-radius:7px;background:#fff;color:#0f172a;font-size:12px}
-/* ── TABLE TEXT UTILITY CLASSES ── */
+/* ── PAKET MODAL CLASSES ── */
+.speed-chip-dn{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:#E6F1FB;color:#0C447C}
+.speed-chip-up{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:#E1F5EE;color:#085041}
+.harga-preview-text{font-size:16px;font-weight:700;color:#BA7517;margin-top:4px}
+.paket-info-box{background:#FAEEDA;border:1px solid rgba(186,117,23,.2);border-radius:8px;padding:8px 12px;font-size:11px;color:#854F0B;display:flex;align-items:flex-start;gap:6px}
+body.dark .speed-chip-dn{background:rgba(37,99,235,.15);color:#60a5fa}
+body.dark .speed-chip-up{background:rgba(20,184,166,.15);color:#34d399}
+body.dark .harga-preview-text{color:#EF9F27}
+body.dark .paket-info-box{background:rgba(186,117,23,.12);border-color:rgba(186,117,23,.25);color:#EF9F27}
+body.dark #fp-tipe-card-pppoe,body.dark #fp-tipe-card-hotspot,body.dark #fp-tipe-card-keduanya{background:#1c2128;border-color:#30363d}
+body.dark #fp-tipe-card-pppoe.tipe-active-pppoe{background:rgba(37,99,235,.15);border-color:#378ADD}
+body.dark #fp-tipe-card-hotspot.tipe-active-hotspot{background:rgba(20,184,166,.15);border-color:#1D9E75}
+body.dark #fp-tipe-card-keduanya.tipe-active-keduanya{background:rgba(99,102,241,.15);border-color:#7F77DD}
 .td-text{font-size:13px;color:#334155}
 .td-text-main{font-weight:500;color:#0f172a;font-size:13px}
 .td-text-sub{font-size:11px;color:#94a3b8}
@@ -1254,18 +1266,18 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px 20px;border-bottom:1px solid #f1f5f9">
       <div id="fp-tipe-card-pppoe" onclick="pilihTipePaket('pppoe')" style="border:2px solid #378ADD;border-radius:10px;padding:10px;cursor:pointer;text-align:center;background:#E6F1FB;transition:all .15s">
         <i class="ti ti-router" style="font-size:20px;color:#378ADD;display:block;margin-bottom:5px" aria-hidden="true"></i>
-        <div style="font-size:11px;font-weight:600;color:#334155">PPPoE</div>
-        <div style="font-size:9px;color:#94a3b8;margin-top:2px">Kabel / Fiber</div>
+        <div class="td-text-main" style="font-size:11px;font-weight:600">PPPoE</div>
+        <div class="td-text-sub" style="font-size:9px;margin-top:2px">Kabel / Fiber</div>
       </div>
       <div id="fp-tipe-card-hotspot" onclick="pilihTipePaket('hotspot')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px;cursor:pointer;text-align:center;transition:all .15s">
         <i class="ti ti-wifi" style="font-size:20px;color:#1D9E75;display:block;margin-bottom:5px" aria-hidden="true"></i>
-        <div style="font-size:11px;font-weight:600;color:#334155">Hotspot</div>
-        <div style="font-size:9px;color:#94a3b8;margin-top:2px">WiFi / Voucher</div>
+        <div class="td-text-main" style="font-size:11px;font-weight:600">Hotspot</div>
+        <div class="td-text-sub" style="font-size:9px;margin-top:2px">WiFi / Voucher</div>
       </div>
       <div id="fp-tipe-card-keduanya" onclick="pilihTipePaket('keduanya')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px;cursor:pointer;text-align:center;transition:all .15s">
         <i class="ti ti-arrows-exchange" style="font-size:20px;color:#7F77DD;display:block;margin-bottom:5px" aria-hidden="true"></i>
-        <div style="font-size:11px;font-weight:600;color:#334155">Keduanya</div>
-        <div style="font-size:9px;color:#94a3b8;margin-top:2px">PPPoE & Hotspot</div>
+        <div class="td-text-main" style="font-size:11px;font-weight:600">Keduanya</div>
+        <div class="td-text-sub" style="font-size:9px;margin-top:2px">PPPoE & Hotspot</div>
       </div>
       <input type="hidden" id="fp-tipe" value="pppoe">
     </div>
@@ -1281,7 +1293,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
           <label>Kecepatan Download (Mbps)</label>
           <input id="fp-speed" type="number" placeholder="100" oninput="updateSpeedPreview()">
           <div style="margin-top:5px;display:flex;align-items:center;gap:5px">
-            <span id="fp-speed-preview" style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:#E6F1FB;color:#0C447C">
+            <span id="fp-speed-preview" class="speed-chip-dn">
               <i class="ti ti-arrow-down" style="font-size:10px" aria-hidden="true"></i> — Mbps
             </span>
           </div>
@@ -1290,7 +1302,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
           <label>Kecepatan Upload (Mbps)</label>
           <input id="fp-speed-up" type="number" placeholder="50" oninput="updateSpeedPreview()">
           <div style="margin-top:5px">
-            <span id="fp-speed-up-preview" style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:#E1F5EE;color:#085041">
+            <span id="fp-speed-up-preview" class="speed-chip-up">
               <i class="ti ti-arrow-up" style="font-size:10px" aria-hidden="true"></i> — Mbps
             </span>
           </div>
@@ -1301,8 +1313,8 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
         <div class="fg">
           <label>Harga (Rp)</label>
           <input id="fp-harga" type="number" placeholder="500000" oninput="updateHargaPreview()">
-          <div id="fp-harga-preview" style="font-size:16px;font-weight:700;color:#BA7517;margin-top:4px">—</div>
-          <div style="font-size:10px;color:#94a3b8">per periode masa aktif</div>
+          <div id="fp-harga-preview" class="harga-preview-text">—</div>
+          <div class="td-text-sub" style="font-size:10px">per periode masa aktif</div>
         </div>
         <div class="fg">
           <label>Pool RADIUS</label>
@@ -1330,7 +1342,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
         <input id="fp-deskripsi" placeholder="cth: Cocok untuk streaming & gaming">
       </div>
 
-      <div style="background:#FAEEDA;border:1px solid rgba(186,117,23,.2);border-radius:8px;padding:8px 12px;font-size:11px;color:#854F0B;display:flex;align-items:flex-start;gap:6px">
+      <div class="paket-info-box">
         <i class="ti ti-info-circle" style="font-size:14px;margin-top:1px;flex-shrink:0" aria-hidden="true"></i>
         <span>Paket akan muncul di storefront voucher jika tipe = <b>Hotspot</b> atau <b>Keduanya</b></span>
       </div>
@@ -3028,16 +3040,16 @@ function filterEditPaketByTipe() {
 
 function pilihTipePelanggan(tipe) {
   document.getElementById('f-tipe').value = tipe;
-  // Update card visual
+  const isDark = document.body.classList.contains('dark');
   ['pppoe','hotspot'].forEach(function(t) {
     const card = document.getElementById('f-tipe-card-' + t);
     if (!card) return;
     if (t === tipe) {
       card.style.borderColor = '#BA7517';
-      card.style.background  = 'rgba(186,117,23,.06)';
+      card.style.background  = isDark ? 'rgba(186,117,23,.15)' : 'rgba(186,117,23,.08)';
     } else {
-      card.style.borderColor = 'var(--border)';
-      card.style.background  = 'transparent';
+      card.style.borderColor = isDark ? '#30363d' : '#e2e7ef';
+      card.style.background  = isDark ? '#1c2128' : 'transparent';
     }
   });
   filterPaketByTipe();
@@ -3171,15 +3183,17 @@ function pilihTipePaket(tipe) {
     hotspot:  { border:'#1D9E75', bg:'#E1F5EE' },
     keduanya: { border:'#7F77DD', bg:'#EEEDFE' }
   };
+  const isDark = document.body.classList.contains('dark');
+  const darkBg = { pppoe:'rgba(37,99,235,.15)', hotspot:'rgba(20,184,166,.15)', keduanya:'rgba(99,102,241,.15)' };
   ['pppoe','hotspot','keduanya'].forEach(function(t) {
     const el = document.getElementById('fp-tipe-card-' + t);
     if (!el) return;
     if (t === tipe) {
       el.style.borderColor = cfg[t].border;
-      el.style.background  = cfg[t].bg;
+      el.style.background  = isDark ? darkBg[t] : cfg[t].bg;
     } else {
-      el.style.borderColor = '#e2e7ef';
-      el.style.background  = 'transparent';
+      el.style.borderColor = isDark ? '#30363d' : '#e2e7ef';
+      el.style.background  = isDark ? '#1c2128' : 'transparent';
     }
   });
 }
