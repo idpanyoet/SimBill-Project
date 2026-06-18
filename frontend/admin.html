@@ -1330,6 +1330,10 @@ body.dark .toggle-thumb{left:18px}
           </select>
         </div>
       </div>
+      <div class="fg-row">
+        <div class="fg"><label>SNMP Community</label><input id="fn-community" placeholder="public"></div>
+        <div class="fg"><label>SNMP Interface ID</label><input id="fn-ports" placeholder="1" type="number"></div>
+      </div>
       <div class="modal-foot"><button class="btn" onclick="closeModal('m-add-nas')">Batal</button><button class="btn primary" onclick="apiTambahNAS()">Simpan</button></div>
     </div>
   </div>
@@ -1355,6 +1359,10 @@ body.dark .toggle-thumb{left:18px}
             <option value="keduanya">PPPoE/Hotspot</option>
           </select>
         </div>
+      </div>
+      <div class="fg-row">
+        <div class="fg"><label>SNMP Community</label><input id="en-community" placeholder="public"></div>
+        <div class="fg"><label>SNMP Interface ID</label><input id="en-ports" placeholder="1" type="number"></div>
       </div>
       <div class="modal-foot"><button class="btn" onclick="closeModal('m-edit-nas')">Batal</button><button class="btn primary" onclick="apiEditNAS()">💾 Simpan</button></div>
     </div>
@@ -3773,7 +3781,7 @@ function renderNAS(rows) {
       </td>
       <td style="font-size:11px;color:var(--text3)">${lastSeen}</td>
       <td style="white-space:nowrap">
-        <button class="btn sm" onclick="bukaEditNAS(${n.id},'${(n.shortname||'').replace(/'/g,"\\'")}','${n.nasname}','${secEsc}','${n.type||'other'}')">✏️</button>
+        <button class="btn sm" onclick="bukaEditNAS(${n.id},'${(n.shortname||'').replace(/'/g,"\\'")}','${n.nasname}','${secEsc}','${n.type||'other'}','${(n.community||'').replace(/'/g,"\\'")}',${n.ports||0})">✏️</button>
         <button class="btn sm danger" onclick="apiHapusNAS(${n.id})">🗑️</button>
       </td>
     </tr>`;
@@ -3800,26 +3808,30 @@ async function refreshStatusNAS() {
   } catch(e) { toast('❌ '+e.message, true); }
 }
 
-function bukaEditNAS(id, nama, ip, secret, tipe) {
-  document.getElementById('en-id').value     = id;
-  document.getElementById('en-nama').value   = nama;
-  document.getElementById('en-ip').value     = ip;
-  document.getElementById('en-secret').value = secret;
-  document.getElementById('en-tipe').value   = tipe;
+function bukaEditNAS(id, nama, ip, secret, tipe, community, ports) {
+  document.getElementById('en-id').value        = id;
+  document.getElementById('en-nama').value      = nama;
+  document.getElementById('en-ip').value        = ip;
+  document.getElementById('en-secret').value    = secret;
+  document.getElementById('en-tipe').value      = tipe;
+  document.getElementById('en-community').value = community || '';
+  document.getElementById('en-ports').value     = ports || '';
   openModal('m-edit-nas');
 }
 
 async function apiEditNAS() {
-  const id      = document.getElementById('en-id').value;
-  const nasname = document.getElementById('en-ip').value.trim();
+  const id        = document.getElementById('en-id').value;
+  const nasname   = document.getElementById('en-ip').value.trim();
   const shortname = document.getElementById('en-nama').value.trim();
-  const secret  = document.getElementById('en-secret').value;
-  const type    = document.getElementById('en-tipe').value;
+  const secret    = document.getElementById('en-secret').value;
+  const type      = document.getElementById('en-tipe').value;
+  const community = document.getElementById('en-community').value.trim();
+  const ports     = document.getElementById('en-ports').value.trim();
   if (!nasname || !secret) return toast('❌ IP dan secret wajib', true);
   try {
     await apiFetch(`/api/radius/nas/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({ nasname, shortname, type, secret, description: shortname })
+      body: JSON.stringify({ nasname, shortname, type, secret, description: shortname, community, ports: ports ? parseInt(ports) : null })
     });
     toast('✅ NAS diperbarui');
     closeModal('m-edit-nas');
@@ -3833,18 +3845,18 @@ async function apiTambahNAS() {
   const shortname = document.getElementById('fn-nama').value.trim();
   const secret    = document.getElementById('fn-secret').value;
   const type      = document.getElementById('fn-tipe').value;
+  const community = document.getElementById('fn-community').value.trim();
+  const ports     = document.getElementById('fn-ports').value.trim();
   if (!nasname||!secret) return toast('❌ IP dan secret wajib', true);
   try {
     await apiFetch('/api/radius/nas', {method:'POST',
-      body: JSON.stringify({nasname, shortname, type, secret, description:shortname})
+      body: JSON.stringify({nasname, shortname, type, secret, description:shortname, community, ports: ports ? parseInt(ports) : null})
     });
     toast('✅ NAS ditambahkan');
     closeModal('m-add-nas');
-    // Refresh daftar NAS langsung tanpa reset tab
     try {
       const nas = await apiFetch('/api/radius/nas');
       renderNAS(nas);
-      console.log('[NAS] Loaded', nas.length, 'entries');
     } catch(e) { console.warn('[NAS] refresh gagal:', e.message); }
   } catch(e) { toast('❌ '+e.message, true); }
 }
@@ -4309,9 +4321,9 @@ function nasChartMulai(nasIp) {
 
       const prev = _nasPrevBytes[nasIp];
       if (prev) {
-        // Rate = selisih MB / interval 5 detik × 8 = Mbps
-        const dl = Math.max(0, +((totalIn  - prev.in)  / 5 * 8).toFixed(2));
-        const ul = Math.max(0, +((totalOut - prev.out) / 5 * 8).toFixed(2));
+        // Rate = selisih MB / interval 60 detik × 8 = Mbps
+        const dl = Math.max(0, +((totalIn  - prev.in)  / 60 * 8).toFixed(2));
+        const ul = Math.max(0, +((totalOut - prev.out) / 60 * 8).toFixed(2));
 
         _nasChart.data.datasets[0].data.push(dl); _nasChart.data.datasets[0].data.shift();
         _nasChart.data.datasets[1].data.push(ul); _nasChart.data.datasets[1].data.shift();
@@ -4329,7 +4341,7 @@ function nasChartMulai(nasIp) {
   }
 
   poll();
-  _nasTimer = setInterval(poll, 5000);
+  _nasTimer = setInterval(poll, 60000);
 }
 </script>
 </body>

@@ -115,14 +115,14 @@ router.post('/nas', async (req, res, next) => {
 // PUT /api/radius/nas/:id — edit NAS
 router.put('/nas/:id', async (req, res, next) => {
     try {
-        const { nasname, shortname, type, secret, description } = req.body;
+        const { nasname, shortname, type, secret, description, community, ports } = req.body;
         if (!nasname || !secret)
             return res.status(400).json({ error: 'nasname dan secret wajib diisi' });
         await query(
-            `UPDATE nas SET nasname=?, shortname=?, type=?, secret=?, description=? WHERE id=?`,
-            [nasname, shortname || null, type || 'other', secret, description || shortname || null, req.params.id]
+            `UPDATE nas SET nasname=?, shortname=?, type=?, secret=?, description=?, community=?, ports=? WHERE id=?`,
+            [nasname, shortname || null, type || 'other', secret, description || shortname || null,
+             community || null, ports || null, req.params.id]
         );
-        // Sync clients.conf
         syncClientsConf();
         res.json({ pesan: 'NAS diperbarui' });
     } catch (e) { next(e); }
