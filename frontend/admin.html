@@ -647,6 +647,9 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
           <button class="btn primary" onclick="openModal('m-add-invoice')">+ Buat Invoice</button>
           <button class="btn" onclick="apiReminderMassal()">💬 Reminder Massal</button>
           <button class="btn" onclick="apiGenerateBulanan()">⚡ Generate Tagihan Otomatis</button>
+          <button id="inv-btn-hapus-terpilih" class="btn danger" style="display:none" onclick="apiHapusInvoiceTerpilih()">
+            <i class="ti ti-trash" aria-hidden="true"></i> Hapus Terpilih (<span id="inv-sel-count">0</span>)
+          </button>
         </div>
 
         <!-- Tab bar -->
@@ -666,9 +669,12 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
               <option value="overdue">Overdue</option>
             </select>
           </div>
-          <table><thead><tr><th>No. Invoice</th><th>Pelanggan</th><th>Paket</th><th>Jumlah</th><th>Jatuh Tempo</th><th>Status</th><th>Aksi</th></tr></thead>
+          <table><thead><tr>
+            <th style="width:36px"><input type="checkbox" id="inv-chk-all" onchange="invToggleAll(this.checked)" style="width:15px;height:15px;accent-color:#dc2626;cursor:pointer"></th>
+            <th>No. Invoice</th><th>Pelanggan</th><th>Paket</th><th>Jumlah</th><th>Jatuh Tempo</th><th>Status</th><th>Aksi</th>
+          </tr></thead>
           <tbody id="tbl-invoice">
-            <tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">Tidak ada data</td></tr>
+            <tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">Tidak ada data</td></tr>
           </tbody></table>
         </div>
       </div>
@@ -4016,6 +4022,10 @@ let _invTab = 'pppoe';
 
 function switchInvTab(tab) {
   _invTab = tab;
+  // Reset checkbox
+  const chkAll = document.getElementById('inv-chk-all');
+  if (chkAll) chkAll.checked = false;
+  invUpdateSelBtn();
   ['pppoe','hotspot','voucher'].forEach(function(t) {
     const btn = document.getElementById('inv-tab-' + t);
     if (!btn) return;
@@ -4047,22 +4057,84 @@ async function loadInvoice() {
 
 function renderTblInvoice(rows) {
   const t = document.getElementById('tbl-invoice');
-  if(!rows.length) { t.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text3)">Belum ada invoice</td></tr>'; return; }
+  // Reset checkbox state
+  invUpdateSelBtn();
+  if(!rows.length) { t.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text3)">Belum ada invoice</td></tr>'; return; }
   t.innerHTML = rows.map(i => `
     <tr>
-      <td>${i.no_invoice}</td>
+      <td><input type="checkbox" class="inv-chk" value="${i.id}" data-no="${i.no_invoice}" data-status="${i.status}" onchange="invUpdateSelBtn()" style="width:15px;height:15px;accent-color:#dc2626;cursor:pointer"></td>
+      <td class="td-text-main" style="font-size:12px">${i.no_invoice}</td>
       <td>${i.nama_pelanggan||'—'}</td>
-      <td>${i.nama_paket||'—'}</td>
-      <td>${fmt(i.jumlah)}</td>
-      <td>${fmtDate(i.tgl_jatuh_tempo)}</td>
+      <td class="td-text-sub">${i.nama_paket||'—'}</td>
+      <td class="td-text-bold">${fmt(i.jumlah)}</td>
+      <td class="td-text-sub">${fmtDate(i.tgl_jatuh_tempo)}</td>
       <td><span class="tag ${i.status==='paid'?'paid':i.status==='overdue'?'overdue':'unpaid'}">${i.status==='paid'?'Lunas':i.status==='overdue'?'Terlambat':'Belum Bayar'}</span></td>
-      <td>
-        ${i.status!=='paid' ? `<button class="btn sm" onclick="apiKirimReminder(${i.id})">💬</button>
-        <button class="btn sm danger" onclick="apiBayarTunai(${i.id})">✓ Lunasi</button>` : ''}
-        ${i.status==='overdue' ? `<button class="btn sm danger" style="margin-top:2px" onclick="apiSuspendDariInvoice(${i.id}, '${i.nama_pelanggan}')">🚫</button>` : ''}
-        ${i.status!=='paid' ? `<button class="btn sm" style="margin-top:2px" onclick="apiHapusInvoice(${i.id}, '${i.no_invoice}')" title="Hapus invoice">🗑️</button>` : ''}
+      <td style="white-space:nowrap">
+        ${i.status!=='paid' ? `<button class="btn sm" onclick="apiKirimReminder(${i.id})" title="Kirim reminder WA"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i></button>
+        <button class="btn sm" onclick="apiBayarTunai(${i.id})" title="Lunasi manual"><i class="ti ti-check" aria-hidden="true"></i> Lunasi</button>` : ''}
+        ${i.status==='overdue' ? `<button class="btn sm danger" onclick="apiSuspendDariInvoice(${i.id}, '${i.nama_pelanggan}')" title="Suspend pelanggan"><i class="ti ti-ban" aria-hidden="true"></i></button>` : ''}
+        ${i.status!=='paid' ? `<button class="btn sm danger" onclick="apiHapusInvoice(${i.id}, '${i.no_invoice}')" title="Hapus invoice"><i class="ti ti-trash" aria-hidden="true"></i></button>` : ''}
       </td>
     </tr>`).join('');
+}
+
+function invToggleAll(checked) {
+  document.querySelectorAll('.inv-chk').forEach(function(c) { c.checked = checked; });
+  invUpdateSelBtn();
+}
+
+function invUpdateSelBtn() {
+  const all   = document.querySelectorAll('.inv-chk');
+  const sel   = document.querySelectorAll('.inv-chk:checked');
+  const btn   = document.getElementById('inv-btn-hapus-terpilih');
+  const count = document.getElementById('inv-sel-count');
+  const chkAll= document.getElementById('inv-chk-all');
+  if (count) count.textContent = sel.length;
+  if (btn)   btn.style.display = sel.length > 0 ? 'inline-flex' : 'none';
+  if (chkAll) {
+    chkAll.indeterminate = sel.length > 0 && sel.length < all.length;
+    chkAll.checked = all.length > 0 && sel.length === all.length;
+  }
+}
+
+async function apiHapusInvoiceTerpilih() {
+  const sel = document.querySelectorAll('.inv-chk:checked');
+  if (!sel.length) return;
+
+  // Pisahkan yang bisa dihapus (non-paid) dan yang tidak
+  const bisa   = [];
+  const tidakBisa = [];
+  sel.forEach(function(c) {
+    if (c.dataset.status !== 'paid') bisa.push({ id: c.value, no: c.dataset.no });
+    else tidakBisa.push(c.dataset.no);
+  });
+
+  if (!bisa.length) {
+    return toast('❌ Invoice lunas tidak bisa dihapus', true);
+  }
+
+  let pesan = `Hapus ${bisa.length} invoice terpilih?`;
+  if (tidakBisa.length) pesan += `\n(${tidakBisa.length} invoice lunas dilewati)`;
+  if (!confirm(pesan)) return;
+
+  let sukses = 0, gagal = 0;
+  for (const item of bisa) {
+    try {
+      await apiFetch(`/api/invoice/${item.id}`, { method: 'DELETE' });
+      sukses++;
+    } catch(e) {
+      gagal++;
+      console.warn('Gagal hapus invoice', item.no, e.message);
+    }
+  }
+
+  if (sukses) toast(`✅ ${sukses} invoice dihapus${gagal ? `, ${gagal} gagal` : ''}`);
+  else toast('❌ Gagal menghapus invoice', true);
+
+  // Reset checkbox all
+  const chkAll = document.getElementById('inv-chk-all');
+  if (chkAll) chkAll.checked = false;
+  loadInvoice();
 }
 
 async function apiHapusInvoice(id, noInvoice) {
