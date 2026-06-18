@@ -216,13 +216,32 @@ body.dark .toggle-thumb{left:14px}
 .plan-card .price{font-size:13px;color:#64748b}
 .pagination-bar{display:flex;align-items:center;justify-content:space-between;margin-top:14px;gap:10px;flex-wrap:wrap;font-size:13px}
 .pagination-bar select{padding:5px 10px;border:1px solid #e2e7ef;border-radius:7px;background:#fff;color:#0f172a;font-size:12px}
+/* ── TABLE TEXT UTILITY CLASSES ── */
+.td-text{font-size:13px;color:#334155}
+.td-text-main{font-weight:500;color:#0f172a;font-size:13px}
+.td-text-sub{font-size:11px;color:#94a3b8}
+.td-text-bold{font-weight:600;color:#0f172a}
+.td-accent-bold{font-weight:700;color:#BA7517}
+.td-mono{font-family:monospace;font-size:12px}
+body.dark .td-text{color:#c9d1d9}
+body.dark .td-text-main{color:#e6edf3}
+body.dark .td-text-sub{color:#6e7681}
+body.dark .td-text-bold{color:#e6edf3}
+body.dark .td-accent-bold{color:#EF9F27}
 #tbl-pelanggan td:last-child{white-space:nowrap}
 #tbl-pelanggan td:last-child .btn{margin:0 1px}
 @keyframes slideIn{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
 .sidebar-brand{color:#0f172a}
 
 /* ── DARK MODE — minimal overrides untuk readability ── */
-body.dark{background:#0d1117;color:#e6edf3}
+body.dark{
+  background:#0d1117;color:#e6edf3;
+  --text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;
+  --border:#30363d;--border2:#484f58;
+  --accent:#EF9F27;--accent-h:#FAC775;
+  --accent-light:rgba(239,159,39,.15);
+}
 body.dark .main{background:#0d1117}
 body.dark .topbar{background:#161b22;border-color:#30363d}
 body.dark .topbar h1{color:#e6edf3}
@@ -2861,7 +2880,7 @@ function renderPaket(rows) {
   if (!tbody) return;
 
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:30px">
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8">
       Belum ada paket. Klik <b>+ Tambah Paket</b> untuk membuat paket pertama.
     </td></tr>`;
     return;
@@ -2871,7 +2890,6 @@ function renderPaket(rows) {
     const satuan = p.satuan_masa || 'hari';
     const satuanLabel = satuan === 'jam' ? 'Jam' : satuan === 'bulan' ? 'Bulan' : 'Hari';
     const masaLabel   = `${p.masa_aktif || 30} ${satuanLabel}`;
-    const tipeLabel   = p.tipe === 'keduanya' ? 'PPPoE & Hotspot' : (p.tipe === 'pppoe' ? 'PPPoE' : 'Hotspot');
     const tipeBadge   = p.tipe === 'pppoe' ? 'pppoe' : p.tipe === 'hotspot' ? 'hotspot' : 'blue';
     const tipeBadgeLabel = p.tipe === 'keduanya' ? 'Keduanya' : (p.tipe === 'pppoe' ? 'PPPoE' : 'Hotspot');
     const statusDot   = p.aktif ? 'dot-green' : 'dot-red';
@@ -2881,26 +2899,24 @@ function renderPaket(rows) {
         <div style="display:flex;align-items:center;gap:8px">
           <span class="status-dot ${statusDot}"></span>
           <div>
-            <div style="font-weight:500;color:var(--text)">${p.nama}</div>
-            ${p.deskripsi ? `<div style="font-size:11px;color:var(--text3)">${p.deskripsi}</div>` : ''}
+            <div class="td-text-main">${p.nama}</div>
+            ${p.deskripsi ? `<div class="td-text-sub">${p.deskripsi}</div>` : ''}
           </div>
         </div>
       </td>
-      <td><span style="font-weight:600;color:var(--accent)">${p.kecepatan_dn} Mbps</span>${p.kecepatan_up && p.kecepatan_up !== p.kecepatan_dn ? `<span style="font-size:10px;color:var(--text3)"> / ${p.kecepatan_up}↑</span>` : ''}</td>
-      <td><span style="font-size:12px">${masaLabel}</span></td>
-      <td><span style="font-weight:600">${fmt(p.harga)}</span></td>
+      <td><span class="td-accent-bold">${p.kecepatan_dn} Mbps</span>${p.kecepatan_up && p.kecepatan_up !== p.kecepatan_dn ? `<span class="td-text-sub"> / ${p.kecepatan_up}↑</span>` : ''}</td>
+      <td><span class="td-text">${masaLabel}</span></td>
+      <td><span class="td-text-bold">${fmt(p.harga)}</span></td>
       <td><span class="tag ${tipeBadge}">${tipeBadgeLabel}</span></td>
-      <td><span style="font-size:12px;color:var(--text3);font-family:monospace">${p.pool_name || '—'}</span></td>
+      <td><span class="td-text-sub td-mono">${p.pool_name || '—'}</span></td>
       <td><span class="badge blue">${p.jumlah_pelanggan || 0}</span></td>
       <td style="white-space:nowrap">
-        <button class="btn sm" onclick="bukaEditPaket(${p.id})">✏️ Edit</button>
-        <button class="btn sm danger" onclick="apiHapusPaket(${p.id},'${namaEsc}')">🗑</button>
+        <button class="btn sm" onclick="bukaEditPaket(${p.id})"><i class="ti ti-edit" aria-hidden="true"></i> Edit</button>
+        <button class="btn sm danger" onclick="apiHapusPaket(${p.id},'${namaEsc}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
       </td>
     </tr>`;
   }).join('');
 
-
-  // Populate dropdown paket di form tambah pelanggan — filter by tipe
   filterPaketByTipe();
 }
 
