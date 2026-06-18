@@ -66,8 +66,8 @@ router.post('/generate', async (req, res, next) => {
     const charsetKey = req.body.charset || 'angka';
 
     if (!paket_id) return res.status(400).json({ error: 'paket_id wajib diisi' });
-    if (jumlah < 1 || jumlah > 500)
-      return res.status(400).json({ error: 'Jumlah harus antara 1–500 per batch' });
+    if (jumlah < 1 || jumlah > 9999)
+      return res.status(400).json({ error: 'Jumlah harus antara 1–9999 per batch' });
 
     const CHARSETS = {
       angka:        '0123456789',
