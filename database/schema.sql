@@ -594,3 +594,24 @@ CREATE TABLE IF NOT EXISTS acs_task (
     done_at         DATETIME DEFAULT NULL,
     KEY acs_task_device (device_id)
 ) ENGINE=InnoDB;
+
+-- ============================================================
+-- VOUCHER TEMPLATE
+-- ============================================================
+CREATE TABLE IF NOT EXISTS voucher_template (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    nama        VARCHAR(100) NOT NULL,
+    header_html TEXT,
+    row_html    TEXT NOT NULL,
+    footer_html TEXT,
+    is_default  TINYINT(1) DEFAULT 0,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO voucher_template (id, nama, header_html, row_html, footer_html, is_default) VALUES
+(1, 'Default', 
+'<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Segoe UI,Arial,sans-serif;padding:16px;background:#fff}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}@media print{.noprint{display:none}body{padding:8px;-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><div class="noprint" style="text-align:center;padding:0 0 12px"><button onclick="window.print()" style="padding:7px 22px;background:#3b82f6;color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer;font-weight:600">Print</button> <button onclick="window.close()" style="padding:7px 14px;background:#f1f4f8;color:#333;border:none;border-radius:7px;font-size:13px;cursor:pointer;margin-left:8px">Tutup</button></div><div class="grid">',
+'<div style="border:0.5px solid #d0d7e3;border-radius:10px;overflow:hidden;page-break-inside:avoid"><div style="padding:9px 12px;background:#185FA5;display:flex;align-items:center;justify-content:space-between"><span style="font-size:11px;font-weight:700;color:#fff">NetBilling</span><span style="font-size:9px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,.2);color:#fff">Aktif</span></div><div style="padding:9px 12px"><div style="font-size:10px;color:#888;margin-bottom:4px">%profile% &nbsp;·&nbsp; %validity%</div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#aaa;margin-bottom:3px">Kode Voucher</div><div style="font-size:20px;font-weight:700;letter-spacing:.1em;font-family:Courier New,monospace;color:#185FA5;margin-bottom:7px">%username%</div><div style="border-top:0.5px dashed #e5e9f0;padding-top:6px;font-size:9px;color:#aaa">Sambung WiFi lalu masukkan kode</div></div></div>',
+'</div></body></html>',
+1);

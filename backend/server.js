@@ -47,6 +47,11 @@ async function jalankanMigration() {
             nama: 'setting.radius_single_session'
         },
         {
+            cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='voucher_template'`,
+            sql:  `CREATE TABLE IF NOT EXISTS voucher_template (id INT AUTO_INCREMENT PRIMARY KEY, nama VARCHAR(100) NOT NULL, header_html TEXT, row_html TEXT NOT NULL, footer_html TEXT, is_default TINYINT(1) DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB`,
+            nama: 'table.voucher_template'
+        },
+        {
             cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='voucher' AND COLUMN_NAME='batch_id'`,
             sql:  `ALTER TABLE voucher ADD COLUMN batch_id VARCHAR(30) DEFAULT NULL AFTER paket_id`,
             nama: 'voucher.batch_id'
@@ -195,7 +200,8 @@ app.use('/api/radius',    require('./routes/radius'));
 app.use('/api/laporan',   require('./routes/laporan'));
 app.use('/api/setting',   require('./routes/setting'));
 app.use('/api/client',    require('./routes/client'));
-app.use('/api/acs',       require('./routes/acs'));
+app.use('/api/acs',            require('./routes/acs'));
+app.use('/api/voucher-template', require('./routes/voucher-template'));
 
 // ── ACS CWMP Server (TR-069) port 7547 ───────────────────────
 const { createCwmpRouter } = require('./services/acs');

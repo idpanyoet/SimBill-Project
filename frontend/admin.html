@@ -536,6 +536,7 @@ body.dark .toggle-thumb{left:18px}
     <div class="sb-section">Sistem</div>
     <div class="sb-item" onclick="goto('radius',this)"><span class="icon">📡</span> RADIUS / NAS</div>
     <div class="sb-item" onclick="goto('laporan',this)"><span class="icon">📈</span> Laporan</div>
+    <div class="sb-item" onclick="goto('voucher-template',this)"><span class="icon">🎨</span> Template Voucher</div>
     <div class="sb-item" onclick="goto('acs',this)"><span class="icon">📡</span> ACS TR-069</div>
     <div class="sb-item" onclick="goto('setting',this)"><span class="icon">⚙️</span> Setting</div>
 
@@ -1123,6 +1124,99 @@ body.dark .toggle-thumb{left:18px}
         </div>
       </div>
 
+      <!-- ══ VOUCHER TEMPLATE ══ -->
+      <div class="page" id="p-voucher-template">
+        <div class="grid2" style="align-items:start">
+          <!-- Panel kiri: editor -->
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="card">
+              <div class="card-title">🎨 Template Voucher
+                <div style="display:flex;gap:6px">
+                  <span id="vt-badge-default" class="badge green" style="display:none">Default</span>
+                  <button class="btn sm primary" onclick="vtSimpan()">💾 Simpan</button>
+                  <button class="btn sm danger" onclick="vtHapus()" id="vt-btn-hapus">🗑️ Hapus</button>
+                </div>
+              </div>
+              <div class="fg" style="margin-bottom:10px">
+                <label>Pilih Template</label>
+                <select id="vt-select" onchange="vtLoad(this.value)" style="width:100%">
+                  <option value="">Memuat...</option>
+                </select>
+              </div>
+              <div class="fg" style="margin-bottom:10px">
+                <label>Nama Template</label>
+                <input type="text" id="vt-nama" placeholder="Nama template...">
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+                <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+                  <input type="checkbox" id="vt-is-default"> Set sebagai Default
+                </label>
+                <button class="btn sm" onclick="vtBaru()">+ Template Baru</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Header HTML
+                <span class="sub">Bagian atas halaman print (html, head, css, pembuka grid)</span>
+              </div>
+              <textarea id="vt-header" style="width:100%;min-height:130px;font-family:var(--font-mono,monospace);font-size:11px;padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);resize:vertical;line-height:1.5" placeholder="<html><head>...</head><body><div class=&quot;grid&quot;>"></textarea>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Row HTML (per voucher)
+                <span class="sub">Diulang untuk setiap voucher</span>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">
+                <span class="badge blue" style="cursor:pointer;font-family:monospace" onclick="vtInsert('vt-row','%username%')">%username%</span>
+                <span class="badge blue" style="cursor:pointer;font-family:monospace" onclick="vtInsert('vt-row','%password%')">%password%</span>
+                <span class="badge blue" style="cursor:pointer;font-family:monospace" onclick="vtInsert('vt-row','%profile%')">%profile%</span>
+                <span class="badge blue" style="cursor:pointer;font-family:monospace" onclick="vtInsert('vt-row','%validity%')">%validity%</span>
+                <span class="badge blue" style="cursor:pointer;font-family:monospace" onclick="vtInsert('vt-row','%price%')">%price%</span>
+                <span class="badge blue" style="cursor:pointer;font-family:monospace" onclick="vtInsert('vt-row','%no_urut%')">%no_urut%</span>
+              </div>
+              <textarea id="vt-row" style="width:100%;min-height:180px;font-family:var(--font-mono,monospace);font-size:11px;padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);resize:vertical;line-height:1.5" placeholder="<div class=&quot;voucher&quot;>...</div>" oninput="vtPreview()"></textarea>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Footer HTML
+                <span class="sub">Penutup halaman (tutup grid, body, html)</span>
+              </div>
+              <textarea id="vt-footer" style="width:100%;min-height:80px;font-family:var(--font-mono,monospace);font-size:11px;padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);resize:vertical;line-height:1.5" placeholder="</div></body></html>"></textarea>
+            </div>
+          </div>
+
+          <!-- Panel kanan: preview -->
+          <div style="position:sticky;top:70px;display:flex;flex-direction:column;gap:10px">
+            <div class="card">
+              <div class="card-title">Preview
+                <div style="display:flex;align-items:center;gap:8px">
+                  <label style="font-size:12px;color:var(--text2)">Jumlah preview</label>
+                  <select id="vt-preview-count" onchange="vtPreview()" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text)">
+                    <option value="4" selected>4</option>
+                    <option value="8">8</option>
+                    <option value="12">12</option>
+                  </select>
+                  <button class="btn sm primary" onclick="vtTestPrint()">🖨️ Test Print</button>
+                </div>
+              </div>
+              <div id="vt-preview-area" style="background:#f8f9fc;border:1px solid var(--border);border-radius:8px;padding:12px;min-height:200px;overflow:auto"></div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Placeholder Tersedia</div>
+              <div style="font-size:12px;color:var(--text2);line-height:2">
+                <div><code>%username%</code> — username / kode voucher</div>
+                <div><code>%password%</code> — password voucher</div>
+                <div><code>%profile%</code> — nama paket</div>
+                <div><code>%validity%</code> — masa aktif (misal: 30 Hari)</div>
+                <div><code>%price%</code> — harga paket</div>
+                <div><code>%no_urut%</code> — nomor urut (001, 002, ...)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ══ ACS TR-069 ══ -->
       <div class="page" id="p-acs">
 
@@ -1669,7 +1763,164 @@ let TOKEN = localStorage.getItem('nb_token') || '';
 let ADMIN = JSON.parse(localStorage.getItem('nb_admin') || '{}');
 
 // ── UTILS ──
-// ── ACS TR-069 ─────────────────────────────────────────────────
+// ── VOUCHER TEMPLATE ───────────────────────────────────────────
+let _vtList = [];
+let _vtCurId = null;
+
+const VT_SAMPLE = [
+  { username:'USR001', password:'USR001', profile:'Paket Rumahan', validity:'30 Hari', price:'Rp 50.000', no_urut:'001' },
+  { username:'USR002', password:'USR002', profile:'Paket Mingguan', validity:'7 Hari',  price:'Rp 20.000', no_urut:'002' },
+  { username:'USR003', password:'USR003', profile:'Paket Harian',   validity:'1 Hari',  price:'Rp 5.000',  no_urut:'003' },
+  { username:'USR004', password:'USR004', profile:'Paket Rumahan',  validity:'30 Hari', price:'Rp 50.000', no_urut:'004' },
+  { username:'USR005', password:'USR005', profile:'Paket Mingguan', validity:'7 Hari',  price:'Rp 20.000', no_urut:'005' },
+  { username:'USR006', password:'USR006', profile:'Paket Harian',   validity:'1 Hari',  price:'Rp 5.000',  no_urut:'006' },
+  { username:'USR007', password:'USR007', profile:'Paket Rumahan',  validity:'30 Hari', price:'Rp 50.000', no_urut:'007' },
+  { username:'USR008', password:'USR008', profile:'Paket Mingguan', validity:'7 Hari',  price:'Rp 20.000', no_urut:'008' },
+  { username:'USR009', password:'USR009', profile:'Paket Harian',   validity:'1 Hari',  price:'Rp 5.000',  no_urut:'009' },
+  { username:'USR010', password:'USR010', profile:'Paket Rumahan',  validity:'30 Hari', price:'Rp 50.000', no_urut:'010' },
+  { username:'USR011', password:'USR011', profile:'Paket Mingguan', validity:'7 Hari',  price:'Rp 20.000', no_urut:'011' },
+  { username:'USR012', password:'USR012', profile:'Paket Harian',   validity:'1 Hari',  price:'Rp 5.000',  no_urut:'012' },
+];
+
+function vtReplaceVar(tpl, v) {
+  return tpl
+    .replace(/%username%/g, v.username)
+    .replace(/%password%/g, v.password)
+    .replace(/%profile%/g, v.profile)
+    .replace(/%validity%/g, v.validity)
+    .replace(/%price%/g, v.price)
+    .replace(/%no_urut%/g, v.no_urut);
+}
+
+async function loadVoucherTemplate() {
+  try {
+    _vtList = await apiFetch('/api/voucher-template');
+    const sel = document.getElementById('vt-select');
+    sel.innerHTML = _vtList.map(t =>
+      `<option value="${t.id}">${t.nama}${t.is_default?' (Default)':''}</option>`
+    ).join('');
+    if (_vtList.length) vtLoad(_vtList.find(t=>t.is_default)?.id || _vtList[0].id);
+  } catch(e) { toast('❌ Gagal load template: '+e.message, true); }
+}
+
+function vtLoad(id) {
+  id = parseInt(id);
+  const t = _vtList.find(t => t.id === id);
+  if (!t) return;
+  _vtCurId = id;
+  document.getElementById('vt-select').value = id;
+  document.getElementById('vt-nama').value = t.nama;
+  document.getElementById('vt-header').value = t.header_html || '';
+  document.getElementById('vt-row').value = t.row_html || '';
+  document.getElementById('vt-footer').value = t.footer_html || '';
+  document.getElementById('vt-is-default').checked = !!t.is_default;
+  document.getElementById('vt-badge-default').style.display = t.is_default ? 'inline-flex' : 'none';
+  document.getElementById('vt-btn-hapus').disabled = !!t.is_default;
+  vtPreview();
+}
+
+function vtPreview() {
+  const rowTpl = document.getElementById('vt-row').value;
+  const count  = parseInt(document.getElementById('vt-preview-count').value) || 4;
+  const area   = document.getElementById('vt-preview-area');
+  const samples = VT_SAMPLE.slice(0, count);
+  const rows = samples.map(v => vtReplaceVar(rowTpl, v)).join('');
+  area.innerHTML = rows || '<div style="color:#aaa;text-align:center;padding:20px;font-size:12px">Tulis Row HTML untuk melihat preview</div>';
+}
+
+function vtInsert(taId, text) {
+  const ta = document.getElementById(taId);
+  if (!ta) return;
+  const s = ta.selectionStart, e = ta.selectionEnd;
+  ta.value = ta.value.slice(0,s) + text + ta.value.slice(e);
+  ta.selectionStart = ta.selectionEnd = s + text.length;
+  ta.focus();
+  vtPreview();
+}
+
+function vtBaru() {
+  _vtCurId = null;
+  document.getElementById('vt-select').value = '';
+  document.getElementById('vt-nama').value = 'Template Baru';
+  document.getElementById('vt-header').value = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Segoe UI,Arial,sans-serif;padding:16px;background:#fff}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}@media print{.noprint{display:none}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><div class="noprint" style="text-align:center;padding:0 0 12px"><button onclick="window.print()" style="padding:7px 22px;background:#3b82f6;color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer;font-weight:600">Print</button> <button onclick="window.close()" style="padding:7px 14px;background:#f1f4f8;color:#333;border:none;border-radius:7px;font-size:13px;cursor:pointer;margin-left:8px">Tutup</button></div><div class="grid">';
+  document.getElementById('vt-row').value = '<div style="border:0.5px solid #d0d7e3;border-radius:10px;overflow:hidden;page-break-inside:avoid"><div style="padding:9px 12px;background:#185FA5;display:flex;align-items:center;justify-content:space-between"><span style="font-size:11px;font-weight:700;color:#fff">NetBilling</span><span style="font-size:9px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,.2);color:#fff">Aktif</span></div><div style="padding:9px 12px"><div style="font-size:10px;color:#888;margin-bottom:4px">%profile% &nbsp;·&nbsp; %validity%</div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#aaa;margin-bottom:3px">Kode Voucher</div><div style="font-size:20px;font-weight:700;letter-spacing:.1em;font-family:Courier New,monospace;color:#185FA5;margin-bottom:7px">%username%</div><div style="border-top:0.5px dashed #e5e9f0;padding-top:6px;font-size:9px;color:#aaa">Sambung WiFi lalu masukkan kode</div></div></div>';
+  document.getElementById('vt-footer').value = '</div></body></html>';
+  document.getElementById('vt-is-default').checked = false;
+  document.getElementById('vt-badge-default').style.display = 'none';
+  document.getElementById('vt-btn-hapus').disabled = true;
+  vtPreview();
+}
+
+async function vtSimpan() {
+  const nama       = document.getElementById('vt-nama').value.trim();
+  const header_html= document.getElementById('vt-header').value;
+  const row_html   = document.getElementById('vt-row').value;
+  const footer_html= document.getElementById('vt-footer').value;
+  const is_default = document.getElementById('vt-is-default').checked;
+  if (!nama) { toast('❌ Nama template wajib diisi', true); return; }
+  if (!row_html.trim()) { toast('❌ Row HTML wajib diisi', true); return; }
+  try {
+    let d;
+    if (_vtCurId) {
+      d = await apiFetch(`/api/voucher-template/${_vtCurId}`, { method:'PUT', body: JSON.stringify({nama,header_html,row_html,footer_html,is_default}) });
+    } else {
+      d = await apiFetch('/api/voucher-template', { method:'POST', body: JSON.stringify({nama,header_html,row_html,footer_html,is_default}) });
+      _vtCurId = d.id;
+    }
+    toast('✅ Template disimpan');
+    await loadVoucherTemplate();
+    if (_vtCurId) { document.getElementById('vt-select').value = _vtCurId; vtLoad(_vtCurId); }
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+
+async function vtHapus() {
+  if (!_vtCurId) return;
+  if (!confirm('Hapus template ini?')) return;
+  try {
+    await apiFetch(`/api/voucher-template/${_vtCurId}`, { method:'DELETE' });
+    toast('✅ Template dihapus');
+    _vtCurId = null;
+    await loadVoucherTemplate();
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+
+function vtTestPrint() {
+  const header = document.getElementById('vt-header').value;
+  const row    = document.getElementById('vt-row').value;
+  const footer = document.getElementById('vt-footer').value;
+  const count  = parseInt(document.getElementById('vt-preview-count').value) || 4;
+  const rows   = VT_SAMPLE.slice(0, count).map(v => vtReplaceVar(row, v)).join('');
+  const html   = (header || '') + rows + (footer || '');
+  const win    = window.open('', '_blank', 'width=960,height=700');
+  win.document.write(html);
+  win.document.close();
+}
+
+// Fungsi print batch pakai template default
+async function printBatchDenganTemplate(vouchers) {
+  try {
+    const tpl = await apiFetch('/api/voucher-template/default/get');
+    if (!tpl) { bukaWindowPrint(document.querySelector('.sidebar-brand span')?.textContent||'NetBilling', vouchers); return; }
+    const rows = vouchers.map(function(v, i) {
+      return vtReplaceVar(tpl.row_html, {
+        username: v.username || v.kode || '',
+        password: v.password || v.username || '',
+        profile:  v.nama_paket || v.paket || '—',
+        validity: v.satuan_masa ? ((v.masa_aktif||'?')+' '+(v.satuan_masa==='jam'?'Jam':v.satuan_masa==='bulan'?'Bulan':'Hari')) : '—',
+        price:    v.harga ? 'Rp '+Number(v.harga).toLocaleString('id-ID') : '—',
+        no_urut:  String(i+1).padStart(3,'0')
+      });
+    }).join('');
+    const html = (tpl.header_html||'') + rows + (tpl.footer_html||'');
+    const win = window.open('','_blank','width=960,height=700');
+    win.document.write(html);
+    win.document.close();
+  } catch(e) {
+    bukaWindowPrint(document.querySelector('.sidebar-brand span')?.textContent||'NetBilling', vouchers);
+  }
+}
+
+// ── END VOUCHER TEMPLATE ────────────────────────────────────
 let _acsDeviceId = null;
 
 async function loadACS() {
@@ -2051,7 +2302,8 @@ const titles = {
   paket:'Paket Internet', invoice:'Invoice & Tagihan',
   voucher:'Voucher Online', whatsapp:'WhatsApp Gateway',
   payment:'Payment Gateway', radius:'RADIUS / NAS',
-  laporan:'Laporan', acs:'ACS TR-069', setting:'Setting Sistem'
+  laporan:'Laporan', acs:'ACS TR-069',
+  'voucher-template':'Template Voucher', setting:'Setting Sistem'
 };
 const loaders = {
   dashboard: loadDashboard, pelanggan: loadPelanggan,
@@ -2059,7 +2311,8 @@ const loaders = {
   voucher: loadVoucher, whatsapp: loadWALog,
   payment: loadPayment, radius: loadRadius,
   laporan: loadLaporan, reseller: loadReseller,
-  acs: loadACS, setting: loadSetting
+  acs: loadACS, 'voucher-template': loadVoucherTemplate,
+  setting: loadSetting
 };
 
 function toggleSidebar() {
@@ -3194,8 +3447,7 @@ async function printBatch(batchId, jumlah) {
     const rows = await apiFetch('/api/voucher?batch_id=' + encodeURIComponent(batchId) + '&limit=' + lmt);
     const list = Array.isArray(rows) ? rows : (rows.data || []);
     if (!list.length) { toast('❌ Tidak ada voucher batch ini', true); return; }
-    const appName = document.querySelector('.sidebar-brand span')?.textContent?.trim() || 'NetBilling';
-    bukaWindowPrint(appName, list);
+    await printBatchDenganTemplate(list);
   } catch(e) { toast('❌ ' + e.message, true); }
 }
 
