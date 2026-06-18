@@ -4263,23 +4263,27 @@ function nasChartInit(nasList) {
     const opt = document.createElement('option');
     opt.value = n.nasname;
     opt.textContent = (n.shortname || n.nasname) + ' — ' + n.nasname;
+    opt.dataset.id  = n.id;
     sel.appendChild(opt);
   });
   if (nasList.length > 0) {
     sel.value = nasList[0].nasname;
-    nasChartMulai(nasList[0].nasname);
+    nasChartMulai(nasList[0].nasname, nasList[0].id);
   }
 }
 
 function nasChartGantiNAS() {
-  const ip = document.getElementById('nas-chart-select').value;
+  const sel = document.getElementById('nas-chart-select');
+  const ip  = sel.value;
+  const id  = sel.options[sel.selectedIndex]?.dataset?.id || '';
   if (!ip) return;
   _nasPrevBytes = {};
-  nasChartMulai(ip);
+  nasChartMulai(ip, id);
 }
 
-function nasChartMulai(nasIp) {
+function nasChartMulai(nasIp, nasId) {
   if (_nasTimer) clearInterval(_nasTimer);
+  nasId = nasId || '';
 
   const dlData = Array(NAS_POINTS).fill(0);
   const ulData = Array(NAS_POINTS).fill(0);
@@ -4312,36 +4316,46 @@ function nasChartMulai(nasIp) {
   let dotState = true;
   async function poll() {
     try {
-      const sesi = await apiFetch('/api/radius/sesi-aktif');
-      const sesiNAS = sesi.filter(s => s.nas_ip === nasIp);
+      // Ambil data SNMP dari NAS
+      const snmpData = await apiFetch('/api/radius/snmp-traffic?nas_id=' + nasId);
 
-      // Hitung total bytes in/out dari semua sesi NAS ini
-      const totalIn  = sesiNAS.reduce((a,s) => a + (parseFloat(s.total_mb_in)  || 0), 0);
-      const totalOut = sesiNAS.reduce((a,s) => a + (parseFloat(s.total_mb_out) || 0), 0);
+      const totalIn  = snmpData.in_octets  / 1048576; // bytes → MB
+      const totalOut = snmpData.out_octets / 1048576;
 
       const prev = _nasPrevBytes[nasIp];
       if (prev) {
-        // Rate = selisih MB / interval 60 detik × 8 = Mbps
-        const dl = Math.max(0, +((totalIn  - prev.in)  / 60 * 8).toFixed(2));
-        const ul = Math.max(0, +((totalOut - prev.out) / 60 * 8).toFixed(2));
+        // Rate = selisih MB / interval 5 detik × 8 = Mbps
+        const dl = Math.max(0, +((totalIn  - prev.in)  / 5 * 8).toFixed(2));
+        const ul = Math.max(0, +((totalOut - prev.out) / 5 * 8).toFixed(2));
 
         _nasChart.data.datasets[0].data.push(dl); _nasChart.data.datasets[0].data.shift();
         _nasChart.data.datasets[1].data.push(ul); _nasChart.data.datasets[1].data.shift();
         _nasChart.update('none');
 
-        document.getElementById('nas-s-dl').textContent   = dl.toFixed(1) + ' Mbps';
-        document.getElementById('nas-s-ul').textContent   = ul.toFixed(1) + ' Mbps';
+        document.getElementById('nas-s-dl').textContent = dl.toFixed(1) + ' Mbps';
+        document.getElementById('nas-s-ul').textContent = ul.toFixed(1) + ' Mbps';
       }
       _nasPrevBytes[nasIp] = { in: totalIn, out: totalOut };
-      document.getElementById('nas-s-sesi').textContent = sesiNAS.length;
+
+      // Jumlah sesi dari radacct
+      try {
+        const sesi = await apiFetch('/api/radius/sesi-aktif');
+        const sesiNAS = sesi.filter(s => s.nas_ip === nasIp);
+        document.getElementById('nas-s-sesi').textContent = sesiNAS.length;
+      } catch(e) {}
 
       const dot = document.getElementById('nas-live-dot');
       if (dot) { dot.style.opacity = dotState ? '1' : '0.2'; dotState = !dotState; }
-    } catch(e) { console.warn('[NAS chart]', e.message); }
+    } catch(e) {
+      console.warn('[NAS chart SNMP]', e.message);
+      // Fallback: tampilkan error kecil
+      document.getElementById('nas-s-dl').textContent = '—';
+      document.getElementById('nas-s-ul').textContent = '—';
+    }
   }
 
   poll();
-  _nasTimer = setInterval(poll, 60000);
+  _nasTimer = setInterval(poll, 5000);
 }
 </script>
 </body>

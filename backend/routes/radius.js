@@ -671,4 +671,61 @@ router.post('/restart', authMiddleware, async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// ── GET /api/radius/snmp-traffic — ambil data SNMP dari NAS ──
+router.get('/snmp-traffic', async (req, res, next) => {
+    try {
+        const nasId = req.query.nas_id;
+        let nas;
+        if (nasId) {
+            nas = await queryOne('SELECT * FROM nas WHERE id=?', [nasId]);
+        } else {
+            nas = await queryOne('SELECT * FROM nas LIMIT 1');
+        }
+        if (!nas) return res.status(404).json({ error: 'NAS tidak ditemukan' });
+
+        const community = nas.community || 'public';
+        const host      = nas.nasname;
+
+        // OID standar untuk traffic interface (ifIndex 1 = interface utama)
+        // ifInOctets  = 1.3.6.1.2.1.2.2.1.10.1
+        // ifOutOctets = 1.3.6.1.2.1.2.2.1.16.1
+        const oids = [
+            '1.3.6.1.2.1.2.2.1.10.1',  // ifInOctets
+            '1.3.6.1.2.1.2.2.1.16.1',  // ifOutOctets
+            '1.3.6.1.2.1.2.2.1.5.1',   // ifSpeed
+            '1.3.6.1.2.1.1.3.0',        // sysUpTime
+        ];
+
+        const snmp = require('net-snmp');
+        const session = snmp.createSession(host, community, {
+            timeout: 5000,
+            retries: 1,
+            version: snmp.Version2c
+        });
+
+        session.get(oids, function(error, varbinds) {
+            session.close();
+            if (error) {
+                return res.status(502).json({ error: 'SNMP gagal: ' + error.message });
+            }
+            const result = {};
+            varbinds.forEach(function(vb) {
+                if (!snmp.isVarbindError(vb)) {
+                    result[vb.oid] = typeof vb.value === 'object' ? vb.value.toString() : vb.value;
+                }
+            });
+            res.json({
+                nas_id:      nas.id,
+                nas_name:    nas.shortname,
+                host:        host,
+                in_octets:   parseInt(result['1.3.6.1.2.1.2.2.1.10.1'] || 0),
+                out_octets:  parseInt(result['1.3.6.1.2.1.2.2.1.16.1'] || 0),
+                if_speed:    parseInt(result['1.3.6.1.2.1.2.2.1.5.1']  || 0),
+                uptime:      result['1.3.6.1.2.1.1.3.0'] || 0,
+                timestamp:   Date.now()
+            });
+        });
+    } catch(e) { next(e); }
+});
+
 module.exports = router;
