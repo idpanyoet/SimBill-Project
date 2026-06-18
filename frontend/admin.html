@@ -1820,12 +1820,37 @@ function vtLoad(id) {
 }
 
 function vtPreview() {
-  const rowTpl = document.getElementById('vt-row').value;
-  const count  = parseInt(document.getElementById('vt-preview-count').value) || 4;
-  const area   = document.getElementById('vt-preview-area');
-  const samples = VT_SAMPLE.slice(0, count);
-  const rows = samples.map(v => vtReplaceVar(rowTpl, v)).join('');
-  area.innerHTML = rows || '<div style="color:#aaa;text-align:center;padding:20px;font-size:12px">Tulis Row HTML untuk melihat preview</div>';
+  const headerTpl = document.getElementById('vt-header').value;
+  const rowTpl    = document.getElementById('vt-row').value;
+  const footerTpl = document.getElementById('vt-footer').value;
+  const count     = parseInt(document.getElementById('vt-preview-count').value) || 4;
+  const area      = document.getElementById('vt-preview-area');
+
+  const rows = VT_SAMPLE.slice(0, count).map(v => vtReplaceVar(rowTpl, v)).join('');
+  const fullHtml = (headerTpl || '') + rows + (footerTpl || '');
+
+  // Render di iframe agar CSS header ikut terbaca
+  let iframe = area.querySelector('iframe');
+  if (!iframe) {
+    iframe = document.createElement('iframe');
+    iframe.style.cssText = 'width:100%;border:none;border-radius:6px;min-height:180px;background:#fff';
+    iframe.scrolling = 'no';
+    area.innerHTML = '';
+    area.appendChild(iframe);
+  }
+
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open();
+  doc.write(fullHtml || '<div style="color:#aaa;text-align:center;padding:20px;font-size:12px">Tulis Row HTML untuk melihat preview</div>');
+  doc.close();
+
+  // Auto-resize iframe sesuai konten
+  setTimeout(function() {
+    try {
+      const h = iframe.contentDocument.body?.scrollHeight || 200;
+      iframe.style.height = Math.min(h + 20, 500) + 'px';
+    } catch(e) {}
+  }, 100);
 }
 
 function vtInsert(taId, text) {
