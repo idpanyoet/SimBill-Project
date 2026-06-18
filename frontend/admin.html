@@ -3303,6 +3303,9 @@ async function apiSimpanConfigPG() {
 // RADIUS
 // ================================================================
 async function loadRadius() {
+  // Tampilkan tombol langsung tanpa tunggu fetch
+  radiusTab('nas');
+
   try {
     const [sesi, nas] = await Promise.all([
       apiFetch('/api/radius/sesi-aktif'),
@@ -3317,10 +3320,7 @@ async function loadRadius() {
         nas.map(n => `<option value="${n.id}">${n.shortname||n.nasname}</option>`).join('');
     }
   } catch(e) { console.warn('Radius API:', e.message); }
-  // Inisialisasi tab hanya saat pertama kali (panel NAS belum aktif)
-  if (document.getElementById('rpanel-nas').style.display === 'none') {
-    radiusTab('nas');
-  }
+
   loadAuthMode();
   loadVPN();
 }
