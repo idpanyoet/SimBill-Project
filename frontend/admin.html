@@ -1693,7 +1693,7 @@ async function loadACSDevices() {
       return;
     }
     t.innerHTML = rows.map(d => {
-      const online = d.status === 'online' && d.last_inform && (Date.now() - new Date(d.last_inform)) < 600000;
+      const online = d.status === 'online' && d.last_inform && (Date.now() - new Date(d.last_inform).getTime()) < 15 * 60 * 1000;
       const dotCls = online ? 'dot-green' : 'dot-red';
       const stLabel = online ? '<span class="badge green">Online</span>' : '<span class="badge red">Offline</span>';
       const lastInform = d.last_inform ? new Date(d.last_inform).toLocaleString('id-ID') : '—';

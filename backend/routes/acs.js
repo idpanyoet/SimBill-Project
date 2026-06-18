@@ -12,14 +12,17 @@ router.use(authMiddleware);
 router.get('/devices', async (req, res, next) => {
     try {
         const rows = await query(`
-            SELECT d.*, p.nama AS pelanggan_nama, p.username AS pelanggan_username
+            SELECT d.*,
+                p.nama AS pelanggan_nama, p.username AS pelanggan_username,
+                CASE WHEN d.last_inform > DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+                     THEN 'online' ELSE 'offline' END AS status_live
             FROM acs_device d
             LEFT JOIN pelanggan p ON d.pelanggan_id = p.id
             ORDER BY d.last_inform DESC
         `);
-        // Parse param_cache untuk setiap device
         res.json(rows.map(r => ({
             ...r,
+            status: r.status_live,
             param_cache: (() => { try { return JSON.parse(r.param_cache || '{}'); } catch(e) { return {}; } })()
         })));
     } catch(e) { next(e); }
@@ -123,7 +126,7 @@ router.get('/tasks', async (req, res, next) => {
 router.get('/stats', async (req, res, next) => {
     try {
         const [total]   = await query('SELECT COUNT(*) AS n FROM acs_device');
-        const [online]  = await query("SELECT COUNT(*) AS n FROM acs_device WHERE status='online' AND last_inform > DATE_SUB(NOW(), INTERVAL 10 MINUTE)");
+        const [online]  = await query("SELECT COUNT(*) AS n FROM acs_device WHERE last_inform > DATE_SUB(NOW(), INTERVAL 15 MINUTE)");
         const [pending] = await query("SELECT COUNT(*) AS n FROM acs_task WHERE status='pending'");
         res.json({ total: total.n, online: online.n, offline: total.n - online.n, pending_tasks: pending.n });
     } catch(e) { next(e); }

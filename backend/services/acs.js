@@ -191,16 +191,33 @@ async function handleInform(req, res, xml) {
     const swVersion    = xmlVal(xml, 'SoftwareVersion');
     const hwVersion    = xmlVal(xml, 'HardwareVersion');
     const connReqUrl   = xmlVal(xml, 'ConnectionRequestURL');
-    const ip           = req.ip?.replace('::ffff:', '') || req.connection?.remoteAddress;
+    const reqIp        = req.ip?.replace('::ffff:', '') || req.connection?.remoteAddress || '';
 
     // Parse parameter values dari Inform
     const params = xmlParam(xml);
+
+    // Ambil IP WAN dari parameter yang dikirim router
+    const wanIpKeys = [
+        'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ExternalIPAddress',
+        'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.ExternalIPAddress',
+        'Device.IP.Interface.1.IPv4Address.1.IPAddress',
+    ];
+    let ip = reqIp;
+    for (const key of wanIpKeys) {
+        if (params[key] && params[key] !== '0.0.0.0') { ip = params[key]; break; }
+    }
+
+    // Jika IP dari req adalah IP VPS sendiri, coba ambil dari X-Forwarded-For
+    const xForwardedFor = req.headers['x-forwarded-for'];
+    if (xForwardedFor && ip === reqIp) {
+        const forwardedIp = xForwardedFor.split(',')[0].trim();
+        if (forwardedIp && forwardedIp !== '127.0.0.1') ip = forwardedIp;
+    }
 
     console.log(`[ACS] Inform dari ${serialNumber} (${manufacturer} ${productClass}) IP:${ip}`);
 
     if (serialNumber) {
         try {
-            // Upsert device
             await query(`
                 INSERT INTO acs_device
                   (serial_number, product_class, manufacturer, oui, software_version,
@@ -218,20 +235,28 @@ async function handleInform(req, res, xml) {
         } catch(e) { console.warn('[ACS] DB upsert:', e.message); }
     }
 
-    // Balas InformResponse
     res.status(200).send(soapInformResponse());
 }
 
 // ── Handler: Empty (device poll) ─────────────────────────────
 async function handleEmpty(req, res) {
-    // Ambil auth header untuk identifikasi device
-    const auth = req.headers['authorization'] || '';
-    const ip   = req.ip?.replace('::ffff:', '') || '';
+    const ip = req.ip?.replace('::ffff:', '') || '';
+    const xForwardedFor = req.headers['x-forwarded-for'];
+    const realIp = xForwardedFor ? xForwardedFor.split(',')[0].trim() : ip;
 
     let device = null;
     try {
-        // Cari device berdasarkan IP
-        device = await queryOne('SELECT * FROM acs_device WHERE ip_address=? AND status="online"', [ip]);
+        // Cari device berdasarkan IP (coba beberapa kemungkinan IP)
+        device = await queryOne(
+            `SELECT * FROM acs_device WHERE (ip_address=? OR ip_address=?) AND last_inform > DATE_SUB(NOW(), INTERVAL 15 MINUTE) ORDER BY last_inform DESC LIMIT 1`,
+            [realIp, ip]
+        );
+        // Fallback: device yang paling baru inform dalam 2 menit terakhir
+        if (!device) {
+            device = await queryOne(
+                `SELECT * FROM acs_device WHERE last_inform > DATE_SUB(NOW(), INTERVAL 2 MINUTE) ORDER BY last_inform DESC LIMIT 1`
+            );
+        }
     } catch(e) {}
 
     if (!device) return res.status(204).end();
