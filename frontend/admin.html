@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NetBilling — Admin Panel</title>
+<title>Nexbill — Admin Panel</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -44,12 +44,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;background:var(-
   box-shadow:0 4px 24px rgba(0,0,0,.06);
 }
 .login-logo{text-align:center;margin-bottom:28px}
-.login-logo .ico{
-  width:52px;height:52px;border-radius:14px;
-  background:var(--accent);color:#fff;font-size:24px;
-  display:flex;align-items:center;justify-content:center;
-  margin:0 auto 10px;
-}
 .login-logo h2{font-size:18px;font-weight:700}
 .login-logo p{font-size:12px;color:var(--text3);margin-top:2px}
 .field{margin-bottom:14px}
@@ -88,11 +82,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;background:var(-
 .sb-logo{
   padding:14px 16px;border-bottom:1px solid var(--border);
   display:flex;align-items:center;gap:9px;
-}
-.sb-logo .ico{
-  width:30px;height:30px;border-radius:7px;
-  background:var(--accent);color:#fff;font-size:14px;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
 }
 .sb-logo span{font-size:14px;font-weight:700}
 .sb-logo small{display:block;font-size:10px;color:var(--text3);line-height:1}
@@ -497,8 +486,8 @@ body.dark .toggle-thumb{left:18px}
 <div id="login-screen">
   <div class="login-box">
     <div class="login-logo">
-      <div class="ico">⚡</div>
-      <h2>NetBilling Admin</h2>
+      <svg width="48" height="48" viewBox="0 0 48 48" style="margin:0 auto 8px;display:block"><rect width="48" height="48" rx="12" fill="#BA7517"/><circle cx="12" cy="32" r="5" fill="#fff" opacity=".35"/><circle cx="24" cy="14" r="5" fill="#fff" opacity=".65"/><circle cx="36" cy="32" r="5" fill="#fff"/><line x1="12" y1="32" x2="24" y2="14" stroke="#fff" stroke-width="2.5" opacity=".5"/><line x1="24" y1="14" x2="36" y2="32" stroke="#fff" stroke-width="2.5" opacity=".85"/></svg>
+      <h2>Nexbill Admin</h2>
       <p>Masuk untuk mengelola sistem</p>
     </div>
     <div class="login-err" id="login-err"></div>
@@ -517,8 +506,8 @@ body.dark .toggle-thumb{left:18px}
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sb-logo">
-      <div class="ico">⚡</div>
-      <div><span>NetBilling</span><small>Admin Panel</small></div>
+      <svg width="28" height="28" viewBox="0 0 28 28" style="flex-shrink:0"><rect width="28" height="28" rx="7" fill="#BA7517"/><circle cx="7" cy="19" r="3" fill="#fff" opacity=".35"/><circle cx="14" cy="10" r="3" fill="#fff" opacity=".65"/><circle cx="21" cy="19" r="3" fill="#fff"/><line x1="7" y1="19" x2="14" y2="10" stroke="#fff" stroke-width="1.8" opacity=".5"/><line x1="14" y1="10" x2="21" y2="19" stroke="#fff" stroke-width="1.8" opacity=".85"/></svg>
+      <div><div style="font-size:14px;font-weight:700;line-height:1.2"><span style="color:#EF9F27">Nex</span><span style="color:var(--text);font-weight:400">bill</span></div><small>Admin Panel</small></div>
     </div>
 
     <div class="sb-section">Utama</div>
@@ -1289,7 +1278,7 @@ body.dark .toggle-thumb{left:18px}
         <div class="grid2">
           <div class="card">
             <div class="card-title">⚙️ Setting Umum</div>
-            <div class="fg"><label>Nama Aplikasi</label><input id="s-app_name" placeholder="NetBilling"></div>
+            <div class="fg"><label>Nama Aplikasi</label><input id="s-app_name" placeholder="Nexbill"></div>
             <div class="fg"><label>URL Aplikasi</label><input id="s-app_url" placeholder="https://billing.anda.id"></div>
             <div class="fg-row">
               <div class="fg"><label>Prefix Invoice</label><input id="s-invoice_prefix" placeholder="INV"></div>
@@ -1952,7 +1941,7 @@ function vtBaru() {
   document.getElementById('vt-select').value = '';
   document.getElementById('vt-nama').value = 'Template Baru';
   document.getElementById('vt-header').value = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Segoe UI,Arial,sans-serif;padding:16px;background:#fff}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}@media print{.noprint{display:none}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><div class="noprint" style="text-align:center;padding:0 0 12px"><button onclick="window.print()" style="padding:7px 22px;background:#3b82f6;color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer;font-weight:600">Print</button> <button onclick="window.close()" style="padding:7px 14px;background:#f1f4f8;color:#333;border:none;border-radius:7px;font-size:13px;cursor:pointer;margin-left:8px">Tutup</button></div><div class="grid">';
-  document.getElementById('vt-row').value = '<div style="border:0.5px solid #d0d7e3;border-radius:10px;overflow:hidden;page-break-inside:avoid"><div style="padding:9px 12px;background:#185FA5;display:flex;align-items:center;justify-content:space-between"><span style="font-size:11px;font-weight:700;color:#fff">NetBilling</span><span style="font-size:9px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,.2);color:#fff">Aktif</span></div><div style="padding:9px 12px"><div style="font-size:10px;color:#888;margin-bottom:4px">%profile% &nbsp;·&nbsp; %validity%</div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#aaa;margin-bottom:3px">Kode Voucher</div><div style="font-size:20px;font-weight:700;letter-spacing:.1em;font-family:Courier New,monospace;color:#185FA5;margin-bottom:7px">%username%</div><div style="border-top:0.5px dashed #e5e9f0;padding-top:6px;font-size:9px;color:#aaa">Sambung WiFi lalu masukkan kode</div></div></div>';
+  document.getElementById('vt-row').value = '<div style="border:0.5px solid #d0d7e3;border-radius:10px;overflow:hidden;page-break-inside:avoid"><div style="padding:9px 12px;background:#185FA5;display:flex;align-items:center;justify-content:space-between"><span style="font-size:11px;font-weight:700;color:#fff">Nexbill</span><span style="font-size:9px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,.2);color:#fff">Aktif</span></div><div style="padding:9px 12px"><div style="font-size:10px;color:#888;margin-bottom:4px">%profile% &nbsp;·&nbsp; %validity%</div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#aaa;margin-bottom:3px">Kode Voucher</div><div style="font-size:20px;font-weight:700;letter-spacing:.1em;font-family:Courier New,monospace;color:#185FA5;margin-bottom:7px">%username%</div><div style="border-top:0.5px dashed #e5e9f0;padding-top:6px;font-size:9px;color:#aaa">Sambung WiFi lalu masukkan kode</div></div></div>';
   document.getElementById('vt-footer').value = '</div></body></html>';
   document.getElementById('vt-is-default').checked = false;
   document.getElementById('vt-badge-default').style.display = 'none';
@@ -2010,7 +1999,7 @@ async function printBatchDenganTemplate(vouchers, autoPrint) {
   if (autoPrint === undefined) autoPrint = true;
   try {
     const tpl = await apiFetch('/api/voucher-template/default/get');
-    if (!tpl) { bukaWindowPrint(document.querySelector('.sidebar-brand span')?.textContent||'NetBilling', vouchers); return; }
+    if (!tpl) { bukaWindowPrint(document.querySelector('.sidebar-brand span')?.textContent||'Nexbill', vouchers); return; }
 
     const rows = vouchers.map(function(v, i) {
       return vtReplaceVar(tpl.row_html, {
@@ -2054,7 +2043,7 @@ async function printBatchDenganTemplate(vouchers, autoPrint) {
     win.document.close();
   } catch(e) {
     console.error('printBatchDenganTemplate:', e);
-    bukaWindowPrint(document.querySelector('.sidebar-brand span')?.textContent||'NetBilling', vouchers);
+    bukaWindowPrint(document.querySelector('.sidebar-brand span')?.textContent||'Nexbill', vouchers);
   }
 }
 
@@ -2995,7 +2984,7 @@ async function apiKirimWAPelanggan(id, nama) {
       // Tidak ada invoice unpaid, kirim WA manual
       const p = await apiFetch(`/api/pelanggan/${id}`);
       await apiFetch('/api/whatsapp/kirim', {method:'POST',
-        body:JSON.stringify({no_hp:p.no_hp, pesan:`Halo *${p.nama}*, ada informasi dari admin NetBilling.`})
+        body:JSON.stringify({no_hp:p.no_hp, pesan:`Halo *${p.nama}*, ada informasi dari admin Nexbill.`})
       });
     }
     toast(`✅ WA terkirim ke ${nama}`);
@@ -4456,7 +4445,7 @@ async function apiExportExcelLaporan() {
     const a    = document.createElement('a');
     const tgl  = new Date().toISOString().slice(0,10).replace(/-/g,'');
     a.href     = url;
-    a.download = `Laporan_NetBilling_${tgl}.xlsx`;
+    a.download = `Laporan_Nexbill_${tgl}.xlsx`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
