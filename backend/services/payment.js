@@ -49,7 +49,7 @@ function invalidateCache() {
 // ============================================================
 // BUAT TRANSAKSI BARU
 // ============================================================
-async function buatTransaksi({ order_id, gross_amount, pelanggan }) {
+async function buatTransaksi({ order_id, gross_amount, pelanggan, metode }) {
     const cfg = await getConfig();
     try {
         if (!cfg.serverKey && !cfg.secretKey && !cfg.apiKey) {
@@ -61,9 +61,9 @@ async function buatTransaksi({ order_id, gross_amount, pelanggan }) {
         } else if (cfg.provider === 'xendit') {
             return await _xenditBuat(order_id, gross_amount, pelanggan, cfg);
         } else if (cfg.provider === 'duitku') {
-            return await _duitkuBuat(order_id, gross_amount, pelanggan, cfg);
+            return await _duitkuBuat(order_id, gross_amount, pelanggan, cfg, metode);
         } else if (cfg.provider === 'tripay') {
-            return await _tripayBuat(order_id, gross_amount, pelanggan, cfg);
+            return await _tripayBuat(order_id, gross_amount, pelanggan, cfg, metode);
         }
     } catch (err) {
         const detail = err.response?.data ? JSON.stringify(err.response.data) : err.message;
@@ -201,7 +201,7 @@ async function handleXenditWebhook(body) {
 // ============================================================
 // DUITKU
 // ============================================================
-async function _duitkuBuat(order_id, gross_amount, pelanggan, cfg) {
+async function _duitkuBuat(order_id, gross_amount, pelanggan, cfg, metode) {
     const baseUrl = cfg.sandbox
         ? 'https://sandbox.duitku.com/webapi/api/merchant/v2/inquiry'
         : 'https://passport.duitku.com/webapi/api/merchant/v2/inquiry';
@@ -214,7 +214,7 @@ async function _duitkuBuat(order_id, gross_amount, pelanggan, cfg) {
     const resp = await axios.post(baseUrl, {
         merchantCode: cfg.merchantCode,
         paymentAmount: Math.round(gross_amount),
-        paymentMethod: 'VC',
+        paymentMethod: metode || 'VC',
         merchantOrderId,
         productDetails: `Tagihan Internet ${pelanggan.nama}`,
         email:    pelanggan.email || `${pelanggan.username}@customer.id`,
@@ -237,7 +237,7 @@ async function _duitkuBuat(order_id, gross_amount, pelanggan, cfg) {
 // ============================================================
 // TRIPAY
 // ============================================================
-async function _tripayBuat(order_id, gross_amount, pelanggan, cfg) {
+async function _tripayBuat(order_id, gross_amount, pelanggan, cfg, metode) {
     const baseUrl = cfg.sandbox
         ? 'https://tripay.co.id/api-sandbox/transaction/create'
         : 'https://tripay.co.id/api/transaction/create';
@@ -247,7 +247,7 @@ async function _tripayBuat(order_id, gross_amount, pelanggan, cfg) {
         .digest('hex');
 
     const resp = await axios.post(baseUrl, {
-        method:           'QRIS',
+        method:           metode || 'QRIS',
         merchant_ref:     order_id,
         amount:           Math.round(gross_amount),
         customer_name:    pelanggan.nama,

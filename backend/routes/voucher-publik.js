@@ -118,6 +118,7 @@ router.post('/beli', limitBeli, async (req, res, next) => {
     const pg = await paymentService.buatTransaksi({
       order_id,
       gross_amount: paket.harga,
+      metode,
       pelanggan: {
         nama, no_hp: noHpNormal,
         username:   `voucher_${Date.now()}`,
