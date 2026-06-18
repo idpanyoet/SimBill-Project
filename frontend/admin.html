@@ -660,7 +660,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
           </div>
         </div>
         <div class="action-bar">
-          <button class="btn primary" onclick="openModal('m-gen-voucher')">⚡ Generate Voucher Batch</button>
+          <button class="btn primary" onclick="openModal('m-gen-voucher')">⚡ Generate Voucher</button>
           <div class="dropdown" id="dd-aksi-massal">
             <button class="btn" onclick="toggleDropdownAksi()">Aksi Massal ▾</button>
             <div class="dropdown-menu" id="dd-aksi-menu" style="display:none;position:absolute;z-index:100;background:var(--bg2);border:1px solid var(--border);border-radius:8px;min-width:190px;box-shadow:0 4px 16px rgba(0,0,0,.3);overflow:hidden">
@@ -1679,7 +1679,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
           <i class="ti ti-bolt" style="font-size:20px;color:#d97706" aria-hidden="true"></i>
         </div>
         <div>
-          <div class="td-text-main" style="font-size:15px;font-weight:700">Generate Voucher Batch</div>
+          <div class="td-text-main" style="font-size:15px;font-weight:700">Generate Voucher</div>
           <div class="td-text-sub" style="font-size:11px;margin-top:1px">Buat kode voucher dalam jumlah banyak</div>
         </div>
       </div>
@@ -1709,11 +1709,11 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
       <div>
         <label class="fg-label">Jumlah Voucher — <span id="gv-jml-lbl" style="color:#d97706;font-weight:700">50</span></label>
         <div style="display:flex;align-items:center;gap:10px">
-          <input type="range" id="fv-jml-range" min="1" max="500" value="50" oninput="gvSyncJml('range')" style="flex:1;height:5px;cursor:pointer;accent-color:#d97706">
-          <input type="number" id="fv-jml" min="1" max="500" value="50" oninput="gvSyncJml('input')" style="width:70px;padding:7px 10px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#d97706;font-size:15px;font-weight:700;text-align:center;font-family:inherit">
+          <input type="range" id="fv-jml-range" min="1" max="9999" value="50" oninput="gvSyncJml('range')" style="flex:1;height:5px;cursor:pointer;accent-color:#d97706">
+          <input type="number" id="fv-jml" min="1" value="50" oninput="gvSyncJml('input')" style="width:70px;padding:7px 10px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#d97706;font-size:15px;font-weight:700;text-align:center;font-family:inherit">
         </div>
         <div style="display:flex;justify-content:space-between;font-size:10px;margin-top:3px">
-          <span class="td-text-sub">1</span><span class="td-text-sub">Maks. 500</span>
+          <span class="td-text-sub">1</span><span class="td-text-sub">Tak terbatas</span>
         </div>
       </div>
 
