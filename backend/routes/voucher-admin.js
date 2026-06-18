@@ -35,6 +35,26 @@ router.get('/', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// GET /api/voucher/batch — riwayat batch generate
+router.get('/batch', async (req, res, next) => {
+  try {
+    const rows = await query(`
+      SELECT v.batch_id,
+             COUNT(*) AS jumlah,
+             SUM(CASE WHEN v.status='used' THEN 1 ELSE 0 END) AS terpakai,
+             MIN(v.created_at) AS created_at,
+             p.nama AS nama_paket
+      FROM voucher v
+      JOIN paket p ON v.paket_id = p.id
+      WHERE v.batch_id IS NOT NULL
+      GROUP BY v.batch_id, p.nama
+      ORDER BY MIN(v.created_at) DESC
+      LIMIT 20
+    `);
+    res.json(rows);
+  } catch(e) { next(e); }
+});
+
 // POST /api/voucher/generate — buat voucher batch
 router.post('/generate', async (req, res, next) => {
   try {
