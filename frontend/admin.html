@@ -225,6 +225,23 @@ body.dark #nr-komisi-range{accent-color:#a78bfa}
 body.dark #rs-komisi-lbl{color:#a78bfa!important}
 body.dark .btn[style*="background:#7c3aed"]{background:#7c3aed!important}
 
+/* ── TAMBAH SALDO RESELLER ── */
+.ts-quick-chip{padding:5px 12px;border-radius:99px;border:1.5px solid #e2e7ef;font-size:11px;font-weight:600;cursor:pointer;color:#64748b;background:#fff;transition:all .15s;font-family:inherit}
+.ts-quick-chip:hover{border-color:#16a34a;color:#16a34a;background:#f0fdf4}
+.ts-quick-chip.active{border-color:#16a34a;background:#dcfce7;color:#15803d}
+body.dark .ts-quick-chip{background:#21262d;border-color:#30363d;color:#8b949e}
+body.dark .ts-quick-chip:hover{border-color:#4ade80;color:#4ade80;background:rgba(22,163,74,.1)}
+body.dark .ts-quick-chip.active{border-color:#4ade80;background:rgba(22,163,74,.15);color:#4ade80}
+body.dark #ts-preview{color:#4ade80!important}
+body.dark [style*="background:#f0fdf4"]{background:rgba(22,163,74,.08)!important;border-color:rgba(22,163,74,.2)!important}
+body.dark [style*="color:#166534"]{color:#4ade80!important}
+body.dark [style*="color:#15803d"]:not(.btn){color:#4ade80!important}
+body.dark #ts-jumlah{background:#0d1117!important;border-color:#30363d!important;color:#e6edf3!important}
+/* ── EDIT PAKET MODAL ── */
+body.dark #ep2-tipe-card-pppoe,body.dark #ep2-tipe-card-hotspot,body.dark #ep2-tipe-card-keduanya{background:#1c2128;border-color:#30363d}
+body.dark #ep2-harga-preview{color:#fbbf24!important}
+body.dark #ep2-speed-preview{background:rgba(37,99,235,.15);color:#60a5fa}
+body.dark #ep2-speed-up-preview{background:rgba(20,184,166,.15);color:#34d399}
 /* ── EDIT PELANGGAN MODAL ── */
 .ep-info-card{background:#f8fafc;border:1px solid #e2e7ef}
 body.dark .ep-info-card{background:#1c2128;border-color:#30363d}
@@ -1528,18 +1545,113 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 </div>
 
 <div class="overlay" id="m-edit-paket">
-  <div class="modal">
-    <div class="modal-hdr"><h3 id="ep2-title">✏️ Edit Paket</h3><button class="btn-x" onclick="closeModal('m-edit-paket')">✕</button></div>
-    <div class="modal-body">
-      <input type="hidden" id="ep2-id">
-      <div class="fg-row"><div class="fg"><label>Nama Paket</label><input id="ep2-nama" placeholder="Paket Fiber 100Mbps"></div><div class="fg"><label>Kecepatan (Mbps)</label><input id="ep2-speed" type="number" placeholder="100"></div></div>
-      <div class="fg-row"><div class="fg"><label>Harga</label><input id="ep2-harga" placeholder="500000"></div><div class="fg"><label>Pool RADIUS</label><input id="ep2-pool" placeholder="pool-100mbps"></div></div>
-      <div class="fg-row">
-        <div class="fg"><label>Masa Berlaku</label><input id="ep2-masa" type="number" min="1" value="30" placeholder="30"></div>
-        <div class="fg"><label>Satuan</label><select id="ep2-satuan"><option value="jam">Jam</option><option value="hari">Hari</option><option value="bulan">Bulan</option></select></div>
+  <div class="modal" style="max-width:520px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#fef3c7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-package" style="font-size:20px;color:#d97706" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div id="ep2-title" class="td-text-main" style="font-size:15px;font-weight:700">Edit Paket</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Ubah konfigurasi paket internet</div>
+        </div>
       </div>
-      <div class="fg"><label>Tipe Koneksi</label><select id="ep2-tipe"><option value="pppoe">PPPoE saja</option><option value="hotspot">Hotspot saja</option><option value="keduanya">Keduanya (PPPoE & Hotspot)</option></select><small style="color:var(--text3);font-size:11px;display:block;margin-top:4px">Paket akan muncul di storefront voucher jika tipe = Hotspot atau Keduanya</small></div>
-      <div class="modal-foot"><button class="btn" onclick="closeModal('m-edit-paket')">Batal</button><button class="btn primary" onclick="apiUpdatePaketGrid()">💾 Simpan Perubahan</button></div>
+      <button class="btn-x" onclick="closeModal('m-edit-paket')">✕</button>
+    </div>
+
+    <!-- Tipe Koneksi -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px 20px;border-bottom:1px solid #f1f5f9">
+      <div id="ep2-tipe-card-pppoe" onclick="ep2SetTipe('pppoe')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all .15s">
+        <i class="ti ti-router" style="font-size:20px;color:#378ADD;display:block;margin-bottom:4px" aria-hidden="true"></i>
+        <div class="td-text-main" style="font-size:11px;font-weight:600">PPPoE</div>
+        <div class="td-text-sub" style="font-size:9px;margin-top:2px">Kabel / Fiber</div>
+      </div>
+      <div id="ep2-tipe-card-hotspot" onclick="ep2SetTipe('hotspot')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all .15s">
+        <i class="ti ti-wifi" style="font-size:20px;color:#1D9E75;display:block;margin-bottom:4px" aria-hidden="true"></i>
+        <div class="td-text-main" style="font-size:11px;font-weight:600">Hotspot</div>
+        <div class="td-text-sub" style="font-size:9px;margin-top:2px">WiFi / Voucher</div>
+      </div>
+      <div id="ep2-tipe-card-keduanya" onclick="ep2SetTipe('keduanya')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all .15s">
+        <i class="ti ti-arrows-exchange" style="font-size:20px;color:#7F77DD;display:block;margin-bottom:4px" aria-hidden="true"></i>
+        <div class="td-text-main" style="font-size:11px;font-weight:600">Keduanya</div>
+        <div class="td-text-sub" style="font-size:9px;margin-top:2px">PPPoE & Hotspot</div>
+      </div>
+      <input type="hidden" id="ep2-tipe" value="pppoe">
+    </div>
+
+    <div class="modal-body" style="padding:14px 20px;display:flex;flex-direction:column;gap:12px">
+      <input type="hidden" id="ep2-id">
+
+      <div class="fg">
+        <label>Nama Paket</label>
+        <input id="ep2-nama" placeholder="cth: Paket Fiber 100Mbps">
+      </div>
+
+      <div class="fg-row">
+        <div class="fg">
+          <label>Kecepatan Download (Mbps)</label>
+          <input id="ep2-speed" type="number" placeholder="100" oninput="ep2UpdatePreview()">
+          <div style="margin-top:5px">
+            <span id="ep2-speed-preview" class="speed-chip-dn">
+              <i class="ti ti-arrow-down" style="font-size:10px" aria-hidden="true"></i> — Mbps
+            </span>
+          </div>
+        </div>
+        <div class="fg">
+          <label>Kecepatan Upload (Mbps)</label>
+          <input id="ep2-speed-up" type="number" placeholder="50" oninput="ep2UpdatePreview()">
+          <div style="margin-top:5px">
+            <span id="ep2-speed-up-preview" class="speed-chip-up">
+              <i class="ti ti-arrow-up" style="font-size:10px" aria-hidden="true"></i> — Mbps
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="fg-row">
+        <div class="fg">
+          <label>Harga (Rp)</label>
+          <input id="ep2-harga" type="number" placeholder="500000" oninput="ep2UpdateHarga()">
+          <div id="ep2-harga-preview" class="harga-preview-text">—</div>
+          <div class="td-text-sub" style="font-size:10px">per periode masa aktif</div>
+        </div>
+        <div class="fg">
+          <label>Pool RADIUS</label>
+          <input id="ep2-pool" placeholder="pool-100mbps">
+        </div>
+      </div>
+
+      <div class="fg-row">
+        <div class="fg">
+          <label>Masa Berlaku</label>
+          <input id="ep2-masa" type="number" min="1" value="30" placeholder="30">
+        </div>
+        <div class="fg">
+          <label>Satuan</label>
+          <select id="ep2-satuan">
+            <option value="jam">Jam</option>
+            <option value="hari" selected>Hari</option>
+            <option value="bulan">Bulan</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label>Deskripsi (opsional)</label>
+        <input id="ep2-deskripsi" placeholder="cth: Cocok untuk streaming & gaming">
+      </div>
+
+      <div class="paket-info-box">
+        <i class="ti ti-info-circle" style="font-size:14px;margin-top:1px;flex-shrink:0" aria-hidden="true"></i>
+        <span>Paket akan muncul di storefront voucher jika tipe = <b>Hotspot</b> atau <b>Keduanya</b></span>
+      </div>
+
+      <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
+        <button class="btn" onclick="closeModal('m-edit-paket')">Batal</button>
+        <button class="btn primary" style="background:#d97706;box-shadow:0 2px 6px rgba(217,119,6,.3)" onclick="apiUpdatePaketGrid()">
+          <i class="ti ti-device-floppy" style="font-size:14px" aria-hidden="true"></i> Simpan Perubahan
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -2338,16 +2450,65 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 
 <!-- MODAL TAMBAH SALDO RESELLER -->
 <div class="overlay" id="m-tambah-saldo-reseller">
-  <div class="modal" style="max-width:380px">
-    <div class="modal-hdr"><h3>💰 Tambah Saldo Reseller</h3><button class="btn-x" onclick="closeModal('m-tambah-saldo-reseller')">✕</button></div>
-    <div class="modal-body">
+  <div class="modal" style="max-width:420px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#dcfce7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-wallet" style="font-size:20px;color:#16a34a" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="td-text-main" style="font-size:15px;font-weight:700">Tambah Saldo</div>
+          <div id="ts-reseller-nama" class="td-text-sub" style="font-size:11px;margin-top:1px">—</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-tambah-saldo-reseller')">✕</button>
+    </div>
+
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
       <input type="hidden" id="ts-reseller-id">
-      <div class="fg"><label id="ts-reseller-nama" style="font-size:13px;font-weight:600;color:var(--text)">—</label></div>
-      <div class="fg"><label>Jumlah (Rp)</label><input id="ts-jumlah" type="number" min="1000" placeholder="Contoh: 100000"></div>
-      <div class="fg"><label>Keterangan</label><input id="ts-keterangan" placeholder="Contoh: Topup manual, bonus, dsb"></div>
-      <div class="modal-foot">
+
+      <!-- Jumlah -->
+      <div>
+        <label class="fg-label">Jumlah Saldo (Rp)</label>
+        <div style="position:relative">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:600;color:#64748b;pointer-events:none">Rp</span>
+          <input id="ts-jumlah" type="number" min="1000" placeholder="0" oninput="tsUpdatePreview()" style="width:100%;padding:9px 12px 9px 36px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#0f172a;font-size:13px;font-family:inherit">
+        </div>
+        <div id="ts-preview" style="font-size:20px;font-weight:700;color:#16a34a;margin-top:5px">—</div>
+        <div class="td-text-sub" style="font-size:11px">Minimal Rp 1.000</div>
+      </div>
+
+      <!-- Quick amount chips -->
+      <div>
+        <label class="fg-label">Nominal Cepat</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+          <button type="button" onclick="tsSetJumlah(50000)"  class="ts-quick-chip">Rp 50rb</button>
+          <button type="button" onclick="tsSetJumlah(100000)" class="ts-quick-chip">Rp 100rb</button>
+          <button type="button" onclick="tsSetJumlah(200000)" class="ts-quick-chip">Rp 200rb</button>
+          <button type="button" onclick="tsSetJumlah(500000)" class="ts-quick-chip">Rp 500rb</button>
+          <button type="button" onclick="tsSetJumlah(1000000)" class="ts-quick-chip">Rp 1jt</button>
+        </div>
+      </div>
+
+      <!-- Keterangan -->
+      <div class="fg">
+        <label>Keterangan</label>
+        <input id="ts-keterangan" placeholder="cth: Topup manual, bonus penjualan, dsb">
+      </div>
+
+      <!-- Summary -->
+      <div id="ts-summary-box" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:12px;color:#166534;font-weight:500">Saldo yang ditambahkan</span>
+          <span id="ts-summary-val" style="font-size:16px;font-weight:700;color:#15803d">—</span>
+        </div>
+      </div>
+
+      <div class="modal-foot" style="padding:0;border:none;margin-top:2px">
         <button class="btn" onclick="closeModal('m-tambah-saldo-reseller')">Batal</button>
-        <button class="btn primary" onclick="apiTambahSaldoReseller()">💰 Tambah Saldo</button>
+        <button class="btn primary" style="background:#16a34a;box-shadow:0 2px 6px rgba(22,163,74,.25)" onclick="apiTambahSaldoReseller()">
+          <i class="ti ti-wallet" style="font-size:14px" aria-hidden="true"></i> Tambah Saldo
+        </button>
       </div>
     </div>
   </div>
@@ -4078,31 +4239,78 @@ function pilihPaketCard(id, el) {
 function bukaEditPaket(id) {
   const p = LAST_PAKET_LIST?.find(x => x.id === id);
   if (!p) return toast('❌ Data paket tidak ditemukan, muat ulang halaman', true);
-  document.getElementById('ep2-id').value      = p.id;
-  document.getElementById('ep2-nama').value    = p.nama;
-  document.getElementById('ep2-speed').value   = p.kecepatan_dn;
-  document.getElementById('ep2-harga').value   = p.harga;
-  document.getElementById('ep2-pool').value    = p.pool_name || '';
-  document.getElementById('ep2-tipe').value    = p.tipe;
-  document.getElementById('ep2-masa').value    = p.masa_aktif || 30;
-  document.getElementById('ep2-satuan').value  = p.satuan_masa || 'hari';
-  document.getElementById('ep2-title').textContent = 'Edit Paket: ' + p.nama;
+  document.getElementById('ep2-id').value       = p.id;
+  document.getElementById('ep2-nama').value     = p.nama;
+  document.getElementById('ep2-speed').value    = p.kecepatan_dn;
+  document.getElementById('ep2-speed-up').value = p.kecepatan_up || p.kecepatan_dn;
+  document.getElementById('ep2-harga').value    = p.harga;
+  document.getElementById('ep2-pool').value     = p.pool_name || '';
+  document.getElementById('ep2-masa').value     = p.masa_aktif || 30;
+  document.getElementById('ep2-satuan').value   = p.satuan_masa || 'hari';
+  document.getElementById('ep2-deskripsi').value= p.deskripsi || '';
+  document.getElementById('ep2-title').textContent = 'Edit: ' + p.nama;
+  // Set tipe card
+  ep2SetTipe(p.tipe || 'pppoe');
+  // Update preview
+  ep2UpdatePreview();
+  ep2UpdateHarga();
   openModal('m-edit-paket');
+}
+
+function ep2SetTipe(tipe) {
+  document.getElementById('ep2-tipe').value = tipe;
+  const isDark = document.body.classList.contains('dark');
+  const cfg = {
+    pppoe:    { border:'#378ADD', bg:'#E6F1FB', bgD:'rgba(37,99,235,.15)',  color:'#0369a1' },
+    hotspot:  { border:'#1D9E75', bg:'#E1F5EE', bgD:'rgba(20,184,166,.15)', color:'#0F6E56' },
+    keduanya: { border:'#7F77DD', bg:'#EEEDFE', bgD:'rgba(99,102,241,.15)', color:'#534AB7' }
+  };
+  ['pppoe','hotspot','keduanya'].forEach(function(t) {
+    const el = document.getElementById('ep2-tipe-card-' + t);
+    if (!el) return;
+    const lbl = el.querySelectorAll('div')[0];
+    if (t === tipe) {
+      el.style.borderColor = cfg[t].border;
+      el.style.background  = isDark ? cfg[t].bgD : cfg[t].bg;
+      if (lbl) { lbl.style.color = cfg[t].color; lbl.classList.remove('td-text-main'); }
+    } else {
+      el.style.borderColor = isDark ? '#30363d' : '#e2e7ef';
+      el.style.background  = isDark ? '#1c2128' : 'transparent';
+      if (lbl) { lbl.style.color = ''; lbl.classList.add('td-text-main'); }
+    }
+  });
+}
+
+function ep2UpdatePreview() {
+  const dn = document.getElementById('ep2-speed')?.value;
+  const up = document.getElementById('ep2-speed-up')?.value;
+  const pDn = document.getElementById('ep2-speed-preview');
+  const pUp = document.getElementById('ep2-speed-up-preview');
+  if (pDn) pDn.innerHTML = `<i class="ti ti-arrow-down" style="font-size:10px"></i> ${dn||'—'} Mbps`;
+  if (pUp) pUp.innerHTML = `<i class="ti ti-arrow-up" style="font-size:10px"></i> ${up||'—'} Mbps`;
+}
+
+function ep2UpdateHarga() {
+  const val = parseInt(document.getElementById('ep2-harga')?.value) || 0;
+  const el  = document.getElementById('ep2-harga-preview');
+  if (el) el.textContent = val ? 'Rp ' + val.toLocaleString('id-ID') : '—';
 }
 
 async function apiUpdatePaketGrid() {
   const id           = document.getElementById('ep2-id').value;
   const nama         = document.getElementById('ep2-nama').value.trim();
   const kecepatan_dn = parseInt(document.getElementById('ep2-speed').value);
+  const kecepatan_up = parseInt(document.getElementById('ep2-speed-up').value) || kecepatan_dn;
   const harga        = parseInt(document.getElementById('ep2-harga').value);
   const pool_name    = document.getElementById('ep2-pool').value.trim();
   const tipe         = document.getElementById('ep2-tipe').value;
   const masa_aktif   = parseInt(document.getElementById('ep2-masa').value) || 30;
   const satuan_masa  = document.getElementById('ep2-satuan').value;
+  const deskripsi    = document.getElementById('ep2-deskripsi')?.value.trim() || '';
   if (!nama||!kecepatan_dn||!harga) return toast('❌ Nama, kecepatan, harga wajib diisi', true);
   try {
     await apiFetch('/api/paket/'+id, {method:'PUT',
-      body: JSON.stringify({nama, kecepatan_up:kecepatan_dn, kecepatan_dn, harga, pool_name, tipe, masa_aktif, satuan_masa})
+      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi})
     });
     toast('✅ Paket diperbarui');
     closeModal('m-edit-paket');
@@ -6258,11 +6466,36 @@ async function apiKonfirmasiTopup(orderId, nama) {
 }
 
 function bukaTambahSaldoReseller(id, nama) {
-  document.getElementById('ts-reseller-id').value = id;
-  document.getElementById('ts-reseller-nama').textContent = 'Reseller: ' + nama;
-  document.getElementById('ts-jumlah').value = '';
-  document.getElementById('ts-keterangan').value = '';
+  document.getElementById('ts-reseller-id').value    = id;
+  document.getElementById('ts-reseller-nama').textContent = nama;
+  document.getElementById('ts-jumlah').value         = '';
+  document.getElementById('ts-keterangan').value     = '';
+  document.getElementById('ts-preview').textContent  = '—';
+  const sumBox = document.getElementById('ts-summary-box');
+  if (sumBox) sumBox.style.display = 'none';
+  document.querySelectorAll('.ts-quick-chip').forEach(c => c.classList.remove('active'));
   openModal('m-tambah-saldo-reseller');
+}
+
+function tsSetJumlah(val) {
+  document.getElementById('ts-jumlah').value = val;
+  document.querySelectorAll('.ts-quick-chip').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+  tsUpdatePreview();
+}
+
+function tsUpdatePreview() {
+  const val = parseInt(document.getElementById('ts-jumlah').value) || 0;
+  const fmt = val ? 'Rp ' + val.toLocaleString('id-ID') : '—';
+  document.getElementById('ts-preview').textContent = fmt;
+  const sumBox = document.getElementById('ts-summary-box');
+  const sumVal = document.getElementById('ts-summary-val');
+  if (sumBox) sumBox.style.display = val > 0 ? 'block' : 'none';
+  if (sumVal) sumVal.textContent = fmt;
+  // Reset chip active jika manual input
+  const chips = document.querySelectorAll('.ts-quick-chip');
+  const nominals = [50000,100000,200000,500000,1000000];
+  chips.forEach((c,i) => c.classList.toggle('active', val === nominals[i]));
 }
 
 async function apiTambahSaldoReseller() {
