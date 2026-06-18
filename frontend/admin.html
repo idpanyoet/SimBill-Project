@@ -924,11 +924,13 @@ body.dark .toggle-thumb{left:18px}
             <div class="fg"><label>Provider</label><select id="pg-provider" onchange="ubahProviderPG()"><option value="midtrans">Midtrans</option><option value="xendit">Xendit</option><option value="duitku">Duitku</option><option value="tripay">Tripay</option></select></div>
 
             <div id="pg-fields-midtrans">
+              <div class="fg"><label>Merchant ID</label><input id="pg-merchant-code-midtrans" placeholder="Merchant ID dari Midtrans dashboard"></div>
               <div class="fg"><label>Server Key</label><input id="pg-server-key" type="password" placeholder="Server key dari Midtrans"></div>
               <div class="fg"><label>Client Key</label><input id="pg-client-key" type="password" placeholder="Client key (opsional)"></div>
             </div>
 
             <div id="pg-fields-xendit" style="display:none">
+              <div class="fg"><label>Business ID</label><input id="pg-merchant-code-xendit" placeholder="Business ID dari Xendit dashboard"></div>
               <div class="fg"><label>Secret Key</label><input id="pg-secret-key" type="password" placeholder="Secret key dari Xendit"></div>
               <div class="fg"><label>Webhook Verification Token</label><input id="pg-webhook-token" type="password" placeholder="Token dari Xendit dashboard"></div>
             </div>
@@ -3736,6 +3738,11 @@ async function loadPayment() {
     document.getElementById('pg-provider').value = provider;
     document.getElementById('pg-sandbox').checked = map.pg_sandbox === '1';
     if (map.pg_merchant_code)   { document.getElementById('pg-merchant-code-duitku').value = map.pg_merchant_code; document.getElementById('pg-merchant-code-tripay').value = map.pg_merchant_code; }
+    // Load merchant code per provider jika ada
+    if (map.pg_merchant_code_duitku)   document.getElementById('pg-merchant-code-duitku').value   = map.pg_merchant_code_duitku;
+    if (map.pg_merchant_code_tripay)   document.getElementById('pg-merchant-code-tripay').value   = map.pg_merchant_code_tripay;
+    if (map.pg_merchant_code_midtrans) document.getElementById('pg-merchant-code-midtrans').value = map.pg_merchant_code_midtrans;
+    if (map.pg_merchant_code_xendit)   document.getElementById('pg-merchant-code-xendit').value   = map.pg_merchant_code_xendit;
     document.getElementById('pg-webhook-url').value =
       (map.app_url || window.location.origin) + '/webhook/' + provider;
 
@@ -3795,16 +3802,20 @@ async function apiSimpanConfigPG() {
   const sudahAdaKredensial = document.getElementById('p-payment').dataset.hasCred === provider;
 
   if (provider === 'midtrans') {
-    const serverKey = document.getElementById('pg-server-key').value.trim();
-    const clientKey = document.getElementById('pg-client-key').value.trim();
+    const merchantId = document.getElementById('pg-merchant-code-midtrans').value.trim();
+    const serverKey  = document.getElementById('pg-server-key').value.trim();
+    const clientKey  = document.getElementById('pg-client-key').value.trim();
     if (!serverKey && !sudahAdaKredensial) return toast('❌ Server key wajib diisi', true);
+    if (merchantId) { body.pg_merchant_code = merchantId; body.pg_merchant_code_midtrans = merchantId; }
     if (serverKey) body.pg_server_key = serverKey;
     if (clientKey) body.pg_client_key = clientKey;
 
   } else if (provider === 'xendit') {
-    const secretKey = document.getElementById('pg-secret-key').value.trim();
+    const businessId   = document.getElementById('pg-merchant-code-xendit').value.trim();
+    const secretKey    = document.getElementById('pg-secret-key').value.trim();
     const webhookToken = document.getElementById('pg-webhook-token').value.trim();
     if (!secretKey && !sudahAdaKredensial) return toast('❌ Secret key wajib diisi', true);
+    if (businessId) { body.pg_merchant_code_xendit = businessId; }
     if (secretKey) body.pg_secret_key = secretKey;
     if (webhookToken) body.pg_webhook_token = webhookToken;
 
@@ -3814,6 +3825,7 @@ async function apiSimpanConfigPG() {
     if (!merchantCode) return toast('❌ Merchant code wajib diisi', true);
     if (!apiKey && !sudahAdaKredensial) return toast('❌ API key wajib diisi', true);
     body.pg_merchant_code = merchantCode;
+    body.pg_merchant_code_duitku = merchantCode;
     if (apiKey) body.pg_api_key = apiKey;
 
   } else if (provider === 'tripay') {
@@ -3823,6 +3835,7 @@ async function apiSimpanConfigPG() {
     if (!merchantCode) return toast('❌ Merchant code wajib diisi', true);
     if ((!apiKey || !privateKey) && !sudahAdaKredensial) return toast('❌ API key dan private key wajib diisi', true);
     body.pg_merchant_code = merchantCode;
+    body.pg_merchant_code_tripay = merchantCode;
     if (apiKey) body.pg_api_key = apiKey;
     if (privateKey) body.pg_private_key = privateKey;
   }

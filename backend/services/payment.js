@@ -20,22 +20,37 @@ async function getConfig() {
     const rows = await query(
         `SELECT kunci, nilai FROM setting WHERE kunci IN
          ('pg_provider','pg_sandbox','pg_server_key','pg_client_key',
-          'pg_secret_key','pg_webhook_token','pg_merchant_code','pg_api_key',
-          'pg_private_key','app_url')`
+          'pg_secret_key','pg_webhook_token','pg_merchant_code',
+          'pg_merchant_code_duitku','pg_merchant_code_tripay',
+          'pg_merchant_code_midtrans','pg_merchant_code_xendit',
+          'pg_api_key','pg_private_key','app_url')`
     );
     const map = {};
     rows.forEach(r => map[r.kunci] = r.nilai);
 
+    const provider = map.pg_provider || 'midtrans';
+
+    // Merchant code per provider — fallback ke pg_merchant_code lama
+    const merchantCode = provider === 'duitku'
+        ? (map.pg_merchant_code_duitku  || map.pg_merchant_code || '')
+        : provider === 'tripay'
+        ? (map.pg_merchant_code_tripay  || map.pg_merchant_code || '')
+        : provider === 'midtrans'
+        ? (map.pg_merchant_code_midtrans|| map.pg_merchant_code || '')
+        : provider === 'xendit'
+        ? (map.pg_merchant_code_xendit  || map.pg_merchant_code || '')
+        : (map.pg_merchant_code || '');
+
     _cache = {
-        provider:      map.pg_provider      || 'midtrans',
-        sandbox:       map.pg_sandbox       !== '0',   // default true kecuali eksplisit '0'
+        provider,
+        sandbox:       map.pg_sandbox       !== '0',
         serverKey:     map.pg_server_key    || '',
         clientKey:     map.pg_client_key    || '',
-        secretKey:     map.pg_secret_key    || '',      // Xendit
-        webhookToken:  map.pg_webhook_token || '',      // Xendit
-        merchantCode:  map.pg_merchant_code || '',      // Duitku/Tripay
-        apiKey:        map.pg_api_key       || '',      // Duitku/Tripay
-        privateKey:    map.pg_private_key   || '',      // Tripay
+        secretKey:     map.pg_secret_key    || '',
+        webhookToken:  map.pg_webhook_token || '',
+        merchantCode,
+        apiKey:        map.pg_api_key       || '',
+        privateKey:    map.pg_private_key   || '',
         appUrl:        map.app_url          || process.env.APP_URL || 'http://localhost:3000'
     };
     _cacheAt = now;

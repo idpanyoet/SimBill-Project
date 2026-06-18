@@ -127,6 +127,18 @@ jalankanMigration().catch(e => console.warn('[migration] Gagal:', e.message));
 const radiusService = require('./services/radius');
 radiusService.syncVoucher().catch(e => console.warn('[startup sync] Gagal:', e.message));
 
+// Init merchant code per provider dari pg_merchant_code lama
+(async () => {
+    try {
+        const { query: q, queryOne: qo } = require('./config/db');
+        const mc = await qo("SELECT nilai FROM setting WHERE kunci='pg_merchant_code'");
+        if (mc?.nilai) {
+            await q("INSERT IGNORE INTO setting (kunci,nilai,deskripsi) VALUES ('pg_merchant_code_duitku',?,'Merchant code Duitku')", [mc.nilai]);
+            await q("INSERT IGNORE INTO setting (kunci,nilai,deskripsi) VALUES ('pg_merchant_code_tripay',?,'Merchant code Tripay')", [mc.nilai]);
+        }
+    } catch(e) {}
+})();
+
 // Sync NAS ke clients.conf saat server start
 setTimeout(async () => {
     try {
