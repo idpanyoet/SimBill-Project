@@ -800,6 +800,16 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
             <button class="btn primary" onclick="apiSimpanConfigWA()">Simpan Konfigurasi</button>
             <div class="divider"></div>
             <div class="card-title">Template Pesan</div>
+            <div class="fg"><label>Pelanggan Baru Didaftarkan</label><textarea id="wa-tpl-daftar" rows="4">Halo {nama}, selamat datang! 🎉
+
+Akun internet Anda telah aktif.
+
+🔑 Username: *{username}*
+🔒 Password: *{password}*
+📦 Paket: *{paket}*
+📅 Aktif hingga: *{tgl_expired}*
+
+Selamat menikmati layanan internet kami! 🌐</textarea></div>
             <div class="fg"><label>Reminder Jatuh Tempo</label><textarea id="wa-tpl-reminder">Halo {nama}, tagihan *Rp {jumlah}* jatuh tempo *{tgl_jatuh_tempo}*. Bayar: {link_pembayaran}</textarea></div>
             <div class="fg"><label>Notifikasi Suspend</label><textarea id="wa-tpl-suspend">Halo {nama}, layanan internet Anda telah *disuspend*. Hubungi kami untuk reaktivasi.</textarea></div>
             <div class="fg"><label>Konfirmasi Pembayaran</label><textarea id="wa-tpl-konfirmasi">Terima kasih {nama}! Pembayaran diterima ✅. Aktif hingga {tgl_expired}.</textarea></div>
@@ -5402,6 +5412,11 @@ async function loadWALog() {
     if (map.wa_provider) document.getElementById('wa-provider').value = map.wa_provider;
     if (map.wa_sender)   document.getElementById('wa-sender').value   = map.wa_sender;
     if (map.wa_phone_id) document.getElementById('wa-phone-id').value = map.wa_phone_id;
+    // Load template pesan
+    if (map.wa_tpl_daftar)     document.getElementById('wa-tpl-daftar').value     = map.wa_tpl_daftar;
+    if (map.wa_tpl_reminder)   document.getElementById('wa-tpl-reminder').value   = map.wa_tpl_reminder;
+    if (map.wa_tpl_suspend)    document.getElementById('wa-tpl-suspend').value    = map.wa_tpl_suspend;
+    if (map.wa_tpl_konfirmasi) document.getElementById('wa-tpl-konfirmasi').value = map.wa_tpl_konfirmasi;
     // Tampilkan field Phone ID hanya untuk WA Business API
     document.getElementById('wa-phoneid-wrap').style.display =
       map.wa_provider === 'wa_business' ? '' : 'none';
@@ -5465,8 +5480,17 @@ async function apiSimpanConfigWA() {
     const body = { wa_provider: provider, wa_sender: sender };
     if (token) body.wa_token = token;
     if (provider === 'wa_business') body.wa_phone_id = phoneId;
+    // Simpan template pesan
+    const tplDaftar    = document.getElementById('wa-tpl-daftar')?.value.trim();
+    const tplReminder  = document.getElementById('wa-tpl-reminder')?.value.trim();
+    const tplSuspend   = document.getElementById('wa-tpl-suspend')?.value.trim();
+    const tplKonfirmasi= document.getElementById('wa-tpl-konfirmasi')?.value.trim();
+    if (tplDaftar)     body.wa_tpl_daftar     = tplDaftar;
+    if (tplReminder)   body.wa_tpl_reminder   = tplReminder;
+    if (tplSuspend)    body.wa_tpl_suspend    = tplSuspend;
+    if (tplKonfirmasi) body.wa_tpl_konfirmasi = tplKonfirmasi;
     await apiFetch('/api/setting', {method:'PUT', body: JSON.stringify(body)});
-    toast('✅ Konfigurasi WA disimpan');
+    toast('✅ Konfigurasi & template WA disimpan');
   } catch(e) { toast('❌ '+e.message, true); }
 }
 

@@ -18,16 +18,21 @@ async function getConfig() {
 
     const rows = await query(
         `SELECT kunci, nilai FROM setting WHERE kunci IN
-         ('wa_provider','wa_token','wa_sender','wa_phone_id')`
+         ('wa_provider','wa_token','wa_sender','wa_phone_id',
+          'wa_tpl_daftar','wa_tpl_reminder','wa_tpl_suspend','wa_tpl_konfirmasi')`
     );
     const map = {};
     rows.forEach(r => map[r.kunci] = r.nilai);
 
     _cache = {
-        provider: map.wa_provider || 'fonnte',
-        token:    map.wa_token    || '',
-        sender:   map.wa_sender   || '',
-        phoneId:  map.wa_phone_id || ''
+        provider:         map.wa_provider       || 'fonnte',
+        token:            map.wa_token           || '',
+        sender:           map.wa_sender          || '',
+        phoneId:          map.wa_phone_id        || '',
+        wa_tpl_daftar:    map.wa_tpl_daftar      || '',
+        wa_tpl_reminder:  map.wa_tpl_reminder    || '',
+        wa_tpl_suspend:   map.wa_tpl_suspend     || '',
+        wa_tpl_konfirmasi:map.wa_tpl_konfirmasi  || ''
     };
     _cacheAt = now;
     return _cache;
@@ -197,6 +202,23 @@ Untuk mengaktifkan kembali, silakan bayar tagihan Anda dan hubungi kami.
     return kirimPesan(pelanggan.no_hp, pesan, pelanggan.id, 'suspend');
 }
 
+// Notifikasi pelanggan baru didaftarkan
+async function kirimPelangganBaru({ no_hp, nama, username, password, nama_paket, tgl_expired }) {
+    const cfg = await getConfig();
+    // Gunakan template dari DB jika ada, fallback ke default
+    let tpl = cfg.wa_tpl_daftar || '';
+    if (!tpl) {
+        tpl = `Halo *{nama}*, selamat datang! 🎉\n\nAkun internet Anda telah aktif.\n\n🔑 Username: *{username}*\n🔒 Password: *{password}*\n📦 Paket: *{paket}*\n📅 Aktif hingga: *{tgl_expired}*\n\nSelamat menikmati layanan internet kami! 🌐`;
+    }
+    const pesan = tpl
+        .replace(/{nama}/g, nama)
+        .replace(/{username}/g, username)
+        .replace(/{password}/g, password)
+        .replace(/{paket}/g, nama_paket || '')
+        .replace(/{tgl_expired}/g, tgl_expired || '-');
+    return kirimPesan(no_hp, pesan, null, 'daftar');
+}
+
 // Kirim OTP / kode voucher
 async function kirimOTP(no_hp, kode) {
     const pesan = `Kode OTP Anda: *${kode}*\nBerlaku 5 menit. Jangan bagikan ke siapapun.`;
@@ -254,6 +276,7 @@ module.exports = {
     kirimLinkBayar,
     kirimKonfirmasiBayar,
     kirimSuspend,
+    kirimPelangganBaru,
     kirimOTP,
     kirimVoucher,
     broadcast,

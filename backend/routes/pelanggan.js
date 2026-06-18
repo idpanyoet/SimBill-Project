@@ -100,6 +100,17 @@ router.post('/', async (req, res, next) => {
             throw new Error(`Gagal sinkronisasi RADIUS: ${radiusErr.message}`);
         }
 
+        // Kirim WA notifikasi pelanggan baru (non-blocking)
+        const waService = require('../services/whatsapp');
+        waService.kirimPelangganBaru({
+            no_hp:      no_hp,
+            nama:       nama,
+            username:   username,
+            password:   password,
+            nama_paket: paket.nama,
+            tgl_expired: tgl_expired
+        }).catch(e => console.warn('[WA] kirimPelangganBaru gagal:', e.message));
+
         res.status(201).json({
             pesan: 'Pelanggan berhasil ditambahkan',
             id: result.insertId
