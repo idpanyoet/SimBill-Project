@@ -16,7 +16,7 @@ const limitBeli = rateLimit({
 // ── GET /voucher/info ── info publik storefront ──────────────
 router.get('/info', async (req, res, next) => {
   try {
-    const rows = await query(`SELECT kunci, nilai FROM setting WHERE kunci IN ('app_name','wa_number','alamat')`);
+    const rows = await query(`SELECT kunci, nilai FROM setting WHERE kunci IN ('app_name','wa_number','alamat','pg_metode_aktif')`);
     const map = {};
     rows.forEach(r => map[r.kunci] = r.nilai);
     res.json(map);

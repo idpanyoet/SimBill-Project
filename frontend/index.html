@@ -267,19 +267,8 @@ footer a:hover{color:var(--accent)}
         <input type="text" id="inp-nama" placeholder="Nama Anda">
       </div>
       <div class="sec-title">Metode Pembayaran</div>
-      <div class="metode-grid">
-        <div class="metode-item sel" onclick="pilihMetode(this,'qris')">
-          <span class="ico">⬛</span><div><div class="name">QRIS</div><div class="sub">GoPay · OVO · Dana</div></div>
-        </div>
-        <div class="metode-item" onclick="pilihMetode(this,'va_bca')">
-          <span class="ico">🏦</span><div><div class="name">VA BCA</div><div class="sub">ATM / m-BCA</div></div>
-        </div>
-        <div class="metode-item" onclick="pilihMetode(this,'va_bri')">
-          <span class="ico">🏦</span><div><div class="name">VA BRI</div><div class="sub">ATM / BRImo</div></div>
-        </div>
-        <div class="metode-item" onclick="pilihMetode(this,'ovo')">
-          <span class="ico">💜</span><div><div class="name">OVO</div><div class="sub">Push notif OVO</div></div>
-        </div>
+      <div class="metode-grid" id="metode-checkout-grid">
+        <div style="color:var(--text3);font-size:12px;padding:8px 0">Memuat metode...</div>
       </div>
       <button class="btn-bayar" id="btn-bayar" onclick="prosesBayar()">
         🔒 Bayar Sekarang
@@ -440,9 +429,8 @@ function bukaBeli(cardId) {
   document.getElementById('co-harga').textContent  = 'Rp ' + paketDipilih.harga.toLocaleString('id-ID');
   document.getElementById('inp-nohp').value = '';
   document.getElementById('inp-nama').value = '';
-  document.querySelectorAll('.metode-item').forEach(function(m){ m.classList.remove('sel'); });
-  document.querySelector('.metode-item').classList.add('sel');
-  metode = 'qris';
+  metode = '';
+  loadMetodeCheckout();
   document.getElementById('ov-checkout').classList.add('open');
 }
 
@@ -537,6 +525,53 @@ function toast(msg) {
   var el = document.getElementById('toast-el');
   el.textContent = msg; el.classList.add('show');
   clearTimeout(el._t); el._t = setTimeout(function(){ el.classList.remove('show'); }, 3500);
+}
+
+var SEMUA_METODE = {
+  'QRIS':       { ico:'⬛', name:'QRIS',          sub:'GoPay · OVO · Dana · ShopeePay' },
+  'BRIVA':      { ico:'🏦', name:'VA BRI',         sub:'ATM / BRImo' },
+  'BCAVA':      { ico:'🏦', name:'VA BCA',         sub:'ATM / m-BCA' },
+  'BNIVA':      { ico:'🏦', name:'VA BNI',         sub:'ATM / BNI Mobile' },
+  'MANDIRIVA':  { ico:'🏦', name:'VA Mandiri',     sub:'ATM / Livin' },
+  'BSIVA':      { ico:'🏦', name:'VA BSI',         sub:'ATM / BSI Mobile' },
+  'PERMATAVA':  { ico:'🏦', name:'VA Permata',     sub:'ATM / PermataMobile' },
+  'ALFAMART':   { ico:'🏪', name:'Alfamart',       sub:'Alfamart / Alfamidi' },
+  'OVO':        { ico:'💜', name:'OVO',            sub:'Push notif OVO' },
+  'M2':         { ico:'⬛', name:'QRIS',           sub:'Semua dompet digital' },
+  'VC':         { ico:'🏦', name:'Virtual Account',sub:'BCA · BRI · BNI · Mandiri' },
+  'DA':         { ico:'💙', name:'DANA',           sub:'DANA' },
+  'LF':         { ico:'❤️', name:'LinkAja',        sub:'LinkAja' },
+  'A1':         { ico:'🏪', name:'Alfamart',       sub:'Alfamart / Alfamidi' },
+  'snap':       { ico:'💳', name:'Midtrans Snap',  sub:'Semua metode Midtrans' },
+  'gopay':      { ico:'💚', name:'GoPay',          sub:'GoPay via Midtrans' },
+  'qris':       { ico:'⬛', name:'QRIS',           sub:'QRIS via Midtrans/Xendit' },
+  'xendit':     { ico:'💳', name:'Xendit Invoice', sub:'Semua metode Xendit' },
+  'DANA':       { ico:'💙', name:'DANA',           sub:'DANA via Xendit' },
+};
+
+function loadMetodeCheckout() {
+  var grid = document.getElementById('metode-checkout-grid');
+  if (!grid) return;
+  fetch('/voucher/info')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var aktif = d.pg_metode_aktif ? d.pg_metode_aktif.split(',').filter(Boolean) : ['qris','QRIS'];
+      if (!aktif.length) aktif = ['qris'];
+      grid.innerHTML = aktif.map(function(code, idx) {
+        var m = SEMUA_METODE[code] || { ico:'💳', name: code, sub:'' };
+        var selCls = idx === 0 ? ' sel' : '';
+        if (idx === 0) metode = code;
+        return '<div class="metode-item' + selCls + '" onclick="pilihMetode(this,\'' + code + '\')">'
+          + '<span class="ico">' + m.ico + '</span>'
+          + '<div><div class="name">' + m.name + '</div><div class="sub">' + m.sub + '</div></div>'
+          + '</div>';
+      }).join('');
+    })
+    .catch(function() {
+      grid.innerHTML = '<div class="metode-item sel" onclick="pilihMetode(this,\'qris\')">'
+        + '<span class="ico">⬛</span><div><div class="name">QRIS</div><div class="sub">GoPay · OVO · Dana</div></div></div>';
+      metode = 'qris';
+    });
 }
 
 function escHtml(s) {

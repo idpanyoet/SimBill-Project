@@ -911,11 +911,13 @@ body.dark .toggle-thumb{left:18px}
       <div class="page" id="p-payment">
         <div class="grid2">
           <div class="card">
-            <div class="card-title">Metode Aktif</div>
-            <table><thead><tr><th>Metode</th><th>Provider</th><th>Status</th></tr></thead>
-            <tbody id="tbl-metode-pg">
-              <tr><td colspan="3" style="text-align:center;color:var(--text3);padding:16px">Tidak ada data</td></tr>
-            </tbody></table>
+            <div class="card-title">Metode Aktif
+              <button class="btn sm primary" onclick="apiSimpanMetodeAktif()">💾 Simpan</button>
+            </div>
+            <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Centang metode yang ingin ditampilkan di halaman checkout voucher.</p>
+            <div id="metode-aktif-list">
+              <div style="color:var(--text3);font-size:13px;padding:12px 0">Pilih provider dulu di kanan →</div>
+            </div>
           </div>
           <div class="card">
             <div class="card-title">Konfigurasi Payment Gateway</div>
@@ -1763,7 +1765,79 @@ let TOKEN = localStorage.getItem('nb_token') || '';
 let ADMIN = JSON.parse(localStorage.getItem('nb_admin') || '{}');
 
 // ── UTILS ──
-// ── VOUCHER TEMPLATE ───────────────────────────────────────────
+// ── METODE AKTIF PAYMENT GATEWAY ──────────────────────────────
+const METODE_PER_PROVIDER = {
+  tripay: [
+    { code:'QRIS',       label:'QRIS',              ico:'⬛', sub:'GoPay · OVO · Dana · ShopeePay' },
+    { code:'BRIVA',      label:'VA BRI',             ico:'🏦', sub:'ATM / BRImo' },
+    { code:'BCAVA',      label:'VA BCA',             ico:'🏦', sub:'ATM / m-BCA' },
+    { code:'BNIVA',      label:'VA BNI',             ico:'🏦', sub:'ATM / BNI Mobile' },
+    { code:'MANDIRIVA',  label:'VA Mandiri',         ico:'🏦', sub:'ATM / Livin' },
+    { code:'BSIVA',      label:'VA BSI',             ico:'🏦', sub:'ATM / BSI Mobile' },
+    { code:'PERMATAVA',  label:'VA Permata',         ico:'🏦', sub:'ATM / PermataMobile' },
+    { code:'ALFAMART',   label:'Alfamart',           ico:'🏪', sub:'Alfamart / Alfamidi' },
+    { code:'OVO',        label:'OVO',                ico:'💜', sub:'Push notif OVO' },
+  ],
+  duitku: [
+    { code:'M2',  label:'QRIS',       ico:'⬛', sub:'Semua dompet digital' },
+    { code:'VC',  label:'Virtual Account', ico:'🏦', sub:'BCA · BRI · BNI · Mandiri' },
+    { code:'OV',  label:'OVO',        ico:'💜', sub:'Push notif OVO' },
+    { code:'DA',  label:'DANA',       ico:'💙', sub:'DANA' },
+    { code:'LF',  label:'LinkAja',    ico:'❤️', sub:'LinkAja' },
+    { code:'A1',  label:'Alfamart',   ico:'🏪', sub:'Alfamart / Alfamidi' },
+  ],
+  midtrans: [
+    { code:'snap',  label:'Midtrans Snap', ico:'💳', sub:'Semua metode Midtrans' },
+    { code:'gopay', label:'GoPay',         ico:'💚', sub:'GoPay via Midtrans' },
+    { code:'qris',  label:'QRIS',          ico:'⬛', sub:'QRIS via Midtrans' },
+  ],
+  xendit: [
+    { code:'xendit', label:'Xendit Invoice', ico:'💳', sub:'Semua metode Xendit' },
+    { code:'QRIS',   label:'QRIS',           ico:'⬛', sub:'QRIS via Xendit' },
+    { code:'OVO',    label:'OVO',            ico:'💜', sub:'OVO via Xendit' },
+    { code:'DANA',   label:'DANA',           ico:'💙', sub:'DANA via Xendit' },
+  ]
+};
+
+let _metodeAktif = [];
+
+function renderMetodeAktif(provider) {
+  const el = document.getElementById('metode-aktif-list');
+  if (!el) return;
+  const list = METODE_PER_PROVIDER[provider] || [];
+  if (!list.length) { el.innerHTML = '<div style="color:var(--text3);font-size:13px">Provider ini tidak memerlukan pilihan metode</div>'; return; }
+
+  el.innerHTML = list.map(function(m) {
+    const checked = _metodeAktif.includes(m.code) ? 'checked' : '';
+    return `<label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer">
+      <input type="checkbox" id="m-${m.code}" value="${m.code}" ${checked} style="width:16px;height:16px;cursor:pointer">
+      <span style="font-size:18px">${m.ico}</span>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500;color:var(--text)">${m.label}</div>
+        <div style="font-size:11px;color:var(--text3)">${m.sub}</div>
+      </div>
+    </label>`;
+  }).join('') + `<div style="margin-top:10px;font-size:11px;color:var(--text3)">Metode yang dicentang akan tampil di halaman checkout voucher.</div>`;
+}
+
+async function apiSimpanMetodeAktif() {
+  const provider = document.getElementById('pg-provider').value;
+  const list = METODE_PER_PROVIDER[provider] || [];
+  const aktif = list.filter(function(m) {
+    const el = document.getElementById('m-' + m.code);
+    return el && el.checked;
+  }).map(function(m) { return m.code; });
+
+  try {
+    await apiFetch('/api/setting', {
+      method: 'PUT',
+      body: JSON.stringify({ pg_metode_aktif: aktif.join(',') })
+    });
+    toast('✅ Metode aktif disimpan');
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+
+// ── END METODE AKTIF ──────────────────────────────────────────
 let _vtList = [];
 let _vtCurId = null;
 
@@ -3673,7 +3747,9 @@ async function loadPayment() {
     document.getElementById('p-payment').dataset.hasCred = credByProvider[provider] ? provider : '';
 
     ubahProviderPG(provider);
-    renderMetodeAktif(provider, map.pg_sandbox === '1');
+    // Load metode aktif tersimpan
+    _metodeAktif = map.pg_metode_aktif ? map.pg_metode_aktif.split(',').filter(Boolean) : [];
+    renderMetodeAktif(provider);
   } catch(e) { console.warn('Setting PG:', e.message); }
 
   // Riwayat transaksi
@@ -3704,20 +3780,7 @@ function ubahProviderPG(forceProvider) {
   });
   document.getElementById('pg-webhook-url').value =
     window.location.origin + '/webhook/' + provider;
-}
-
-function renderMetodeAktif(provider, sandbox) {
-  const t = document.getElementById('tbl-metode-pg');
-  const metodeByProvider = {
-    midtrans: [['⬛ QRIS','Midtrans'],['🏦 Virtual Account BCA','Midtrans'],['🏦 Virtual Account BRI','Midtrans']],
-    xendit:   [['⬛ QRIS','Xendit'],['🏦 Virtual Account','Xendit'],['💜 E-Wallet','Xendit']],
-    duitku:   [['⬛ QRIS','Duitku'],['🏦 Virtual Account','Duitku']],
-    tripay:   [['⬛ QRIS','Tripay'],['🏦 Virtual Account','Tripay']],
-  };
-  const list = metodeByProvider[provider] || metodeByProvider.midtrans;
-  t.innerHTML = list.map(([nama, prov]) => `
-    <tr><td>${nama}</td><td>${prov}</td><td><span class="badge ${sandbox?'amber':'green'}">${sandbox?'Sandbox':'Aktif'}</span></td></tr>
-  `).join('') + `<tr><td>💵 Tunai Manual</td><td>Internal</td><td><span class="badge green">Aktif</span></td></tr>`;
+  renderMetodeAktif(provider);
 }
 
 async function apiSimpanConfigPG() {
