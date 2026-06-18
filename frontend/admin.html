@@ -225,6 +225,16 @@ body.dark #nr-komisi-range{accent-color:#a78bfa}
 body.dark #rs-komisi-lbl{color:#a78bfa!important}
 body.dark .btn[style*="background:#7c3aed"]{background:#7c3aed!important}
 
+/* ── WA TEMPLATE EDITOR ── */
+.tpl-editor-box{background:#fff;border:1px solid #e2e7ef;border-radius:10px;padding:14px}
+.tpl-placeholder-box{background:#f8fafc;border:1px solid #e2e7ef;border-radius:10px;padding:12px 14px}
+.tpl-ph-chip{display:inline-flex;align-items:center;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600;background:#FAEEDA;color:#854F0B;cursor:pointer;font-family:monospace;border:1px solid rgba(186,117,23,.2);transition:all .15s}
+.tpl-ph-chip:hover{background:#f5dfb0;border-color:#BA7517}
+body.dark .tpl-editor-box{background:#161b22;border-color:#30363d}
+body.dark .tpl-placeholder-box{background:#1c2128;border-color:#30363d}
+body.dark .tpl-ph-chip{background:rgba(186,117,23,.15);color:#EF9F27;border-color:rgba(186,117,23,.3)}
+body.dark #tpl-editor-body{background:#0d1117;border-color:#30363d;color:#e6edf3}
+body.dark #wa-tpl-select{background:#161b22;border-color:#30363d;color:#e6edf3}
 /* ── TAMBAH SALDO RESELLER ── */
 .ts-quick-chip{padding:5px 12px;border-radius:99px;border:1.5px solid #e2e7ef;font-size:11px;font-weight:600;cursor:pointer;color:#64748b;background:#fff;transition:all .15s;font-family:inherit}
 .ts-quick-chip:hover{border-color:#16a34a;color:#16a34a;background:#f0fdf4}
@@ -799,8 +809,15 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
             <div class="fg" id="wa-phoneid-wrap" style="display:none"><label>Phone Number ID (khusus WA Business API)</label><input id="wa-phone-id" placeholder="Phone Number ID dari Meta"></div>
             <button class="btn primary" onclick="apiSimpanConfigWA()">Simpan Konfigurasi</button>
             <div class="divider"></div>
-            <div class="card-title">Template Pesan</div>
-            <div class="fg"><label>Pelanggan Baru Didaftarkan</label><textarea id="wa-tpl-daftar" rows="4">Halo {nama}, selamat datang! 🎉
+
+            <!-- Template Pesan — dropdown editor -->
+            <div class="card-title" style="margin-bottom:12px">
+              Template Pesan
+              <span class="card-title sub" style="font-weight:400">Pilih template untuk diedit</span>
+            </div>
+
+            <!-- Hidden textareas untuk menyimpan nilai -->
+            <textarea id="wa-tpl-daftar" style="display:none">Halo {nama}, selamat datang! 🎉
 
 Akun internet Anda telah aktif.
 
@@ -809,10 +826,74 @@ Akun internet Anda telah aktif.
 📦 Paket: *{paket}*
 📅 Aktif hingga: *{tgl_expired}*
 
-Selamat menikmati layanan internet kami! 🌐</textarea></div>
-            <div class="fg"><label>Reminder Jatuh Tempo</label><textarea id="wa-tpl-reminder">Halo {nama}, tagihan *Rp {jumlah}* jatuh tempo *{tgl_jatuh_tempo}*. Bayar: {link_pembayaran}</textarea></div>
-            <div class="fg"><label>Notifikasi Suspend</label><textarea id="wa-tpl-suspend">Halo {nama}, layanan internet Anda telah *disuspend*. Hubungi kami untuk reaktivasi.</textarea></div>
-            <div class="fg"><label>Konfirmasi Pembayaran</label><textarea id="wa-tpl-konfirmasi">Terima kasih {nama}! Pembayaran diterima ✅. Aktif hingga {tgl_expired}.</textarea></div>
+Selamat menikmati layanan internet kami! 🌐</textarea>
+            <textarea id="wa-tpl-reminder" style="display:none">Halo *{nama}*,
+
+Tagihan internet Anda akan segera jatuh tempo.
+
+📄 No. Invoice: *{no_invoice}*
+💰 Jumlah: *Rp {jumlah}*
+📅 Jatuh Tempo: *{tgl_jatuh_tempo}*
+
+Bayar sekarang via:
+🔗 {link_pembayaran}
+
+Terima kasih! 🙏</textarea>
+            <textarea id="wa-tpl-suspend" style="display:none">Halo *{nama}*,
+
+Layanan internet Anda telah *disuspend* karena tagihan belum dibayar.
+
+Untuk mengaktifkan kembali, silakan bayar tagihan dan hubungi kami.</textarea>
+            <textarea id="wa-tpl-konfirmasi" style="display:none">Halo *{nama}*,
+
+Pembayaran Anda telah kami terima! ✅
+
+💰 Jumlah: *Rp {jumlah}*
+📅 Aktif hingga: *{tgl_expired}*
+
+Internet Anda sudah aktif kembali. Terima kasih! 🙏</textarea>
+
+            <!-- Dropdown pilih template -->
+            <div class="fg" style="margin-bottom:10px">
+              <label>Pilih Template</label>
+              <select id="wa-tpl-select" onchange="tplLoad(this.value)" style="width:100%">
+                <option value="daftar">Pelanggan Baru Didaftarkan</option>
+                <option value="reminder">Reminder Jatuh Tempo</option>
+                <option value="suspend">Notifikasi Suspend</option>
+                <option value="konfirmasi">Konfirmasi Pembayaran</option>
+              </select>
+            </div>
+
+            <!-- Editor area -->
+            <div class="tpl-editor-box">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <div>
+                  <div id="tpl-editor-title" class="td-text-main" style="font-size:13px;font-weight:600"></div>
+                  <div id="tpl-editor-slug" class="td-text-sub" style="font-size:10px;margin-top:1px;font-family:monospace"></div>
+                </div>
+                <button class="btn sm" onclick="tplReset()" title="Reset ke default">
+                  <i class="ti ti-refresh" aria-hidden="true"></i> Reset default
+                </button>
+              </div>
+              <textarea id="tpl-editor-body" rows="8" style="width:100%;padding:10px 12px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#0f172a;font-size:13px;font-family:inherit;resize:vertical;line-height:1.6" oninput="tplMarkDirty()"></textarea>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+                <div id="tpl-dirty-badge" style="display:none;font-size:11px;color:#d97706;display:flex;align-items:center;gap:4px">
+                  <i class="ti ti-pencil" style="font-size:12px" aria-hidden="true"></i> Belum disimpan
+                </div>
+                <div style="flex:1"></div>
+                <button class="btn primary" style="background:#BA7517" onclick="tplSave()">
+                  <i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan Template
+                </button>
+              </div>
+            </div>
+
+            <!-- Placeholder reference -->
+            <div class="tpl-placeholder-box" style="margin-top:10px">
+              <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:5px">
+                <i class="ti ti-braces" style="font-size:13px" aria-hidden="true"></i> Placeholder Tersedia
+              </div>
+              <div id="tpl-placeholders" style="display:flex;flex-wrap:wrap;gap:5px"></div>
+            </div>
           </div>
           <div class="card">
             <div class="card-title">Test Kirim Pesan</div>
@@ -5403,6 +5484,97 @@ async function apiHapusVoucher(username) {
 // ================================================================
 // WHATSAPP
 // ================================================================
+// ── WA TEMPLATE EDITOR ──────────────────────────────────────
+const TPL_META = {
+  daftar: {
+    title: 'Pelanggan Baru Didaftarkan',
+    slug:  'wa_tpl_daftar',
+    placeholders: ['{nama}','{username}','{password}','{paket}','{tgl_expired}'],
+    default: `Halo {nama}, selamat datang! 🎉\n\nAkun internet Anda telah aktif.\n\n🔑 Username: *{username}*\n🔒 Password: *{password}*\n📦 Paket: *{paket}*\n📅 Aktif hingga: *{tgl_expired}*\n\nSelamat menikmati layanan internet kami! 🌐`
+  },
+  reminder: {
+    title: 'Reminder Jatuh Tempo',
+    slug:  'wa_tpl_reminder',
+    placeholders: ['{nama}','{no_invoice}','{jumlah}','{tgl_jatuh_tempo}','{link_pembayaran}'],
+    default: `Halo *{nama}*,\n\nTagihan internet Anda akan segera jatuh tempo.\n\n📄 No. Invoice: *{no_invoice}*\n💰 Jumlah: *Rp {jumlah}*\n📅 Jatuh Tempo: *{tgl_jatuh_tempo}*\n\nBayar sekarang via:\n🔗 {link_pembayaran}\n\nTerima kasih! 🙏`
+  },
+  suspend: {
+    title: 'Notifikasi Suspend',
+    slug:  'wa_tpl_suspend',
+    placeholders: ['{nama}'],
+    default: `Halo *{nama}*,\n\nLayanan internet Anda telah *disuspend* karena tagihan belum dibayar.\n\nUntuk mengaktifkan kembali, silakan bayar tagihan dan hubungi kami.`
+  },
+  konfirmasi: {
+    title: 'Konfirmasi Pembayaran',
+    slug:  'wa_tpl_konfirmasi',
+    placeholders: ['{nama}','{jumlah}','{tgl_expired}'],
+    default: `Halo *{nama}*,\n\nPembayaran Anda telah kami terima! ✅\n\n💰 Jumlah: *Rp {jumlah}*\n📅 Aktif hingga: *{tgl_expired}*\n\nInternet Anda sudah aktif kembali. Terima kasih! 🙏`
+  }
+};
+
+let _tplCurrent = 'daftar';
+let _tplDirty   = false;
+
+function tplLoad(key) {
+  _tplCurrent = key;
+  _tplDirty   = false;
+  const meta   = TPL_META[key];
+  const stored = document.getElementById('wa-tpl-' + key)?.value || meta.default;
+
+  document.getElementById('tpl-editor-title').textContent = meta.title;
+  document.getElementById('tpl-editor-slug').textContent  = meta.slug;
+  document.getElementById('tpl-editor-body').value        = stored;
+  document.getElementById('tpl-dirty-badge').style.display = 'none';
+
+  // Render placeholder chips
+  const box = document.getElementById('tpl-placeholders');
+  box.innerHTML = meta.placeholders.map(p =>
+    `<span class="tpl-ph-chip" onclick="tplInsert('${p}')" title="Klik untuk sisipkan">${p}</span>`
+  ).join('');
+}
+
+function tplInsert(ph) {
+  const ta  = document.getElementById('tpl-editor-body');
+  const pos = ta.selectionStart;
+  const val = ta.value;
+  ta.value  = val.slice(0, pos) + ph + val.slice(ta.selectionEnd);
+  ta.selectionStart = ta.selectionEnd = pos + ph.length;
+  ta.focus();
+  tplMarkDirty();
+}
+
+function tplMarkDirty() {
+  _tplDirty = true;
+  const badge = document.getElementById('tpl-dirty-badge');
+  if (badge) badge.style.display = 'flex';
+}
+
+function tplReset() {
+  const meta = TPL_META[_tplCurrent];
+  if (!confirm('Reset template "' + meta.title + '" ke default?')) return;
+  document.getElementById('tpl-editor-body').value = meta.default;
+  tplMarkDirty();
+}
+
+async function tplSave() {
+  const meta = TPL_META[_tplCurrent];
+  const body = document.getElementById('tpl-editor-body').value.trim();
+  if (!body) return toast('❌ Template tidak boleh kosong', true);
+  try {
+    // Simpan ke hidden textarea
+    const ta = document.getElementById('wa-tpl-' + _tplCurrent);
+    if (ta) ta.value = body;
+    // Simpan ke DB
+    await apiFetch('/api/setting', { method:'PUT',
+      body: JSON.stringify({ [meta.slug]: body })
+    });
+    _tplDirty = false;
+    document.getElementById('tpl-dirty-badge').style.display = 'none';
+    toast('✅ Template "' + meta.title + '" disimpan');
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+// ── END WA TEMPLATE EDITOR ──────────────────────────────────
+
 async function loadWALog() {
   // Isi field konfigurasi dari setting tersimpan
   try {
@@ -5417,6 +5589,8 @@ async function loadWALog() {
     if (map.wa_tpl_reminder)   document.getElementById('wa-tpl-reminder').value   = map.wa_tpl_reminder;
     if (map.wa_tpl_suspend)    document.getElementById('wa-tpl-suspend').value    = map.wa_tpl_suspend;
     if (map.wa_tpl_konfirmasi) document.getElementById('wa-tpl-konfirmasi').value = map.wa_tpl_konfirmasi;
+    // Init template editor dengan template pertama
+    tplLoad(document.getElementById('wa-tpl-select')?.value || 'daftar');
     // Tampilkan field Phone ID hanya untuk WA Business API
     document.getElementById('wa-phoneid-wrap').style.display =
       map.wa_provider === 'wa_business' ? '' : 'none';
