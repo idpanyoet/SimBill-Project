@@ -1922,7 +1922,8 @@ function vtTestPrint() {
 }
 
 // Fungsi print batch pakai template default
-async function printBatchDenganTemplate(vouchers) {
+async function printBatchDenganTemplate(vouchers, autoPrint) {
+  if (autoPrint === undefined) autoPrint = true;
   try {
     const tpl = await apiFetch('/api/voucher-template/default/get');
     if (!tpl) { bukaWindowPrint(document.querySelector('.sidebar-brand span')?.textContent||'NetBilling', vouchers); return; }
@@ -1936,7 +1937,9 @@ async function printBatchDenganTemplate(vouchers) {
         no_urut:  String(i+1).padStart(3,'0')
       });
     }).join('');
-    const html = (tpl.header_html||'') + rows + (tpl.footer_html||'');
+
+    const autoPrintScript = autoPrint ? '<script>window.onload=function(){window.print();}<\/script>' : '';
+    const html = (tpl.header_html||'') + rows + autoPrintScript + (tpl.footer_html||'');
     const win = window.open('','_blank','width=960,height=700');
     win.document.write(html);
     win.document.close();
@@ -3170,7 +3173,7 @@ let vcrHalaman = 1;
 let vcrLimit   = 25;
 let vcrTotal   = 0;
 
-function printVoucher() {
+async function printVoucher() {
   const rows = document.querySelectorAll('#tbl-voucher tr');
   if (!rows.length) { toast('❌ Tidak ada voucher untuk diprint', true); return; }
 
@@ -3182,81 +3185,14 @@ function printVoucher() {
     const paket    = cols[3]?.textContent?.trim();
     const status   = cols[4]?.textContent?.trim();
     if (username && username !== '—') {
-      vouchers.push({ kode: username, paket, status });
+      vouchers.push({ username, password: username, nama_paket: paket, status });
     }
   });
 
   if (!vouchers.length) { toast('❌ Tidak ada data voucher', true); return; }
-
-  const appName = document.querySelector('.sidebar-brand span')?.textContent?.trim() || 'NetBilling';
-
-  const win = window.open('', '_blank', 'width=960,height=700');
-  win.document.write(`<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<title>Print Voucher — ${appName}</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#111;font-size:12px;padding:16px}
-.header{text-align:center;padding-bottom:12px;border-bottom:1px solid #e5e9f0;margin-bottom:14px}
-.header h1{font-size:16px;font-weight:600}
-.header p{font-size:11px;color:#888;margin-top:3px}
-.no-print{text-align:center;padding:10px 0 14px}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.vcr{border:0.5px solid #d0d7e3;border-radius:10px;overflow:hidden;page-break-inside:avoid}
-.vcr-top{padding:9px 12px 8px;border-bottom:1.5px dashed #e5e9f0}
-.vcr-brand{font-size:10px;color:#888;margin-bottom:5px;display:flex;align-items:center;justify-content:space-between}
-.vcr-paket{font-size:11px;font-weight:600;color:#111;margin-bottom:2px}
-.vcr-dur{font-size:10px;color:#888}
-.vcr-body{padding:10px 12px}
-.vcr-lbl{font-size:9px;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
-.vcr-kode{font-size:20px;font-weight:600;letter-spacing:.1em;color:#185FA5;font-family:'Courier New',monospace;margin-bottom:8px}
-.vcr-kode.used{color:#aaa;text-decoration:line-through;opacity:.5}
-.vcr-footer{border-top:0.5px solid #e5e9f0;padding-top:7px;font-size:9px;color:#aaa}
-.badge{font-size:9px;padding:2px 7px;border-radius:20px;font-weight:600}
-.badge.aktif{background:#dcfce7;color:#166534}
-.badge.used{background:#fee2e2;color:#991b1b}
-@media print{
-  body{padding:8px}
-  .no-print{display:none!important}
-  .vcr{break-inside:avoid}
-  body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  await printBatchDenganTemplate(vouchers, false); // false = tidak auto-print, tampil tombol dulu
 }
-</style>
-</head>
-<body>
-<div class="header">
-  <h1>${appName} — Voucher Internet</h1>
-  <p>Dicetak: ${new Date().toLocaleString('id-ID')} &nbsp;·&nbsp; Total: ${vouchers.length} voucher</p>
-</div>
-<div class="no-print">
-  <button onclick="window.print()" style="padding:8px 24px;background:#3b82f6;color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer;font-weight:600">🖨️ Print</button>
-  <button onclick="window.close()" style="padding:8px 16px;background:#f1f4f8;color:#333;border:none;border-radius:7px;font-size:13px;cursor:pointer;margin-left:8px">✕ Tutup</button>
-</div>
-<div class="grid">
-${vouchers.map(function(v) {
-  const isUsed = v.status && v.status.toLowerCase().includes('used');
-  const badgeCls = isUsed ? 'used' : 'aktif';
-  const badgeLabel = isUsed ? 'Terpakai' : 'Aktif';
-  const dur = v.paket || '—';
-  return `<div class="vcr">
-  <div class="vcr-top">
-    <div class="vcr-brand">${appName} <span class="badge ${badgeCls}">${badgeLabel}</span></div>
-    <div class="vcr-paket">${dur}</div>
-  </div>
-  <div class="vcr-body">
-    <div class="vcr-lbl">Kode Voucher</div>
-    <div class="vcr-kode ${isUsed?'used':''}">${v.kode}</div>
-    <div class="vcr-footer">${isUsed ? '✓ Voucher sudah digunakan' : '📶 Sambung WiFi → Login → Masukkan kode'}</div>
-  </div>
-</div>`;
-}).join('')}
-</div>
-</body>
-</html>`);
-  win.document.close();
-}
+
 
 async function loadBatchHistory() {
   const el = document.getElementById('batch-history-list');
