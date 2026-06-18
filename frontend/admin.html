@@ -4351,9 +4351,9 @@ function nasChartMulai(nasIp, nasId, ifIdx) {
         if (diffIn  < 0) diffIn  += 4096;
         if (diffOut < 0) diffOut += 4096;
 
-        // Rate Mbps — interval 15 detik
-        const dl = Math.max(0, +((diffIn  / 15 * 8)).toFixed(2));
-        const ul = Math.max(0, +((diffOut / 15 * 8)).toFixed(2));
+        // Rate Mbps — interval 8 detik
+        const dl = Math.max(0, +((diffIn  / 8 * 8)).toFixed(2));
+        const ul = Math.max(0, +((diffOut / 8 * 8)).toFixed(2));
 
         // Abaikan lonjakan tidak wajar (>10 Gbps)
         if (dl < 10000 && ul < 10000) {
@@ -4384,7 +4384,7 @@ function nasChartMulai(nasIp, nasId, ifIdx) {
   }
 
   poll();
-  _nasTimer = setInterval(poll, 15000);
+  _nasTimer = setInterval(poll, 8000);
 }
 </script>
 </body>
