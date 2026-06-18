@@ -216,7 +216,39 @@ body.dark .toggle-thumb{left:14px}
 .plan-card .price{font-size:13px;color:#64748b}
 .pagination-bar{display:flex;align-items:center;justify-content:space-between;margin-top:14px;gap:10px;flex-wrap:wrap;font-size:13px}
 .pagination-bar select{padding:5px 10px;border:1px solid #e2e7ef;border-radius:7px;background:#fff;color:#0f172a;font-size:12px}
-/* ── PAKET MODAL CLASSES ── */
+/* ── GENERATE VOUCHER MODAL ── */
+.gv-cs-chip{padding:5px 12px;border-radius:8px;border:1.5px solid #e2e7ef;font-size:11px;font-weight:600;cursor:pointer;color:#64748b;background:#fff;transition:all .15s;font-family:monospace}
+.gv-cs-chip:hover{border-color:#d97706;color:#d97706}
+.gv-cs-active{border-color:#d97706!important;background:#fef3c7!important;color:#b45309!important}
+body.dark .gv-cs-chip{background:#21262d;border-color:#30363d;color:#8b949e}
+body.dark .gv-cs-active{background:rgba(217,119,6,.15)!important;border-color:#d97706!important;color:#fbbf24!important}
+body.dark #gv-mode-sama,body.dark #gv-mode-beda{background:#1c2128;border-color:#30363d}
+body.dark #gv-mode-sama.gv-mode-on{background:rgba(217,119,6,.15);border-color:#d97706}
+body.dark [style*="background:linear-gradient(135deg,#FAEEDA"]{background:rgba(186,117,23,.15)!important}
+body.dark [style*="background:#fef3c7"]{background:rgba(217,119,6,.12)!important;border-color:rgba(217,119,6,.3)!important}
+body.dark #gv-sum-jml{color:#fbbf24!important}
+body.dark [style*="color:#b45309"]{color:#fbbf24!important}
+body.dark [style*="color:#92400e"]{color:#fbbf24!important}
+body.dark [style*="color:#854F0B"]:not(.metric *){color:#fbbf24!important}
+body.dark [style*="color:#633806"]{color:#fbbf24!important}
+body.dark #gv-paket-nama{color:#fbbf24!important}
+body.dark #gv-preview-kode{color:#fbbf24!important}
+body.dark #fv-jml{color:#fbbf24!important;background:#0d1117!important;border-color:#30363d!important}
+body.dark #fv-paket,body.dark #fv-panjang,body.dark #fv-prefix{background:#0d1117!important;border-color:#30363d!important;color:#e6edf3!important}
+.fg-label{display:block;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.due-chip{padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600;border:1px solid #e2e7ef;background:#fff;cursor:pointer;color:#64748b;transition:all .15s;font-family:inherit}
+.due-chip:hover{background:#dcfce7;border-color:#86efac;color:#15803d}
+.due-chip.active{background:#dcfce7;border-color:#86efac;color:#15803d}
+body.dark .fg-label{color:#8b949e}
+body.dark .due-chip{background:#21262d;border-color:#30363d;color:#8b949e}
+body.dark .due-chip:hover,.due-chip.active{background:rgba(22,163,74,.15);border-color:rgba(22,163,74,.4);color:#4ade80}
+body.dark #fi-pel,body.dark #fi-jml,body.dark #fi-tgl{background:#0d1117;border-color:#30363d;color:#e6edf3}
+body.dark #fi-pel-card{background:#1c2128;border-color:#30363d}
+body.dark [style*="background:#f0fdf4"]{background:rgba(22,163,74,.08)!important;border-color:rgba(22,163,74,.2)!important}
+body.dark [style*="color:#166534"]{color:#4ade80!important}
+body.dark [style*="color:#15803d"]{color:#4ade80!important}
+body.dark #fi-jml-preview{color:#4ade80!important}
+body.dark [style*="color:#64748b"]{color:#8b949e!important}
 .speed-chip-dn{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:#E6F1FB;color:#0C447C}
 .speed-chip-up{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:#E1F5EE;color:#085041}
 .harga-preview-text{font-size:16px;font-weight:700;color:#BA7517;margin-top:4px}
@@ -406,8 +438,8 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
                 <div style="font-size:11px;color:var(--text3)">Statistik koneksi real-time</div>
               </div>
               <div style="margin-left:auto;text-align:right">
-                <div style="font-size:28px;font-weight:700;color:#3C3489" id="pppoe-total">—</div>
-                <div style="font-size:11px;color:#534AB7">total user</div>
+                <div class="td-text-main" style="font-size:28px;font-weight:700" id="pppoe-total">—</div>
+                <div class="td-text-sub" style="font-size:11px">total user</div>
               </div>
             </div>
             <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--border);border-radius:8px;overflow:hidden">
@@ -436,7 +468,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
                 <div style="font-size:11px;color:var(--text3)">Statistik koneksi real-time</div>
               </div>
               <div style="margin-left:auto;text-align:right">
-                <div style="font-size:28px;font-weight:700;color:#157A59" id="hotspot-total">—</div>
+                <div class="td-text-main" style="font-size:28px;font-weight:700" id="hotspot-total">—</div>
                 <div style="font-size:11px;color:#1D9E75">total user</div>
               </div>
             </div>
@@ -505,15 +537,15 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
             </div>
             <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px">
               <div style="background:var(--bg3);border-radius:8px;padding:10px 12px;text-align:center">
-                <div id="nas-s-dl" style="font-size:17px;font-weight:700;color:#185FA5">—</div>
+                <div id="nas-s-dl" class="td-text-main" style="font-size:17px;font-weight:700">—</div>
                 <div style="font-size:11px;color:var(--text3);margin-top:2px">Unduh</div>
               </div>
               <div style="background:var(--bg3);border-radius:8px;padding:10px 12px;text-align:center">
-                <div id="nas-s-ul" style="font-size:17px;font-weight:700;color:#0F6E56">—</div>
+                <div id="nas-s-ul" class="td-text-main" style="font-size:17px;font-weight:700">—</div>
                 <div style="font-size:11px;color:var(--text3);margin-top:2px">Unggah</div>
               </div>
               <div style="background:var(--bg3);border-radius:8px;padding:10px 12px;text-align:center">
-                <div id="nas-s-sesi" style="font-size:17px;font-weight:700;color:#534AB7">—</div>
+                <div id="nas-s-sesi" class="td-text-main" style="font-size:17px;font-weight:700">—</div>
                 <div style="font-size:11px;color:var(--text3);margin-top:2px">Sesi aktif</div>
               </div>
             </div>
@@ -1166,8 +1198,8 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
           <i class="ti ti-router" style="font-size:16px;color:#185FA5" aria-hidden="true"></i>
         </div>
         <div>
-          <div style="font-size:13px;font-weight:500;color:var(--text)">PPPoE</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:1px">Koneksi kabel fiber</div>
+          <div class="td-text-main" style="font-size:13px;font-weight:500">PPPoE</div>
+          <div class="td-text-sub" style="font-size:10px;margin-top:1px">Koneksi kabel fiber</div>
         </div>
       </div>
       <div id="f-tipe-card-hotspot" onclick="pilihTipePelanggan('hotspot')" style="border:2px solid var(--border);border-radius:9px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .15s">
@@ -1175,8 +1207,8 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
           <i class="ti ti-wifi" style="font-size:16px;color:#0F6E56" aria-hidden="true"></i>
         </div>
         <div>
-          <div style="font-size:13px;font-weight:500;color:var(--text)">Hotspot</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:1px">Koneksi WiFi / voucher</div>
+          <div class="td-text-main" style="font-size:13px;font-weight:500">Hotspot</div>
+          <div class="td-text-sub" style="font-size:10px;margin-top:1px">Koneksi WiFi / voucher</div>
         </div>
       </div>
       <input type="hidden" id="f-tipe" value="pppoe">
@@ -1255,8 +1287,8 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
           <i class="ti ti-package" style="font-size:20px;color:#BA7517" aria-hidden="true"></i>
         </div>
         <div>
-          <div style="font-size:15px;font-weight:700;color:#0f172a">Tambah Paket Internet</div>
-          <div style="font-size:11px;color:#94a3b8;margin-top:1px">Buat paket baru untuk pelanggan</div>
+          <div class="td-text-main" style="font-size:15px;font-weight:700">Tambah Paket Internet</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Buat paket baru untuk pelanggan</div>
         </div>
       </div>
       <button class="btn-x" onclick="closeModal('m-add-paket')">✕</button>
@@ -1373,13 +1405,89 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 </div>
 
 <div class="overlay" id="m-add-invoice">
-  <div class="modal">
-    <div class="modal-hdr"><h3>🧾 Buat Invoice</h3><button class="btn-x" onclick="closeModal('m-add-invoice')">✕</button></div>
-    <div class="modal-body">
-      <div class="fg"><label>Pelanggan</label><select id="fi-pel"><option value="">-- pilih pelanggan --</option></select></div>
-      <div class="fg-row"><div class="fg"><label>Jumlah</label><input id="fi-jml" value="" placeholder="Jumlah tagihan"></div><div class="fg"><label>Jatuh Tempo</label><input id="fi-tgl" type="date"></div></div>
-      <div class="fg"><label style="display:flex;align-items:center;gap:6px"><input id="fi-wa" type="checkbox" checked> Kirim link pembayaran via WhatsApp</label></div>
-      <div class="modal-foot"><button class="btn" onclick="closeModal('m-add-invoice')">Batal</button><button class="btn primary" onclick="apiBuatInvoice()">Buat Invoice</button></div>
+  <div class="modal" style="max-width:480px">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#dcfce7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-receipt" style="font-size:20px;color:#15803d" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="td-text-main" style="font-size:15px;font-weight:700">Buat Invoice</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Tagihan manual untuk pelanggan</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-add-invoice')">✕</button>
+    </div>
+
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
+
+      <!-- Pelanggan -->
+      <div>
+        <label class="fg-label">Pelanggan</label>
+        <select id="fi-pel" onchange="invoiceOnPelangganChange()" style="width:100%;padding:9px 12px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#0f172a;font-size:13px;font-family:inherit">
+          <option value="">-- pilih pelanggan --</option>
+        </select>
+        <!-- Preview card pelanggan -->
+        <div id="fi-pel-card" style="display:none;margin-top:8px;background:#f8fafc;border:1px solid #e2e7ef;border-radius:10px;padding:11px 14px;display:none;align-items:center;gap:12px">
+          <div id="fi-pel-avatar" style="width:36px;height:36px;border-radius:9px;background:#1D9E75;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">—</div>
+          <div style="flex:1;min-width:0">
+            <div id="fi-pel-name" class="td-text-main" style="font-size:13px;font-weight:600"></div>
+            <div style="font-size:11px;margin-top:2px;display:flex;gap:6px;align-items:center">
+              <span id="fi-pel-hp" class="td-text-sub"></span>
+              <span id="fi-pel-tipe" class="tag pppoe" style="font-size:9px;padding:1px 6px"></span>
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div class="td-text-sub" style="font-size:10px">Paket aktif</div>
+            <div id="fi-pel-paket" class="td-text-main" style="font-size:11px;font-weight:600"></div>
+            <div id="fi-pel-harga" style="font-size:12px;font-weight:700;color:#15803d"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Jumlah -->
+      <div>
+        <label class="fg-label">Jumlah Tagihan</label>
+        <div style="position:relative">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:600;color:#64748b;pointer-events:none">Rp</span>
+          <input id="fi-jml" type="number" placeholder="0" oninput="invoiceUpdatePreview()" style="width:100%;padding:9px 12px 9px 36px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#0f172a;font-size:13px;font-family:inherit">
+        </div>
+        <div id="fi-jml-preview" style="font-size:20px;font-weight:700;color:#15803d;margin-top:5px">—</div>
+        <div class="td-text-sub" style="font-size:11px">Nominal yang akan ditagihkan</div>
+      </div>
+
+      <!-- Jatuh Tempo -->
+      <div>
+        <label class="fg-label">Jatuh Tempo</label>
+        <input id="fi-tgl" type="date" style="width:100%;padding:9px 12px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#0f172a;font-size:13px;font-family:inherit">
+        <div style="display:flex;gap:6px;margin-top:7px;flex-wrap:wrap">
+          <button type="button" onclick="invoiceSetDue(7)"  class="due-chip">7 hari</button>
+          <button type="button" onclick="invoiceSetDue(14)" class="due-chip">14 hari</button>
+          <button type="button" onclick="invoiceSetDue(30)" class="due-chip">30 hari</button>
+          <button type="button" onclick="invoiceSetDueEOM()" class="due-chip">Akhir bulan</button>
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 14px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:#166534"><span>Subtotal</span><span id="fi-sum-sub">—</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:#166534"><span>PPN (0%)</span><span>Rp 0</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:#15803d;border-top:1px solid #bbf7d0;margin-top:6px;padding-top:8px"><span>Total Tagihan</span><span id="fi-sum-total">—</span></div>
+      </div>
+
+      <!-- Opsi -->
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+        <input id="fi-wa" type="checkbox" checked style="width:15px;height:15px;accent-color:#15803d;cursor:pointer;flex-shrink:0">
+        <label for="fi-wa" class="td-text-sub" style="cursor:pointer"><i class="ti ti-brand-whatsapp" style="color:#25D366;font-size:14px;vertical-align:-2px" aria-hidden="true"></i> Kirim link pembayaran via WhatsApp</label>
+      </div>
+
+      <div class="modal-foot" style="padding:0;border:none;margin-top:2px">
+        <button class="btn" onclick="closeModal('m-add-invoice')">Batal</button>
+        <button class="btn primary" style="background:#15803d;box-shadow:0 2px 6px rgba(22,163,74,.25)" onclick="apiBuatInvoice()">
+          <i class="ti ti-receipt" style="font-size:14px" aria-hidden="true"></i> Buat Invoice
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -1564,34 +1672,111 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 </div>
 
 <div class="overlay" id="m-gen-voucher">
-  <div class="modal">
-    <div class="modal-hdr"><h3>⚡ Generate Voucher Batch</h3><button class="btn-x" onclick="closeModal('m-gen-voucher')">✕</button></div>
-    <div class="modal-body">
-      <div class="fg"><label>Paket Voucher</label><select id="fv-paket"><option value="">-- pilih paket --</option></select></div>
-      <div class="fg"><label>Jumlah Voucher</label><input id="fv-jml" type="number" value="50" min="1" max="500"></div>
-      <p style="font-size:12px;color:var(--text3);margin-top:-6px">Maksimal 500 voucher per batch</p>
+  <div class="modal" style="max-width:500px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:38px;height:38px;border-radius:10px;background:#fef3c7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-bolt" style="font-size:20px;color:#d97706" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="td-text-main" style="font-size:15px;font-weight:700">Generate Voucher Batch</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Buat kode voucher dalam jumlah banyak</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-gen-voucher')">✕</button>
+    </div>
 
-      <div class="fg"><label>Mode</label>
-        <select id="fv-mode">
-          <option value="sama">Username = Password</option>
-          <option value="beda">Username+Password</option>
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
+
+      <!-- Paket -->
+      <div>
+        <label class="fg-label">Paket Voucher</label>
+        <select id="fv-paket" onchange="gvUpdatePaket()" style="width:100%;padding:9px 12px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#0f172a;font-size:13px;font-family:inherit">
+          <option value="">-- pilih paket --</option>
         </select>
+        <div id="gv-paket-card" style="display:none;margin-top:8px;background:linear-gradient(135deg,#FAEEDA,#f5e0b5);border-radius:10px;padding:11px 14px;align-items:center;gap:12px">
+          <div style="width:36px;height:36px;border-radius:8px;background:#BA7517;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">
+            <i class="ti ti-wifi" aria-hidden="true"></i>
+          </div>
+          <div>
+            <div id="gv-paket-nama" style="font-size:13px;font-weight:600;color:#633806"></div>
+            <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap" id="gv-paket-chips"></div>
+          </div>
+        </div>
       </div>
 
-      <div class="fg-row">
-        <div class="fg"><label>Panjang Username</label><input id="fv-panjang" type="number" value="8" min="4" max="20"></div>
-        <div class="fg"><label>Prefix Username <span style="color:var(--text3);font-weight:normal">(opsional)</span></label><input id="fv-prefix" placeholder="misal: WIFI"></div>
+      <!-- Jumlah -->
+      <div>
+        <label class="fg-label">Jumlah Voucher — <span id="gv-jml-lbl" style="color:#d97706;font-weight:700">50</span></label>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="range" id="fv-jml-range" min="1" max="500" value="50" oninput="gvSyncJml('range')" style="flex:1;height:5px;cursor:pointer;accent-color:#d97706">
+          <input type="number" id="fv-jml" min="1" max="500" value="50" oninput="gvSyncJml('input')" style="width:70px;padding:7px 10px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#d97706;font-size:15px;font-weight:700;text-align:center;font-family:inherit">
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;margin-top:3px">
+          <span class="td-text-sub">1</span><span class="td-text-sub">Maks. 500</span>
+        </div>
       </div>
 
-      <div class="fg"><label>Set Karakter</label>
-        <select id="fv-charset">
-          <option value="angka">Angka saja (0-9)</option>
-          <option value="angka_kecil">Angka + huruf kecil (a-z)</option>
-          <option value="angka_besar">Angka + huruf besar (A-Z)</option>
-        </select>
+      <!-- Mode -->
+      <div>
+        <label class="fg-label">Mode Kode</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div id="gv-mode-sama" onclick="gvSetMode('sama')" style="border:2px solid #d97706;background:#FAEEDA;border-radius:9px;padding:10px 12px;cursor:pointer;transition:all .15s">
+            <div style="font-size:18px;margin-bottom:4px">🔑</div>
+            <div class="gv-mode-title" style="font-size:12px;font-weight:600;color:#854F0B">Username = Password</div>
+            <div class="gv-mode-desc" style="font-size:10px;color:#BA7517;margin-top:3px">1 kode untuk login & password</div>
+          </div>
+          <div id="gv-mode-beda" onclick="gvSetMode('beda')" style="border:2px solid #e2e7ef;border-radius:9px;padding:10px 12px;cursor:pointer;transition:all .15s">
+            <div style="font-size:18px;margin-bottom:4px">🗝️</div>
+            <div class="gv-mode-title td-text-main" style="font-size:12px;font-weight:600">Username + Password</div>
+            <div class="gv-mode-desc td-text-sub" style="font-size:10px;margin-top:3px">Kode terpisah user & pass</div>
+          </div>
+        </div>
+        <input type="hidden" id="fv-mode" value="sama">
       </div>
 
-      <div class="modal-foot"><button class="btn" onclick="closeModal('m-gen-voucher')">Batal</button><button class="btn primary" onclick="apiGenerateVoucher()">Generate</button></div>
+      <!-- Format -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label class="fg-label">Panjang Kode</label>
+          <input type="number" id="fv-panjang" value="8" min="4" max="20" oninput="gvUpdatePreview()" style="width:100%;padding:9px 12px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#0f172a;font-size:13px;font-family:inherit">
+        </div>
+        <div>
+          <label class="fg-label">Prefix <span style="font-weight:400" class="td-text-sub">(opsional)</span></label>
+          <input type="text" id="fv-prefix" placeholder="cth: WIFI" oninput="gvUpdatePreview()" style="width:100%;padding:9px 12px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#0f172a;font-size:13px;font-family:inherit">
+        </div>
+      </div>
+
+      <!-- Charset -->
+      <div>
+        <label class="fg-label">Set Karakter</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button type="button" onclick="gvSetCharset('angka')" id="gv-cs-angka" class="gv-cs-chip">0–9</button>
+          <button type="button" onclick="gvSetCharset('angka_kecil')" id="gv-cs-angka_kecil" class="gv-cs-chip gv-cs-active">a–z 0–9</button>
+          <button type="button" onclick="gvSetCharset('angka_besar')" id="gv-cs-angka_besar" class="gv-cs-chip">A–Z 0–9</button>
+        </div>
+        <div style="margin-top:7px;font-size:11px" class="td-text-sub">Preview: <span id="gv-preview-kode" style="font-family:monospace;font-weight:700;color:#d97706">k7m2x9qp</span></div>
+        <input type="hidden" id="fv-charset" value="angka_kecil">
+      </div>
+
+      <!-- Summary -->
+      <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:14px">
+        <div style="text-align:center;flex-shrink:0">
+          <div id="gv-sum-jml" style="font-size:28px;font-weight:700;color:#b45309;line-height:1">50</div>
+          <div style="font-size:10px;color:#b45309;margin-top:1px">voucher</div>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div id="gv-sum-paket" style="font-size:12px;color:#92400e;font-weight:500">— pilih paket terlebih dahulu</div>
+          <div id="gv-sum-detail" style="font-size:11px;color:#b45309;margin-top:3px;font-weight:500"></div>
+        </div>
+      </div>
+
+      <div class="modal-foot" style="padding:0;border:none;margin-top:2px">
+        <button class="btn" onclick="closeModal('m-gen-voucher')">Batal</button>
+        <button class="btn primary" style="background:#d97706;box-shadow:0 2px 6px rgba(217,119,6,.3)" onclick="apiGenerateVoucher()">
+          <i class="ti ti-bolt" style="font-size:14px" aria-hidden="true"></i> Generate Voucher
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -2339,9 +2524,41 @@ function toast(msg, err=false) {
 
 function openModal(id) {
   document.getElementById(id).classList.add('open');
-  // Re-populate dropdown saat modal dibuka
   if (id === 'm-add-pelanggan' || id === 'm-add-invoice' || id === 'm-gen-voucher') {
     populateDropdowns();
+  }
+  if (id === 'm-add-invoice') {
+    // Reset form
+    document.getElementById('fi-pel').value = '';
+    document.getElementById('fi-jml').value = '';
+    const card = document.getElementById('fi-pel-card');
+    if (card) card.style.display = 'none';
+    document.getElementById('fi-jml-preview').textContent = '—';
+    document.getElementById('fi-sum-sub').textContent     = '—';
+    document.getElementById('fi-sum-total').textContent   = '—';
+    // Default jatuh tempo 7 hari
+    invoiceSetDue(7);
+    document.querySelectorAll('.due-chip').forEach((c,i) => {
+      c.classList.toggle('active', i === 0);
+    });
+  }
+  if (id === 'm-gen-voucher') {
+    // Reset jumlah dan preview
+    const range = document.getElementById('fv-jml-range');
+    const input = document.getElementById('fv-jml');
+    if (range) range.value = 50;
+    if (input) input.value = 50;
+    const lbl = document.getElementById('gv-jml-lbl');
+    const sum = document.getElementById('gv-sum-jml');
+    if (lbl) lbl.textContent = '50';
+    if (sum) sum.textContent = '50';
+    // Reset mode ke sama
+    gvSetMode('sama');
+    // Reset charset ke angka_kecil
+    gvSetCharset('angka_kecil');
+    // Update preview kode
+    gvUpdatePreview();
+    gvUpdateSummary();
   }
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
@@ -3090,7 +3307,7 @@ function filterPaketByTipe() {
     const active = String(p.id) === String(curVal) ? 'border-color:#BA7517;background:rgba(186,117,23,.08)' : 'border-color:var(--border)';
     return `<div onclick="pilihPaketCard(${p.id},this)" style="border:2px solid;${active};border-radius:8px;padding:8px 10px;cursor:pointer;transition:all .15s" data-paket-id="${p.id}">
       <div style="font-size:12px;font-weight:500;color:var(--text)">${p.nama}</div>
-      <div style="font-size:11px;color:#854F0B;margin-top:2px">${fmt(p.harga)} / bln</div>
+      <div class="td-accent-bold" style="font-size:11px;margin-top:2px">${fmt(p.harga)} / bln</div>
       <div style="font-size:10px;color:var(--text3);margin-top:1px">${p.kecepatan_dn} Mbps · ${p.masa_aktif || 30} ${satuan}</div>
     </div>`;
   }).join('');
@@ -3265,6 +3482,7 @@ async function populateDropdowns() {
     // Dropdown pelanggan di form buat invoice
     const selInvPel = document.getElementById('fi-pel');
     if (selInvPel) {
+      PELANGGAN_LIST_CACHE = rows;
       selInvPel.innerHTML = '<option value="">-- pilih pelanggan --</option>'
         + rows.map(p => `<option value="${p.id}">${p.nama} (${p.username})</option>`).join('');
     }
@@ -3280,9 +3498,160 @@ async function apiHapusPaket(id, nama) {
   } catch(e) { toast('❌ '+e.message, true); }
 }
 
-// ================================================================
-// INVOICE
-// ================================================================
+// ── GENERATE VOUCHER MODAL HELPERS ──────────────────────────
+const GV_CHARSETS = {
+  angka: '0123456789',
+  angka_kecil: 'abcdefghjkmnpqrstuvwxyz23456789',
+  angka_besar: 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+};
+
+function gvSyncJml(src) {
+  const range = document.getElementById('fv-jml-range');
+  const input = document.getElementById('fv-jml');
+  const lbl   = document.getElementById('gv-jml-lbl');
+  const sum   = document.getElementById('gv-sum-jml');
+  if (!range || !input) return;
+  if (src === 'range') input.value = range.value;
+  else range.value = input.value;
+  const v = input.value;
+  if (lbl) lbl.textContent = v;
+  if (sum) sum.textContent = v;
+  gvUpdateSummary();
+}
+
+function gvSetMode(mode) {
+  document.getElementById('fv-mode').value = mode;
+  const isDark = document.body.classList.contains('dark');
+  ['sama','beda'].forEach(function(m) {
+    const el = document.getElementById('gv-mode-' + m);
+    if (!el) return;
+    const titles = el.querySelectorAll('.gv-mode-title');
+    const descs  = el.querySelectorAll('.gv-mode-desc');
+    if (m === mode) {
+      el.style.borderColor = '#d97706';
+      el.style.background  = isDark ? 'rgba(217,119,6,.15)' : '#FAEEDA';
+      titles.forEach(t => { t.style.color = isDark ? '#fbbf24' : '#854F0B'; });
+      descs.forEach(d  => { d.style.color = isDark ? '#fbbf24' : '#BA7517'; });
+    } else {
+      el.style.borderColor = isDark ? '#30363d' : '#e2e7ef';
+      el.style.background  = isDark ? '#1c2128' : 'transparent';
+      titles.forEach(t => { t.style.color = ''; });
+      descs.forEach(d  => { d.style.color = ''; });
+    }
+  });
+  gvUpdateSummary();
+}
+
+function gvSetCharset(cs) {
+  document.getElementById('fv-charset').value = cs;
+  document.querySelectorAll('.gv-cs-chip').forEach(function(c) {
+    c.classList.remove('gv-cs-active');
+  });
+  const el = document.getElementById('gv-cs-' + cs);
+  if (el) el.classList.add('gv-cs-active');
+  gvUpdatePreview();
+}
+
+function gvUpdatePreview() {
+  const charset = GV_CHARSETS[document.getElementById('fv-charset')?.value || 'angka_kecil'];
+  const panjang = parseInt(document.getElementById('fv-panjang')?.value) || 8;
+  const prefix  = document.getElementById('fv-prefix')?.value || '';
+  const len     = Math.max(1, panjang - prefix.length);
+  let preview   = prefix;
+  for (let i = 0; i < Math.min(len, 12); i++) {
+    preview += charset[Math.floor(Math.random() * charset.length)];
+  }
+  const el = document.getElementById('gv-preview-kode');
+  if (el) el.textContent = preview;
+  gvUpdateSummary();
+}
+
+function gvUpdatePaket() {
+  const pid  = document.getElementById('fv-paket').value;
+  const card = document.getElementById('gv-paket-card');
+  if (!pid || !LAST_PAKET_LIST) { if(card) card.style.display='none'; gvUpdateSummary(); return; }
+  const p = LAST_PAKET_LIST.find(x => String(x.id) === String(pid));
+  if (!p) { if(card) card.style.display='none'; gvUpdateSummary(); return; }
+  document.getElementById('gv-paket-nama').textContent = p.nama;
+  const satuan = p.satuan_masa === 'jam' ? 'Jam' : p.satuan_masa === 'bulan' ? 'Bulan' : 'Hari';
+  const chips  = document.getElementById('gv-paket-chips');
+  if (chips) chips.innerHTML = [
+    `${p.masa_aktif || 30} ${satuan}`,
+    `${p.kecepatan_dn} Mbps`,
+    `Rp ${parseInt(p.harga).toLocaleString('id-ID')}`
+  ].map(t => `<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;background:rgba(186,117,23,.15);color:#854F0B">${t}</span>`).join('');
+  if (card) card.style.display = 'flex';
+  gvUpdateSummary();
+}
+
+function gvUpdateSummary() {
+  const pid    = document.getElementById('fv-paket')?.value;
+  const jml    = document.getElementById('fv-jml')?.value || '50';
+  const mode   = document.getElementById('fv-mode')?.value || 'sama';
+  const panjang= document.getElementById('fv-panjang')?.value || '8';
+  const prefix = document.getElementById('fv-prefix')?.value || '';
+  const cs     = document.getElementById('fv-charset')?.value || 'angka_kecil';
+  const p      = LAST_PAKET_LIST?.find(x => String(x.id) === String(pid));
+  const sumPaket = document.getElementById('gv-sum-paket');
+  const sumDetail= document.getElementById('gv-sum-detail');
+  if (sumPaket) sumPaket.textContent = p ? p.nama : '— pilih paket terlebih dahulu';
+  const modeLabel = mode === 'sama' ? 'user=pass' : 'user+pass';
+  const csLabel   = cs === 'angka' ? '0–9' : cs === 'angka_kecil' ? 'a–z 0–9' : 'A–Z 0–9';
+  if (sumDetail) sumDetail.textContent = `${panjang} karakter · prefix: ${prefix||'—'} · ${modeLabel} · ${csLabel}`;
+}
+
+// ── GENERATE VOUCHER MODAL HELPERS END ──────────────────────
+
+let PELANGGAN_LIST_CACHE = [];
+
+function invoiceOnPelangganChange() {
+  const pid  = document.getElementById('fi-pel').value;
+  const card = document.getElementById('fi-pel-card');
+  if (!pid || !PELANGGAN_LIST_CACHE.length) { if(card) card.style.display='none'; return; }
+  const p = PELANGGAN_LIST_CACHE.find(x => String(x.id) === String(pid));
+  if (!p) { if(card) card.style.display='none'; return; }
+  // isi avatar
+  const initials = p.nama.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('fi-pel-avatar').textContent = initials;
+  document.getElementById('fi-pel-name').textContent   = p.nama;
+  document.getElementById('fi-pel-hp').textContent     = p.no_hp || '—';
+  const tipeEl = document.getElementById('fi-pel-tipe');
+  tipeEl.textContent  = p.tipe_koneksi === 'hotspot' ? 'Hotspot' : 'PPPoE';
+  tipeEl.className    = 'tag ' + (p.tipe_koneksi || 'pppoe');
+  document.getElementById('fi-pel-paket').textContent  = p.nama_paket || '—';
+  document.getElementById('fi-pel-harga').textContent  = p.harga ? 'Rp ' + parseInt(p.harga).toLocaleString('id-ID') : '';
+  // auto-isi jumlah dari harga paket
+  if (p.harga) {
+    document.getElementById('fi-jml').value = p.harga;
+    invoiceUpdatePreview();
+  }
+  card.style.display = 'flex';
+}
+
+function invoiceUpdatePreview() {
+  const val = parseInt(document.getElementById('fi-jml').value) || 0;
+  const fmt = val ? 'Rp ' + val.toLocaleString('id-ID') : '—';
+  document.getElementById('fi-jml-preview').textContent = fmt;
+  document.getElementById('fi-sum-sub').textContent     = fmt;
+  document.getElementById('fi-sum-total').textContent   = fmt;
+}
+
+function invoiceSetDue(days) {
+  const d = new Date(); d.setDate(d.getDate() + days);
+  document.getElementById('fi-tgl').value = d.toISOString().split('T')[0];
+  document.querySelectorAll('.due-chip').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+function invoiceSetDueEOM() {
+  const d = new Date(); d.setMonth(d.getMonth()+1,0);
+  document.getElementById('fi-tgl').value = d.toISOString().split('T')[0];
+  document.querySelectorAll('.due-chip').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+// ── INVOICE MODAL HELPERS END ─────────────────────────────────
+
 let _invTab = 'pppoe';
 
 function switchInvTab(tab) {
