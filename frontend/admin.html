@@ -2742,7 +2742,7 @@ async function cekStatusSistem() {
   }
 }
 
-function fmt(n) { return 'Rp ' + Number(n||0).toLocaleString('id-ID'); }
+function fmt(n) { return 'Rp ' + Number(parseFloat(n)||0).toLocaleString('id-ID'); }
 function fmtDate(d) { return d ? new Date(d).toLocaleDateString('id-ID') : '—'; }
 
 function toast(msg, err=false) {
