@@ -1222,9 +1222,6 @@ Selamat menikmati! 🌐</textarea>
             <div class="td-text-sub" style="font-size:12px;margin-top:4px">Pantau sebaran pelanggan dan node jaringan dalam satu peta.</div>
           </div>
           <div style="display:flex;gap:8px">
-            <button class="btn" id="peta-mode-geser" onclick="petaToggleGeser()">
-              <i class="ti ti-lock" aria-hidden="true"></i> Mode Geser: OFF
-            </button>
             <button class="btn" onclick="loadPeta()">
               <i class="ti ti-refresh" aria-hidden="true"></i> Muat Ulang
             </button>
@@ -3782,10 +3779,10 @@ function initMiniMap(prefix) {
     // Hapus peta lama
     if (prefix === 'add') {
       if (_fMap)  { _fMap.remove();  _fMap  = null; _fMarker  = null; }
-      _fMap  = L.map(elId, { scrollWheelZoom: false }).setView([1.0857, 104.0305], 12);
+      _fMap  = L.map(elId, { scrollWheelZoom: true }).setView([1.0857, 104.0305], 12);
     } else {
       if (_epMap) { _epMap.remove(); _epMap = null; _epMarker = null; }
-      _epMap = L.map(elId, { scrollWheelZoom: false }).setView([1.0857, 104.0305], 12);
+      _epMap = L.map(elId, { scrollWheelZoom: true }).setView([1.0857, 104.0305], 12);
     }
     const map = prefix === 'add' ? _fMap : _epMap;
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -6719,7 +6716,7 @@ let _petaGeserMode = false;
 function loadPeta() {
   // Init peta Leaflet saat pertama
   if (!_petaMap) {
-    _petaMap = L.map('peta-map', { scrollWheelZoom: false }).setView([0.7893, 113.9213], 5);
+    _petaMap = L.map('peta-map', { scrollWheelZoom: true }).setView([0.7893, 113.9213], 5);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© <a href="https://leaflet.js.com">Leaflet</a> | © OpenStreetMap contributors',
       maxZoom: 19
