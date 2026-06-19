@@ -1200,13 +1200,14 @@ Selamat menikmati! 🌐</textarea>
                   <th style="width:130px">WAKTU</th>
                   <th style="width:90px">KATEGORI</th>
                   <th style="width:90px">PELAKU</th>
-                  <th style="width:200px">AKSI</th>
+                  <th style="width:180px">AKSI</th>
+                  <th style="width:100px">IP</th>
                   <th>TARGET</th>
                   <th>DETAIL</th>
                 </tr>
               </thead>
               <tbody id="tbl-log">
-                <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text3)">Memuat log...</td></tr>
+                <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3)">Memuat log...</td></tr>
               </tbody>
             </table>
           </div>
@@ -6917,7 +6918,7 @@ async function loadLog() {
 
     if (!tbody) return;
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text3)">Tidak ada log</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3)">Tidak ada log</td></tr>';
       return;
     }
 
@@ -6939,12 +6940,13 @@ async function loadLog() {
         <td><span style="background:${col}18;color:${col};font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;white-space:nowrap">${r.kategori}</span></td>
         <td class="td-text-main" style="font-size:12px;font-weight:600">${r.pelaku}</td>
         <td class="td-mono" style="font-size:11px;color:var(--text2)">${r.aksi}</td>
+        <td class="td-mono" style="font-size:11px;color:var(--text3)">${r.ip||'—'}</td>
         <td class="td-text-sub" style="font-size:12px">${r.target||'—'}</td>
-        <td class="td-text-sub" style="font-size:11px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.detail||''}">${r.detail||'—'}</td>
+        <td class="td-text-sub" style="font-size:11px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.detail||''}">${r.detail||'—'}</td>
       </tr>`;
     }).join('');
   } catch(e) {
-    if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:#dc2626">❌ ${e.message}</td></tr>`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:#dc2626">❌ ${e.message}</td></tr>`;
   }
 }
 

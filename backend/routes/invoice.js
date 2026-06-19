@@ -235,9 +235,9 @@ router.post('/:id/bayar-tunai', async (req, res, next) => {
         });
 
         res.json({ pesan: 'Pembayaran dikonfirmasi', tgl_expired });
-        require('./log').tulisLog({ kategori:'Billing', pelaku: req.user?.nama||'Admin',
+        require('./log').tulisLog({ kategori:'Billing', pelaku: req.admin?.nama||'Admin',
             aksi:'INVOICE_PAID', target: inv.no_invoice,
-            detail:`Amount: ${inv.jumlah}, Method: cash` });
+            detail:`Amount: ${inv.jumlah}, Method: cash`, ip: req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || req.ip });
     } catch (e) { next(e); }
 });
 

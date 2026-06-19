@@ -33,10 +33,11 @@ router.post('/login', async (req, res, next) => {
 
         // Audit log
         const { tulisLog } = require('./log');
+        const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || req.ip;
         tulisLog({ kategori:'Auth', pelaku: admin.nama || admin.email,
             aksi:'LOGIN', target: admin.nama,
-            detail:'User logged in via Web UI',
-            ip: req.headers['x-forwarded-for'] || req.ip });
+            detail:`User logged in via Web UI`,
+            ip });
 
         res.json({
             token,
