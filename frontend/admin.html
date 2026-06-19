@@ -3795,6 +3795,118 @@ Selamat menikmati! 🌐</textarea>
   </div>
 </div>
 
+<!-- MODAL TAMBAH NAS -->
+<div class="overlay" id="m-add-nas">
+  <div class="modal" style="max-width:460px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:9px;background:rgba(37,99,235,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-server" style="font-size:18px;color:#2563eb" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">Tambah NAS</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Network Access Server baru</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-add-nas')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+      <div class="fg-row">
+        <div class="fg"><label>Nama / Shortname</label><input id="nas-nama" placeholder="cth: Router-01"></div>
+        <div class="fg"><label>IP Address NAS</label><input id="nas-ip" placeholder="cth: 192.168.1.1"></div>
+      </div>
+      <div class="fg-row">
+        <div class="fg">
+          <label>Tipe</label>
+          <select id="nas-tipe" style="width:100%">
+            <option value="other">other</option>
+            <option value="Cisco">Cisco</option>
+            <option value="Computone">Computone</option>
+            <option value="Livingston">Livingston</option>
+            <option value="Max40xx">Max40xx</option>
+            <option value="Multitech">Multitech</option>
+            <option value="NetServer">NetServer</option>
+            <option value="PathSystems">PathSystems</option>
+            <option value="Portslave">Portslave</option>
+            <option value="TC">TC</option>
+            <option value="Usr">Usr</option>
+            <option value="mikrotik">Mikrotik</option>
+          </select>
+        </div>
+        <div class="fg"><label>Secret</label><input id="nas-secret" placeholder="shared secret" type="password"></div>
+      </div>
+      <div class="fg"><label>Deskripsi <span class="td-text-sub" style="font-size:10px">(opsional)</span></label><input id="nas-desc" placeholder="Keterangan NAS"></div>
+      <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
+        <button class="btn" onclick="closeModal('m-add-nas')">Batal</button>
+        <button class="btn primary" onclick="apiTambahNAS()" style="gap:6px">
+          <i class="ti ti-check" style="font-size:13px" aria-hidden="true"></i> Tambah NAS
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TAMBAH WG PEER -->
+<div class="overlay" id="m-add-wg-peer">
+  <div class="modal" style="max-width:440px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:9px;background:rgba(22,163,74,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-lock" style="font-size:18px;color:#16a34a" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">Tambah WireGuard Peer</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Tambah peer baru ke tunnel WireGuard</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-add-wg-peer')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+      <div class="fg"><label>Nama Peer</label><input id="wg-peer-nama" placeholder="cth: pelanggan-01"></div>
+      <div class="fg"><label>Public Key</label><input id="wg-peer-pubkey" placeholder="Public key peer (dari device)"></div>
+      <div class="fg"><label>IP Tunnel <span class="td-text-sub" style="font-size:10px">(cth: 10.10.28.2/32)</span></label><input id="wg-peer-ip" placeholder="10.10.28.x/32"></div>
+      <div class="fg"><label>Allowed IPs <span class="td-text-sub" style="font-size:10px">(opsional, default: 0.0.0.0/0)</span></label><input id="wg-peer-allowed" placeholder="0.0.0.0/0"></div>
+      <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
+        <button class="btn" onclick="closeModal('m-add-wg-peer')">Batal</button>
+        <button class="btn primary" onclick="apiTambahWgPeer()" style="gap:6px">
+          <i class="ti ti-check" style="font-size:13px" aria-hidden="true"></i> Tambah Peer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TAMBAH L2TP USER -->
+<div class="overlay" id="m-add-l2tp-user">
+  <div class="modal" style="max-width:440px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:9px;background:rgba(217,119,6,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-shield-lock" style="font-size:18px;color:#d97706" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">Tambah User L2TP</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Tambah akun VPN L2TP/IPSec</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-add-l2tp-user')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+      <div class="fg-row">
+        <div class="fg"><label>Username</label><input id="l2tp-username" placeholder="username VPN"></div>
+        <div class="fg"><label>Password</label><input id="l2tp-password" type="password" placeholder="••••••••"></div>
+      </div>
+      <div class="fg"><label>IP Statis <span class="td-text-sub" style="font-size:10px">(opsional, cth: 10.10.29.2)</span></label><input id="l2tp-ip" placeholder="Kosongkan untuk IP dinamis"></div>
+      <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
+        <button class="btn" onclick="closeModal('m-add-l2tp-user')">Batal</button>
+        <button class="btn primary" onclick="apiTambahL2tpUser()" style="gap:6px">
+          <i class="ti ti-check" style="font-size:13px" aria-hidden="true"></i> Tambah User
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="m-mikrotik-script">
   <div class="modal" style="max-width:580px">
     <div class="modal-hdr"><h3 id="mks-title">📋 Script MikroTik</h3><button class="btn-x" onclick="closeModal('m-mikrotik-script')">✕</button></div>
@@ -8129,7 +8241,19 @@ function radiusTab(tab) {
   }
 }
 
+function bukaModalWgPeer() {
+  ['wg-peer-nama','wg-peer-pubkey','wg-peer-ip','wg-peer-allowed'].forEach(function(id) {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  openModal('m-add-wg-peer');
+}
 
+function bukaModalL2tpUser() {
+  ['l2tp-username','l2tp-password','l2tp-ip'].forEach(function(id) {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  openModal('m-add-l2tp-user');
+}
 
 async function apiVpnRefreshStatus(tab) {
   const pfx = tab === 'wg' ? 'wg' : 'l2tp';
