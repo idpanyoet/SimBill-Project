@@ -942,10 +942,10 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
           </div>
         </div>
 
-        <div class="grid2" style="align-items:start">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
 
           <!-- ══ KOLOM KIRI ══ -->
-          <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+          <div style="display:flex;flex-direction:column;gap:14px">
 
             <!-- Card Konfigurasi Gateway -->
             <div class="card">
@@ -964,8 +964,8 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
                 </button>
               </div>
 
-              <!-- Provider cards -->
-              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px">
+              <!-- Provider cards 2x2 -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
                 <div onclick="waSetProvider('fonnte')" id="wa-prov-fonnte" style="border:2px solid #16a34a;background:rgba(22,163,74,.06);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:center;transition:all .15s">
                   <div style="font-size:18px;margin-bottom:3px">📱</div>
                   <div style="font-size:12px;font-weight:700;color:#16a34a">Fonnte</div>
@@ -1008,12 +1008,9 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
                 <div style="width:34px;height:34px;border-radius:9px;background:rgba(37,99,235,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
                   <i class="ti ti-message-2" style="font-size:17px;color:#2563eb" aria-hidden="true"></i>
                 </div>
-                <div style="flex:1">
+                <div>
                   <div style="font-size:13px;font-weight:700;color:var(--text)">Template Pesan</div>
                   <div class="td-text-sub" style="font-size:11px">Kustomisasi teks notifikasi otomatis</div>
-                </div>
-                <div id="vt-dirty-badge" style="display:none;background:rgba(217,119,6,.12);color:#d97706;font-size:11px;font-weight:600;padding:3px 10px;border-radius:7px;align-items:center;gap:4px">
-                  <i class="ti ti-pencil" style="font-size:11px" aria-hidden="true"></i> Belum disimpan
                 </div>
               </div>
 
@@ -1064,26 +1061,14 @@ Terima kasih! Pembayaran voucher diterima ✅
 
 Selamat menikmati! 🌐</textarea>
 
-              <!-- Tab pills pilih template -->
+              <!-- Tab pills -->
               <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
-                <button onclick="tplLoad('daftar');waActiveTpl('daftar',this)" id="wa-tpl-btn-daftar" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid #2563eb;background:#2563eb;color:#fff;cursor:pointer;font-family:inherit;transition:all .15s">
-                  Pelanggan Baru
-                </button>
-                <button onclick="tplLoad('reminder');waActiveTpl('reminder',this)" id="wa-tpl-btn-reminder" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s">
-                  Reminder
-                </button>
-                <button onclick="tplLoad('suspend');waActiveTpl('suspend',this)" id="wa-tpl-btn-suspend" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s">
-                  Suspend
-                </button>
-                <button onclick="tplLoad('konfirmasi');waActiveTpl('konfirmasi',this)" id="wa-tpl-btn-konfirmasi" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s">
-                  Konfirmasi
-                </button>
-                <button onclick="tplLoad('voucher_sukses');waActiveTpl('voucher_sukses',this)" id="wa-tpl-btn-voucher_sukses" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s">
-                  🎟️ Voucher
-                </button>
+                <button onclick="tplLoad('daftar');waActiveTpl('daftar',this)" id="wa-tpl-btn-daftar" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid #2563eb;background:#2563eb;color:#fff;cursor:pointer;font-family:inherit;transition:all .15s">Pelanggan Baru</button>
+                <button onclick="tplLoad('reminder');waActiveTpl('reminder',this)" id="wa-tpl-btn-reminder" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s">Reminder</button>
+                <button onclick="tplLoad('suspend');waActiveTpl('suspend',this)" id="wa-tpl-btn-suspend" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s">Suspend</button>
+                <button onclick="tplLoad('konfirmasi');waActiveTpl('konfirmasi',this)" id="wa-tpl-btn-konfirmasi" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s">Konfirmasi</button>
+                <button onclick="tplLoad('voucher_sukses');waActiveTpl('voucher_sukses',this)" id="wa-tpl-btn-voucher_sukses" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s">🎟️ Voucher</button>
               </div>
-
-              <!-- Hidden select (dipertahankan untuk kompatibilitas JS) -->
               <select id="wa-tpl-select" style="display:none" onchange="tplLoad(this.value)">
                 <option value="daftar">Pelanggan Baru</option>
                 <option value="reminder">Reminder</option>
@@ -1119,7 +1104,11 @@ Selamat menikmati! 🌐</textarea>
                 <i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan Template
               </button>
             </div>
+
           </div>
+
+          <!-- ══ KOLOM KANAN ══ -->
+          <div style="display:flex;flex-direction:column;gap:14px">
 
             <!-- Card Statistik 30 Hari -->
             <div class="card">
@@ -1132,33 +1121,30 @@ Selamat menikmati! 🌐</textarea>
                   <div class="td-text-sub" style="font-size:11px">Statistik pengiriman pesan</div>
                 </div>
               </div>
-              <div class="stat-row"><span class="lbl">Reminder terkirim</span><span class="val" style="color:var(--green)" id="wa-stat-reminder">—</span></div>
-              <div class="stat-row"><span class="lbl">Notif suspend</span><span class="val" style="color:var(--red)" id="wa-stat-suspend">—</span></div>
-              <div class="stat-row"><span class="lbl">Konfirmasi bayar</span><span class="val" style="color:var(--accent)" id="wa-stat-konfirmasi">—</span></div>
-              <div class="stat-row"><span class="lbl">Voucher terkirim</span><span class="val" id="wa-stat-voucher">—</span></div>
-              <div class="divider"></div>
-              <div class="stat-row"><span class="lbl">Delivery rate</span><span class="val" style="color:var(--green)" id="wa-stat-rate">—</span></div>
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <div class="stat-row"><span class="lbl">Reminder terkirim</span><span class="val" style="color:var(--green)" id="wa-stat-reminder">—</span></div>
+                <div class="stat-row"><span class="lbl">Notif suspend</span><span class="val" style="color:var(--red)" id="wa-stat-suspend">—</span></div>
+                <div class="stat-row"><span class="lbl">Konfirmasi bayar</span><span class="val" style="color:var(--accent)" id="wa-stat-konfirmasi">—</span></div>
+                <div class="stat-row"><span class="lbl">Voucher terkirim</span><span class="val" id="wa-stat-voucher">—</span></div>
+                <div class="divider"></div>
+                <div class="stat-row"><span class="lbl">Delivery rate</span><span class="val" style="color:var(--green)" id="wa-stat-rate">—</span></div>
+              </div>
             </div>
 
-          <!-- ══ KOLOM KANAN ══ -->
-          <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
-
-            <!-- Card Test + Preview Chat -->
+            <!-- Card Test Kirim + Preview Chat -->
             <div class="card">
               <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
                 <div style="width:34px;height:34px;border-radius:9px;background:rgba(22,163,74,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
                   <i class="ti ti-send" style="font-size:17px;color:#16a34a" aria-hidden="true"></i>
                 </div>
-                <div style="flex:1">
+                <div>
                   <div style="font-size:13px;font-weight:700;color:var(--text)">Test Kirim Pesan</div>
                   <div class="td-text-sub" style="font-size:11px">Kirim pesan percobaan ke nomor tujuan</div>
                 </div>
               </div>
-              <div class="fg-row">
-                <div class="fg" style="margin-bottom:0">
-                  <label>Nomor Tujuan</label>
-                  <input id="wa-to" placeholder="628xxxxxxxxxx">
-                </div>
+              <div class="fg">
+                <label>Nomor Tujuan</label>
+                <input id="wa-to" placeholder="628xxxxxxxxxx">
               </div>
               <div class="fg" style="margin-top:10px">
                 <label>Pesan</label>
