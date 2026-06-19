@@ -7373,7 +7373,7 @@ function renderTblInvoice(rows) {
 // ══════════════════════════════════════════════════════════════
 // CETAK INVOICE
 // ══════════════════════════════════════════════════════════════
-async function cetakInvoice(id, mode) {
+async function _invoiceHtml(id, mode) {
   try {
     toast('⏳ Menyiapkan invoice...');
     const [inv, settings] = await Promise.all([
@@ -7639,28 +7639,74 @@ body{font-family:'Courier New',monospace;font-size:9pt;color:#000;background:#ff
 </body></html>`;
     }
 
-    const win = window.open('', '_blank', 'width=' + (mode === 'thermal' ? '320' : '900') + ',height=700');
-    win.document.write(html);
-    win.document.close();
-
+    return html;
   } catch(e) {
-    toast('❌ Gagal cetak invoice: ' + e.message, true);
+    toast('❌ Gagal menyiapkan invoice: ' + e.message, true);
+    return null;
   }
 }
+
+// Thin wrapper: buka window & print (dipakai tombol A4 / Thermal)
+async function cetakInvoice(id, mode) {
+  const html = await _invoiceHtml(id, mode);
+  if (!html) return;
+  const win = window.open('', '_blank', 'width=' + (mode === 'thermal' ? '320' : '900') + ',height=700');
+  win.document.write(html);
+  win.document.close();
+}
+
+// Muat html2pdf.js sekali (untuk PDF yang identik dengan hasil print A4)
+function _loadHtml2Pdf() {
+  return new Promise((resolve, reject) => {
+    if (window.html2pdf) return resolve();
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Gagal memuat html2pdf.js (cek koneksi internet)'));
+    document.head.appendChild(s);
+  });
+}
+
+// Render HTML invoice A4 → Blob PDF (pixel-identik dengan print A4).
+// Dirender di iframe tersembunyi supaya CSS invoice tidak bentrok dengan CSS admin.
+async function _invoicePdfBlob(id) {
+  await _loadHtml2Pdf();
+  const htmlRaw = await _invoiceHtml(id, 'a4');
+  if (!htmlRaw) throw new Error('Gagal menyiapkan invoice');
+  // Buang script auto-print agar iframe tersembunyi tidak memunculkan dialog print
+  const html = htmlRaw.replace(/<script>[\s\S]*?window\.print[\s\S]*?<\/script>/gi, '');
+
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;left:-99999px;top:0;width:210mm;height:297mm;border:0';
+  document.body.appendChild(iframe);
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open(); doc.write(html); doc.close();
+
+  // Tunggu dokumen + semua gambar (logo & QR) selesai dimuat
+  await new Promise(res => { if (doc.readyState === 'complete') res(); else iframe.onload = res; });
+  await Promise.all(Array.from(doc.images).map(img =>
+    img.complete ? Promise.resolve() : new Promise(r => { img.onload = img.onerror = r; })));
+
+  const el = doc.querySelector('.page') || doc.body;
+  try {
+    return await window.html2pdf().set({
+      margin: 0,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).from(el).outputPdf('blob');
+  } finally {
+    iframe.remove();
+  }
+}
+
 // ══════════════════════════════════════════════════════════════
 
-// ── Download PDF asli (perlu kirim token via fetch, lalu unduh blob) ──
+// ── Download PDF (identik dengan hasil print A4) ──
 async function unduhInvoicePDF(id, noInv) {
   try {
     toast('⏳ Membuat PDF...');
-    const res = await fetch(API + '/api/invoice/' + id + '/pdf', {
-      headers: { 'Authorization': 'Bearer ' + TOKEN }
-    });
-    if (!res.ok) {
-      const e = await res.json().catch(() => ({}));
-      throw new Error(e.error || 'Gagal membuat PDF');
-    }
-    const blob = await res.blob();
+    const blob = await _invoicePdfBlob(id);
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href = url; a.download = (noInv || 'invoice') + '.pdf';
@@ -7670,13 +7716,22 @@ async function unduhInvoicePDF(id, noInv) {
   } catch (e) { toast('❌ ' + e.message, true); }
 }
 
-// ── Kirim PDF invoice ke WhatsApp pelanggan ──
+// ── Kirim PDF invoice (identik print) ke WhatsApp pelanggan ──
 async function kirimInvoicePDFwa(id, noInv) {
-  if (!confirm('Kirim PDF invoice ' + (noInv || '') + ' ke WhatsApp pelanggan?')) return;
+  if (!confirm('Kirim invoice ' + (noInv || '') + ' ke WhatsApp pelanggan?')) return;
   try {
-    toast('⏳ Mengirim PDF ke WhatsApp...');
-    const r = await apiFetch('/api/invoice/' + id + '/kirim-wa-pdf', { method: 'POST' });
-    toast('✅ ' + (r.pesan || 'PDF terkirim'));
+    toast('⏳ Membuat & mengirim PDF...');
+    const blob = await _invoicePdfBlob(id);
+    const fd   = new FormData();
+    fd.append('file', blob, (noInv || 'invoice') + '.pdf');
+    const res = await fetch(API + '/api/invoice/' + id + '/kirim-wa-pdf', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + TOKEN },   // jangan set Content-Type — biar browser isi boundary
+      body: fd
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Gagal mengirim');
+    toast('✅ ' + (data.pesan || 'Invoice terkirim ke WhatsApp'));
   } catch (e) { toast('❌ ' + e.message, true); }
 }
 

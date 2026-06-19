@@ -323,6 +323,13 @@ router.delete('/:id', async (req, res, next) => {
 // CETAK PDF & KIRIM KE WHATSAPP
 // ============================================================
 const invoicePdf = require('../services/invoice-pdf');
+const multer  = require('multer');
+const fs      = require('fs');
+const path    = require('path');
+const crypto  = require('crypto');
+// PDF dikirim dari browser (html2pdf, identik dengan hasil print) → diterima
+// sebagai multipart di memori, lalu disimpan & dikirim.
+const uploadPdf = multer({ storage: multer.memoryStorage(), limits: { fileSize: 6 * 1024 * 1024 } });
 
 // GET /api/invoice/:id/pdf — generate & download PDF asli
 router.get('/:id/pdf', async (req, res, next) => {
@@ -336,8 +343,10 @@ router.get('/:id/pdf', async (req, res, next) => {
     }
 });
 
-// POST /api/invoice/:id/kirim-wa-pdf — generate PDF lalu kirim ke WA pelanggan
-router.post('/:id/kirim-wa-pdf', async (req, res, next) => {
+// POST /api/invoice/:id/kirim-wa-pdf — kirim PDF ke WA pelanggan.
+// Jika browser mengupload file PDF (html2pdf, identik dgn print) → pakai itu;
+// kalau tidak ada (mis. dipanggil tanpa file) → fallback generate server-side.
+router.post('/:id/kirim-wa-pdf', uploadPdf.single('file'), async (req, res, next) => {
     try {
         const inv = await queryOne(`
             SELECT i.no_invoice, i.jumlah, i.status, i.tgl_jatuh_tempo, i.payment_url,
@@ -349,7 +358,21 @@ router.post('/:id/kirim-wa-pdf', async (req, res, next) => {
         const noHp = req.body?.no_hp || inv.no_hp;
         if (!noHp) return res.status(400).json({ error: 'Nomor HP pelanggan tidak tersedia' });
 
-        const { filePath, publicUrl, filename } = await invoicePdf.buatInvoicePDF(req.params.id);
+        let filePath, publicUrl, filename;
+        if (req.file && req.file.buffer && req.file.size > 0) {
+            // PDF dari browser — identik dengan hasil print
+            const dir = path.join(__dirname, '../../frontend/uploads/invoice');
+            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+            const safeNo = String(inv.no_invoice).replace(/[^a-zA-Z0-9_-]/g, '_');
+            filename = `${safeNo}_${crypto.randomBytes(4).toString('hex')}.pdf`;
+            filePath = path.join(dir, filename);
+            fs.writeFileSync(filePath, req.file.buffer);
+            const s = await queryOne(`SELECT nilai FROM setting WHERE kunci='app_url'`);
+            const appUrl = (s?.nilai || '').replace(/\/+$/, '');
+            publicUrl = appUrl ? `${appUrl}/uploads/invoice/${filename}` : `/uploads/invoice/${filename}`;
+        } else {
+            ({ filePath, publicUrl, filename } = await invoicePdf.buatInvoicePDF(req.params.id));
+        }
 
         const isLunas = inv.status === 'paid';
         const caption = isLunas
