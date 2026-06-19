@@ -447,6 +447,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-item" onclick="goto('radius',this)"><i class="ti ti-server icon" aria-hidden="true"></i> RADIUS / NAS</div>
     <div class="sb-item" onclick="goto('laporan',this)"><i class="ti ti-chart-bar icon" aria-hidden="true"></i> Laporan</div>
     <div class="sb-item" onclick="goto('income-report',this)"><i class="ti ti-report-money icon" aria-hidden="true"></i> Period Income Report</div>
+    <div class="sb-item" onclick="goto('net-profit',this)"><i class="ti ti-coin icon" aria-hidden="true"></i> Net Profit</div>
     <div class="sb-item" onclick="goto('voucher-template',this)"><i class="ti ti-palette icon" aria-hidden="true"></i> Template Voucher</div>
     <div class="sb-item" onclick="goto('acs',this)"><i class="ti ti-router icon" aria-hidden="true"></i> ACS TR-069</div>
     <div class="sb-item" onclick="goto('setting',this)"><i class="ti ti-settings icon" aria-hidden="true"></i> Setting</div>
@@ -1242,6 +1243,113 @@ Selamat menikmati! 🌐</textarea>
             <span class="td-text-sub" style="font-size:13px">Total Pendapatan (Paid)</span>
             <span id="ir-grand-total" class="td-accent-bold" style="font-size:16px;font-weight:700"></span>
           </div>
+        </div>
+      </div>
+
+      <!-- ══ NET PROFIT ══ -->
+      <div class="page" id="p-net-profit">
+
+        <!-- Header bar -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div>
+            <h2 class="td-text-main" style="font-size:18px;font-weight:700">NET PROFIT</h2>
+            <div class="td-text-sub" style="font-size:12px;margin-top:2px">Laporan keuntungan bersih per periode</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="fg-row" style="gap:8px;margin:0">
+              <input type="date" id="np-from" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+              <input type="date" id="np-till" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+            </div>
+            <button class="btn primary" onclick="apiNetProfit()"><i class="ti ti-search" aria-hidden="true"></i> Lihat</button>
+            <button class="btn" onclick="npExportCSV()" title="Export CSV"><i class="ti ti-table-export" aria-hidden="true"></i></button>
+            <button class="btn" onclick="window.print()" title="Print"><i class="ti ti-printer" aria-hidden="true"></i></button>
+          </div>
+        </div>
+
+        <!-- Summary cards -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px">
+          <div style="background:#fff;border:1px solid #e2e7ef;border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+            <div style="width:48px;height:48px;border-radius:10px;background:#e11d48;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ti-calendar" style="font-size:22px;color:#fff" aria-hidden="true"></i>
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em">PERIOD ( <span id="np-year-label">2026</span> )</div>
+              <div id="np-period-label" style="font-size:14px;font-weight:700;color:#0f172a;margin-top:2px">Jan 01 – Des 31</div>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid #e2e7ef;border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+            <div style="width:48px;height:48px;border-radius:10px;background:#0ea5e9;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ti-shopping-cart" style="font-size:22px;color:#fff" aria-hidden="true"></i>
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em">GROSS INCOME ( IDR )</div>
+              <div id="np-gross" style="font-size:18px;font-weight:700;color:#0ea5e9;margin-top:2px">0</div>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid #e2e7ef;border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+            <div style="width:48px;height:48px;border-radius:10px;background:#f97316;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ti-file-invoice" style="font-size:22px;color:#fff" aria-hidden="true"></i>
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em">MONEY OUT ( IDR )</div>
+              <div id="np-out" style="font-size:18px;font-weight:700;color:#f97316;margin-top:2px">0</div>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid #e2e7ef;border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
+            <div style="width:48px;height:48px;border-radius:10px;background:#16a34a;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ti-currency-dollar" style="font-size:22px;color:#fff" aria-hidden="true"></i>
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em">PROFIT ( IDR )</div>
+              <div id="np-profit" style="font-size:18px;font-weight:700;color:#16a34a;margin-top:2px">0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart Money In -->
+        <div class="card">
+          <div style="text-align:center;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">
+            MONEY IN (PROFIT) STATISTIC <span id="np-chart-year">2026</span>
+          </div>
+          <div style="display:flex;justify-content:center;gap:16px;font-size:11px;color:var(--text2);margin-bottom:10px">
+            <span><span style="display:inline-block;width:24px;height:3px;background:#fbbf24;vertical-align:middle;margin-right:4px;border-radius:2px"></span>TRX COUNT</span>
+            <span><span style="display:inline-block;width:24px;height:3px;background:#0ea5e9;vertical-align:middle;margin-right:4px;border-radius:2px"></span>INCOME</span>
+            <span><span style="display:inline-block;width:24px;height:3px;background:#f87171;vertical-align:middle;margin-right:4px;border-radius:2px"></span>PROFIT</span>
+          </div>
+          <canvas id="np-chart-in" height="80"></canvas>
+        </div>
+
+        <!-- Chart Money Out -->
+        <div class="card">
+          <div style="text-align:center;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">
+            MONEY OUT STATISTIC <span id="np-chart-year2">2026</span>
+          </div>
+          <div style="display:flex;justify-content:center;gap:16px;font-size:11px;color:var(--text2);margin-bottom:10px">
+            <span><span style="display:inline-block;width:24px;height:3px;background:#60a5fa;vertical-align:middle;margin-right:4px;border-radius:2px"></span>SELLER FEE</span>
+            <span><span style="display:inline-block;width:24px;height:3px;background:#34d399;vertical-align:middle;margin-right:4px;border-radius:2px"></span>VAT</span>
+            <span><span style="display:inline-block;width:24px;height:3px;background:#fde68a;vertical-align:middle;margin-right:4px;border-radius:2px"></span>PAYOUT</span>
+          </div>
+          <canvas id="np-chart-out" height="80"></canvas>
+        </div>
+
+        <!-- Tabel Net Profit per bulan -->
+        <div class="card">
+          <table>
+            <thead>
+              <tr>
+                <th>Period</th>
+                <th>Transaction</th>
+                <th>Gross Income</th>
+                <th>— Seller Fee</th>
+                <th>— VAT</th>
+                <th>— Payout</th>
+                <th style="color:#16a34a">NET PROFIT</th>
+              </tr>
+            </thead>
+            <tbody id="tbl-net-profit">
+              <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3)">Klik Lihat untuk memuat data</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -3631,7 +3739,7 @@ const loaders = {
   paket: loadPaket, invoice: loadInvoice,
   voucher: loadVoucher, whatsapp: loadWALog,
   payment: loadPayment, radius: loadRadius,
-  laporan: loadLaporan, 'income-report': loadIncomeReport, reseller: loadReseller,
+  laporan: loadLaporan, 'income-report': loadIncomeReport, 'net-profit': loadNetProfit, reseller: loadReseller,
   acs: loadACS, 'voucher-template': loadVoucherTemplate,
   setting: loadSetting,
   backup:  loadBackup
@@ -5037,6 +5145,117 @@ function gvUpdateSummary() {
 }
 
 // ── GENERATE VOUCHER MODAL HELPERS END ──────────────────────
+
+// ══════════════════════════════════════════════════
+// NET PROFIT
+// ══════════════════════════════════════════════════
+let _npChartIn  = null;
+let _npChartOut = null;
+let _npData     = null;
+
+function loadNetProfit() {
+  const now  = new Date();
+  const y    = now.getFullYear();
+  const dari = `${y}-01-01`;
+  const till = `${y}-12-31`;
+  const elF  = document.getElementById('np-from');
+  const elT  = document.getElementById('np-till');
+  if (elF) elF.value = dari;
+  if (elT) elT.value = till;
+  apiNetProfit();
+}
+
+async function apiNetProfit() {
+  const dari = document.getElementById('np-from').value;
+  const till = document.getElementById('np-till').value;
+  if (!dari || !till) return toast('❌ Pilih rentang tanggal', true);
+  try {
+    const year = dari.slice(0,4);
+    const d    = await apiFetch(`/api/laporan/net-profit?dari=${dari}&sampai=${till}&year=${year}`);
+    _npData    = d;
+
+    ['np-year-label','np-chart-year','np-chart-year2'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = year;
+    });
+    const fmtD = dt => { const p = dt.split('-'); return `${p[2]} ${new Date(dt+'T00:00:00').toLocaleString('en',{month:'short'})}`; };
+    document.getElementById('np-period-label').textContent = `${fmtD(dari)} – ${fmtD(till)}`;
+
+    const fmtN = n => n ? 'Rp ' + Math.round(n).toLocaleString('id-ID') : '0';
+    document.getElementById('np-gross').textContent  = fmtN(d.summary.gross);
+    document.getElementById('np-out').textContent    = fmtN(d.summary.fee + d.summary.vat + d.summary.payout);
+    document.getElementById('np-profit').textContent = fmtN(d.summary.profit);
+
+    const labels = d.months.map(m => m.label);
+
+    // Chart Money In
+    if (_npChartIn) _npChartIn.destroy();
+    const ctxIn = document.getElementById('np-chart-in')?.getContext('2d');
+    if (ctxIn) _npChartIn = new Chart(ctxIn, {
+      type:'line', data:{ labels, datasets:[
+        { label:'TRX COUNT', data:d.months.map(m=>m.trx),   borderColor:'#fbbf24', backgroundColor:'rgba(251,191,36,.1)',  tension:.4, pointRadius:4, borderWidth:2 },
+        { label:'INCOME',    data:d.months.map(m=>m.gross),  borderColor:'#0ea5e9', backgroundColor:'rgba(14,165,233,.1)',  tension:.4, pointRadius:4, borderWidth:2 },
+        { label:'PROFIT',    data:d.months.map(m=>m.profit), borderColor:'#f87171', backgroundColor:'rgba(248,113,113,.1)', tension:.4, pointRadius:4, borderWidth:2 }
+      ]},
+      options:{ responsive:true, interaction:{mode:'index',intersect:false},
+        plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.dataset.label==='TRX COUNT'?ctx.raw:'Rp '+Math.round(ctx.raw||0).toLocaleString('id-ID')}`}}},
+        scales:{ y:{ticks:{callback:v=>v>=1000000?(v/1000000).toFixed(1)+'jt':v>=1000?(v/1000).toFixed(0)+'rb':v}} }
+      }
+    });
+
+    // Chart Money Out
+    if (_npChartOut) _npChartOut.destroy();
+    const ctxOut = document.getElementById('np-chart-out')?.getContext('2d');
+    if (ctxOut) _npChartOut = new Chart(ctxOut, {
+      type:'bar', data:{ labels, datasets:[
+        { label:'SELLER FEE', data:d.months.map(m=>m.sellerFee), backgroundColor:'rgba(96,165,250,.6)',  borderColor:'#60a5fa', borderWidth:1 },
+        { label:'VAT',        data:d.months.map(m=>m.vat),       backgroundColor:'rgba(52,211,153,.6)',  borderColor:'#34d399', borderWidth:1 },
+        { label:'PAYOUT',     data:d.months.map(m=>m.payout),    backgroundColor:'rgba(253,230,138,.6)', borderColor:'#fde68a', borderWidth:1 }
+      ]},
+      options:{ responsive:true, interaction:{mode:'index',intersect:false},
+        plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: Rp ${Math.round(ctx.raw||0).toLocaleString('id-ID')}`}}},
+        scales:{ x:{stacked:true}, y:{stacked:true, ticks:{callback:v=>v>=1000000?(v/1000000).toFixed(1)+'jt':v}} }
+      }
+    });
+
+    // Tabel
+    const tbody = document.getElementById('tbl-net-profit');
+    const profC = p => p >= 0 ? '#16a34a' : '#dc2626';
+    tbody.innerHTML = d.months.map(m=>`<tr>
+      <td class="td-text-main" style="font-size:12px">${m.label}</td>
+      <td class="td-text-sub" style="text-align:center">${m.trx}</td>
+      <td class="td-text-bold">${fmtN(m.gross)}</td>
+      <td class="td-text-sub">${m.sellerFee?fmtN(m.sellerFee):'—'}</td>
+      <td class="td-text-sub">${m.vat?fmtN(m.vat):'—'}</td>
+      <td class="td-text-sub">${m.payout?fmtN(m.payout):'—'}</td>
+      <td style="font-weight:700;color:${profC(m.profit)}">${fmtN(m.profit)}</td>
+    </tr>`).join('') +
+    `<tr style="border-top:2px solid var(--border)">
+      <td class="td-text-bold">TOTAL</td>
+      <td class="td-text-bold" style="text-align:center">${d.summary.trx}</td>
+      <td class="td-text-bold">${fmtN(d.summary.gross)}</td>
+      <td class="td-text-sub">${fmtN(d.summary.fee)}</td>
+      <td class="td-text-sub">${fmtN(d.summary.vat)}</td>
+      <td class="td-text-sub">${fmtN(d.summary.payout)}</td>
+      <td style="font-weight:700;font-size:15px;color:${profC(d.summary.profit)}">${fmtN(d.summary.profit)}</td>
+    </tr>`;
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+
+function npExportCSV() {
+  if (!_npData?.months) return toast('❌ Tidak ada data', true);
+  const h = ['Period','Transaction','Gross Income','Seller Fee','VAT','Payout','Net Profit'];
+  const r = _npData.months.map(m=>[m.label,m.trx,m.gross,m.sellerFee,m.vat,m.payout,m.profit]);
+  r.push(['TOTAL',_npData.summary.trx,_npData.summary.gross,_npData.summary.fee,_npData.summary.vat,_npData.summary.payout,_npData.summary.profit]);
+  const csv  = [h,...r].map(row=>row.map(v=>`"${v}"`).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href=url; a.download=`net-profit-${document.getElementById('np-from').value}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  toast('✅ Export CSV berhasil');
+}
+// ══════════════════════════════════════════════════
 
 // ── RESELLER MODAL HELPERS ──────────────────────────────────
 function rsSetLevel(level) {

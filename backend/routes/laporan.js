@@ -391,6 +391,63 @@ router.get('/income-report', async (req, res, next) => {
     } catch(e) { next(e); }
 });
 
+// ── GET /api/laporan/net-profit ──────────────────────────────
+router.get('/net-profit', async (req, res, next) => {
+    try {
+        const year = parseInt(req.query.year) || new Date().getFullYear();
+        const dari = req.query.dari || `${year}-01-01`;
+        const sampai = req.query.sampai || `${year}-12-31`;
+
+        // Pendapatan bulanan (paid invoices)
+        const incomeRows = await query(`
+            SELECT
+                DATE_FORMAT(tgl_bayar,'%Y-%m') AS bulan,
+                COUNT(*) AS trx_count,
+                COALESCE(SUM(jumlah),0) AS gross_income
+            FROM invoice
+            WHERE status='paid' AND DATE(tgl_bayar) BETWEEN ? AND ?
+            GROUP BY bulan
+            ORDER BY bulan
+        `, [dari, sampai]);
+
+        // Biaya payment gateway dari setting (% fee)
+        const [feeRow] = await query(`SELECT nilai FROM setting WHERE kunci='pg_fee_persen'`).catch(()=>[{nilai:'0'}]);
+        const feePersen = parseFloat(feeRow?.nilai || 0);
+
+        // Build per-bulan data
+        const months = [];
+        const d = new Date(dari);
+        const dEnd = new Date(sampai);
+        while (d <= dEnd) {
+            const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+            const label = d.toLocaleString('id-ID',{month:'short',year:'numeric'});
+            const inc = incomeRows.find(r => r.bulan === key);
+            const gross = parseFloat(inc?.gross_income || 0);
+            const trx   = parseInt(inc?.trx_count || 0);
+            const sellerFee = Math.round(gross * feePersen / 100);
+            const vat       = 0; // bisa diisi nanti
+            const payout    = 0; // bisa diisi nanti
+            const profit    = gross - sellerFee - vat - payout;
+            months.push({ key, label, trx, gross, sellerFee, vat, payout, profit });
+            d.setMonth(d.getMonth() + 1);
+        }
+
+        const totalGross  = months.reduce((s,m) => s + m.gross, 0);
+        const totalFee    = months.reduce((s,m) => s + m.sellerFee, 0);
+        const totalVat    = months.reduce((s,m) => s + m.vat, 0);
+        const totalPayout = months.reduce((s,m) => s + m.payout, 0);
+        const totalProfit = months.reduce((s,m) => s + m.profit, 0);
+        const totalTrx    = months.reduce((s,m) => s + m.trx, 0);
+
+        res.json({
+            months,
+            summary: { gross: totalGross, fee: totalFee, vat: totalVat, payout: totalPayout, profit: totalProfit, trx: totalTrx },
+            periode: `${dari} s/d ${sampai}`,
+            year
+        });
+    } catch(e) { next(e); }
+});
+
 // ── GET /api/laporan/income-report-excel ──────────────────────
 router.get('/income-report-excel', async (req, res, next) => {
     try {
