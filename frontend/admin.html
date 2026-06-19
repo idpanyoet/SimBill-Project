@@ -2791,6 +2791,158 @@ Selamat menikmati! 🌐</textarea>
       </div>
 
 
+
+      <!-- ══ SETTING ══ -->
+      <div class="page" id="p-setting">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <h2 style="font-size:18px;font-weight:700;color:var(--text);margin:0">Setting Sistem</h2>
+            <div class="td-text-sub" style="font-size:12px;margin-top:3px">Konfigurasi identitas aplikasi, billing, dan informasi sistem</div>
+          </div>
+          <button class="btn primary" onclick="apiSimpanSetting()" style="gap:6px">
+            <i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan Pengaturan
+          </button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+
+          <!-- Kolom Kiri -->
+          <div style="display:flex;flex-direction:column;gap:14px">
+
+            <!-- Identitas Aplikasi -->
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(37,99,235,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-apps" style="font-size:17px;color:#2563eb" aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Identitas Aplikasi</div>
+                  <div class="td-text-sub" style="font-size:11px">Nama, URL, dan logo sistem</div>
+                </div>
+              </div>
+
+              <!-- Logo -->
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+                <div style="position:relative;cursor:pointer" onclick="document.getElementById('s-logo-file').click()">
+                  <div id="s-logo-icon" style="width:64px;height:64px;border-radius:14px;background:rgba(37,99,235,.1);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;transition:all .2s" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='var(--border)'">
+                    <i class="ti ti-photo" style="font-size:24px;color:#94a3b8" aria-hidden="true"></i>
+                  </div>
+                  <img id="s-logo-preview" src="" alt="Logo" style="display:none;width:64px;height:64px;border-radius:14px;object-fit:contain;border:2px solid var(--border)">
+                  <input type="file" id="s-logo-file" accept="image/*" style="display:none" onchange="logoPreview(this)">
+                </div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Logo Aplikasi</div>
+                  <div class="td-text-sub" style="font-size:11px;margin-bottom:8px">Klik untuk upload logo (PNG/JPG, maks 2MB)</div>
+                  <div style="display:flex;gap:6px">
+                    <button class="btn sm" onclick="document.getElementById('s-logo-file').click()" style="gap:4px">
+                      <i class="ti ti-upload" style="font-size:12px" aria-hidden="true"></i> Upload
+                    </button>
+                    <button id="s-logo-clear-btn" class="btn sm danger" onclick="logoClear()" style="display:none;gap:4px">
+                      <i class="ti ti-x" style="font-size:12px" aria-hidden="true"></i> Hapus
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <input type="hidden" id="s-app_logo">
+
+              <div class="fg-row">
+                <div class="fg"><label>Nama Aplikasi</label><input id="s-app_name" placeholder="SimBill ISP"></div>
+                <div class="fg"><label>URL Aplikasi</label><input id="s-app_url" placeholder="https://billing.rfnet.id"></div>
+              </div>
+            </div>
+
+            <!-- Kontak & Lokasi -->
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(22,163,74,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-map-pin" style="font-size:17px;color:#16a34a" aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Kontak & Lokasi</div>
+                  <div class="td-text-sub" style="font-size:11px">Nomor WA dan alamat usaha</div>
+                </div>
+              </div>
+              <div class="fg"><label>No. WA Kontak Bantuan</label><input id="s-wa_number" placeholder="6281234567890"></div>
+              <div class="fg"><label>Alamat Usaha</label><input id="s-alamat" placeholder="Jl. Merdeka No. 1, Batam"></div>
+            </div>
+
+          </div>
+
+          <!-- Kolom Kanan -->
+          <div style="display:flex;flex-direction:column;gap:14px">
+
+            <!-- Konfigurasi Billing -->
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(186,117,23,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-receipt" style="font-size:17px;color:#BA7517" aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Konfigurasi Billing</div>
+                  <div class="td-text-sub" style="font-size:11px">Prefix invoice, reminder, dan pajak</div>
+                </div>
+              </div>
+              <div class="fg-row">
+                <div class="fg"><label>Prefix Invoice</label><input id="s-invoice_prefix" placeholder="INV-"></div>
+                <div class="fg"><label>Pajak (%)</label><input id="s-pajak_persen" type="number" min="0" max="100" placeholder="0"></div>
+              </div>
+              <div class="fg-row">
+                <div class="fg">
+                  <label>Reminder H- (hari)</label>
+                  <input id="s-reminder_h" type="number" min="0" placeholder="3">
+                  <div class="td-text-sub" style="font-size:10px;margin-top:3px">Kirim WA X hari sebelum jatuh tempo</div>
+                </div>
+                <div class="fg">
+                  <label>Auto-Suspend H+ (hari)</label>
+                  <input id="s-suspend_h" type="number" min="0" placeholder="3">
+                  <div class="td-text-sub" style="font-size:10px;margin-top:3px">Suspend X hari setelah jatuh tempo</div>
+                </div>
+              </div>
+              <div style="padding-top:12px;border-top:1px solid var(--border);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn" onclick="apiSyncRadcheck()" style="gap:5px">
+                  <i class="ti ti-refresh" style="font-size:13px" aria-hidden="true"></i> Sync Radcheck
+                </button>
+                <button class="btn" onclick="apiTestRADIUS()" style="gap:5px">
+                  <i class="ti ti-plug" style="font-size:13px" aria-hidden="true"></i> Test RADIUS
+                </button>
+                <button class="btn danger" onclick="if(confirm('Restart RADIUS service?')) apiFetch(\'/api/radius/restart\',{method:\'POST\'}).then(()=>toast(\'✅ RADIUS restarted\')).catch(e=>toast(\'❌ \'+e.message,true))" style="gap:5px">
+                  <i class="ti ti-refresh-alert" style="font-size:13px" aria-hidden="true"></i> Restart RADIUS
+                </button>
+              </div>
+            </div>
+
+            <!-- Info Sistem -->
+            <div class="card">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="width:34px;height:34px;border-radius:9px;background:rgba(124,58,237,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <i class="ti ti-info-circle" style="font-size:17px;color:#7c3aed" aria-hidden="true"></i>
+                  </div>
+                  <div>
+                    <div style="font-size:13px;font-weight:700;color:var(--text)">Info Sistem</div>
+                    <div class="td-text-sub" style="font-size:11px">Status layanan dan versi</div>
+                  </div>
+                </div>
+                <button class="btn sm" onclick="loadSysInfo()" style="gap:5px">
+                  <i class="ti ti-refresh" style="font-size:13px" aria-hidden="true"></i>
+                </button>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div class="stat-row"><span class="lbl">Versi App</span><span class="val" id="sys-ver">—</span></div>
+                <div class="stat-row"><span class="lbl">Node.js</span><span class="val" id="sys-node">—</span></div>
+                <div class="divider"></div>
+                <div class="stat-row"><span class="lbl">Database</span><span class="val" id="sys-db">—</span></div>
+                <div class="stat-row"><span class="lbl">RADIUS</span><span class="val" id="sys-radius">—</span></div>
+                <div class="stat-row"><span class="lbl">Uptime</span><span class="val" id="sys-uptime">—</span></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /app -->
