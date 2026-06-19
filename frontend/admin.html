@@ -6994,7 +6994,8 @@ function gantiHalamanVoucher(arah) {
 
 function renderTblVoucher(rows) {
   const t = document.getElementById('tbl-voucher');
-  document.getElementById('vcr-pilih-semua').checked = false;
+  const chkAll = document.getElementById('vcr-pilih-semua');
+  if (chkAll) chkAll.checked = false;
   if(!rows.length) { t.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3)">Belum ada voucher</td></tr>'; return; }
   t.innerHTML = rows.map(v=>`
     <tr>
