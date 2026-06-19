@@ -7655,26 +7655,38 @@ async function cetakInvoice(id, mode) {
   win.document.close();
 }
 
-// Loader script eksternal sekali pakai (CDN)
+// Loader script eksternal sekali pakai
 function _loadScript(src, isReady) {
   return new Promise((resolve, reject) => {
     if (isReady && isReady()) return resolve();
     const s = document.createElement('script');
     s.src = src;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error('Gagal memuat ' + src + ' (cek koneksi internet)'));
+    s.onload = () => (isReady && !isReady())
+      ? reject(new Error('lib tidak terdefinisi: ' + src))
+      : resolve();
+    s.onerror = () => reject(new Error('Gagal memuat ' + src));
     document.head.appendChild(s);
   });
 }
+// Coba dari server sendiri dulu (/vendor), baru CDN sebagai cadangan.
+async function _loadLib(localSrc, cdnSrc, isReady) {
+  if (isReady()) return;
+  try { await _loadScript(localSrc, isReady); }
+  catch (e) { await _loadScript(cdnSrc, isReady); }
+}
 function _loadHtml2Pdf() {
-  return _loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js',
+  return _loadLib(
+    '/vendor/html2pdf.bundle.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js',
     () => window.html2pdf);
 }
 
 // Generate QR sebagai data URL lokal (tanpa server luar → tanpa masalah CORS pada canvas)
 async function _makeQrDataUrl(text) {
   try {
-    await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
+    await _loadLib(
+      '/vendor/qrcode.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
       () => window.QRCode);
   } catch (e) { return ''; }
   return new Promise(resolve => {
