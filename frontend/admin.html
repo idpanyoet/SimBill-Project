@@ -489,6 +489,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-item" onclick="goto('voucher-template',this)"><i class="ti ti-palette icon" aria-hidden="true"></i> Template Voucher</div>
     <div class="sb-item" onclick="goto('acs',this)"><i class="ti ti-router icon" aria-hidden="true"></i> ACS TR-069</div>
     <div class="sb-item" onclick="goto('setting',this)"><i class="ti ti-settings icon" aria-hidden="true"></i> Setting</div>
+    <div class="sb-item" onclick="goto('pengguna',this)"><i class="ti ti-users-group icon" aria-hidden="true"></i> Pengguna Admin</div>
     <div class="sb-item" onclick="goto('backup',this)"><i class="ti ti-database-export icon" aria-hidden="true"></i> Backup & Restore</div>
     <div class="sb-item" onclick="goto('log',this)"><i class="ti ti-clipboard-list icon" aria-hidden="true"></i> Log Admin</div>
 
@@ -1152,6 +1153,74 @@ Selamat menikmati! 🌐</textarea>
                 <button class="btn sm" onclick="apiTestRADIUS()">🔌 Test Koneksi</button>
                 <small style="font-size:10px;color:var(--text3)">Cek koneksi FreeRADIUS</small>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ PENGGUNA ADMIN ══ -->
+      <div class="page" id="p-pengguna">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+          <div>
+            <h2 style="font-size:18px;font-weight:700;color:#2563eb">Pengguna Admin</h2>
+            <div class="td-text-sub" style="font-size:12px;margin-top:4px">Kelola akun admin, peran, dan level akses.</div>
+          </div>
+          <button class="btn primary" onclick="openModal('m-add-pengguna')">
+            <i class="ti ti-plus" aria-hidden="true"></i> Tambah Pengguna
+          </button>
+        </div>
+
+        <div class="card">
+          <!-- Filter -->
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+            <div style="position:relative;min-width:220px">
+              <i class="ti ti-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px" aria-hidden="true"></i>
+              <input id="pg-search" placeholder="Cari username, nama, atau kontak" oninput="loadPengguna()" style="width:100%;padding:7px 12px 7px 32px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+            </div>
+            <select id="pg-filter-role" onchange="loadPengguna()" style="padding:7px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+              <option value="semua">Semua peran</option>
+              <option value="superadmin">Super Admin</option>
+              <option value="admin">Admin</option>
+              <option value="operator">Operator</option>
+            </select>
+            <span id="pg-count" class="td-text-sub" style="font-size:12px;margin-left:auto"></span>
+          </div>
+
+          <!-- Tabel -->
+          <table>
+            <thead>
+              <tr>
+                <th>USERNAME</th>
+                <th>NAMA</th>
+                <th>PERAN</th>
+                <th>STATUS</th>
+                <th>KONTAK</th>
+                <th>DIPERBARUI</th>
+                <th style="width:40px"></th>
+              </tr>
+            </thead>
+            <tbody id="tbl-pengguna">
+              <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3)">Memuat...</td></tr>
+            </tbody>
+          </table>
+
+          <!-- Pagination -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px">
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)">
+              Baris per halaman
+              <select id="pg-per-halaman" onchange="pgHalaman=0;loadPengguna()" style="padding:3px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit">
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+              <span id="pg-info"></span>
+            </div>
+            <div style="display:flex;gap:4px">
+              <button class="btn sm" id="pg-btn-first"  onclick="pgHalaman=0;loadPengguna()">«</button>
+              <button class="btn sm" id="pg-btn-prev"   onclick="pgHalaman=Math.max(0,pgHalaman-1);loadPengguna()">‹</button>
+              <span id="pg-page-num" style="padding:4px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--accent);color:#fff;font-weight:600">1</span>
+              <button class="btn sm" id="pg-btn-next"   onclick="pgHalaman++;loadPengguna()">›</button>
+              <button class="btn sm" id="pg-btn-last"   onclick="pgHalaman=pgTotalHalaman-1;loadPengguna()">»</button>
             </div>
           </div>
         </div>
@@ -2177,6 +2246,105 @@ Selamat menikmati! 🌐</textarea>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
         <button class="btn" onclick="epSwitchTab(1)"><i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> Kembali</button>
         <button class="btn primary" onclick="apiUpdatePelanggan()"><i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan Perubahan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TAMBAH PENGGUNA -->
+<div class="overlay" id="m-add-pengguna">
+  <div class="modal" style="max-width:440px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:9px;background:#dbeafe;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-user-plus" style="font-size:18px;color:#2563eb" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:600;color:var(--text)">Tambah Pengguna</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Buat akun admin baru</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-add-pengguna')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+      <div class="fg-row">
+        <div class="fg"><label>Username</label><input id="ap-username" placeholder="username"></div>
+        <div class="fg"><label>Nama Lengkap</label><input id="ap-nama" placeholder="Nama tampilan"></div>
+      </div>
+      <div class="fg"><label>Email</label><input id="ap-email" type="email" placeholder="admin@domain.com"></div>
+      <div class="fg-row">
+        <div class="fg"><label>No. HP / Kontak</label><input id="ap-nohp" placeholder="08xxxxxxxxxx"></div>
+        <div class="fg">
+          <label>Peran</label>
+          <select id="ap-role" style="width:100%">
+            <option value="operator">Operator</option>
+            <option value="admin">Admin</option>
+            <option value="superadmin">Super Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Password</label>
+        <div style="position:relative">
+          <input id="ap-password" type="password" placeholder="Minimal 6 karakter" style="padding-right:36px">
+          <button type="button" onclick="togglePwVis('ap-password',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0">👁</button>
+        </div>
+      </div>
+      <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
+        <button class="btn" onclick="closeModal('m-add-pengguna')">Batal</button>
+        <button class="btn primary" style="background:#2563eb;box-shadow:0 2px 6px rgba(37,99,235,.3)" onclick="apiTambahPengguna()">
+          <i class="ti ti-user-plus" style="font-size:13px" aria-hidden="true"></i> Tambah
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDIT PENGGUNA -->
+<div class="overlay" id="m-edit-pengguna">
+  <div class="modal" style="max-width:440px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:9px;background:#fef3c7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-user-edit" style="font-size:18px;color:#d97706" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div id="ep-pg-title" style="font-size:15px;font-weight:600;color:var(--text)">Edit Pengguna</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Perbarui data akun</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-edit-pengguna')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+      <input type="hidden" id="ep-pg-id">
+      <div class="fg-row">
+        <div class="fg"><label>Username</label><input id="ep-pg-username" placeholder="username"></div>
+        <div class="fg"><label>Nama Lengkap</label><input id="ep-pg-nama" placeholder="Nama"></div>
+      </div>
+      <div class="fg"><label>Email</label><input id="ep-pg-email" type="email"></div>
+      <div class="fg-row">
+        <div class="fg"><label>No. HP / Kontak</label><input id="ep-pg-nohp" placeholder="08xxxxxxxxxx"></div>
+        <div class="fg">
+          <label>Peran</label>
+          <select id="ep-pg-role" style="width:100%">
+            <option value="operator">Operator</option>
+            <option value="admin">Admin</option>
+            <option value="superadmin">Super Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Password baru <span class="td-text-sub" style="font-size:10px;font-weight:400">(kosongkan jika tidak diubah)</span></label>
+        <div style="position:relative">
+          <input id="ep-pg-password" type="password" placeholder="Kosongkan jika tidak diubah" style="padding-right:36px">
+          <button type="button" onclick="togglePwVis('ep-pg-password',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0">👁</button>
+        </div>
+      </div>
+      <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
+        <button class="btn" onclick="closeModal('m-edit-pengguna')">Batal</button>
+        <button class="btn primary" style="background:#d97706;box-shadow:0 2px 6px rgba(217,119,6,.3)" onclick="apiUpdatePengguna()">
+          <i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan
+        </button>
       </div>
     </div>
   </div>
@@ -3218,6 +3386,7 @@ const titles = {
   'income-report':'Period Income Report',
   'net-profit':'Net Profit',
   'log':'Log Admin',
+  'pengguna':'Pengguna Admin',
   'sesi':'Sesi Aktif',
   'peta':'Peta Jaringan',
   'voucher-template':'Template Voucher', setting:'Setting Sistem'
@@ -3230,6 +3399,7 @@ const loaders = {
   laporan: loadLaporan, 'income-report': loadIncomeReport, 'net-profit': loadNetProfit, reseller: loadReseller,
   sesi: loadSesi,
   log:  loadLog,
+  pengguna: loadPengguna,
   peta: loadPeta,
   acs: loadACS, 'voucher-template': loadVoucherTemplate,
   setting: loadSetting,
@@ -6891,6 +7061,162 @@ function petaToggleGeser() {
 // ══════════════════════════════════════════════════
 // LOG ADMIN
 // ══════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
+// PENGGUNA ADMIN
+// ══════════════════════════════════════════════════
+let pgHalaman = 0, pgTotalHalaman = 1;
+
+const PERAN_LABEL = { superadmin:'Super Admin', admin:'Admin', operator:'Operator' };
+const PERAN_COLOR = { superadmin:'#7c3aed', admin:'#2563eb', operator:'#0891b2' };
+
+async function loadPengguna() {
+  const tbody = document.getElementById('tbl-pengguna');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:18px;color:var(--text3)"><i class="ti ti-loader"></i> Memuat...</td></tr>';
+  try {
+    const q    = document.getElementById('pg-search')?.value || '';
+    const role = document.getElementById('pg-filter-role')?.value || 'semua';
+    const limit= parseInt(document.getElementById('pg-per-halaman')?.value || 25);
+    const params = new URLSearchParams({ limit, offset: pgHalaman * limit });
+    if (q)    params.append('q', q);
+    if (role !== 'semua') params.append('role', role);
+
+    const d = await apiFetch('/api/pengguna?' + params.toString());
+    const rows  = d.rows  || [];
+    const total = d.total || 0;
+    pgTotalHalaman = Math.max(1, Math.ceil(total / limit));
+
+    document.getElementById('pg-count').textContent = total + ' pengguna';
+    document.getElementById('pg-info').textContent  = `${pgHalaman+1} / ${pgTotalHalaman}`;
+    document.getElementById('pg-page-num').textContent = pgHalaman + 1;
+    document.getElementById('pg-btn-prev').disabled  = pgHalaman === 0;
+    document.getElementById('pg-btn-first').disabled = pgHalaman === 0;
+    document.getElementById('pg-btn-next').disabled  = pgHalaman >= pgTotalHalaman - 1;
+    document.getElementById('pg-btn-last').disabled  = pgHalaman >= pgTotalHalaman - 1;
+
+    if (!tbody) return;
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3)">Tidak ada pengguna</td></tr>';
+      return;
+    }
+
+    const fmtDT = dt => dt ? new Date(dt).toLocaleString('id-ID',{day:'numeric',month:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '—';
+
+    tbody.innerHTML = rows.map(r => {
+      const col   = PERAN_COLOR[r.role] || '#64748b';
+      const label = PERAN_LABEL[r.role]  || r.role;
+      const aktif = r.aktif ? 1 : 0;
+      return `<tr>
+        <td class="td-text-main" style="font-weight:600">${r.username || r.email?.split('@')[0] || '—'}</td>
+        <td class="td-text-main">${r.nama}</td>
+        <td><span style="font-size:12px;color:${col}">${label}</span></td>
+        <td>
+          <span style="background:${aktif?'#dcfce7':'#f1f5f9'};color:${aktif?'#15803d':'#94a3b8'};font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px">
+            ${aktif ? 'Active' : 'Inactive'}
+          </span>
+        </td>
+        <td class="td-text-sub" style="font-size:12px">${r.no_hp || '—'}</td>
+        <td class="td-text-sub" style="font-size:11px">${fmtDT(r.updated_at || r.created_at)}</td>
+        <td>
+          <div class="dropdown" style="position:relative">
+            <button class="btn sm" onclick="pgToggleMenu(${r.id},this)" style="padding:4px 8px;font-size:16px;line-height:1">⋯</button>
+            <div id="pg-menu-${r.id}" style="display:none;position:absolute;right:0;top:100%;z-index:100;background:var(--bg2);border:1px solid var(--border);border-radius:8px;min-width:150px;box-shadow:0 4px 16px rgba(0,0,0,.15);overflow:hidden">
+              <button onclick="bukaPgEdit(${r.id},'${r.username||''}','${r.nama}','${r.email}','${r.no_hp||''}','${r.role}')" style="display:block;width:100%;text-align:left;padding:9px 14px;background:none;border:none;color:var(--text);cursor:pointer;font-size:13px;font-family:inherit">✏️ Edit</button>
+              <button onclick="apiToggleAktifPg(${r.id},'${r.username||r.nama}',${aktif})" style="display:block;width:100%;text-align:left;padding:9px 14px;background:none;border:none;color:${aktif?'#d97706':'#16a34a'};cursor:pointer;font-size:13px;font-family:inherit">${aktif?'⏸ Nonaktifkan':'▶ Aktifkan'}</button>
+              <div style="border-top:1px solid var(--border)"></div>
+              <button onclick="apiHapusPg(${r.id},'${r.nama}')" style="display:block;width:100%;text-align:left;padding:9px 14px;background:none;border:none;color:#dc2626;cursor:pointer;font-size:13px;font-family:inherit">🗑️ Hapus</button>
+            </div>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:#dc2626">❌ ${e.message}</td></tr>`;
+  }
+}
+
+function pgToggleMenu(id, btn) {
+  // Tutup menu lain
+  document.querySelectorAll('[id^="pg-menu-"]').forEach(m => { if (m.id !== `pg-menu-${id}`) m.style.display='none'; });
+  const menu = document.getElementById('pg-menu-' + id);
+  if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  // Tutup saat klik di luar
+  setTimeout(() => {
+    document.addEventListener('click', function close(e) {
+      if (!btn.contains(e.target)) { if(menu) menu.style.display='none'; document.removeEventListener('click',close); }
+    });
+  }, 10);
+}
+
+function bukaPgEdit(id, username, nama, email, nohp, role) {
+  document.getElementById('ep-pg-id').value       = id;
+  document.getElementById('ep-pg-username').value = username;
+  document.getElementById('ep-pg-nama').value     = nama;
+  document.getElementById('ep-pg-email').value    = email;
+  document.getElementById('ep-pg-nohp').value     = nohp;
+  document.getElementById('ep-pg-role').value     = role;
+  document.getElementById('ep-pg-password').value = '';
+  document.getElementById('ep-pg-title').textContent = 'Edit: ' + nama;
+  document.querySelectorAll('[id^="pg-menu-"]').forEach(m => m.style.display='none');
+  openModal('m-edit-pengguna');
+}
+
+async function apiTambahPengguna() {
+  const username = document.getElementById('ap-username').value.trim();
+  const nama     = document.getElementById('ap-nama').value.trim();
+  const email    = document.getElementById('ap-email').value.trim();
+  const no_hp    = document.getElementById('ap-nohp').value.trim();
+  const role     = document.getElementById('ap-role').value;
+  const password = document.getElementById('ap-password').value;
+  if (!nama || !email || !password) return toast('❌ Nama, email, dan password wajib diisi', true);
+  if (password.length < 6) return toast('❌ Password minimal 6 karakter', true);
+  try {
+    await apiFetch('/api/pengguna', { method:'POST', body: JSON.stringify({ username, nama, email, no_hp, role, password }) });
+    toast('✅ Pengguna ' + nama + ' ditambahkan');
+    closeModal('m-add-pengguna');
+    ['ap-username','ap-nama','ap-email','ap-nohp','ap-password'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    loadPengguna();
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+
+async function apiUpdatePengguna() {
+  const id       = document.getElementById('ep-pg-id').value;
+  const username = document.getElementById('ep-pg-username').value.trim();
+  const nama     = document.getElementById('ep-pg-nama').value.trim();
+  const email    = document.getElementById('ep-pg-email').value.trim();
+  const no_hp    = document.getElementById('ep-pg-nohp').value.trim();
+  const role     = document.getElementById('ep-pg-role').value;
+  const password = document.getElementById('ep-pg-password').value;
+  if (!nama || !email) return toast('❌ Nama dan email wajib diisi', true);
+  const body = { username, nama, email, no_hp, role };
+  if (password) body.password = password;
+  try {
+    await apiFetch('/api/pengguna/' + id, { method:'PUT', body: JSON.stringify(body) });
+    toast('✅ Pengguna ' + nama + ' diperbarui');
+    closeModal('m-edit-pengguna');
+    loadPengguna();
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+
+async function apiToggleAktifPg(id, nama, aktif) {
+  document.querySelectorAll('[id^="pg-menu-"]').forEach(m => m.style.display='none');
+  try {
+    const d = await apiFetch('/api/pengguna/' + id + '/toggle-aktif', { method:'POST' });
+    toast(d.aktif ? `✅ ${nama} diaktifkan` : `⏸ ${nama} dinonaktifkan`);
+    loadPengguna();
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+
+async function apiHapusPg(id, nama) {
+  document.querySelectorAll('[id^="pg-menu-"]').forEach(m => m.style.display='none');
+  if (!confirm(`Hapus pengguna "${nama}"? Tindakan ini tidak dapat dibatalkan.`)) return;
+  try {
+    await apiFetch('/api/pengguna/' + id, { method:'DELETE' });
+    toast('✅ Pengguna ' + nama + ' dihapus');
+    loadPengguna();
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+// ══════════════════════════════════════════════════
+
 let _logPage   = 0;
 const _logLimit = 100;
 
