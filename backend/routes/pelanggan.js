@@ -279,6 +279,11 @@ router.put('/:id', async (req, res, next) => {
         const p = await queryOne('SELECT * FROM pelanggan WHERE id = ?', [req.params.id]);
         if (!p) return res.status(404).json({ error: 'Pelanggan tidak ditemukan' });
 
+        // Auto-migrate kolom KTP jika belum ada
+        await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS no_ktp VARCHAR(20) NULL`).catch(()=>{});
+        await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS tgl_lahir DATE NULL`).catch(()=>{});
+        await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS ktp_url VARCHAR(255) NULL`).catch(()=>{});
+
         const paketIdBaru = paket_id !== undefined && paket_id !== null && paket_id !== ''
             ? parseInt(paket_id) : p.paket_id;
         const tipeBaru    = tipe_koneksi || p.tipe_koneksi;

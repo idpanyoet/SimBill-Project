@@ -1068,56 +1068,205 @@ Selamat menikmati! 🌐</textarea>
 
       <!-- ══ PAYMENT ══ -->
       <div class="page" id="p-payment">
-        <div class="grid2">
-          <div class="card">
-            <div class="card-title">Metode Aktif
-              <button class="btn sm primary" onclick="apiSimpanMetodeAktif()">💾 Simpan</button>
-            </div>
-            <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Centang metode yang ingin ditampilkan di halaman checkout voucher.</p>
-            <div id="metode-aktif-list">
-              <div style="color:var(--text3);font-size:13px;padding:12px 0">Pilih provider dulu di kanan →</div>
-            </div>
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <h2 style="font-size:18px;font-weight:700;color:var(--text);margin:0">Payment Gateway</h2>
+            <div class="td-text-sub" style="font-size:12px;margin-top:3px">Konfigurasi metode pembayaran dan provider gateway</div>
           </div>
-          <div class="card">
-            <div class="card-title">Konfigurasi Payment Gateway</div>
-            <div class="fg"><label>Provider</label><select id="pg-provider" onchange="ubahProviderPG()"><option value="midtrans">Midtrans</option><option value="xendit">Xendit</option><option value="duitku">Duitku</option><option value="tripay">Tripay</option></select></div>
+        </div>
 
-            <div id="pg-fields-midtrans">
-              <div class="fg"><label>Merchant ID</label><input id="pg-merchant-code-midtrans" placeholder="Merchant ID dari Midtrans dashboard"></div>
-              <div class="fg"><label>Server Key</label><input id="pg-server-key" type="password" placeholder="Server key dari Midtrans"></div>
-              <div class="fg"><label>Client Key</label><input id="pg-client-key" type="password" placeholder="Client key (opsional)"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+
+          <!-- Kolom Kiri: Provider + Konfigurasi -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+
+            <!-- Pilih Provider -->
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(37,99,235,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-credit-card" style="font-size:17px;color:#2563eb" aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Payment Provider</div>
+                  <div class="td-text-sub" style="font-size:11px">Pilih gateway pembayaran</div>
+                </div>
+              </div>
+
+              <!-- Provider cards -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+                <div onclick="ubahProviderPG('midtrans')" id="pg-card-midtrans" style="border:2px solid #2563eb;background:rgba(37,99,235,.06);border-radius:10px;padding:12px;cursor:pointer;transition:all .15s;text-align:center">
+                  <div style="font-size:20px;margin-bottom:4px">🏦</div>
+                  <div style="font-size:12px;font-weight:700;color:#2563eb">Midtrans</div>
+                  <div class="td-text-sub" style="font-size:10px;margin-top:2px">Snap & API</div>
+                </div>
+                <div onclick="ubahProviderPG('xendit')" id="pg-card-xendit" style="border:2px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;transition:all .15s;text-align:center">
+                  <div style="font-size:20px;margin-bottom:4px">⚡</div>
+                  <div style="font-size:12px;font-weight:700;color:var(--text)">Xendit</div>
+                  <div class="td-text-sub" style="font-size:10px;margin-top:2px">Invoice & VA</div>
+                </div>
+                <div onclick="ubahProviderPG('duitku')" id="pg-card-duitku" style="border:2px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;transition:all .15s;text-align:center">
+                  <div style="font-size:20px;margin-bottom:4px">💳</div>
+                  <div style="font-size:12px;font-weight:700;color:var(--text)">Duitku</div>
+                  <div class="td-text-sub" style="font-size:10px;margin-top:2px">Multi channel</div>
+                </div>
+                <div onclick="ubahProviderPG('tripay')" id="pg-card-tripay" style="border:2px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;transition:all .15s;text-align:center">
+                  <div style="font-size:20px;margin-bottom:4px">🔗</div>
+                  <div style="font-size:12px;font-weight:700;color:var(--text)">Tripay</div>
+                  <div class="td-text-sub" style="font-size:10px;margin-top:2px">Agregator</div>
+                </div>
+              </div>
+              <input type="hidden" id="pg-provider" value="midtrans">
+
+              <!-- Fields per provider -->
+              <div id="pg-fields-midtrans">
+                <div class="fg"><label>Merchant ID</label><input id="pg-merchant-code-midtrans" placeholder="Merchant ID dari Midtrans dashboard"></div>
+                <div class="fg">
+                  <label>Server Key</label>
+                  <div style="position:relative">
+                    <input id="pg-server-key" type="password" placeholder="Server key dari Midtrans" style="padding-right:36px">
+                    <button type="button" onclick="togglePwVis('pg-server-key',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0">👁</button>
+                  </div>
+                </div>
+                <div class="fg">
+                  <label>Client Key</label>
+                  <div style="position:relative">
+                    <input id="pg-client-key" type="password" placeholder="Client key (opsional)" style="padding-right:36px">
+                    <button type="button" onclick="togglePwVis('pg-client-key',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0">👁</button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="pg-fields-xendit" style="display:none">
+                <div class="fg"><label>Business ID</label><input id="pg-merchant-code-xendit" placeholder="Business ID dari Xendit dashboard"></div>
+                <div class="fg">
+                  <label>Secret Key</label>
+                  <div style="position:relative">
+                    <input id="pg-secret-key" type="password" placeholder="Secret key dari Xendit" style="padding-right:36px">
+                    <button type="button" onclick="togglePwVis('pg-secret-key',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0">👁</button>
+                  </div>
+                </div>
+                <div class="fg">
+                  <label>Webhook Verification Token</label>
+                  <div style="position:relative">
+                    <input id="pg-webhook-token" type="password" placeholder="Token dari Xendit dashboard" style="padding-right:36px">
+                    <button type="button" onclick="togglePwVis('pg-webhook-token',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0">👁</button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="pg-fields-duitku" style="display:none">
+                <div class="fg"><label>Merchant Code</label><input id="pg-merchant-code-duitku" placeholder="Merchant code dari Duitku"></div>
+                <div class="fg">
+                  <label>API Key</label>
+                  <div style="position:relative">
+                    <input id="pg-api-key-duitku" type="password" placeholder="API key dari Duitku" style="padding-right:36px">
+                    <button type="button" onclick="togglePwVis('pg-api-key-duitku',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0">👁</button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="pg-fields-tripay" style="display:none">
+                <div class="fg"><label>Merchant Code</label><input id="pg-merchant-code-tripay" placeholder="Merchant code dari Tripay"></div>
+                <div class="fg">
+                  <label>API Key</label>
+                  <div style="position:relative">
+                    <input id="pg-api-key-tripay" type="password" placeholder="API key dari Tripay" style="padding-right:36px">
+                    <button type="button" onclick="togglePwVis('pg-api-key-tripay',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0">👁</button>
+                  </div>
+                </div>
+                <div class="fg">
+                  <label>Private Key</label>
+                  <div style="position:relative">
+                    <input id="pg-private-key" type="password" placeholder="Private key dari Tripay" style="padding-right:36px">
+                    <button type="button" onclick="togglePwVis('pg-private-key',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0">👁</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Webhook URL & Sandbox -->
+              <div class="fg">
+                <label style="display:flex;align-items:center;gap:6px">
+                  <i class="ti ti-link" style="font-size:12px;color:#94a3b8" aria-hidden="true"></i> Webhook URL
+                </label>
+                <div style="position:relative">
+                  <input id="pg-webhook-url" value="" readonly style="font-size:11px;color:var(--text3);padding-right:36px;cursor:default">
+                  <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('pg-webhook-url').value).then(()=>toast('✅ URL disalin'))" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:14px;padding:0" title="Salin URL">📋</button>
+                </div>
+              </div>
+
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;margin-bottom:12px">
+                <input type="checkbox" id="pg-sandbox" style="width:15px;height:15px;accent-color:#d97706;cursor:pointer">
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:#d97706">Mode Sandbox</div>
+                  <div class="td-text-sub" style="font-size:11px;margin-top:1px">Aktifkan untuk testing, nonaktifkan untuk produksi</div>
+                </div>
+              </label>
+
+              <button class="btn primary" onclick="apiSimpanConfigPG()" style="width:100%;justify-content:center;gap:6px">
+                <i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan Konfigurasi
+              </button>
             </div>
 
-            <div id="pg-fields-xendit" style="display:none">
-              <div class="fg"><label>Business ID</label><input id="pg-merchant-code-xendit" placeholder="Business ID dari Xendit dashboard"></div>
-              <div class="fg"><label>Secret Key</label><input id="pg-secret-key" type="password" placeholder="Secret key dari Xendit"></div>
-              <div class="fg"><label>Webhook Verification Token</label><input id="pg-webhook-token" type="password" placeholder="Token dari Xendit dashboard"></div>
+          </div>
+
+          <!-- Kolom Kanan: Metode Aktif + Transaksi -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+
+            <!-- Metode Aktif -->
+            <div class="card">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="width:34px;height:34px;border-radius:9px;background:rgba(22,163,74,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <i class="ti ti-checks" style="font-size:17px;color:#16a34a" aria-hidden="true"></i>
+                  </div>
+                  <div>
+                    <div style="font-size:13px;font-weight:700;color:var(--text)">Metode Aktif</div>
+                    <div class="td-text-sub" style="font-size:11px">Tampil di checkout voucher</div>
+                  </div>
+                </div>
+                <button class="btn primary" onclick="apiSimpanMetodeAktif()" style="gap:6px">
+                  <i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan
+                </button>
+              </div>
+              <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Centang metode yang ingin ditampilkan di halaman checkout voucher.</p>
+              <div id="metode-aktif-list">
+                <div style="color:var(--text3);font-size:13px;padding:12px 0;text-align:center">
+                  <i class="ti ti-arrow-left" aria-hidden="true"></i> Pilih provider dulu di kiri
+                </div>
+              </div>
             </div>
 
-            <div id="pg-fields-duitku" style="display:none">
-              <div class="fg"><label>Merchant Code</label><input id="pg-merchant-code-duitku" placeholder="Merchant code dari Duitku"></div>
-              <div class="fg"><label>API Key</label><input id="pg-api-key-duitku" type="password" placeholder="API key dari Duitku"></div>
+            <!-- Transaksi Terbaru -->
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(186,117,23,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-receipt-2" style="font-size:17px;color:#BA7517" aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Transaksi Terbaru</div>
+                  <div class="td-text-sub" style="font-size:11px">Log pembayaran masuk</div>
+                </div>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Pelanggan</th>
+                    <th>Metode</th>
+                    <th>Jumlah</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="tbl-transaksi">
+                  <tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">Tidak ada data</td></tr>
+                </tbody>
+              </table>
             </div>
 
-            <div id="pg-fields-tripay" style="display:none">
-              <div class="fg"><label>Merchant Code</label><input id="pg-merchant-code-tripay" placeholder="Merchant code dari Tripay"></div>
-              <div class="fg"><label>API Key</label><input id="pg-api-key-tripay" type="password" placeholder="API key dari Tripay"></div>
-              <div class="fg"><label>Private Key</label><input id="pg-private-key" type="password" placeholder="Private key dari Tripay"></div>
-            </div>
-
-            <div class="fg"><label>Webhook URL</label><input id="pg-webhook-url" value="" readonly style="font-size:11px;color:var(--text3)"></div>
-            <div class="fg"><label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="pg-sandbox"> Mode Sandbox</label></div>
-            <button class="btn primary" onclick="apiSimpanConfigPG()">Simpan</button>
-            <div class="divider"></div>
-            <div class="card-title">Transaksi Terbaru</div>
-            <table><thead><tr><th>Pelanggan</th><th>Metode</th><th>Jumlah</th><th>Status</th></tr></thead>
-            <tbody id="tbl-transaksi">
-              <tr><td colspan="4" style="text-align:center;color:var(--text3);padding:16px">Tidak ada data</td></tr>
-            </tbody></table>
           </div>
         </div>
       </div>
-
       <!-- ══ RADIUS ══ -->
       <div class="page" id="p-radius">
 
@@ -7143,12 +7292,30 @@ async function loadPayment() {
 function ubahProviderPG(forceProvider) {
   const provider = forceProvider || document.getElementById('pg-provider').value;
   document.getElementById('pg-provider').value = provider;
+
+  // Highlight provider card
+  const COLORS = { midtrans:'#2563eb', xendit:'#7c3aed', duitku:'#16a34a', tripay:'#d97706' };
   ['midtrans','xendit','duitku','tripay'].forEach(p => {
-    document.getElementById('pg-fields-'+p).style.display = (p === provider) ? '' : 'none';
+    const card = document.getElementById('pg-card-' + p);
+    if (!card) return;
+    const active = p === provider;
+    const col = COLORS[p] || '#2563eb';
+    card.style.borderColor  = active ? col : 'var(--border)';
+    card.style.background   = active ? `rgba(${col === '#2563eb'?'37,99,235':col === '#7c3aed'?'124,58,237':col === '#16a34a'?'22,163,74':'217,119,6'},.06)` : 'transparent';
+    const title = card.querySelector('div:nth-child(2)');
+    if (title) title.style.color = active ? col : 'var(--text)';
   });
+
+  // Show/hide fields
+  ['midtrans','xendit','duitku','tripay'].forEach(p => {
+    const el = document.getElementById('pg-fields-'+p);
+    if (el) el.style.display = (p === provider) ? '' : 'none';
+  });
+
   document.getElementById('pg-webhook-url').value =
     window.location.origin + '/webhook/' + provider;
-  // Load metode aktif untuk provider yang dipilih
+
+  // Load metode aktif
   apiFetch('/api/setting').then(function(settings) {
     const map = {};
     settings.forEach(function(s) { map[s.kunci] = s.nilai; });
