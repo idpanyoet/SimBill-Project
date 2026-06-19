@@ -3618,6 +3618,183 @@ Selamat menikmati! 🌐</textarea>
   </div>
 </div>
 
+<!-- MODAL TAMBAH PAKET -->
+<div class="overlay" id="m-add-paket">
+  <div class="modal" style="max-width:500px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:9px;background:rgba(186,117,23,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-package" style="font-size:18px;color:#BA7517" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">Tambah Paket</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Buat paket internet baru</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-add-paket')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+
+      <!-- Tipe Koneksi -->
+      <div>
+        <label class="fg-label">Tipe Koneksi</label>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px">
+          <div id="fp-tipe-card-pppoe" onclick="pilihTipePaket('pppoe')" style="border:2px solid #378ADD;background:#E6F1FB;border-radius:9px;padding:9px;cursor:pointer;text-align:center;transition:all .15s">
+            <i class="ti ti-router" style="font-size:18px;color:#378ADD;display:block;margin-bottom:3px" aria-hidden="true"></i>
+            <div style="font-size:11px;font-weight:700;color:#0369a1">PPPoE</div>
+          </div>
+          <div id="fp-tipe-card-hotspot" onclick="pilihTipePaket('hotspot')" style="border:2px solid var(--border);border-radius:9px;padding:9px;cursor:pointer;text-align:center;transition:all .15s">
+            <i class="ti ti-wifi" style="font-size:18px;color:#1D9E75;display:block;margin-bottom:3px" aria-hidden="true"></i>
+            <div class="td-text-main" style="font-size:11px;font-weight:700">Hotspot</div>
+          </div>
+          <div id="fp-tipe-card-keduanya" onclick="pilihTipePaket('keduanya')" style="border:2px solid var(--border);border-radius:9px;padding:9px;cursor:pointer;text-align:center;transition:all .15s">
+            <i class="ti ti-layers" style="font-size:18px;color:#7F77DD;display:block;margin-bottom:3px" aria-hidden="true"></i>
+            <div class="td-text-main" style="font-size:11px;font-weight:700">Keduanya</div>
+          </div>
+        </div>
+        <input type="hidden" id="fp-tipe" value="pppoe">
+      </div>
+
+      <!-- Nama & Speed -->
+      <div class="fg-row">
+        <div class="fg"><label>Nama Paket</label><input id="fp-nama" placeholder="cth: Paket Rumahan"></div>
+        <div class="fg">
+          <label>Kecepatan <span class="td-text-sub" style="font-size:10px">(cth: 10M/10M)</span></label>
+          <input id="fp-speed" placeholder="10M/10M" oninput="fpPreviewSpeed()">
+          <div id="fp-speed-preview" style="font-size:11px;color:var(--text3);margin-top:3px"><i class="ti ti-arrow-right" style="font-size:10px"></i> —</div>
+        </div>
+      </div>
+
+      <!-- Harga & Masa Aktif -->
+      <div class="fg-row">
+        <div class="fg">
+          <label>Harga (Rp)</label>
+          <input id="fp-harga" type="number" placeholder="50000" oninput="fpPreviewHarga()">
+          <div id="fp-harga-preview" style="font-size:11px;color:var(--text3);margin-top:3px">—</div>
+        </div>
+        <div class="fg">
+          <label>Masa Aktif</label>
+          <div style="display:flex;gap:6px">
+            <input id="fp-masa" type="number" value="30" min="1" style="width:70px;flex-shrink:0">
+            <select id="fp-satuan" style="flex:1">
+              <option value="hari">Hari</option>
+              <option value="bulan">Bulan</option>
+              <option value="jam">Jam</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pool & Deskripsi -->
+      <div class="fg-row">
+        <div class="fg"><label>Pool RADIUS <span class="td-text-sub" style="font-size:10px">(opsional)</span></label><input id="fp-pool" placeholder="pool-default"></div>
+        <div class="fg"><label>Deskripsi</label><input id="fp-deskripsi" placeholder="Keterangan singkat"></div>
+      </div>
+
+      <!-- Izin Voucher -->
+      <div id="fp-vcr-wrap">
+        <label for="fp-izin-voucher" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
+          <span class="vcr-toggle-track" id="fp-vcr-track" style="flex-shrink:0"><span class="vcr-toggle-thumb"></span></span>
+          <input type="checkbox" id="fp-izin-voucher" style="display:none" onchange="paketToggleVcrLabel('fp')">
+          <div>
+            <div class="td-text-main" style="font-size:13px;font-weight:600">Izinkan e-Voucher Online</div>
+            <div id="fp-vcr-lbl" class="td-text-sub" style="font-size:11px;margin-top:1px">Tidak diizinkan — paket tidak muncul di storefront</div>
+          </div>
+        </label>
+      </div>
+
+      <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
+        <button class="btn" onclick="closeModal('m-add-paket')">Batal</button>
+        <button class="btn primary" onclick="apiTambahPaket()" style="gap:6px">
+          <i class="ti ti-check" style="font-size:13px" aria-hidden="true"></i> Simpan Paket
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDIT PAKET -->
+<div class="overlay" id="m-edit-paket">
+  <div class="modal" style="max-width:500px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:9px;background:rgba(217,119,6,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-package" style="font-size:18px;color:#d97706" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">Edit Paket</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Ubah konfigurasi paket internet</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-edit-paket')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+      <input type="hidden" id="ep2-id">
+
+      <!-- Tipe -->
+      <div>
+        <label class="fg-label">Tipe Koneksi</label>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px">
+          <div id="ep2-tipe-card-pppoe" onclick="pilihTipeEditPaket('pppoe')" style="border:2px solid #378ADD;background:#E6F1FB;border-radius:9px;padding:9px;cursor:pointer;text-align:center;transition:all .15s">
+            <i class="ti ti-router" style="font-size:18px;color:#378ADD;display:block;margin-bottom:3px" aria-hidden="true"></i>
+            <div style="font-size:11px;font-weight:700;color:#0369a1">PPPoE</div>
+          </div>
+          <div id="ep2-tipe-card-hotspot" onclick="pilihTipeEditPaket('hotspot')" style="border:2px solid var(--border);border-radius:9px;padding:9px;cursor:pointer;text-align:center;transition:all .15s">
+            <i class="ti ti-wifi" style="font-size:18px;color:#1D9E75;display:block;margin-bottom:3px" aria-hidden="true"></i>
+            <div class="td-text-main" style="font-size:11px;font-weight:700">Hotspot</div>
+          </div>
+          <div id="ep2-tipe-card-keduanya" onclick="pilihTipeEditPaket('keduanya')" style="border:2px solid var(--border);border-radius:9px;padding:9px;cursor:pointer;text-align:center;transition:all .15s">
+            <i class="ti ti-layers" style="font-size:18px;color:#7F77DD;display:block;margin-bottom:3px" aria-hidden="true"></i>
+            <div class="td-text-main" style="font-size:11px;font-weight:700">Keduanya</div>
+          </div>
+        </div>
+        <input type="hidden" id="ep2-tipe" value="pppoe">
+      </div>
+
+      <div class="fg-row">
+        <div class="fg"><label>Nama Paket</label><input id="ep2-nama" placeholder="Nama paket"></div>
+        <div class="fg"><label>Kecepatan</label><input id="ep2-speed" placeholder="10M/10M"></div>
+      </div>
+      <div class="fg-row">
+        <div class="fg"><label>Harga (Rp)</label><input id="ep2-harga" type="number" placeholder="50000"></div>
+        <div class="fg">
+          <label>Masa Aktif</label>
+          <div style="display:flex;gap:6px">
+            <input id="ep2-masa" type="number" value="30" min="1" style="width:70px;flex-shrink:0">
+            <select id="ep2-satuan" style="flex:1">
+              <option value="hari">Hari</option>
+              <option value="bulan">Bulan</option>
+              <option value="jam">Jam</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="fg-row">
+        <div class="fg"><label>Pool RADIUS</label><input id="ep2-pool" placeholder="pool-default"></div>
+        <div class="fg"><label>Deskripsi</label><input id="ep2-deskripsi" placeholder="Keterangan singkat"></div>
+      </div>
+
+      <div id="ep2-vcr-wrap">
+        <label for="ep2-izin-voucher" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
+          <span class="vcr-toggle-track" id="ep2-vcr-track" style="flex-shrink:0"><span class="vcr-toggle-thumb"></span></span>
+          <input type="checkbox" id="ep2-izin-voucher" style="display:none" onchange="paketToggleVcrLabel('ep2')">
+          <div>
+            <div class="td-text-main" style="font-size:13px;font-weight:600">Izinkan e-Voucher Online</div>
+            <div id="ep2-vcr-lbl" class="td-text-sub" style="font-size:11px;margin-top:1px">Tidak diizinkan</div>
+          </div>
+        </label>
+      </div>
+
+      <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
+        <button class="btn" onclick="closeModal('m-edit-paket')">Batal</button>
+        <button class="btn primary" onclick="apiUpdatePaket()" style="gap:6px">
+          <i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan Perubahan
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="m-mikrotik-script">
   <div class="modal" style="max-width:580px">
     <div class="modal-hdr"><h3 id="mks-title">📋 Script MikroTik</h3><button class="btn-x" onclick="closeModal('m-mikrotik-script')">✕</button></div>
@@ -6129,20 +6306,43 @@ function ep2UpdateHarga() {
 }
 
 
-const _parseRateLimit = (rate_limit) => {
+function fpPreviewSpeed() { updateSpeedPreview(); }
+function fpPreviewHarga() { updateHargaPreview(); }
+function pilihTipeEditPaket(tipe) { ep2SetTipe(tipe); }
+
+async function apiTambahPaket() {
+  const nama       = document.getElementById('fp-nama').value.trim();
+  const rate_limit = document.getElementById('fp-speed').value.trim();
+  const harga      = parseInt(document.getElementById('fp-harga').value);
+  const pool_name  = document.getElementById('fp-pool').value.trim();
+  const tipe       = document.getElementById('fp-tipe').value;
+  const masa_aktif = parseInt(document.getElementById('fp-masa').value) || 30;
+  const satuan_masa= document.getElementById('fp-satuan').value;
+  const deskripsi  = document.getElementById('fp-deskripsi')?.value.trim() || '';
+  const izin_voucher = document.getElementById('fp-izin-voucher')?.checked ? 1 : 0;
+  if (!nama || !rate_limit || !harga) return toast('❌ Nama, kecepatan, dan harga wajib diisi', true);
+  const { kecepatan_up, kecepatan_dn } = _parseRateLimit(rate_limit);
+  try {
+    await apiFetch('/api/paket', { method:'POST',
+      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, rate_limit, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi, izin_voucher})
+    });
+    toast('✅ Paket berhasil ditambahkan');
+    closeModal('m-add-paket');
+    loadPaket();
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+
+async function apiUpdatePaket() { await apiUpdatePaketGrid(); }
+
+function _parseRateLimit(rate_limit) {
   const parts = (rate_limit||'').split(' ');
   const mainRate = parts[0] || rate_limit;
   const slash = mainRate.indexOf('/');
-  const parseV = v => {
-    if (!v) return 1;
-    const n = parseFloat(v);
-    if (v.toLowerCase().endsWith('k')) return Math.max(1, Math.round(n/1000));
-    return Math.max(1, Math.round(n));
-  };
+  const parseV = v => { if (!v) return 1; const n = parseFloat(v); if (v.toLowerCase().endsWith('k')) return Math.max(1, Math.round(n/1000)); return Math.max(1, Math.round(n)); };
   const rawUp = slash > -1 ? mainRate.slice(0, slash).replace(/[Mm]$/, '') : mainRate.replace(/[Mm]$/, '');
   const rawDn = slash > -1 ? mainRate.slice(slash+1).replace(/[Mm]$/, '') : rawUp;
   return { kecepatan_up: parseV(rawUp), kecepatan_dn: parseV(rawDn) };
-};
+}
 async function apiUpdatePaketGrid() {
   const id         = document.getElementById('ep2-id').value;
   const nama       = document.getElementById('ep2-nama').value.trim();
