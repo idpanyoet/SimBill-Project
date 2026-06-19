@@ -2409,6 +2409,9 @@ Selamat menikmati! 🌐</textarea>
       <button id="ap-tab-btn-2" onclick="apSwitchTab(2)" style="flex:1;padding:10px;font-size:12px;font-weight:600;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
         <i class="ti ti-map-pin" style="font-size:14px" aria-hidden="true"></i> <span data-i18n="Lokasi & Jaringan">Lokasi & Jaringan</span>
       </button>
+      <button id="ap-tab-btn-3" onclick="apSwitchTab(3)" style="flex:1;padding:10px;font-size:12px;font-weight:600;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+        <i class="ti ti-id-badge" style="font-size:14px" aria-hidden="true"></i> <span data-i18n="KTP">KTP</span>
+      </button>
     </div>
 
     <!-- Tab 1: Data Utama -->
@@ -2480,6 +2483,53 @@ Selamat menikmati! 🌐</textarea>
 
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
         <button class="btn" onclick="apSwitchTab(1)">
+          <i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> <span data-i18n="Kembali">Kembali</span>
+        </button>
+        <button class="btn primary" onclick="apiSimpanPelanggan()">
+          <i class="ti ti-check" style="font-size:13px" aria-hidden="true"></i> <span data-i18n="Simpan & Aktifkan">Simpan & Aktifkan</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tab 3: KTP -->
+    <div id="ap-tab-3" style="display:none;padding:14px 20px;flex-direction:column;gap:14px">
+      <div style="font-size:12px;color:var(--text2)">Upload foto KTP pelanggan. Format: JPG, PNG, WEBP. Maks 5MB.</div>
+
+      <!-- Upload area -->
+      <div id="f-ktp-dropzone" onclick="document.getElementById('f-ktp-file').click()"
+        style="border:2px dashed var(--border);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg3)"
+        ondragover="event.preventDefault();this.style.borderColor='#BA7517';this.style.background='rgba(186,117,23,.06)'"
+        ondragleave="this.style.borderColor='var(--border)';this.style.background='var(--bg3)'"
+        ondrop="ktpHandleDrop(event)">
+        <i class="ti ti-id" style="font-size:36px;color:#94a3b8;display:block;margin-bottom:8px" aria-hidden="true"></i>
+        <div style="font-size:13px;font-weight:600;color:var(--text2)">Klik atau drag & drop foto KTP</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">JPG, PNG, WEBP — maks 5MB</div>
+        <input type="file" id="f-ktp-file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="ktpPreview(this)">
+      </div>
+
+      <!-- Preview KTP -->
+      <div id="f-ktp-preview-wrap" style="display:none">
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">Preview KTP:</div>
+        <div style="position:relative;display:inline-block;width:100%">
+          <img id="f-ktp-preview-img" src="" alt="Preview KTP"
+            style="width:100%;max-height:220px;object-fit:contain;border-radius:10px;border:1px solid var(--border);background:#000">
+          <!-- Badge overlay -->
+          <div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;display:flex;align-items:center;gap:4px">
+            <i class="ti ti-id" style="font-size:11px" aria-hidden="true"></i> KTP
+          </div>
+          <button onclick="ktpClear()" style="position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(220,38,38,.9);border:none;color:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;line-height:1" title="Hapus foto">✕</button>
+        </div>
+        <div id="f-ktp-filename" style="font-size:11px;color:var(--text3);margin-top:6px;text-align:center"></div>
+      </div>
+
+      <!-- Info fields -->
+      <div class="fg-row">
+        <div class="fg"><label>No. KTP</label><input id="f-no-ktp" placeholder="16 digit NIK" maxlength="16" oninput="this.value=this.value.replace(/\D/g,'')"></div>
+        <div class="fg"><label>Tgl. Lahir</label><input id="f-tgl-lahir" type="date"></div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
+        <button class="btn" onclick="apSwitchTab(2)">
           <i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> <span data-i18n="Kembali">Kembali</span>
         </button>
         <button class="btn primary" onclick="apiSimpanPelanggan()">
@@ -4824,7 +4874,7 @@ async function apiImportCSV() {
 
 // ── TAB SWITCHING MODAL PELANGGAN ────────────────────────────
 function apSwitchTab(n) {
-  [1,2].forEach(function(i) {
+  [1,2,3].forEach(function(i) {
     const tab = document.getElementById('ap-tab-' + i);
     const btn = document.getElementById('ap-tab-btn-' + i);
     if (!tab || !btn) return;
@@ -5110,6 +5160,51 @@ async function apiHapusPelanggan(id, nama) {
   } catch(e) { toast('❌ ' + e.message, true); }
 }
 
+// ── KTP UPLOAD HELPERS ───────────────────────────────────────
+function ktpPreview(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { toast('❌ File terlalu besar, maks 5MB', true); input.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img   = document.getElementById('f-ktp-preview-img');
+    const wrap  = document.getElementById('f-ktp-preview-wrap');
+    const zone  = document.getElementById('f-ktp-dropzone');
+    const fname = document.getElementById('f-ktp-filename');
+    if (img)   img.src = e.target.result;
+    if (wrap)  wrap.style.display = '';
+    if (zone)  zone.style.display = 'none';
+    if (fname) fname.textContent  = file.name + ' (' + (file.size/1024).toFixed(0) + ' KB)';
+  };
+  reader.readAsDataURL(file);
+}
+
+function ktpHandleDrop(event) {
+  event.preventDefault();
+  const dz = document.getElementById('f-ktp-dropzone');
+  if (dz) { dz.style.borderColor = 'var(--border)'; dz.style.background = 'var(--bg3)'; }
+  const file = event.dataTransfer.files[0];
+  if (!file || !file.type.startsWith('image/')) { toast('❌ File harus berupa gambar', true); return; }
+  const input = document.getElementById('f-ktp-file');
+  const dt = new DataTransfer(); dt.items.add(file);
+  input.files = dt.files;
+  ktpPreview(input);
+}
+
+function ktpClear() {
+  const input = document.getElementById('f-ktp-file');
+  const img   = document.getElementById('f-ktp-preview-img');
+  const wrap  = document.getElementById('f-ktp-preview-wrap');
+  const zone  = document.getElementById('f-ktp-dropzone');
+  const fname = document.getElementById('f-ktp-filename');
+  if (input) input.value = '';
+  if (img)   img.src = '';
+  if (wrap)  wrap.style.display = 'none';
+  if (zone)  zone.style.display = '';
+  if (fname) fname.textContent  = '';
+}
+// ── END KTP HELPERS ──────────────────────────────────────────
+
 async function apiSimpanPelanggan() {
   const nama      = document.getElementById('f-nama').value.trim();
   const username  = document.getElementById('f-username').value.trim();
@@ -5122,22 +5217,47 @@ async function apiSimpanPelanggan() {
   const longitude = document.getElementById('f-longitude')?.value || '';
   const odc       = document.getElementById('f-odc')?.value.trim() || '';
   const odp       = document.getElementById('f-odp')?.value.trim() || '';
+  const no_ktp    = document.getElementById('f-no-ktp')?.value.trim() || '';
+  const tgl_lahir = document.getElementById('f-tgl-lahir')?.value || '';
   if (!nama||!username||!password||!no_hp||!paket_id)
     return toast('❌ Semua field wajib diisi', true);
   try {
-    await apiFetch('/api/pelanggan', { method:'POST',
+    // Upload KTP jika ada
+    let ktp_url = null;
+    const ktpFile = document.getElementById('f-ktp-file');
+    if (ktpFile && ktpFile.files[0]) {
+      const file = ktpFile.files[0];
+      const ext  = file.name.split('.').pop().toLowerCase();
+      const b64  = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload  = () => res(r.result);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+      toast('⏳ Mengupload KTP...');
+      const up = await apiFetch('/api/pelanggan/upload-ktp', {
+        method: 'POST',
+        body: JSON.stringify({ data: b64, ext, username })
+      });
+      ktp_url = up.url;
+    }
+
+    const baru = await apiFetch('/api/pelanggan', { method:'POST',
       body: JSON.stringify({nama, username, password, no_hp,
         paket_id: parseInt(paket_id), tipe_koneksi: tipe, alamat,
         latitude: latitude ? parseFloat(latitude) : null,
         longitude: longitude ? parseFloat(longitude) : null,
-        odc: odc || null, odp: odp || null
+        odc: odc || null, odp: odp || null,
+        no_ktp: no_ktp || null, tgl_lahir: tgl_lahir || null,
+        ktp_url: ktp_url || null
       })
     });
     toast('✅ Pelanggan ditambahkan & RADIUS aktif');
     closeModal('m-add-pelanggan');
-    ['f-nama','f-username','f-password','f-nohp','f-alamat','f-latitude','f-longitude','f-odc','f-odp'].forEach(id=>{
+    ['f-nama','f-username','f-password','f-nohp','f-alamat','f-latitude','f-longitude','f-odc','f-odp','f-no-ktp','f-tgl-lahir'].forEach(id=>{
       const el = document.getElementById(id); if (el) el.value = '';
     });
+    ktpClear();
     loadPelanggan();
   } catch(e) { toast('❌ '+e.message, true); }
 }

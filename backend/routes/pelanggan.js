@@ -42,6 +42,23 @@ router.get('/', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// ── POST /api/pelanggan/upload-ktp ───────────────────────────
+router.post('/upload-ktp', async (req, res, next) => {
+    try {
+        const { data, ext = 'jpg', username } = req.body;
+        if (!data) return res.status(400).json({ error: 'Data gambar kosong' });
+        const fs   = require('fs');
+        const path = require('path');
+        const dir  = path.join(__dirname, '../../frontend/uploads/ktp');
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        const base64  = data.replace(/^data:image\/\w+;base64,/, '');
+        const safe    = (username || 'ktp').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const filename = `ktp_${safe}_${Date.now()}.${ext}`;
+        fs.writeFileSync(path.join(dir, filename), Buffer.from(base64, 'base64'));
+        res.json({ url: `/uploads/ktp/${filename}` });
+    } catch(e) { next(e); }
+});
+
 // ── GET /api/pelanggan/peta — data pelanggan untuk peta ──────
 router.get('/peta', async (req, res, next) => {
     try {
@@ -169,7 +186,8 @@ router.post('/', async (req, res, next) => {
     try {
         const { nama, username, password, no_hp, email, alamat,
                 paket_id, tipe_koneksi, ip_tetap, notes,
-                latitude, longitude, odc, odp } = req.body;
+                latitude, longitude, odc, odp,
+                no_ktp, tgl_lahir, ktp_url } = req.body;
 
         if (!nama || !username || !password || !no_hp || !paket_id)
             return res.status(400).json({ error: 'nama, username, password, no_hp, paket_id wajib diisi' });
@@ -189,6 +207,9 @@ router.post('/', async (req, res, next) => {
         await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS longitude DECIMAL(10,7) NULL`).catch(()=>{});
         await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS odc VARCHAR(64) NULL`).catch(()=>{});
         await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS odp VARCHAR(64) NULL`).catch(()=>{});
+        await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS no_ktp VARCHAR(20) NULL`).catch(()=>{});
+        await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS tgl_lahir DATE NULL`).catch(()=>{});
+        await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS ktp_url VARCHAR(255) NULL`).catch(()=>{});
 
         step = 'siapkan_data';
         const tgl_aktif    = dayjs().format('YYYY-MM-DD');
@@ -199,11 +220,12 @@ router.post('/', async (req, res, next) => {
         const result = await query(`
             INSERT INTO pelanggan (nama, username, password, no_hp, email, alamat,
                 paket_id, tipe_koneksi, tgl_aktif, tgl_expired, ip_tetap, notes,
-                latitude, longitude, odc, odp)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                latitude, longitude, odc, odp, no_ktp, tgl_lahir, ktp_url)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         `, [nama, username, hash, no_hp, email || null, alamat || null,
             paket_id, tipe_koneksi, tgl_aktif, tgl_expired, ip_tetap || null, notes || null,
-            latitude || null, longitude || null, odc || null, odp || null]);
+            latitude || null, longitude || null, odc || null, odp || null,
+            no_ktp || null, tgl_lahir || null, ktp_url || null]);
 
         step = 'sync_radius';
         // Sync ke FreeRADIUS — jika gagal, hapus dulu baris pelanggan agar tidak ada data
