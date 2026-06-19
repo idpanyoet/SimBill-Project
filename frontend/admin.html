@@ -933,24 +933,92 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 
       <!-- ══ WHATSAPP ══ -->
       <div class="page" id="p-whatsapp">
-        <div class="grid2">
-          <div class="card">
-            <div class="card-title">Konfigurasi WA Gateway</div>
-            <div class="fg"><label>Provider</label><select id="wa-provider" onchange="document.getElementById('wa-phoneid-wrap').style.display=this.value==='wa_business'?'':'none'"><option value="fonnte">Fonnte</option><option value="wablas">Wablas</option><option value="wa_business">WA Business API</option><option value="wanotif">WaNotif</option></select></div>
-            <div class="fg"><label>API Token</label><input id="wa-token" type="password" placeholder="Token"></div>
-            <div class="fg"><label>Nomor Pengirim</label><input id="wa-sender" placeholder="6281234567890"></div>
-            <div class="fg" id="wa-phoneid-wrap" style="display:none"><label>Phone Number ID (khusus WA Business API)</label><input id="wa-phone-id" placeholder="Phone Number ID dari Meta"></div>
-            <button class="btn primary" onclick="apiSimpanConfigWA()">Simpan Konfigurasi</button>
-            <div class="divider"></div>
 
-            <!-- Template Pesan — dropdown editor -->
-            <div class="card-title" style="margin-bottom:12px">
-              Template Pesan
-              <span class="card-title sub" style="font-weight:400">Pilih template untuk diedit</span>
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <h2 style="font-size:18px;font-weight:700;color:var(--text);margin:0">WhatsApp Gateway</h2>
+            <div class="td-text-sub" style="font-size:12px;margin-top:3px">Konfigurasi provider, template pesan, dan broadcast massal</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+
+          <!-- ══ KOLOM KIRI ══ -->
+          <div style="display:flex;flex-direction:column;gap:14px">
+
+            <!-- Card Konfigurasi Gateway -->
+            <div class="card">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="width:34px;height:34px;border-radius:9px;background:rgba(22,163,74,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <i class="ti ti-brand-whatsapp" style="font-size:18px;color:#16a34a" aria-hidden="true"></i>
+                  </div>
+                  <div>
+                    <div style="font-size:13px;font-weight:700;color:var(--text)">Konfigurasi Gateway</div>
+                    <div class="td-text-sub" style="font-size:11px">Provider dan kredensial API</div>
+                  </div>
+                </div>
+                <button class="btn primary" onclick="apiSimpanConfigWA()" style="gap:6px">
+                  <i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan
+                </button>
+              </div>
+
+              <!-- Provider cards -->
+              <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px">
+                <div onclick="waSetProvider('fonnte')" id="wa-prov-fonnte" style="border:2px solid #16a34a;background:rgba(22,163,74,.06);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:center;transition:all .15s">
+                  <div style="font-size:18px;margin-bottom:3px">📱</div>
+                  <div style="font-size:12px;font-weight:700;color:#16a34a">Fonnte</div>
+                </div>
+                <div onclick="waSetProvider('wablas')" id="wa-prov-wablas" style="border:2px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:center;transition:all .15s">
+                  <div style="font-size:18px;margin-bottom:3px">💬</div>
+                  <div style="font-size:12px;font-weight:700;color:var(--text)">Wablas</div>
+                </div>
+                <div onclick="waSetProvider('wa_business')" id="wa-prov-wa_business" style="border:2px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:center;transition:all .15s">
+                  <div style="font-size:18px;margin-bottom:3px">🏢</div>
+                  <div style="font-size:12px;font-weight:700;color:var(--text)">WA Business</div>
+                </div>
+                <div onclick="waSetProvider('wanotif')" id="wa-prov-wanotif" style="border:2px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:center;transition:all .15s">
+                  <div style="font-size:18px;margin-bottom:3px">🔔</div>
+                  <div style="font-size:12px;font-weight:700;color:var(--text)">WaNotif</div>
+                </div>
+              </div>
+              <input type="hidden" id="wa-provider" value="fonnte">
+
+              <div class="fg">
+                <label>API Token</label>
+                <div style="position:relative">
+                  <input id="wa-token" type="password" placeholder="Token dari provider" style="padding-right:36px">
+                  <button type="button" onclick="togglePwVis('wa-token',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0">👁</button>
+                </div>
+              </div>
+              <div class="fg">
+                <label>Nomor Pengirim</label>
+                <input id="wa-sender" placeholder="6281234567890">
+              </div>
+              <div class="fg" id="wa-phoneid-wrap" style="display:none">
+                <label>Phone Number ID <span style="font-size:10px;color:var(--text3)">(khusus WA Business API)</span></label>
+                <input id="wa-phone-id" placeholder="Phone Number ID dari Meta">
+              </div>
             </div>
 
-            <!-- Hidden textareas untuk menyimpan nilai -->
-            <textarea id="wa-tpl-daftar" style="display:none">Halo {nama}, selamat datang! 🎉
+            <!-- Card Template Pesan -->
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(37,99,235,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-message-2" style="font-size:17px;color:#2563eb" aria-hidden="true"></i>
+                </div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Template Pesan</div>
+                  <div class="td-text-sub" style="font-size:11px">Kustomisasi teks notifikasi otomatis</div>
+                </div>
+                <div id="vt-dirty-badge" style="display:none;background:rgba(217,119,6,.12);color:#d97706;font-size:11px;font-weight:600;padding:3px 10px;border-radius:7px;align-items:center;gap:4px">
+                  <i class="ti ti-pencil" style="font-size:11px" aria-hidden="true"></i> Belum disimpan
+                </div>
+              </div>
+
+              <!-- Hidden textareas -->
+              <textarea id="wa-tpl-daftar" style="display:none">Halo {nama}, selamat datang! 🎉
 
 Akun internet Anda telah aktif.
 
@@ -960,7 +1028,7 @@ Akun internet Anda telah aktif.
 📅 Aktif hingga: *{tgl_expired}*
 
 Selamat menikmati layanan internet kami! 🌐</textarea>
-            <textarea id="wa-tpl-reminder" style="display:none">Halo *{nama}*,
+              <textarea id="wa-tpl-reminder" style="display:none">Halo *{nama}*,
 
 Tagihan internet Anda akan segera jatuh tempo.
 
@@ -972,12 +1040,12 @@ Bayar sekarang via:
 🔗 {link_pembayaran}
 
 Terima kasih! 🙏</textarea>
-            <textarea id="wa-tpl-suspend" style="display:none">Halo *{nama}*,
+              <textarea id="wa-tpl-suspend" style="display:none">Halo *{nama}*,
 
 Layanan internet Anda telah *disuspend* karena tagihan belum dibayar.
 
 Untuk mengaktifkan kembali, silakan bayar tagihan dan hubungi kami.</textarea>
-            <textarea id="wa-tpl-konfirmasi" style="display:none">Halo *{nama}*,
+              <textarea id="wa-tpl-konfirmasi" style="display:none">Halo *{nama}*,
 
 Pembayaran Anda telah kami terima! ✅
 
@@ -985,88 +1053,184 @@ Pembayaran Anda telah kami terima! ✅
 📅 Aktif hingga: *{tgl_expired}*
 
 Internet Anda sudah aktif kembali. Terima kasih! 🙏</textarea>
-            <textarea id="wa-tpl-voucher_sukses" style="display:none">Halo *{nama}*,
+              <textarea id="wa-tpl-voucher_sukses" style="display:none">Halo *{nama}*,
 
 Terima kasih! Pembayaran voucher diterima ✅
-
-Berikut voucher internet Anda:
 
 🔑 Username/Password: *{username}*
 📦 Paket: *{paket}*
 ⏱ Berlaku: *{masa_aktif}*
 🚀 Kecepatan: *{kecepatan}*
 
-Cara pakai:
-1️⃣ Sambungkan ke WiFi hotspot
-2️⃣ Buka browser, masuk halaman login
-3️⃣ Masukkan username & password di atas
-
 Selamat menikmati! 🌐</textarea>
 
-            <!-- Dropdown pilih template -->
-            <div class="fg" style="margin-bottom:10px">
-              <label>Pilih Template</label>
-              <select id="wa-tpl-select" onchange="tplLoad(this.value)" style="width:100%">
-                <option value="daftar">Pelanggan Baru Didaftarkan</option>
-                <option value="reminder">Reminder Jatuh Tempo</option>
-                <option value="suspend">Notifikasi Suspend</option>
-                <option value="konfirmasi">Konfirmasi Pembayaran</option>
-                <option value="voucher_sukses">🎟️ Voucher Sukses</option>
+              <!-- Tab pills pilih template -->
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+                <button onclick="tplLoad('daftar');waActiveTpl('daftar',this)" id="wa-tpl-btn-daftar" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid #2563eb;background:#2563eb;color:#fff;cursor:pointer;font-family:inherit;transition:all .15s">
+                  Pelanggan Baru
+                </button>
+                <button onclick="tplLoad('reminder');waActiveTpl('reminder',this)" id="wa-tpl-btn-reminder" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s">
+                  Reminder
+                </button>
+                <button onclick="tplLoad('suspend');waActiveTpl('suspend',this)" id="wa-tpl-btn-suspend" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s">
+                  Suspend
+                </button>
+                <button onclick="tplLoad('konfirmasi');waActiveTpl('konfirmasi',this)" id="wa-tpl-btn-konfirmasi" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s">
+                  Konfirmasi
+                </button>
+                <button onclick="tplLoad('voucher_sukses');waActiveTpl('voucher_sukses',this)" id="wa-tpl-btn-voucher_sukses" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s">
+                  🎟️ Voucher
+                </button>
+              </div>
+
+              <!-- Hidden select (dipertahankan untuk kompatibilitas JS) -->
+              <select id="wa-tpl-select" style="display:none" onchange="tplLoad(this.value)">
+                <option value="daftar">Pelanggan Baru</option>
+                <option value="reminder">Reminder</option>
+                <option value="suspend">Suspend</option>
+                <option value="konfirmasi">Konfirmasi</option>
+                <option value="voucher_sukses">Voucher Sukses</option>
               </select>
-            </div>
 
-            <!-- Editor area -->
-            <div class="tpl-editor-box">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                <div>
-                  <div id="tpl-editor-title" class="td-text-main" style="font-size:13px;font-weight:600"></div>
-                  <div id="tpl-editor-slug" class="td-text-sub" style="font-size:10px;margin-top:1px;font-family:monospace"></div>
+              <!-- Editor -->
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)">
+                  <div>
+                    <div id="tpl-editor-title" style="font-size:12px;font-weight:700;color:var(--text)"></div>
+                    <div id="tpl-editor-slug" style="font-size:10px;color:var(--text3);font-family:monospace;margin-top:1px"></div>
+                  </div>
+                  <button class="btn sm" onclick="tplReset()" style="gap:4px;font-size:11px">
+                    <i class="ti ti-rotate-clockwise" style="font-size:12px" aria-hidden="true"></i> Reset
+                  </button>
                 </div>
-                <button class="btn sm" onclick="tplReset()" title="Reset ke default">
-                  <i class="ti ti-refresh" aria-hidden="true"></i> Reset default
-                </button>
+                <textarea id="tpl-editor-body" rows="8" oninput="tplMarkDirty()"
+                  style="width:100%;padding:12px 14px;background:transparent;border:none;color:var(--text);font-size:13px;font-family:inherit;resize:vertical;line-height:1.7;box-sizing:border-box;outline:none"></textarea>
               </div>
-              <textarea id="tpl-editor-body" rows="8" style="width:100%;padding:10px 12px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#0f172a;font-size:13px;font-family:inherit;resize:vertical;line-height:1.6" oninput="tplMarkDirty()"></textarea>
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
-                <div id="tpl-dirty-badge" style="display:none;font-size:11px;color:#d97706;display:flex;align-items:center;gap:4px">
-                  <i class="ti ti-pencil" style="font-size:12px" aria-hidden="true"></i> Belum disimpan
-                </div>
-                <div style="flex:1"></div>
-                <button class="btn primary" style="background:#BA7517" onclick="tplSave()">
-                  <i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan Template
-                </button>
-              </div>
-            </div>
 
-            <!-- Placeholder reference -->
-            <div class="tpl-placeholder-box" style="margin-top:10px">
-              <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:5px">
-                <i class="ti ti-braces" style="font-size:13px" aria-hidden="true"></i> Placeholder Tersedia
+              <!-- Placeholder chips -->
+              <div style="margin-bottom:12px">
+                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;display:flex;align-items:center;gap:5px">
+                  <i class="ti ti-braces" style="font-size:12px" aria-hidden="true"></i> Placeholder — klik untuk sisipkan
+                </div>
+                <div id="tpl-placeholders" style="display:flex;flex-wrap:wrap;gap:5px"></div>
               </div>
-              <div id="tpl-placeholders" style="display:flex;flex-wrap:wrap;gap:5px"></div>
+
+              <button class="btn primary" style="width:100%;justify-content:center;gap:6px" onclick="tplSave()">
+                <i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan Template
+              </button>
             </div>
           </div>
-          <div class="card">
-            <div class="card-title">Test Kirim Pesan</div>
-            <div class="fg"><label>Nomor Tujuan</label><input id="wa-to" placeholder="628xxx"></div>
-            <div class="fg"><label>Pesan</label><textarea id="wa-pesan" placeholder="Tulis pesan..."></textarea></div>
-            <button class="btn primary" onclick="sendWATest()" style="margin-bottom:14px">📤 Kirim Test</button>
-            <div class="card-title">Preview Chat <span class="sub">Delivery rate: <b id="wa-delivery-rate">—</b></span>
-              <button class="btn sm" onclick="document.getElementById('wa-chat').innerHTML=''" title="Bersihkan chat"><i class="ti ti-trash" aria-hidden="true"></i></button>
+
+          <!-- ══ KOLOM KANAN ══ -->
+          <div style="display:flex;flex-direction:column;gap:14px">
+
+            <!-- Card Test + Preview Chat -->
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(22,163,74,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-send" style="font-size:17px;color:#16a34a" aria-hidden="true"></i>
+                </div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Test Kirim Pesan</div>
+                  <div class="td-text-sub" style="font-size:11px">Kirim pesan percobaan ke nomor tujuan</div>
+                </div>
+              </div>
+              <div class="fg-row">
+                <div class="fg" style="margin-bottom:0">
+                  <label>Nomor Tujuan</label>
+                  <input id="wa-to" placeholder="628xxxxxxxxxx">
+                </div>
+              </div>
+              <div class="fg" style="margin-top:10px">
+                <label>Pesan</label>
+                <textarea id="wa-pesan" rows="3" placeholder="Tulis pesan..." style="resize:vertical"></textarea>
+              </div>
+              <button class="btn primary" style="width:100%;justify-content:center;gap:6px;margin-top:4px" onclick="apiKirimWATest()">
+                <i class="ti ti-send" style="font-size:13px" aria-hidden="true"></i> Kirim Test
+              </button>
+
+              <!-- Preview Chat -->
+              <div style="margin-top:14px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                  <div style="font-size:12px;font-weight:600;color:var(--text2);display:flex;align-items:center;gap:6px">
+                    <i class="ti ti-message-dots" style="font-size:13px" aria-hidden="true"></i>
+                    Preview Chat
+                    <span style="font-size:11px;font-weight:400;color:var(--text3)">Delivery rate: <b id="wa-delivery-rate" style="color:var(--text2)">—</b></span>
+                  </div>
+                  <button class="btn sm" onclick="document.getElementById('wa-chat').innerHTML=''" style="padding:3px 8px">
+                    <i class="ti ti-trash" style="font-size:11px" aria-hidden="true"></i>
+                  </button>
+                </div>
+                <div class="wa-chat" id="wa-chat">
+                  <div style="text-align:center;color:#aaa;font-size:12px;padding:20px 0">Kirim pesan test untuk melihat preview</div>
+                </div>
+              </div>
             </div>
-            <div class="wa-chat" id="wa-chat">
-              <div style="text-align:center;color:#aaa;font-size:12px;margin:auto;padding:20px 0">Kirim pesan test untuk melihat preview</div>
+
+            <!-- Card Broadcast Massal -->
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(220,38,38,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-speakerphone" style="font-size:17px;color:#dc2626" aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Broadcast Massal</div>
+                  <div class="td-text-sub" style="font-size:11px">Kirim pesan ke banyak pelanggan sekaligus</div>
+                </div>
+              </div>
+
+              <div class="fg">
+                <label>Target Penerima</label>
+                <select id="wa-broadcast-target" style="width:100%">
+                  <option value="unpaid">📋 Semua belum bayar</option>
+                  <option value="overdue">⚠️ Sudah terlambat</option>
+                  <option value="semua">👥 Semua pelanggan</option>
+                </select>
+              </div>
+
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+                <div class="fg" style="margin-bottom:0;flex:none;width:100px">
+                  <label>Delay (detik)</label>
+                  <input id="wa-broadcast-delay" type="number" value="3" min="1" max="60" style="width:100%;text-align:center;font-weight:700;font-size:16px">
+                </div>
+                <div style="font-size:11px;color:var(--text2);margin-top:18px;flex:1">
+                  Disarankan <b>3–5 detik</b> antar pesan agar tidak terkena blokir WhatsApp
+                </div>
+              </div>
+
+              <div style="background:rgba(220,38,38,.05);border:1px solid rgba(220,38,38,.15);border-radius:9px;padding:10px 13px;font-size:11px;color:#b91c1c;margin-bottom:14px;display:flex;gap:8px">
+                <i class="ti ti-alert-triangle" style="font-size:14px;flex-shrink:0;margin-top:1px" aria-hidden="true"></i>
+                Broadcast akan mengirim pesan ke semua pelanggan dalam target. Pastikan konten pesan tidak melanggar kebijakan WhatsApp.
+              </div>
+
+              <button class="btn danger" style="width:100%;justify-content:center;gap:6px;background:#dc2626;border-color:#dc2626;color:#fff" onclick="apiBroadcastWA()">
+                <i class="ti ti-speakerphone" style="font-size:14px" aria-hidden="true"></i> Kirim Broadcast
+              </button>
             </div>
-            <div class="divider"></div>
-            <div class="card-title">Broadcast Massal</div>
-            <div class="fg"><label>Target</label><select id="wa-broadcast-target"><option value="unpaid">Semua belum bayar</option><option value="overdue">Sudah terlambat</option><option value="semua">Semua pelanggan</option></select></div>
-            <div class="fg"><label>Delay antar pesan (detik)</label><input id="wa-broadcast-delay" type="number" value="3" min="1" max="60" style="width:100px"><span style="font-size:12px;color:var(--text3);margin-left:8px">Disarankan 3–5 detik agar tidak kena blokir</span></div>
-            <button class="btn primary" onclick="apiBroadcastWA()">📢 Kirim Broadcast</button>
+
+            <!-- Card Statistik 30 Hari -->
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(37,99,235,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-chart-bar" style="font-size:17px;color:#2563eb" aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">WA Gateway — 30 Hari</div>
+                  <div class="td-text-sub" style="font-size:11px">Statistik pengiriman pesan</div>
+                </div>
+              </div>
+              <div class="stat-row"><span class="lbl">Reminder terkirim</span><span class="val" style="color:var(--green)" id="wa-stat-reminder">—</span></div>
+              <div class="stat-row"><span class="lbl">Notif suspend</span><span class="val" style="color:var(--red)" id="wa-stat-suspend">—</span></div>
+              <div class="stat-row"><span class="lbl">Konfirmasi bayar</span><span class="val" style="color:var(--accent)" id="wa-stat-konfirmasi">—</span></div>
+              <div class="stat-row"><span class="lbl">Voucher terkirim</span><span class="val" id="wa-stat-voucher">—</span></div>
+              <div class="divider"></div>
+              <div class="stat-row"><span class="lbl">Delivery rate</span><span class="val" style="color:var(--green)" id="wa-stat-rate">—</span></div>
+            </div>
+
           </div>
         </div>
       </div>
 
-      <!-- ══ PAYMENT ══ -->
       <div class="page" id="p-payment">
 
         <!-- Header -->
@@ -7233,6 +7397,40 @@ async function apiHapusVoucher(username) {
 // ================================================================
 // WHATSAPP
 // ================================================================
+// ── WHATSAPP PROVIDER & TEMPLATE HELPERS ─────────────────────
+function waSetProvider(prov) {
+  document.getElementById('wa-provider').value = prov;
+  const COLORS = { fonnte:'#16a34a', wablas:'#2563eb', wa_business:'#d97706', wanotif:'#7c3aed' };
+  ['fonnte','wablas','wa_business','wanotif'].forEach(function(p) {
+    const el = document.getElementById('wa-prov-'+p);
+    if (!el) return;
+    const active = p === prov;
+    const col = COLORS[p] || '#16a34a';
+    el.style.borderColor = active ? col : 'var(--border)';
+    el.style.background  = active ? `rgba(${col==='#16a34a'?'22,163,74':col==='#2563eb'?'37,99,235':col==='#d97706'?'217,119,6':'124,58,237'},.06)` : 'transparent';
+    const lbl = el.querySelector('div:last-child');
+    if (lbl) lbl.style.color = active ? col : 'var(--text)';
+  });
+  const pw = document.getElementById('wa-phoneid-wrap');
+  if (pw) pw.style.display = prov === 'wa_business' ? '' : 'none';
+}
+
+function waActiveTpl(key, btn) {
+  // Update hidden select
+  const sel = document.getElementById('wa-tpl-select');
+  if (sel) sel.value = key;
+  // Update pill buttons
+  ['daftar','reminder','suspend','konfirmasi','voucher_sukses'].forEach(function(k) {
+    const b = document.getElementById('wa-tpl-btn-'+k);
+    if (!b) return;
+    const active = k === key;
+    b.style.background   = active ? '#2563eb' : 'var(--bg2)';
+    b.style.color        = active ? '#fff' : 'var(--text2)';
+    b.style.borderColor  = active ? '#2563eb' : 'var(--border)';
+  });
+}
+// ── END WA HELPERS ───────────────────────────────────────────
+
 // ── WA TEMPLATE EDITOR ──────────────────────────────────────
 const TPL_META = {
   daftar: {
@@ -7275,6 +7473,7 @@ function tplLoad(key) {
   _tplDirty   = false;
   const meta   = TPL_META[key];
   const stored = document.getElementById('wa-tpl-' + key)?.value || meta.default;
+  waActiveTpl(key, null);  // sync pill buttons
 
   document.getElementById('tpl-editor-title').textContent = meta.title;
   document.getElementById('tpl-editor-slug').textContent  = meta.slug;
@@ -7336,7 +7535,10 @@ async function loadWALog() {
     const settings = await apiFetch('/api/setting');
     const map = {};
     settings.forEach(s => map[s.kunci] = s.nilai);
-    if (map.wa_provider) document.getElementById('wa-provider').value = map.wa_provider;
+    if (map.wa_provider) {
+      document.getElementById('wa-provider').value = map.wa_provider;
+      waSetProvider(map.wa_provider);
+    }
     if (map.wa_sender)   document.getElementById('wa-sender').value   = map.wa_sender;
     if (map.wa_phone_id) document.getElementById('wa-phone-id').value = map.wa_phone_id;
     // Load template pesan
