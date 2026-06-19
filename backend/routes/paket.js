@@ -20,7 +20,7 @@ router.get('/', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
   try {
     const { nama, kecepatan_up, kecepatan_dn, harga, masa_aktif=30, satuan_masa='hari',
-            pool_name, tipe='keduanya', burst_limit, burst_time, deskripsi } = req.body;
+            pool_name, tipe='keduanya', burst_limit, burst_time, deskripsi, rate_limit } = req.body;
 
     if (!nama || !kecepatan_up || !kecepatan_dn || !harga)
       return res.status(400).json({ error: 'nama, kecepatan_up, kecepatan_dn, harga wajib diisi' });
@@ -32,11 +32,17 @@ router.post('/', async (req, res, next) => {
     `, [nama, kecepatan_up, kecepatan_dn, harga, masa_aktif || 30, satuan_masa || 'hari',
         pool_name || null, tipe || 'keduanya', burst_limit || null, burst_time || null, deskripsi || null]);
 
-    // Sync group RADIUS (tanpa membuat user dummy)
+    // Simpan rate_limit ke DB jika ada (auto-migration tambah kolom)
+    if (rate_limit) {
+      await query(`ALTER TABLE paket ADD COLUMN IF NOT EXISTS rate_limit VARCHAR(128) NULL`).catch(()=>{});
+      await query(`UPDATE paket SET rate_limit=? WHERE id=?`, [rate_limit, result.insertId]);
+    }
+
+    // Sync group RADIUS — gunakan rate_limit jika ada
     try {
       const radiusService = require('../services/radius');
       await radiusService._syncGroupPaketPublic(
-        { kecepatan_dn, kecepatan_up, pool_name: pool_name || null, masa_aktif: masa_aktif || 30 }, tipe || 'keduanya'
+        { kecepatan_dn, kecepatan_up, rate_limit, pool_name: pool_name || null, masa_aktif: masa_aktif || 30 }, tipe || 'keduanya'
       );
     } catch(e) {
       console.warn('[PAKET] Sync RADIUS group gagal (tidak fatal):', e.message);
@@ -52,11 +58,13 @@ router.put('/:id', async (req, res, next) => {
     if (!existing) return res.status(404).json({ error: 'Paket tidak ditemukan' });
 
     const { nama, kecepatan_up, kecepatan_dn, harga, masa_aktif, satuan_masa,
-            pool_name, tipe, burst_limit, burst_time, deskripsi, aktif } = req.body;
+            pool_name, tipe, burst_limit, burst_time, deskripsi, aktif, rate_limit } = req.body;
+
+    await query(`ALTER TABLE paket ADD COLUMN IF NOT EXISTS rate_limit VARCHAR(128) NULL`).catch(()=>{});
 
     await query(`
       UPDATE paket SET nama=?,kecepatan_up=?,kecepatan_dn=?,harga=?,
-        masa_aktif=?,satuan_masa=?,pool_name=?,tipe=?,burst_limit=?,burst_time=?,deskripsi=?,aktif=?
+        masa_aktif=?,satuan_masa=?,pool_name=?,tipe=?,burst_limit=?,burst_time=?,deskripsi=?,aktif=?,rate_limit=?
       WHERE id=?
     `, [
         nama ?? existing.nama,
@@ -71,6 +79,7 @@ router.put('/:id', async (req, res, next) => {
         burst_time !== undefined ? (burst_time || null) : existing.burst_time,
         deskripsi !== undefined ? (deskripsi || null) : existing.deskripsi,
         aktif !== undefined ? (aktif ? 1 : 0) : existing.aktif,
+        rate_limit !== undefined ? (rate_limit || null) : (existing.rate_limit || null),
         req.params.id
     ]);
 
@@ -78,10 +87,11 @@ router.put('/:id', async (req, res, next) => {
     const newPool    = pool_name !== undefined ? (pool_name || null) : existing.pool_name;
     const newSpeedDn = kecepatan_dn ?? existing.kecepatan_dn;
     const newSpeedUp = kecepatan_up ?? existing.kecepatan_up;
-    const burstVal   = burst_limit !== undefined ? (burst_limit || null) : existing.burst_limit;
-    const rateLimit  = burstVal
-        ? `${newSpeedDn}M/${newSpeedUp}M ${burstVal}/${burstVal} ${burst_time || existing.burst_time || '8'}`
-        : `${newSpeedDn}M/${newSpeedUp}M`;
+    // Gunakan rate_limit langsung jika ada, fallback ke format lama
+    const rateLimit  = rate_limit || existing.rate_limit ||
+        (existing.burst_limit
+            ? `${newSpeedDn}M/${newSpeedUp}M ${existing.burst_limit}/${existing.burst_limit} ${existing.burst_time || '8'}`
+            : `${newSpeedUp}M/${newSpeedDn}M`);
     const oldPool    = existing.pool_name;
 
     // Cari group yang punya Framed-Pool = pool lama

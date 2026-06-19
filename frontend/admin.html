@@ -1591,26 +1591,17 @@ Selamat menikmati! 🌐</textarea>
         <input id="fp-nama" placeholder="cth: Paket Fiber 100Mbps">
       </div>
 
-      <div class="fg-row">
-        <div class="fg">
-          <label>Kecepatan Download (Mbps)</label>
-          <input id="fp-speed" type="number" placeholder="100" oninput="updateSpeedPreview()">
+      <div class="fg">
+          <label>Batas Kecepatan <span class="td-text-sub" style="font-weight:400;font-size:10px">(Format MikroTik Rate-Limit)</span></label>
+          <input id="fp-speed" type="text" placeholder="cth: 10M/10M atau 2M/2M 3M/3M 1500k/1500k 32/32 8 2M/2M" oninput="updateSpeedPreview()">
           <div style="margin-top:5px;display:flex;align-items:center;gap:5px">
             <span id="fp-speed-preview" class="speed-chip-dn">
-              <i class="ti ti-arrow-down" style="font-size:10px" aria-hidden="true"></i> — Mbps
+              <i class="ti ti-arrow-right" style="font-size:10px" aria-hidden="true"></i> —
             </span>
           </div>
+          <div class="td-text-sub" style="font-size:10px;margin-top:4px">Format: <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">upload/download</code> atau burst lengkap</div>
         </div>
-        <div class="fg">
-          <label>Kecepatan Upload (Mbps)</label>
-          <input id="fp-speed-up" type="number" placeholder="50" oninput="updateSpeedPreview()">
-          <div style="margin-top:5px">
-            <span id="fp-speed-up-preview" class="speed-chip-up">
-              <i class="ti ti-arrow-up" style="font-size:10px" aria-hidden="true"></i> — Mbps
-            </span>
-          </div>
-        </div>
-      </div>
+        <input type="hidden" id="fp-speed-up">
 
       <div class="fg-row">
         <div class="fg">
@@ -1701,26 +1692,17 @@ Selamat menikmati! 🌐</textarea>
         <input id="ep2-nama" placeholder="cth: Paket Fiber 100Mbps">
       </div>
 
-      <div class="fg-row">
-        <div class="fg">
-          <label>Kecepatan Download (Mbps)</label>
-          <input id="ep2-speed" type="number" placeholder="100" oninput="ep2UpdatePreview()">
+      <div class="fg">
+          <label>Batas Kecepatan <span class="td-text-sub" style="font-weight:400;font-size:10px">(Format MikroTik Rate-Limit)</span></label>
+          <input id="ep2-speed" type="text" placeholder="cth: 10M/10M atau 2M/2M 3M/3M 1500k/1500k 32/32 8 2M/2M" oninput="ep2UpdatePreview()">
           <div style="margin-top:5px">
             <span id="ep2-speed-preview" class="speed-chip-dn">
-              <i class="ti ti-arrow-down" style="font-size:10px" aria-hidden="true"></i> — Mbps
+              <i class="ti ti-arrow-right" style="font-size:10px" aria-hidden="true"></i> —
             </span>
           </div>
+          <div class="td-text-sub" style="font-size:10px;margin-top:4px">Format: <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">upload/download</code> atau burst lengkap</div>
         </div>
-        <div class="fg">
-          <label>Kecepatan Upload (Mbps)</label>
-          <input id="ep2-speed-up" type="number" placeholder="50" oninput="ep2UpdatePreview()">
-          <div style="margin-top:5px">
-            <span id="ep2-speed-up-preview" class="speed-chip-up">
-              <i class="ti ti-arrow-up" style="font-size:10px" aria-hidden="true"></i> — Mbps
-            </span>
-          </div>
-        </div>
-      </div>
+        <input type="hidden" id="ep2-speed-up">
 
       <div class="fg-row">
         <div class="fg">
@@ -4355,17 +4337,14 @@ function bukaEditPaket(id) {
   if (!p) return toast('❌ Data paket tidak ditemukan, muat ulang halaman', true);
   document.getElementById('ep2-id').value       = p.id;
   document.getElementById('ep2-nama').value     = p.nama;
-  document.getElementById('ep2-speed').value    = p.kecepatan_dn;
-  document.getElementById('ep2-speed-up').value = p.kecepatan_up || p.kecepatan_dn;
+  document.getElementById('ep2-speed').value    = p.rate_limit || `${p.kecepatan_up||p.kecepatan_dn}M/${p.kecepatan_dn}M`;
   document.getElementById('ep2-harga').value    = p.harga;
   document.getElementById('ep2-pool').value     = p.pool_name || '';
   document.getElementById('ep2-masa').value     = p.masa_aktif || 30;
   document.getElementById('ep2-satuan').value   = p.satuan_masa || 'hari';
   document.getElementById('ep2-deskripsi').value= p.deskripsi || '';
   document.getElementById('ep2-title').textContent = 'Edit: ' + p.nama;
-  // Set tipe card
   ep2SetTipe(p.tipe || 'pppoe');
-  // Update preview
   ep2UpdatePreview();
   ep2UpdateHarga();
   openModal('m-edit-paket');
@@ -4396,12 +4375,9 @@ function ep2SetTipe(tipe) {
 }
 
 function ep2UpdatePreview() {
-  const dn = document.getElementById('ep2-speed')?.value;
-  const up = document.getElementById('ep2-speed-up')?.value;
-  const pDn = document.getElementById('ep2-speed-preview');
-  const pUp = document.getElementById('ep2-speed-up-preview');
-  if (pDn) pDn.innerHTML = `<i class="ti ti-arrow-down" style="font-size:10px"></i> ${dn||'—'} Mbps`;
-  if (pUp) pUp.innerHTML = `<i class="ti ti-arrow-up" style="font-size:10px"></i> ${up||'—'} Mbps`;
+  const val  = document.getElementById('ep2-speed')?.value.trim() || '';
+  const prev = document.getElementById('ep2-speed-preview');
+  if (prev) prev.innerHTML = `<i class="ti ti-arrow-right" style="font-size:10px"></i> ${val || '—'}`;
 }
 
 function ep2UpdateHarga() {
@@ -4410,21 +4386,36 @@ function ep2UpdateHarga() {
   if (el) el.textContent = val ? 'Rp ' + val.toLocaleString('id-ID') : '—';
 }
 
+
+const _parseRateLimit = (rate_limit) => {
+  const parts = (rate_limit||'').split(' ');
+  const mainRate = parts[0] || rate_limit;
+  const slash = mainRate.indexOf('/');
+  const parseV = v => {
+    if (!v) return 1;
+    const n = parseFloat(v);
+    if (v.toLowerCase().endsWith('k')) return Math.max(1, Math.round(n/1000));
+    return Math.max(1, Math.round(n));
+  };
+  const rawUp = slash > -1 ? mainRate.slice(0, slash).replace(/[Mm]$/, '') : mainRate.replace(/[Mm]$/, '');
+  const rawDn = slash > -1 ? mainRate.slice(slash+1).replace(/[Mm]$/, '') : rawUp;
+  return { kecepatan_up: parseV(rawUp), kecepatan_dn: parseV(rawDn) };
+};
 async function apiUpdatePaketGrid() {
-  const id           = document.getElementById('ep2-id').value;
-  const nama         = document.getElementById('ep2-nama').value.trim();
-  const kecepatan_dn = parseInt(document.getElementById('ep2-speed').value);
-  const kecepatan_up = parseInt(document.getElementById('ep2-speed-up').value) || kecepatan_dn;
-  const harga        = parseInt(document.getElementById('ep2-harga').value);
-  const pool_name    = document.getElementById('ep2-pool').value.trim();
-  const tipe         = document.getElementById('ep2-tipe').value;
-  const masa_aktif   = parseInt(document.getElementById('ep2-masa').value) || 30;
-  const satuan_masa  = document.getElementById('ep2-satuan').value;
-  const deskripsi    = document.getElementById('ep2-deskripsi')?.value.trim() || '';
-  if (!nama||!kecepatan_dn||!harga) return toast('❌ Nama, kecepatan, harga wajib diisi', true);
+  const id         = document.getElementById('ep2-id').value;
+  const nama       = document.getElementById('ep2-nama').value.trim();
+  const rate_limit = document.getElementById('ep2-speed').value.trim();
+  const harga      = parseInt(document.getElementById('ep2-harga').value);
+  const pool_name  = document.getElementById('ep2-pool').value.trim();
+  const tipe       = document.getElementById('ep2-tipe').value;
+  const masa_aktif = parseInt(document.getElementById('ep2-masa').value) || 30;
+  const satuan_masa= document.getElementById('ep2-satuan').value;
+  const deskripsi  = document.getElementById('ep2-deskripsi')?.value.trim() || '';
+  if (!nama || !rate_limit || !harga) return toast('❌ Nama, kecepatan, harga wajib diisi', true);
+  const { kecepatan_up, kecepatan_dn } = _parseRateLimit(rate_limit);
   try {
     await apiFetch('/api/paket/'+id, {method:'PUT',
-      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi})
+      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, rate_limit, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi})
     });
     toast('✅ Paket diperbarui');
     closeModal('m-edit-paket');
@@ -4434,7 +4425,7 @@ async function apiUpdatePaketGrid() {
 
 function bukaTambahPaket() {
   // Reset semua field
-  ['fp-nama','fp-speed','fp-speed-up','fp-harga','fp-pool','fp-deskripsi'].forEach(function(id) {
+  ['fp-nama','fp-speed','fp-harga','fp-pool','fp-deskripsi'].forEach(function(id) {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -4445,11 +4436,9 @@ function bukaTambahPaket() {
   // Reset tipe ke pppoe
   pilihTipePaket('pppoe');
   // Reset preview
-  const prevDn = document.getElementById('fp-speed-preview');
-  const prevUp = document.getElementById('fp-speed-up-preview');
+  const prevSpeed = document.getElementById('fp-speed-preview');
   const prevHarga = document.getElementById('fp-harga-preview');
-  if (prevDn) prevDn.innerHTML = '<i class="ti ti-arrow-down" style="font-size:10px"></i> — Mbps';
-  if (prevUp) prevUp.innerHTML = '<i class="ti ti-arrow-up" style="font-size:10px"></i> — Mbps';
+  if (prevSpeed) prevSpeed.innerHTML = '<i class="ti ti-arrow-right" style="font-size:10px"></i> —';
   if (prevHarga) prevHarga.textContent = '—';
   openModal('m-add-paket');
 }
@@ -4477,12 +4466,9 @@ function pilihTipePaket(tipe) {
 }
 
 function updateSpeedPreview() {
-  const dn = document.getElementById('fp-speed')?.value;
-  const up = document.getElementById('fp-speed-up')?.value;
-  const prevDn = document.getElementById('fp-speed-preview');
-  const prevUp = document.getElementById('fp-speed-up-preview');
-  if (prevDn) prevDn.innerHTML = `<i class="ti ti-arrow-down" style="font-size:10px"></i> ${dn || '—'} Mbps`;
-  if (prevUp) prevUp.innerHTML = `<i class="ti ti-arrow-up" style="font-size:10px"></i> ${up || '—'} Mbps`;
+  const val  = document.getElementById('fp-speed')?.value.trim() || '';
+  const prev = document.getElementById('fp-speed-preview');
+  if (prev) prev.innerHTML = `<i class="ti ti-arrow-right" style="font-size:10px"></i> ${val || '—'}`;
 }
 
 function updateHargaPreview() {
@@ -4492,19 +4478,30 @@ function updateHargaPreview() {
 }
 
 async function apiSimpanPaket() {
-  const nama         = document.getElementById('fp-nama').value.trim();
-  const kecepatan_dn = parseInt(document.getElementById('fp-speed').value);
-  const kecepatan_up = parseInt(document.getElementById('fp-speed-up').value) || kecepatan_dn;
-  const harga        = parseInt(document.getElementById('fp-harga').value);
-  const pool_name    = document.getElementById('fp-pool').value.trim();
-  const tipe         = document.getElementById('fp-tipe').value;
-  const masa_aktif   = parseInt(document.getElementById('fp-masa').value) || 30;
-  const satuan_masa  = document.getElementById('fp-satuan').value;
-  const deskripsi    = document.getElementById('fp-deskripsi')?.value.trim() || '';
-  if (!nama || !kecepatan_dn || !harga) return toast('❌ Nama, kecepatan, harga wajib diisi', true);
+  const nama       = document.getElementById('fp-nama').value.trim();
+  const rate_limit = document.getElementById('fp-speed').value.trim();
+  const harga      = parseInt(document.getElementById('fp-harga').value);
+  const pool_name  = document.getElementById('fp-pool').value.trim();
+  const tipe       = document.getElementById('fp-tipe').value;
+  const masa_aktif = parseInt(document.getElementById('fp-masa').value) || 30;
+  const satuan_masa= document.getElementById('fp-satuan').value;
+  const deskripsi  = document.getElementById('fp-deskripsi')?.value.trim() || '';
+  if (!nama || !rate_limit || !harga) return toast('❌ Nama, kecepatan, harga wajib diisi', true);
+  // Parse dn/up dari rate_limit — ambil bagian pertama "up/dn" atau "up/dn ..."
+  const parts = rate_limit.split(' ');
+  const mainRate = parts[0] || rate_limit;
+  const slash = mainRate.indexOf('/');
+  const parseK = v => {
+    if (!v) return 1;
+    const n = parseFloat(v);
+    if (v.toLowerCase().endsWith('k')) return Math.round(n / 1000) || 1;
+    return Math.round(n) || 1;
+  };
+  const kecepatan_up = slash > -1 ? parseK(mainRate.slice(0, slash).replace(/[Mm]$/,'')) : 1;
+  const kecepatan_dn = slash > -1 ? parseK(mainRate.slice(slash+1).replace(/[Mm]$/,'')) : 1;
   try {
     await apiFetch('/api/paket', {method:'POST',
-      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi})
+      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, rate_limit, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi})
     });
     toast('✅ Paket ditambahkan');
     closeModal('m-add-paket');

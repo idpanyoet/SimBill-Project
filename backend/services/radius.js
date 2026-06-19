@@ -253,11 +253,13 @@ async function _syncGroupPaket(paket, tipe_koneksi) {
     const groupname = _namaGroup(paket, tipe_koneksi);
     const speedDn   = `${paket.kecepatan_dn}M`;
     const speedUp   = `${paket.kecepatan_up}M`;
+    // Gunakan rate_limit dari paket jika ada (format MikroTik lengkap)
+    const rateLimit = paket.rate_limit || `${speedUp}/${speedDn}`;
 
     // MikroTik menggunakan Mikrotik-Rate-Limit untuk speed
     const attrs = [
         { attribute: 'Mikrotik-Rate-Limit', op: ':=',
-          value: `${speedUp}/${speedDn}` },
+          value: rateLimit },
         { attribute: 'Framed-Pool',         op: ':=',
           value: paket.pool_name || `pool-${paket.kecepatan_dn}mbps` },
     ];
