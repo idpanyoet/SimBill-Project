@@ -20,7 +20,7 @@ router.get('/', async (req, res, next) => {
 
     const rows = await query(`
       SELECT v.*, p.nama AS nama_paket, p.kecepatan_dn, p.harga
-      FROM voucher v JOIN paket p ON v.paket_id = p.id
+      FROM voucher v LEFT JOIN paket p ON v.paket_id = p.id
       WHERE ${where.join(' AND ')}
       ORDER BY v.created_at DESC LIMIT ? OFFSET ?
     `, [...params, parseInt(limit), offset]);
@@ -29,7 +29,7 @@ router.get('/', async (req, res, next) => {
     if (batch_id) return res.json(rows);
 
     const [{ total }] = await query(
-      `SELECT COUNT(*) AS total FROM voucher v WHERE ${where.join(' AND ')}`, params
+      `SELECT COUNT(*) AS total FROM voucher v LEFT JOIN paket p ON v.paket_id = p.id WHERE ${where.join(' AND ')}`, params
     );
     res.json({ data: rows, total });
   } catch (e) { next(e); }
