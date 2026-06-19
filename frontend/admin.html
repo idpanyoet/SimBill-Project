@@ -3785,9 +3785,14 @@ function initMiniMap(prefix) {
       _epMap = L.map(elId, { scrollWheelZoom: true }).setView([1.0857, 104.0305], 12);
     }
     const map = prefix === 'add' ? _fMap : _epMap;
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const osmL = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors', maxZoom: 19
-    }).addTo(map);
+    });
+    const satL = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: '© Esri', maxZoom: 19
+    });
+    osmL.addTo(map);
+    L.control.layers({ '🗺️ Peta': osmL, '🛰️ Satelit': satL }, {}, { position: 'topright' }).addTo(map);
     // Klik peta → isi lat/lng
     map.on('click', function(e) {
       const lat = e.latlng.lat.toFixed(7);
@@ -6717,10 +6722,18 @@ function loadPeta() {
   // Init peta Leaflet saat pertama
   if (!_petaMap) {
     _petaMap = L.map('peta-map', { scrollWheelZoom: true }).setView([0.7893, 113.9213], 5);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© <a href="https://leaflet.js.com">Leaflet</a> | © OpenStreetMap contributors',
-      maxZoom: 19
-    }).addTo(_petaMap);
+    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors', maxZoom: 19
+    });
+    const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: '© Esri, Maxar, Earthstar Geographics', maxZoom: 19
+    });
+    osmLayer.addTo(_petaMap);
+    L.control.layers(
+      { '🗺️ Peta': osmLayer, '🛰️ Satelit': satLayer },
+      {},
+      { position: 'topright' }
+    ).addTo(_petaMap);
   }
   apiFetch('/api/pelanggan/peta').then(function(rows) {
     _petaData = rows;
