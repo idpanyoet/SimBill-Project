@@ -1077,94 +1077,174 @@ Selamat menikmati! 🌐</textarea>
       <!-- ══ RADIUS ══ -->
       <div class="page" id="p-radius">
 
-        <!-- ══ NAS + VPN TABS ══ -->
-        <div class="card">
-          <!-- Tab Bar -->
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-            <div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:visible">
-              <button id="rtab-nas" class="btn sm" onclick="radiusTab('nas')" style="border-radius:7px 0 0 7px;border:none;background:var(--accent);color:#fff;font-weight:500">📡 NAS</button>
-              <div style="position:relative">
-                <button id="rtab-vpn" class="btn sm" onclick="toggleVpnDropdown(event)" style="border-radius:0 7px 7px 0;border:none;border-left:1px solid var(--border)">🔐 VPN ▾</button>
-                <div id="vpn-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:var(--bg2);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.2);z-index:50;min-width:150px;overflow:hidden">
-                  <button onclick="radiusTab('wg');closeVpnDropdown()" style="display:block;width:100%;text-align:left;padding:9px 14px;background:none;border:none;cursor:pointer;font-size:13px;color:var(--text)" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">🔒 WireGuard</button>
-                  <button onclick="radiusTab('l2tp');closeVpnDropdown()" style="display:block;width:100%;text-align:left;padding:9px 14px;background:none;border:none;cursor:pointer;font-size:13px;color:var(--text);border-top:1px solid var(--border)" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">🔐 L2TP/IPSec</button>
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <h2 style="font-size:18px;font-weight:700;color:var(--text);margin:0">RADIUS / NAS</h2>
+            <div class="td-text-sub" style="font-size:12px;margin-top:3px">Kelola Network Access Server, VPN, dan konfigurasi autentikasi</div>
+          </div>
+          <div id="rtab-action"></div>
+        </div>
+
+        <!-- Tab Bar -->
+        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+          <button id="rtab-nas" onclick="radiusTab('nas')" style="display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;border:2px solid #2563eb;background:#2563eb;color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit">
+            <i class="ti ti-server" style="font-size:14px" aria-hidden="true"></i> NAS
+          </button>
+          <button id="rtab-wg" onclick="radiusTab('wg')" style="display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;border:2px solid var(--border);background:var(--bg2);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit">
+            <i class="ti ti-lock" style="font-size:14px" aria-hidden="true"></i> WireGuard
+          </button>
+          <button id="rtab-l2tp" onclick="radiusTab('l2tp')" style="display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:9px;border:2px solid var(--border);background:var(--bg2);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit">
+            <i class="ti ti-shield-lock" style="font-size:14px" aria-hidden="true"></i> L2TP/IPSec
+          </button>
+        </div>
+
+        <!-- PANEL: Daftar NAS -->
+        <div id="rpanel-nas">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(37,99,235,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-server" style="font-size:17px;color:#2563eb" aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Daftar NAS</div>
+                  <div class="td-text-sub" style="font-size:11px">Network Access Server terdaftar</div>
                 </div>
               </div>
             </div>
-            <div id="rtab-action"></div>
-          </div>
-
-          <!-- PANEL: Daftar NAS -->
-          <div id="rpanel-nas">
-            <table><thead><tr><th>Nama / Status</th><th>IP NAS</th><th>Tipe</th><th>Secret</th><th>Last Seen</th><th>Aksi</th></tr></thead>
-            <tbody id="tbl-nas">
-              <tr><td colspan="5" style="text-align:center;color:var(--text3);padding:16px">Tidak ada data</td></tr>
-            </tbody></table>
-          </div>
-
-          <!-- PANEL: WireGuard -->
-          <div id="rpanel-wg" style="display:none">
-            <div id="vpn-wg-status" style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 12px;background:var(--bg3);border-radius:8px;font-size:13px">
-              <span id="vpn-wg-dot" style="width:10px;height:10px;border-radius:50%;background:#888;flex-shrink:0"></span>
-              <span id="vpn-wg-label">Mengecek status...</span>
-              <div style="margin-left:auto;display:flex;gap:6px">
-                <button class="btn sm" id="vpn-wg-btn-install" onclick="apiVpnInstall('wg')" style="display:none">⬇️ Install WireGuard</button>
-                <button class="btn sm primary" id="vpn-wg-btn-start" onclick="apiVpnToggle('wg','start')" style="display:none">▶ Start</button>
-                <button class="btn sm danger"  id="vpn-wg-btn-stop"  onclick="apiVpnToggle('wg','stop')"  style="display:none">⏹ Stop</button>
-                <button class="btn sm" onclick="apiVpnRefreshStatus('wg')">🔄</button>
-              </div>
-            </div>
             <table>
-              <thead><tr><th>Nama</th><th>IP Tunnel</th><th>Public Key</th><th>Last Handshake</th><th>Traffic</th><th>Aksi</th></tr></thead>
-              <tbody id="tbl-wg-peers">
-                <tr><td colspan="6" style="text-align:center;color:var(--text3);padding:16px">Tidak ada data</td></tr>
+              <thead>
+                <tr>
+                  <th>Nama / Status</th>
+                  <th>IP NAS</th>
+                  <th>Tipe</th>
+                  <th>Secret</th>
+                  <th>Last Seen</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-nas">
+                <tr><td colspan="6" style="text-align:center;color:var(--text3);padding:24px">Tidak ada data</td></tr>
               </tbody>
             </table>
           </div>
 
-          <!-- PANEL: L2TP/IPSec -->
-          <div id="rpanel-l2tp" style="display:none">
-            <div id="vpn-l2tp-status" style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 12px;background:var(--bg3);border-radius:8px;font-size:13px">
-              <span id="vpn-l2tp-dot" style="width:10px;height:10px;border-radius:50%;background:#888;flex-shrink:0"></span>
-              <span id="vpn-l2tp-label">Mengecek status...</span>
-              <div style="margin-left:auto;display:flex;gap:6px">
-                <button class="btn sm" id="vpn-l2tp-btn-install" onclick="apiVpnInstall('l2tp')" style="display:none">⬇️ Install L2TP/IPSec</button>
-                <button class="btn sm primary" id="vpn-l2tp-btn-start" onclick="apiVpnToggle('l2tp','start')" style="display:none">▶ Start</button>
-                <button class="btn sm danger"  id="vpn-l2tp-btn-stop"  onclick="apiVpnToggle('l2tp','stop')"  style="display:none">⏹ Stop</button>
-                <button class="btn sm" onclick="apiVpnRefreshStatus('l2tp')">🔄</button>
+          <!-- Auth Mode Card -->
+          <div class="card" style="margin-top:12px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+              <div style="width:34px;height:34px;border-radius:9px;background:rgba(124,58,237,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <i class="ti ti-key" style="font-size:17px;color:#7c3aed" aria-hidden="true"></i>
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:700;color:var(--text)">Konfigurasi Autentikasi</div>
+                <div class="td-text-sub" style="font-size:11px">Auth method dan single session</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <div>
+                <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px">Auth Mode</div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px">
+                  <label style="display:flex;align-items:center;gap:7px;cursor:pointer;padding:7px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:500">
+                    <input type="checkbox" id="am-check-pap" style="accent-color:#7c3aed;width:14px;height:14px"> PAP
+                  </label>
+                  <label style="display:flex;align-items:center;gap:7px;cursor:pointer;padding:7px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:500">
+                    <input type="checkbox" id="am-check-chap" style="accent-color:#7c3aed;width:14px;height:14px"> CHAP
+                  </label>
+                  <label style="display:flex;align-items:center;gap:7px;cursor:pointer;padding:7px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:500">
+                    <input type="checkbox" id="am-check-mschapv1" style="accent-color:#7c3aed;width:14px;height:14px"> MSCHAP1
+                  </label>
+                  <label style="display:flex;align-items:center;gap:7px;cursor:pointer;padding:7px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:500">
+                    <input type="checkbox" id="am-check-mschapv2" style="accent-color:#7c3aed;width:14px;height:14px"> MSCHAP2
+                  </label>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px">Single Session</div>
+                <select id="single-session-select" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+                  <option value="1">✅ Enabled — 1 login per user</option>
+                  <option value="0">❌ Disabled — multi login</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+              <button class="btn primary" onclick="apiSimpanAuthMode()" style="gap:6px">
+                <i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan Konfigurasi
+              </button>
+              <button class="btn" onclick="apiTestRADIUS()" style="gap:6px">
+                <i class="ti ti-plug" style="font-size:13px" aria-hidden="true"></i> Test Koneksi RADIUS
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL: WireGuard -->
+        <div id="rpanel-wg" style="display:none">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(22,163,74,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-lock" style="font-size:17px;color:#16a34a" aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">WireGuard VPN</div>
+                  <div class="td-text-sub" style="font-size:11px">Kelola peers dan status tunnel</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div id="vpn-wg-status" style="display:flex;align-items:center;gap:7px;padding:6px 12px;background:var(--bg3);border-radius:8px;font-size:12px">
+                  <span id="vpn-wg-dot" style="width:8px;height:8px;border-radius:50%;background:#94a3b8;flex-shrink:0"></span>
+                  <span id="vpn-wg-label">Mengecek...</span>
+                </div>
+                <button class="btn sm" id="vpn-wg-btn-install" onclick="apiVpnInstall('wg')" style="display:none">⬇️ Install</button>
+                <button class="btn sm primary" id="vpn-wg-btn-start" onclick="apiVpnToggle('wg','start')" style="display:none;gap:4px"><i class="ti ti-player-play" aria-hidden="true"></i> Start</button>
+                <button class="btn sm danger" id="vpn-wg-btn-stop" onclick="apiVpnToggle('wg','stop')" style="display:none;gap:4px"><i class="ti ti-player-stop" aria-hidden="true"></i> Stop</button>
+                <button class="btn sm" onclick="apiVpnRefreshStatus('wg')"><i class="ti ti-refresh" style="font-size:13px" aria-hidden="true"></i></button>
               </div>
             </div>
             <table>
-              <thead><tr><th>Username</th><th>Password</th><th>IP Statis</th><th>Status</th><th>Aksi</th></tr></thead>
-              <tbody id="tbl-l2tp-users">
-                <tr><td colspan="5" style="text-align:center;color:var(--text3);padding:16px">Tidak ada data</td></tr>
+              <thead>
+                <tr><th>Nama</th><th>IP Tunnel</th><th>Public Key</th><th>Last Handshake</th><th>Traffic</th><th>Aksi</th></tr>
+              </thead>
+              <tbody id="tbl-wg-peers">
+                <tr><td colspan="6" style="text-align:center;color:var(--text3);padding:24px">Tidak ada data</td></tr>
               </tbody>
             </table>
           </div>
         </div>
 
-        <div class="card" style="margin-top:4px">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-              <span style="font-size:13px;font-weight:600">🔐 Auth Mode</span>
-              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" id="am-check-pap"> PAP</label>
-              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" id="am-check-chap"> CHAP</label>
-              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" id="am-check-mschapv1"> MSCHAP1</label>
-              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" id="am-check-mschapv2"> MSCHAP2</label>
-              <span style="color:var(--border);font-size:16px">|</span>
-              <span style="font-size:13px;font-weight:600">🔒 Single Session</span>
-              <select id="single-session-select" style="font-size:12px;padding:5px 8px;border:1px solid var(--border2);border-radius:7px;background:var(--bg);color:var(--text)">
-                <option value="1">✅ Enabled — 1 login per user</option>
-                <option value="0">❌ Disabled — multi login</option>
-              </select>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-              <button class="btn sm primary" onclick="apiSimpanAuthMode()">💾 Simpan</button>
-              <div style="display:flex;flex-direction:column;align-items:flex-start;gap:2px">
-                <button class="btn sm" onclick="apiTestRADIUS()">🔌 Test Koneksi</button>
-                <small style="font-size:10px;color:var(--text3)">Cek koneksi FreeRADIUS</small>
+        <!-- PANEL: L2TP/IPSec -->
+        <div id="rpanel-l2tp" style="display:none">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(217,119,6,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-shield-lock" style="font-size:17px;color:#d97706" aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">L2TP/IPSec VPN</div>
+                  <div class="td-text-sub" style="font-size:11px">Kelola user dan status L2TP</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div id="vpn-l2tp-status" style="display:flex;align-items:center;gap:7px;padding:6px 12px;background:var(--bg3);border-radius:8px;font-size:12px">
+                  <span id="vpn-l2tp-dot" style="width:8px;height:8px;border-radius:50%;background:#94a3b8;flex-shrink:0"></span>
+                  <span id="vpn-l2tp-label">Mengecek...</span>
+                </div>
+                <button class="btn sm" id="vpn-l2tp-btn-install" onclick="apiVpnInstall('l2tp')" style="display:none">⬇️ Install</button>
+                <button class="btn sm primary" id="vpn-l2tp-btn-start" onclick="apiVpnToggle('l2tp','start')" style="display:none;gap:4px"><i class="ti ti-player-play" aria-hidden="true"></i> Start</button>
+                <button class="btn sm danger" id="vpn-l2tp-btn-stop" onclick="apiVpnToggle('l2tp','stop')" style="display:none;gap:4px"><i class="ti ti-player-stop" aria-hidden="true"></i> Stop</button>
+                <button class="btn sm" onclick="apiVpnRefreshStatus('l2tp')"><i class="ti ti-refresh" style="font-size:13px" aria-hidden="true"></i></button>
               </div>
             </div>
+            <table>
+              <thead>
+                <tr><th>Username</th><th>Password</th><th>IP Statis</th><th>Status</th><th>Aksi</th></tr>
+              </thead>
+              <tbody id="tbl-l2tp-users">
+                <tr><td colspan="5" style="text-align:center;color:var(--text3);padding:24px">Tidak ada data</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -6400,32 +6480,40 @@ function closeVpnDropdown() {
 document.addEventListener('click', function() { closeVpnDropdown(); });
 
 function radiusTab(tab) {
-  // Panel
+  // Panel visibility
   ['nas','wg','l2tp'].forEach(t => {
-    document.getElementById('rpanel-'+t).style.display = t === tab ? '' : 'none';
+    const panel = document.getElementById('rpanel-'+t);
+    if (panel) panel.style.display = t === tab ? '' : 'none';
   });
-  // Styling tab NAS
-  const btnNas = document.getElementById('rtab-nas');
-  const btnVpn = document.getElementById('rtab-vpn');
-  if (tab === 'nas') {
-    btnNas.style.background = 'var(--accent)'; btnNas.style.color = '#fff'; btnNas.style.fontWeight = '500';
-    btnVpn.style.background = ''; btnVpn.style.color = ''; btnVpn.style.fontWeight = '';
-    btnVpn.textContent = '🔐 VPN ▾';
-  } else {
-    btnNas.style.background = ''; btnNas.style.color = ''; btnNas.style.fontWeight = '';
-    btnVpn.style.background = 'var(--accent)'; btnVpn.style.color = '#fff'; btnVpn.style.fontWeight = '500';
-    btnVpn.textContent = (tab === 'wg' ? '🔒 WireGuard' : '🔐 L2TP/IPSec') + ' ▾';
-  }
-  // Tombol aksi
+
+  // Tab button styles
+  const tabCfg = {
+    nas:  { color:'#2563eb', label:'<i class="ti ti-server" style="font-size:14px"></i> NAS' },
+    wg:   { color:'#16a34a', label:'<i class="ti ti-lock" style="font-size:14px"></i> WireGuard' },
+    l2tp: { color:'#d97706', label:'<i class="ti ti-shield-lock" style="font-size:14px"></i> L2TP/IPSec' },
+  };
+  ['nas','wg','l2tp'].forEach(t => {
+    const btn = document.getElementById('rtab-'+t);
+    if (!btn) return;
+    const active = t === tab;
+    btn.style.background    = active ? tabCfg[t].color : 'var(--bg2)';
+    btn.style.color         = active ? '#fff' : 'var(--text2)';
+    btn.style.borderColor   = active ? tabCfg[t].color : 'var(--border)';
+    btn.style.fontWeight    = active ? '600' : '500';
+  });
+
+  // Action buttons
   const action = document.getElementById('rtab-action');
-  if (tab === 'nas') {
-    action.innerHTML = '<button class="btn sm" onclick="refreshStatusNAS()">🔄 Refresh Status</button> <button class="btn sm primary" onclick="openModal(\'m-add-nas\')">+ Tambah NAS</button>';
-  } else if (tab === 'wg') {
-    action.innerHTML = '<button class="btn sm primary" id="vpn-wg-btn-add" onclick="bukaModalWgPeer()" style="display:none">+ Tambah Peer</button>';
-    apiVpnRefreshStatus('wg');
-  } else if (tab === 'l2tp') {
-    action.innerHTML = '<button class="btn sm primary" id="vpn-l2tp-btn-add" onclick="bukaModalL2tpUser()" style="display:none">+ Tambah User</button>';
-    apiVpnRefreshStatus('l2tp');
+  if (action) {
+    if (tab === 'nas') {
+      action.innerHTML = '<button class="btn" onclick="refreshStatusNAS()" style="gap:6px"><i class="ti ti-refresh" style="font-size:13px"></i> Refresh</button> <button class="btn primary" onclick="openModal(\'m-add-nas\')" style="gap:6px"><i class="ti ti-plus" style="font-size:13px"></i> Tambah NAS</button>';
+    } else if (tab === 'wg') {
+      action.innerHTML = '<button class="btn primary" id="vpn-wg-btn-add" onclick="bukaModalWgPeer()" style="display:none;gap:6px"><i class="ti ti-plus" style="font-size:13px"></i> Tambah Peer</button>';
+      apiVpnRefreshStatus('wg');
+    } else if (tab === 'l2tp') {
+      action.innerHTML = '<button class="btn primary" id="vpn-l2tp-btn-add" onclick="bukaModalL2tpUser()" style="display:none;gap:6px"><i class="ti ti-plus" style="font-size:13px"></i> Tambah User</button>';
+      apiVpnRefreshStatus('l2tp');
+    }
   }
 }
 
