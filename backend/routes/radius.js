@@ -35,8 +35,8 @@ router.get('/sesi', async (req, res, next) => {
         const { tipe, q, limit = 500 } = req.query;
         let where = ['ra.acctstoptime IS NULL'];
         const params = [];
-        if (tipe === 'pppoe')   where.push("(ra.nasporttype = 'PPPoE' OR ra.nasporttype LIKE '%ppp%')");
-        else if (tipe === 'hotspot') where.push("(ra.nasporttype != 'PPPoE' AND ra.nasporttype NOT LIKE '%ppp%')");
+        if (tipe === 'pppoe')        where.push("ra.nasporttype = 'Ethernet'");
+        else if (tipe === 'hotspot') where.push("ra.nasporttype = 'Wireless-802.11'");
         if (q) {
             where.push('(ra.username LIKE ? OR ra.framedipaddress LIKE ? OR ra.nasipaddress LIKE ? OR ra.callingstationid LIKE ?)');
             params.push(`%${q}%`,`%${q}%`,`%${q}%`,`%${q}%`);
@@ -64,9 +64,9 @@ router.get('/sesi', async (req, res, next) => {
             LIMIT ?
         `, [...params, parseInt(limit)]);
 
-        const total = rows.length;
-        const pppoe   = rows.filter(r => (r.nasporttype||'').toLowerCase().includes('ppp')).length;
-        const hotspot = total - pppoe;
+        const total   = rows.length;
+        const pppoe   = rows.filter(r => r.nasporttype === 'Ethernet').length;
+        const hotspot = rows.filter(r => r.nasporttype === 'Wireless-802.11').length;
         res.json({ rows, total, pppoe, hotspot });
     } catch(e) { next(e); }
 });
