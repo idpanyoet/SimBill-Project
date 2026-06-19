@@ -741,7 +741,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
       <!-- ══ PELANGGAN ══ -->
       <div class="page" id="p-pelanggan">
         <div class="action-bar">
-          <button class="btn primary" onclick="openModal('m-add-pelanggan')">+ Tambah Pelanggan</button>
+          <button class="btn primary" onclick="openModal('m-add-pelanggan')"><span data-i18n="+ Tambah Pelanggan">+ Tambah Pelanggan</span></button>
           <button class="btn" onclick="apiExportPelangganCSV()"><i class="ti ti-download" aria-hidden="true"></i> Export CSV</button>
           <button class="btn" onclick="bukaImportCSV()"><i class="ti ti-upload" aria-hidden="true"></i> Import CSV</button>
         </div>
@@ -760,7 +760,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 
       <!-- ══ PAKET ══ -->
       <div class="page" id="p-paket">
-        <div class="action-bar"><button class="btn primary" onclick="bukaTambahPaket()">+ Tambah Paket</button></div>
+        <div class="action-bar"><button class="btn primary" onclick="bukaTambahPaket()"><span data-i18n="+ Tambah Paket">+ Tambah Paket</span></button></div>
         <div class="card" style="padding:0;overflow:hidden">
           <table id="plan-grid">
             <thead>
@@ -786,7 +786,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
       <!-- ══ INVOICE ══ -->
       <div class="page" id="p-invoice">
         <div class="action-bar">
-          <button class="btn primary" onclick="openModal('m-add-invoice')">+ Buat Invoice</button>
+          <button class="btn primary" onclick="openModal('m-add-invoice')"><span data-i18n="+ Buat Invoice">+ Buat Invoice</span></button>
           <button class="btn" onclick="apiReminderMassal()">💬 Reminder Massal</button>
           <button class="btn" onclick="apiGenerateBulanan()">⚡ Generate Tagihan Otomatis</button>
           <button id="inv-btn-hapus-terpilih" class="btn danger" style="display:none" onclick="apiHapusInvoiceTerpilih()">
@@ -1901,7 +1901,7 @@ Selamat menikmati! 🌐</textarea>
       <!-- ══ RESELLER ══ -->
       <div class="page" id="p-reseller">
         <div class="action-bar">
-          <button class="btn primary" onclick="openModal('m-add-reseller')">+ Tambah Reseller</button>
+          <button class="btn primary" onclick="openModal('m-add-reseller')"><span data-i18n="+ Tambah Reseller">+ Tambah Reseller</span></button>
           <a href="/reseller" target="_blank"><button class="btn">🏪 Buka Portal Reseller</button></a>
         </div>
         <div class="metrics" id="rs-metrics">
@@ -3829,14 +3829,17 @@ function applyLang() {
     el.textContent = tx(el.dataset.orig);
   });
 
-  // 3. Sidebar items & sub-items
+  // 3. Sidebar items & sub-items — gunakan dataset.origN per child index
   document.querySelectorAll('.sb-item, .sb-sub-item').forEach(el => {
+    let idx = 0;
     el.childNodes.forEach(n => {
-      if (n.nodeType !== 3) return;
-      const raw = n.textContent.replace(/\s+/g,' ').trim();
-      if (!raw || raw.length < 2) return;
-      if (!n._orig) n._orig = raw;
-      n.textContent = ' ' + tx(n._orig) + ' ';
+      if (n.nodeType !== 3) { idx++; return; }
+      const key = 'origText' + idx;
+      const raw = (n.textContent.replace(/\s+/g,' ').trim());
+      if (!raw || raw.length < 2) { idx++; return; }
+      if (!el.dataset[key]) el.dataset[key] = raw;
+      n.textContent = ' ' + tx(el.dataset[key]) + ' ';
+      idx++;
     });
   });
 
@@ -3844,30 +3847,33 @@ function applyLang() {
   document.querySelectorAll('.sb-group-hdr').forEach(el => {
     const inner = el.querySelector('div');
     if (!inner) return;
+    let idx = 0;
     inner.childNodes.forEach(n => {
-      if (n.nodeType !== 3) return;
+      if (n.nodeType !== 3) { idx++; return; }
+      const key = 'origText' + idx;
       const raw = n.textContent.replace(/\s+/g,' ').trim();
-      if (!raw || raw.length < 2) return;
-      if (!n._orig) n._orig = raw;
-      n.textContent = ' ' + tx(n._orig);
+      if (!raw || raw.length < 2) { idx++; return; }
+      if (!inner.dataset[key]) inner.dataset[key] = raw;
+      n.textContent = ' ' + tx(inner.dataset[key]);
+      idx++;
     });
   });
 
   // 5. Page title
   const titleEl = document.getElementById('page-title');
   if (titleEl) {
-    if (!titleEl._orig) titleEl._orig = titleEl.textContent.trim();
-    titleEl.textContent = tx(titleEl._orig);
+    if (!titleEl.dataset.orig) titleEl.dataset.orig = titleEl.textContent.trim();
+    titleEl.textContent = tx(titleEl.dataset.orig);
   }
 
-  // 6. Label form (di luar modal — modal ditangani saat openModal)
+  // 6. Label form
   document.querySelectorAll('label').forEach(el => {
-    const text = el.childNodes[0];
-    if (!text || text.nodeType !== 3) return;
-    const raw = text.textContent.trim();
+    const tn = el.childNodes[0];
+    if (!tn || tn.nodeType !== 3) return;
+    const raw = tn.textContent.trim();
     if (!raw || raw.length < 2) return;
-    if (!text._orig) text._orig = raw;
-    text.textContent = tx(text._orig);
+    if (!el.dataset.origLabel) el.dataset.origLabel = raw;
+    tn.textContent = tx(el.dataset.origLabel);
   });
 
   // 7. Table headers
@@ -3876,7 +3882,7 @@ function applyLang() {
     el.textContent = tx(el.dataset.orig);
   });
 
-  // 8. data-i18n — SELALU gunakan key (bukan textContent) sebagai sumber
+  // 8. data-i18n — key selalu jadi sumber kebenaran (tidak pakai _orig)
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = tx(el.getAttribute('data-i18n'));
   });
@@ -3884,31 +3890,34 @@ function applyLang() {
   // 9. .lbl dan .sub
   document.querySelectorAll('.lbl, .sub').forEach(el => {
     if (el.children.length > 0) return;
-    const raw = el.textContent.trim();
-    if (!raw || raw.length < 2) return;
-    if (!el._orig) el._orig = raw;
-    el.textContent = tx(el._orig);
+    if (!el.dataset.orig) el.dataset.orig = el.textContent.trim();
+    if (!el.dataset.orig || el.dataset.orig.length < 2) return;
+    el.textContent = tx(el.dataset.orig);
   });
 
-  // 10. Card titles
+  // 10. Card titles — text node dan span langsung
   document.querySelectorAll('.card-title').forEach(el => {
+    let idx = 0;
     el.childNodes.forEach(n => {
-      if (n.nodeType !== 3) return;
+      if (n.nodeType !== 3) { idx++; return; }
+      const key = 'origCt' + idx;
       const raw = n.textContent.trim();
-      if (!raw || raw.length < 2) return;
-      if (!n._orig) n._orig = raw;
-      n.textContent = ' ' + tx(n._orig);
+      if (!raw || raw.length < 2) { idx++; return; }
+      if (!el.dataset[key]) el.dataset[key] = raw;
+      n.textContent = ' ' + tx(el.dataset[key]);
+      idx++;
     });
-    el.querySelectorAll('span').forEach(span => {
+    el.querySelectorAll('span').forEach((span, si) => {
       if (span.children.length > 0) return;
+      const key = 'origSpan' + si;
       const raw = span.textContent.trim();
       if (!raw || raw.length < 2) return;
-      if (!span._orig) span._orig = raw;
-      span.textContent = tx(span._orig);
+      if (!el.dataset[key]) el.dataset[key] = raw;
+      span.textContent = tx(el.dataset[key]);
     });
   });
 
-  // 11. Semua modal yang sedang terbuka
+  // 11. Modal yang terbuka
   document.querySelectorAll('.overlay.open').forEach(modal => {
     modal.querySelectorAll('[data-i18n]').forEach(el => {
       el.textContent = tx(el.getAttribute('data-i18n'));
@@ -3916,17 +3925,21 @@ function applyLang() {
     modal.querySelectorAll('label').forEach(el => {
       const tn = el.childNodes[0];
       if (!tn || tn.nodeType !== 3) return;
-      if (!tn._orig) tn._orig = tn.textContent.trim();
-      if (!tn._orig || tn._orig.length < 2) return;
-      tn.textContent = tx(tn._orig);
+      if (!el.dataset.origLabel) el.dataset.origLabel = tn.textContent.trim();
+      if (!el.dataset.origLabel) return;
+      tn.textContent = tx(el.dataset.origLabel);
     });
     modal.querySelectorAll('button').forEach(el => {
+      let idx = 0;
       el.childNodes.forEach(n => {
-        if (n.nodeType !== 3) return;
-        if (!n._orig) n._orig = n.textContent.trim();
-        if (!n._orig || n._orig.length < 2) return;
-        const trans = tx(n._orig);
-        if (trans !== n._orig || !isEN) n.textContent = ' ' + trans + ' ';
+        if (n.nodeType !== 3) { idx++; return; }
+        const key = 'origBtn' + idx;
+        const raw = n.textContent.trim();
+        if (!raw || raw.length < 2) { idx++; return; }
+        if (!el.dataset[key]) el.dataset[key] = raw;
+        const trans = tx(el.dataset[key]);
+        n.textContent = trans === raw ? raw : ' ' + trans + ' ';
+        idx++;
       });
     });
   });
@@ -4133,26 +4146,28 @@ function openModal(id) {
   if (_lang !== 'ID') {
     const modal = document.getElementById(id);
     if (modal) {
-      const tx = (orig) => _lang === 'EN' ? (I18N.EN[orig] || orig) : orig;
+      const tx2 = (orig) => _lang === 'EN' ? (I18N.EN[orig] || orig) : orig;
       modal.querySelectorAll('[data-i18n]').forEach(function(el) {
-        el.textContent = tx(el.getAttribute('data-i18n'));
+        el.textContent = tx2(el.getAttribute('data-i18n'));
       });
       modal.querySelectorAll('label').forEach(function(el) {
         const tn = el.childNodes[0];
         if (!tn || tn.nodeType !== 3) return;
-        const raw = tn._orig || tn.textContent.trim();
-        if (!raw || raw.length < 2) return;
-        tn._orig = raw;
-        tn.textContent = tx(raw);
+        if (!el.dataset.origLabel) el.dataset.origLabel = tn.textContent.trim();
+        if (!el.dataset.origLabel) return;
+        tn.textContent = tx2(el.dataset.origLabel);
       });
       modal.querySelectorAll('button').forEach(function(el) {
+        let idx = 0;
         el.childNodes.forEach(function(n) {
-          if (n.nodeType !== 3) return;
-          const raw = n._orig || n.textContent.trim();
-          if (!raw || raw.length < 2) return;
-          n._orig = raw;
-          const trans = tx(raw);
-          if (trans !== raw) n.textContent = ' ' + trans + ' ';
+          if (n.nodeType !== 3) { idx++; return; }
+          const key = 'origBtn' + idx;
+          const raw = n.textContent.trim();
+          if (!raw || raw.length < 2) { idx++; return; }
+          if (!el.dataset[key]) el.dataset[key] = raw;
+          const trans = tx2(el.dataset[key]);
+          n.textContent = trans === el.dataset[key] ? raw : ' ' + trans + ' ';
+          idx++;
         });
       });
     }
