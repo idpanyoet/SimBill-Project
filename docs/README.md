@@ -386,8 +386,8 @@ cd backend && npm install pdfkit qrcode
 ```
 
 Dua jalur kirim PDF ke WhatsApp (otomatis dipilih sistem):
-- **Mode QR aktif** (whatsapp-web.js tersambung): PDF dikirim langsung sebagai file lokal — tidak perlu URL publik.
-- **Mode Provider** (Fonnte/Wablas/Wanotif/WA Business): provider mengambil file dari URL publik, jadi **`app_url` di Setting wajib diisi alamat server yang bisa diakses dari internet** (bukan `localhost`). File PDF disimpan di `frontend/uploads/invoice/` dengan nama acak dan otomatis dibersihkan tiap minggu (>7 hari).
+- **Mode QR aktif** (whatsapp-web.js tersambung): PDF dikirim langsung sebagai **lampiran file** — tidak perlu URL publik.
+- **Mode Provider** (Fonnte/Wablas/Wanotif/WA Business): dikirim sebagai **teks + link unduh PDF**, karena banyak paket provider (mis. Fonnte basic) tidak mengizinkan lampiran file. Pelanggan klik link untuk membuka PDF. Karena itu **`app_url` di Setting wajib diisi alamat server publik** (mis. `https://billing.domain.id`), bukan `localhost`. File PDF disimpan di `frontend/uploads/invoice/` dengan nama acak dan otomatis dibersihkan tiap minggu (>7 hari).
 
 
 

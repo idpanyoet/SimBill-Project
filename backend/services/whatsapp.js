@@ -1,7 +1,5 @@
 // services/whatsapp.js — WhatsApp Gateway (Fonnte / Wablas / WA Business / WaNotif)
 const axios = require('axios');
-const fs    = require('fs');
-const FormData = require('form-data');
 const { query, queryOne } = require('../config/db');
 
 // ============================================================
@@ -292,66 +290,16 @@ async function kirimDokumen(no_hp, {
         }
     } catch (e) { /* modul QR tidak tersedia — lanjut ke provider */ }
 
-    // 2) Mode provider — wajib URL publik
-    const cfg = await getConfig();
-    if (!cfg.token)
-        return { sukses: false, error: 'Token WhatsApp Gateway belum dikonfigurasi.' };
+    // 2) Mode provider — banyak paket provider (mis. Fonnte basic) tidak bisa
+    //    melampirkan file. Sesuai konfigurasi: kirim sebagai TEKS + link unduh PDF.
+    //    File PDF di /uploads sudah dapat diakses publik, jadi pelanggan tinggal klik.
+    //    (Provider yang mendukung lampiran — WA Business/Wablas — bisa diubah ke
+    //     pengiriman dokumen asli bila diperlukan, tapi default ini paling kompatibel.)
     if (!url)
-        return { sukses: false, error: 'URL dokumen publik tidak tersedia. Set app_url ke alamat server publik, atau aktifkan mode WhatsApp QR.' };
+        return { sukses: false, error: 'URL PDF publik tidak tersedia. Set app_url ke alamat server publik, atau aktifkan mode WhatsApp QR untuk lampiran file.' };
 
-    const logResult = await query(
-        `INSERT INTO wa_log (pelanggan_id, no_tujuan, pesan, tipe, invoice_id, status)
-         VALUES (?, ?, ?, ?, ?, 'pending')`,
-        [pelanggan_id, no_hp, caption || `[Dokumen] ${filename}`, tipe, invoice_id]
-    );
-    const logId = logResult.insertId;
-
-    try {
-        let response;
-        if (cfg.provider === 'fonnte') {
-            // Kirim byte file langsung via multipart (lebih andal — Fonnte tidak perlu
-            // mem-fetch URL dari server kita, jadi tak bergantung /uploads bisa diakses publik).
-            if (filePath && fs.existsSync(filePath)) {
-                const form = new FormData();
-                form.append('target', String(no_hp));
-                form.append('message', caption || '');
-                form.append('file', fs.createReadStream(filePath), { filename });
-                response = await axios.post('https://api.fonnte.com/send', form, {
-                    headers: { Authorization: cfg.token, ...form.getHeaders() },
-                    maxContentLength: Infinity, maxBodyLength: Infinity
-                });
-            } else {
-                response = await axios.post('https://api.fonnte.com/send',
-                    { target: no_hp, message: caption, url },
-                    { headers: { Authorization: cfg.token } });
-            }
-        } else if (cfg.provider === 'wablas') {
-            response = await axios.post('https://solo.wablas.com/api/send-document',
-                { phone: no_hp, document: url, caption },
-                { headers: { Authorization: cfg.token } });
-        } else if (cfg.provider === 'wanotif') {
-            response = await axios.post('https://app.wanotif.id/api/v1/send',
-                { number: no_hp, message: caption, file: url },
-                { headers: { Authorization: `Bearer ${cfg.token}` } });
-        } else if (cfg.provider === 'wa_business') {
-            response = await axios.post(
-                `https://graph.facebook.com/v18.0/${cfg.phoneId}/messages`,
-                { messaging_product: 'whatsapp', to: no_hp, type: 'document',
-                  document: { link: url, filename, caption } },
-                { headers: { Authorization: `Bearer ${cfg.token}` } });
-        } else {
-            throw new Error(`Provider "${cfg.provider}" tidak dikenali`);
-        }
-
-        await query(`UPDATE wa_log SET status='sent', response=?, sent_at=NOW() WHERE id=?`,
-            [JSON.stringify(response?.data), logId]);
-        return { sukses: true };
-    } catch (err) {
-        const errMsg = err.response?.data ? JSON.stringify(err.response.data) : err.message;
-        await query(`UPDATE wa_log SET status='failed', response=? WHERE id=?`, [errMsg, logId]);
-        console.error(`[WA] Gagal kirim dokumen ke ${no_hp}:`, errMsg);
-        return { sukses: false, error: errMsg };
-    }
+    const pesanLink = (caption ? caption + '\n\n' : '') + '📄 Invoice (PDF): ' + url;
+    return await kirimPesan(no_hp, pesanLink, pelanggan_id, tipe, invoice_id);
 }
 
 module.exports = {
