@@ -87,6 +87,11 @@ async function jalankanMigration() {
             nama: 'table.client_otp'
         },
         {
+            cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='wa_log' AND COLUMN_NAME='tipe' AND COLUMN_TYPE LIKE '%invoice_pdf%'`,
+            sql:  `ALTER TABLE wa_log MODIFY COLUMN tipe ENUM('reminder','suspend','konfirmasi_bayar','otp','manual','broadcast','daftar','voucher','invoice_pdf','dokumen') NOT NULL`,
+            nama: 'wa_log.tipe (+invoice_pdf,dokumen,daftar,voucher)'
+        },
+        {
             cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='client_otp' AND COLUMN_NAME='attempts'`,
             sql:  `ALTER TABLE client_otp ADD COLUMN attempts INT NOT NULL DEFAULT 0 AFTER otp`,
             nama: 'client_otp.attempts'
