@@ -472,18 +472,10 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-item" onclick="goto('peta',this)"><i class="ti ti-map-pin icon" aria-hidden="true"></i> Peta Jaringan</div>
 
     <!-- Laporan Group -->
-    <div class="sb-group-hdr" id="sb-finance-hdr" onclick="sbToggleGroup('finance')">
-      <div style="display:flex;align-items:center;gap:9px">
-        <i class="ti ti-report-analytics icon" aria-hidden="true"></i>
-        <span>Laporan</span>
-      </div>
-      <i class="ti ti-chevron-down sb-group-arrow" id="sb-finance-arrow" aria-hidden="true"></i>
-    </div>
-    <div class="sb-group-body" id="sb-finance-body">
-      <div class="sb-sub-item" onclick="goto('laporan',this)"><span class="sb-sub-dot"></span> Ringkasan</div>
-      <div class="sb-sub-item" onclick="goto('income-report',this)"><span class="sb-sub-dot"></span> Period Income</div>
-      <div class="sb-sub-item" onclick="goto('net-profit',this)"><span class="sb-sub-dot"></span> Net Profit</div>
-    </div>
+    <div class="sb-section">Laporan</div>
+    <div class="sb-item" onclick="goto('laporan',this)"><i class="ti ti-chart-bar icon" aria-hidden="true"></i> Ringkasan</div>
+    <div class="sb-item" onclick="goto('income-report',this)"><i class="ti ti-report-money icon" aria-hidden="true"></i> Period Income</div>
+    <div class="sb-item" onclick="goto('net-profit',this)"><i class="ti ti-trending-up icon" aria-hidden="true"></i> Net Profit</div>
 
     <div class="sb-section">Lainnya</div>
     <div class="sb-item" onclick="goto('voucher-template',this)"><i class="ti ti-palette icon" aria-hidden="true"></i> Template Voucher</div>
@@ -3441,17 +3433,7 @@ function sbToggleGroup(name) {
 }
 
 function sbRestoreGroups() {
-  ['finance'].forEach(function(name) {
-    const saved = localStorage.getItem('sb_group_' + name);
-    // Default: open jika belum pernah diset
-    const shouldOpen = saved === null ? true : saved === '1';
-    const hdr  = document.getElementById('sb-' + name + '-hdr');
-    const body = document.getElementById('sb-' + name + '-body');
-    if (hdr && body && shouldOpen) {
-      body.classList.add('open');
-      hdr.classList.add('open');
-    }
-  });
+  // Tidak ada collapsible group saat ini
 }
 
 function goto(id, el) {
