@@ -6218,12 +6218,22 @@ function renderTblPelanggan(rows) {
       <td>${fmtDate(p.tgl_expired)}</td>
       <td><span class="tag ${p.status}">${p.status==='aktif'?'Aktif':p.status==='suspended'?'Suspended':'Nonaktif'}</span></td>
       <td style="white-space:nowrap">
-        <button class="btn sm" title="Kirim WA" onclick="apiKirimWAPelanggan(${p.id},'${p.nama}')">💬</button>
-        <button class="btn sm" title="Edit pelanggan" onclick="bukaModalEdit(${p.id})">✏️ Edit</button>
+        <button class="btn sm" title="Kirim WA" onclick="apiKirimWAPelanggan(${p.id},'${p.nama}')" style="padding:5px 8px;background:rgba(22,163,74,.1);border-color:rgba(22,163,74,.3);color:#16a34a">
+          <i class="ti ti-brand-whatsapp" style="font-size:13px" aria-hidden="true"></i>
+        </button>
+        <button class="btn sm" title="Edit pelanggan" onclick="bukaModalEdit(${p.id})" style="padding:5px 10px;gap:4px">
+          <i class="ti ti-edit" style="font-size:13px" aria-hidden="true"></i> Edit
+        </button>
         ${p.status==='aktif'
-          ? `<button class="btn sm danger" title="Suspend" onclick="apiSuspend(${p.id},'${p.nama}')">⏸</button>`
-          : `<button class="btn sm success" title="Aktifkan" onclick="apiAktifkan(${p.id},'${p.nama}')">▶</button>`}
-        <button class="btn sm danger" title="Hapus pelanggan" onclick="apiHapusPelanggan(${p.id},'${p.nama}')">🗑</button>
+          ? `<button class="btn sm" title="Suspend" onclick="apiSuspend(${p.id},'${p.nama}')" style="padding:5px 8px;background:rgba(217,119,6,.1);border-color:rgba(217,119,6,.3);color:#d97706">
+              <i class="ti ti-player-pause" style="font-size:13px" aria-hidden="true"></i>
+            </button>`
+          : `<button class="btn sm" title="Aktifkan" onclick="apiAktifkan(${p.id},'${p.nama}')" style="padding:5px 8px;background:rgba(37,99,235,.1);border-color:rgba(37,99,235,.3);color:#2563eb">
+              <i class="ti ti-player-play" style="font-size:13px" aria-hidden="true"></i>
+            </button>`}
+        <button class="btn sm danger" title="Hapus pelanggan" onclick="apiHapusPelanggan(${p.id},'${p.nama}')" style="padding:5px 8px">
+          <i class="ti ti-trash" style="font-size:13px" aria-hidden="true"></i>
+        </button>
       </td>
     </tr>`).join('');
 }
