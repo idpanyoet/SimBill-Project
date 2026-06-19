@@ -53,9 +53,9 @@ router.post('/otp/kirim', async (req, res, next) => {
 
         // Simpan OTP
         await query(`
-            INSERT INTO client_otp (no_hp, otp, expired_at)
-            VALUES (?, ?, ?)
-            ON DUPLICATE KEY UPDATE otp=?, expired_at=?, created_at=NOW()
+            INSERT INTO client_otp (no_hp, otp, expired_at, attempts)
+            VALUES (?, ?, ?, 0)
+            ON DUPLICATE KEY UPDATE otp=?, expired_at=?, created_at=NOW(), attempts=0
         `, [noHpNormal, otp, expired, otp, expired]);
 
         // Kirim via WhatsApp
@@ -71,12 +71,31 @@ router.post('/otp/verifikasi', async (req, res, next) => {
     try {
         const { no_hp, otp } = req.body;
         const noHpNormal = no_hp.replace(/\D/g,'').replace(/^0/,'62');
+        const MAKS_PERCOBAAN = 5;
 
+        // Ambil baris OTP berdasarkan nomor saja (bukan nomor+otp), supaya bisa
+        // menghitung percobaan gagal dan mengunci brute-force.
         const record = await queryOne(
-            `SELECT * FROM client_otp WHERE no_hp=? AND otp=? AND expired_at > NOW()`,
-            [noHpNormal, otp]
+            `SELECT * FROM client_otp WHERE no_hp=? AND expired_at > NOW()`,
+            [noHpNormal]
         );
-        if (!record) return res.status(400).json({ error: 'OTP salah atau sudah kadaluarsa' });
+        if (!record)
+            return res.status(400).json({ error: 'OTP salah atau sudah kadaluarsa' });
+
+        if (record.attempts >= MAKS_PERCOBAAN) {
+            await query('DELETE FROM client_otp WHERE no_hp=?', [noHpNormal]);
+            return res.status(429).json({ error: 'Terlalu banyak percobaan. Minta OTP baru.' });
+        }
+
+        if (String(record.otp) !== String(otp)) {
+            await query('UPDATE client_otp SET attempts = attempts + 1 WHERE no_hp=?', [noHpNormal]);
+            const sisa = MAKS_PERCOBAAN - (record.attempts + 1);
+            return res.status(400).json({
+                error: sisa > 0
+                    ? `OTP salah. Sisa percobaan: ${sisa}.`
+                    : 'OTP salah. Percobaan habis, minta OTP baru.'
+            });
+        }
 
         const pel = await queryOne(
             `SELECT id, nama, username, no_hp, email, alamat, tipe_koneksi, status, paket_id FROM pelanggan

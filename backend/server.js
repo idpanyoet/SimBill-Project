@@ -83,8 +83,13 @@ async function jalankanMigration() {
         },
         {
             cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='client_otp'`,
-            sql:  `CREATE TABLE IF NOT EXISTS client_otp (no_hp VARCHAR(20) PRIMARY KEY, otp VARCHAR(6) NOT NULL, expired_at DATETIME NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB`,
+            sql:  `CREATE TABLE IF NOT EXISTS client_otp (no_hp VARCHAR(20) PRIMARY KEY, otp VARCHAR(6) NOT NULL, attempts INT NOT NULL DEFAULT 0, expired_at DATETIME NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB`,
             nama: 'table.client_otp'
+        },
+        {
+            cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='client_otp' AND COLUMN_NAME='attempts'`,
+            sql:  `ALTER TABLE client_otp ADD COLUMN attempts INT NOT NULL DEFAULT 0 AFTER otp`,
+            nama: 'client_otp.attempts'
         },
         {
             cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='tiket'`,
@@ -217,6 +222,13 @@ app.use('/api/auth/', rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 50,
     message: { error: 'Terlalu banyak percobaan login.' }
+}));
+// Limiter ketat untuk OTP client (kirim & verifikasi) — anti spam & brute-force.
+app.use('/api/client/otp/', rateLimit({
+    validate: {xForwardedForHeader: false},
+    windowMs: 10 * 60 * 1000,
+    max: 12,
+    message: { error: 'Terlalu banyak permintaan OTP, coba lagi beberapa menit.' }
 }));
 
 // --- Halaman publik ---

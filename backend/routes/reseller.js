@@ -17,12 +17,13 @@ async function hitungHarga(resellerId, paketId, hargaNormal, db = { query, query
         'SELECT harga_reseller FROM reseller_harga WHERE reseller_id=? AND paket_id=?',
         [resellerId, paketId]
     );
-    if (khusus) return parseFloat(khusus.harga_reseller);
+    if (khusus) return Math.max(0, parseFloat(khusus.harga_reseller) || 0);
 
     // Pakai komisi persen dari profil reseller
     const r = await db.queryOne('SELECT komisi_persen FROM reseller WHERE id=?', [resellerId]);
     const diskon = parseFloat(r?.komisi_persen || 0);
-    return Math.round(hargaNormal * (1 - diskon / 100));
+    // Clamp: harga tidak boleh negatif walau komisi >100% (mencegah saldo malah bertambah saat beli)
+    return Math.max(0, Math.round(hargaNormal * (1 - diskon / 100)));
 }
 
 // ── Helper catat mutasi saldo. WAJIB dipanggil dengan db handle dari withTransaction
@@ -248,10 +249,13 @@ router.post('/beli/voucher', resellerAuth, async (req, res, next) => {
             const kodes = [];
             for (let i = 0; i < jumlah; i++) {
                 const kode = genKode();
+                // Skema voucher baru memakai username+password (mode username=password),
+                // bukan kolom `kode` yang sudah dihapus. Tanpa ini INSERT gagal & seluruh
+                // transaksi rollback (saldo tidak terpotong, voucher tidak terbuat).
                 await db.query(`
-                    INSERT INTO voucher (kode, paket_id, status, tgl_expired)
-                    VALUES (?,?,'unused', DATE_ADD(NOW(), INTERVAL 365 DAY))
-                `, [kode, paket_id]);
+                    INSERT INTO voucher (username, password, paket_id, status, tgl_expired)
+                    VALUES (?,?,?,'unused', DATE_ADD(NOW(), INTERVAL 365 DAY))
+                `, [kode, kode, paket_id]);
                 kodes.push(kode);
             }
 
@@ -264,6 +268,13 @@ router.post('/beli/voucher', resellerAuth, async (req, res, next) => {
 
             return { kodes, hargaReseller, totalBayar, saldoSisa };
         });
+
+        // Daftarkan voucher ke radcheck SETELAH transaksi commit, supaya
+        // FreeRADIUS bisa mengautentikasi voucher saat dipakai login hotspot.
+        for (const kode of hasil.kodes) {
+            radiusService.syncVoucher(kode).catch(err =>
+                console.warn(`[RESELLER] Sync radcheck voucher ${kode} gagal:`, err.message));
+        }
 
         // Kirim via WA jika hanya 1 voucher (di luar transaksi — gagal kirim WA tidak boleh rollback pembelian)
         if (jumlah === 1) {
@@ -444,7 +455,7 @@ router.get('/admin/list', authMiddleware, async (req, res, next) => {
 });
 
 // POST /reseller/admin/approve/:id
-router.post('/admin/approve/:id', authMiddleware, async (req, res, next) => {
+router.post('/admin/approve/:id', authMiddleware, requireAdmin, async (req, res, next) => {
     try {
         await query("UPDATE reseller SET status='aktif' WHERE id=?", [req.params.id]);
         const r = await queryOne('SELECT nama, no_hp FROM reseller WHERE id=?', [req.params.id]);
@@ -457,7 +468,7 @@ router.post('/admin/approve/:id', authMiddleware, async (req, res, next) => {
 });
 
 // PUT /reseller/admin/:id
-router.put('/admin/:id', authMiddleware, async (req, res, next) => {
+router.put('/admin/:id', authMiddleware, requireAdmin, async (req, res, next) => {
     try {
         const { komisi_persen, level, status, saldo_tambah, keterangan_koreksi } = req.body;
 
@@ -485,7 +496,7 @@ router.put('/admin/:id', authMiddleware, async (req, res, next) => {
 });
 
 // POST /reseller/admin/topup-konfirmasi/:order_id (konfirmasi topup manual)
-router.post('/admin/topup-konfirmasi/:order_id', authMiddleware, async (req, res, next) => {
+router.post('/admin/topup-konfirmasi/:order_id', authMiddleware, requireAdmin, async (req, res, next) => {
     try {
         const hasil = await withTransaction(async (db) => {
             // Lock baris topup agar tidak diproses dua kali bersamaan
@@ -577,7 +588,7 @@ async function prosesTopupWebhook(order_id, payment_type) {
 }
 
 // DELETE /reseller/admin/topup/:order_id — hapus topup pending
-router.delete('/admin/topup/:order_id', authMiddleware, async (req, res, next) => {
+router.delete('/admin/topup/:order_id', authMiddleware, requireAdmin, async (req, res, next) => {
     try {
         const t = await queryOne(
             'SELECT * FROM reseller_topup WHERE order_id=?',
@@ -613,7 +624,7 @@ router.get('/admin/:id/izin-paket', authMiddleware, async (req, res, next) => {
 });
 
 // ── PUT /api/reseller/admin/:id/izin-paket ───────────────────
-router.put('/admin/:id/izin-paket', authMiddleware, async (req, res, next) => {
+router.put('/admin/:id/izin-paket', authMiddleware, requireAdmin, async (req, res, next) => {
     try {
         await query(`CREATE TABLE IF NOT EXISTS reseller_izin_paket (
             id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
