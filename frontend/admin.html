@@ -1874,6 +1874,26 @@ Selamat menikmati! 🌐</textarea>
             </div>
             <div class="fg"><label>No. WA Kontak Bantuan</label><input id="s-wa_number" placeholder="6282273309190"><small style="font-size:11px;color:var(--text3)">Tampil di halaman storefront voucher</small></div>
             <div class="fg"><label>Alamat Usaha</label><input id="s-alamat" placeholder="Alamat lengkap usaha Anda"><small style="font-size:11px;color:var(--text3)">Tampil di halaman storefront voucher</small></div>
+
+            <!-- Upload Logo -->
+            <div class="fg">
+              <label>URL Logo <span class="td-text-sub" style="font-size:10px;font-weight:400">(opsional)</span></label>
+              <input id="s-app_logo" placeholder="/uploads/logo.png atau https://...">
+            </div>
+            <div class="fg">
+              <label>Upload Logo</label>
+              <input type="file" id="s-logo-file" accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                style="padding:6px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;width:100%;cursor:pointer"
+                onchange="logoPreview(this)">
+            </div>
+            <div class="fg" id="s-logo-preview-wrap" style="display:none">
+              <label>Preview</label>
+              <div style="padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg3);display:inline-flex;align-items:center;gap:10px">
+                <img id="s-logo-preview" src="" alt="preview" style="height:40px;max-width:160px;object-fit:contain;border-radius:4px">
+                <button class="btn sm danger" onclick="logoClear()">✕ Hapus</button>
+              </div>
+            </div>
+
             <button class="btn primary" onclick="apiSimpanSetting()">💾 Simpan Setting</button>
           </div>
           <div class="card">
@@ -7540,9 +7560,45 @@ async function loadSetting() {
       const el = document.getElementById('s-'+s.kunci);
       if (el) el.value = s.nilai||'';
     });
+    // Tampilkan preview logo jika ada
+    const logoRow = rows.find(s => s.kunci === 'app_logo');
+    if (logoRow && logoRow.nilai) {
+      const img  = document.getElementById('s-logo-preview');
+      const wrap = document.getElementById('s-logo-preview-wrap');
+      if (img)  img.src = logoRow.nilai;
+      if (wrap) wrap.style.display = '';
+    }
   } catch(e) { console.warn('Setting API:', e.message); }
   loadSysInfo();
 }
+
+// ── LOGO HELPERS ──────────────────────────────────────────────
+function logoPreview(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img  = document.getElementById('s-logo-preview');
+    const wrap = document.getElementById('s-logo-preview-wrap');
+    const urlEl = document.getElementById('s-app_logo');
+    if (img)  { img.src = e.target.result; }
+    if (wrap) wrap.style.display = '';
+    if (urlEl) urlEl.value = ''; // akan diupdate setelah simpan
+  };
+  reader.readAsDataURL(file);
+}
+
+function logoClear() {
+  const input = document.getElementById('s-logo-file');
+  const img   = document.getElementById('s-logo-preview');
+  const wrap  = document.getElementById('s-logo-preview-wrap');
+  const urlEl = document.getElementById('s-app_logo');
+  if (input) input.value = '';
+  if (img)   img.src = '';
+  if (wrap)  wrap.style.display = 'none';
+  if (urlEl) urlEl.value = '';
+}
+// ── END LOGO HELPERS ──────────────────────────────────────────
 
 async function loadSysInfo() {
   try {
@@ -7568,13 +7624,33 @@ async function loadSysInfo() {
 }
 
 async function apiSimpanSetting() {
-  const keys = ['app_name','app_url','invoice_prefix','reminder_h','suspend_h','pajak_persen','wa_number','alamat'];
+  const keys = ['app_name','app_url','invoice_prefix','reminder_h','suspend_h','pajak_persen','wa_number','alamat','app_logo'];
   const body = {};
   keys.forEach(k => {
     const el = document.getElementById('s-'+k);
     if (el && el.value !== '') body[k] = el.value;
   });
   try {
+    // Upload logo dulu jika ada file dipilih
+    const fileInput = document.getElementById('s-logo-file');
+    if (fileInput && fileInput.files[0]) {
+      const file = fileInput.files[0];
+      const ext  = file.name.split('.').pop().toLowerCase();
+      const b64  = await new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload  = () => resolve(r.result);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+      toast('⏳ Mengupload logo...');
+      const up = await apiFetch('/api/setting/upload-logo', {
+        method:'POST', body: JSON.stringify({ data: b64, ext })
+      });
+      body.app_logo = up.url;
+      const urlEl = document.getElementById('s-app_logo');
+      if (urlEl) urlEl.value = up.url;
+      fileInput.value = '';
+    }
     await apiFetch('/api/setting', {method:'PUT', body:JSON.stringify(body)});
     toast('✅ Setting disimpan');
   } catch(e) { toast('❌ '+e.message, true); }

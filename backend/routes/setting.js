@@ -47,4 +47,34 @@ router.put('/', requireAdmin, async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// POST /api/setting/upload-logo — upload logo via base64
+router.post('/upload-logo', requireAdmin, async (req, res, next) => {
+    try {
+        const { data, ext = 'png' } = req.body;
+        if (!data) return res.status(400).json({ error: 'Data gambar tidak boleh kosong' });
+
+        const fs   = require('fs');
+        const path = require('path');
+
+        // Hapus logo lama
+        const uploadDir = path.join(__dirname, '../../frontend/uploads');
+        if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+        fs.readdirSync(uploadDir)
+            .filter(f => f.startsWith('logo_'))
+            .forEach(f => fs.unlinkSync(path.join(uploadDir, f)));
+
+        // Simpan logo baru
+        const base64 = data.replace(/^data:image\/\w+;base64,/, '');
+        const filename = `logo_${Date.now()}.${ext}`;
+        fs.writeFileSync(path.join(uploadDir, filename), Buffer.from(base64, 'base64'));
+
+        const url = `/uploads/${filename}`;
+        // Simpan URL ke tabel setting
+        await query(`INSERT INTO setting (kunci, nilai, deskripsi) VALUES ('app_logo', ?, 'URL logo aplikasi')
+            ON DUPLICATE KEY UPDATE nilai = ?`, [url, url]);
+
+        res.json({ url });
+    } catch(e) { next(e); }
+});
+
 module.exports = router;
