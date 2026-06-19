@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SimBill — Admin Panel</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
@@ -469,6 +470,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-section">Sistem</div>
     <div class="sb-item" onclick="goto('radius',this)"><i class="ti ti-server icon" aria-hidden="true"></i> RADIUS / NAS</div>
     <div class="sb-item" onclick="goto('sesi',this)"><i class="ti ti-activity icon" aria-hidden="true"></i> Sesi Aktif</div>
+    <div class="sb-item" onclick="goto('peta',this)"><i class="ti ti-map-pin icon" aria-hidden="true"></i> Peta Jaringan</div>
 
     <!-- Laporan Group -->
     <div class="sb-group-hdr" id="sb-finance-hdr" onclick="sbToggleGroup('finance')">
@@ -1213,6 +1215,44 @@ Selamat menikmati! 🌐</textarea>
         </div>
       </div>
 
+      <!-- ══ PETA JARINGAN ══ -->
+      <div class="page" id="p-peta">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+          <div>
+            <h2 style="font-size:18px;font-weight:700;color:#2563eb">Peta Jaringan</h2>
+            <div class="td-text-sub" style="font-size:12px;margin-top:4px">Pantau sebaran pelanggan dan node jaringan dalam satu peta.</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn" id="peta-mode-geser" onclick="petaToggleGeser()">
+              <i class="ti ti-lock" aria-hidden="true"></i> Mode Geser: OFF
+            </button>
+            <button class="btn" onclick="loadPeta()">
+              <i class="ti ti-refresh" aria-hidden="true"></i> Muat Ulang
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="card" style="padding:12px 16px;margin-bottom:12px">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <div style="position:relative;flex:1;min-width:180px">
+              <i class="ti ti-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px" aria-hidden="true"></i>
+              <input id="peta-search" placeholder="Cari node..." oninput="petaFilter()" style="width:100%;padding:7px 10px 7px 30px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+            </div>
+            <select id="peta-filter-odc" onchange="petaFilter()" style="padding:7px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+              <option value="">Semua ODC</option>
+            </select>
+            <select id="peta-filter-odp" onchange="petaFilter()" style="padding:7px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+              <option value="">Semua ODP</option>
+            </select>
+            <div id="peta-count" class="td-text-sub" style="font-size:12px;white-space:nowrap">— titik</div>
+          </div>
+        </div>
+
+        <!-- Peta -->
+        <div id="peta-map" style="height:580px;border-radius:12px;border:1px solid var(--border);z-index:1"></div>
+      </div>
+
       <!-- ══ LAPORAN ══ -->
       <div class="page" id="p-laporan">
         <div class="metrics">
@@ -1890,6 +1930,26 @@ Selamat menikmati! 🌐</textarea>
       </div>
 
       <div class="fg"><label>Alamat</label><input id="f-alamat" placeholder="Alamat lengkap (opsional)"></div>
+
+      <!-- Koordinat & Peta -->
+      <div class="nas-snmp-box">
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+          <i class="ti ti-map-pin" style="font-size:13px;color:#BA7517" aria-hidden="true"></i>
+          Lokasi & Jaringan
+          <span style="background:#f3e8ff;color:#7c3aed;font-size:9px;font-weight:600;padding:1px 7px;border-radius:99px">Opsional</span>
+        </div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:8px">Klik pada peta untuk mengisi latitude dan longitude secara otomatis.</div>
+        <div id="f-map" style="height:220px;border-radius:8px;border:1px solid var(--border);margin-bottom:10px;z-index:1"></div>
+        <div class="fg-row">
+          <div class="fg"><label>Latitude</label><input id="f-latitude" type="number" step="any" placeholder="cth: 1.1234567" oninput="petaMovePin('add')"></div>
+          <div class="fg"><label>Longitude</label><input id="f-longitude" type="number" step="any" placeholder="cth: 104.0123456" oninput="petaMovePin('add')"></div>
+        </div>
+        <div class="fg-row">
+          <div class="fg"><label>ODC (Opsional)</label><input id="f-odc" placeholder="cth: ODC-A01"></div>
+          <div class="fg"><label>ODP (Opsional)</label><input id="f-odp" placeholder="cth: ODP-A01-01"></div>
+        </div>
+      </div>
+
       <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)">
         <input type="checkbox" id="f-kirim-wa" checked style="width:15px;height:15px;accent-color:#BA7517;cursor:pointer">
         <label for="f-kirim-wa">Buat invoice & kirim notifikasi WA otomatis setelah simpan</label>
@@ -3745,6 +3805,13 @@ function openModal(id) {
   if (id === 'm-add-pelanggan' || id === 'm-add-invoice' || id === 'm-gen-voucher') {
     populateDropdowns();
   }
+  if (id === 'm-add-pelanggan') {
+    // Reset koordinat & init mini map
+    ['f-latitude','f-longitude','f-odc','f-odp'].forEach(function(k) {
+      const el = document.getElementById(k); if (el) el.value = '';
+    });
+    initMiniMap('add');
+  }
   if (id === 'm-add-invoice') {
     // Reset form
     document.getElementById('fi-pel').value = '';
@@ -3860,6 +3927,7 @@ const titles = {
   'income-report':'Period Income Report',
   'net-profit':'Net Profit',
   'sesi':'Sesi Aktif',
+  'peta':'Peta Jaringan',
   'voucher-template':'Template Voucher', setting:'Setting Sistem'
 };
 const loaders = {
@@ -3869,6 +3937,7 @@ const loaders = {
   payment: loadPayment, radius: loadRadius,
   laporan: loadLaporan, 'income-report': loadIncomeReport, 'net-profit': loadNetProfit, reseller: loadReseller,
   sesi: loadSesi,
+  peta: loadPeta,
   acs: loadACS, 'voucher-template': loadVoucherTemplate,
   setting: loadSetting,
   backup:  loadBackup
@@ -4439,6 +4508,44 @@ async function apiImportCSV() {
 }
 // ── END EXPORT / IMPORT CSV ───────────────────────────────────
 
+// ── MINI MAP MODAL PELANGGAN ─────────────────────────────────
+let _fMap = null, _fMarker = null;
+
+function initMiniMap(prefix) {
+  const elId = prefix === 'add' ? 'f-map' : 'ep-map';
+  if (!document.getElementById(elId)) return;
+  setTimeout(function() {
+    if (prefix === 'add') {
+      if (_fMap) { _fMap.remove(); _fMap = null; _fMarker = null; }
+      _fMap = L.map(elId, { scrollWheelZoom: false }).setView([1.0857, 104.0305], 12);
+    }
+    const map = _fMap;
+    if (!map) return;
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors', maxZoom: 19
+    }).addTo(map);
+    map.on('click', function(e) {
+      const lat = e.latlng.lat.toFixed(7);
+      const lng = e.latlng.lng.toFixed(7);
+      document.getElementById(prefix === 'add' ? 'f-latitude' : 'ep-latitude').value = lat;
+      document.getElementById(prefix === 'add' ? 'f-longitude' : 'ep-longitude').value = lng;
+      petaMovePin(prefix, lat, lng);
+    });
+  }, 100);
+}
+
+function petaMovePin(prefix, lat, lng) {
+  const map    = _fMap;
+  if (!map) return;
+  const latVal = lat || parseFloat(document.getElementById(prefix === 'add' ? 'f-latitude' : 'ep-latitude')?.value);
+  const lngVal = lng || parseFloat(document.getElementById(prefix === 'add' ? 'f-longitude' : 'ep-longitude')?.value);
+  if (!latVal || !lngVal || isNaN(latVal) || isNaN(lngVal)) return;
+  if (_fMarker) map.removeLayer(_fMarker);
+  _fMarker = L.marker([latVal, lngVal]).addTo(map);
+  map.setView([latVal, lngVal], 16);
+}
+// ── END MINI MAP ─────────────────────────────────────────────
+
 async function loadPelanggan() {
   try {
     const data = await apiFetch('/api/pelanggan?limit=50');
@@ -4648,22 +4755,31 @@ async function apiHapusPelanggan(id, nama) {
 }
 
 async function apiSimpanPelanggan() {
-  const nama     = document.getElementById('f-nama').value.trim();
-  const username = document.getElementById('f-username').value.trim();
-  const password = document.getElementById('f-password').value;
-  const no_hp    = document.getElementById('f-nohp').value.trim();
-  const paket_id = document.getElementById('f-paket').value;
-  const tipe     = document.getElementById('f-tipe').value;
-  const alamat   = document.getElementById('f-alamat').value.trim();
+  const nama      = document.getElementById('f-nama').value.trim();
+  const username  = document.getElementById('f-username').value.trim();
+  const password  = document.getElementById('f-password').value;
+  const no_hp     = document.getElementById('f-nohp').value.trim();
+  const paket_id  = document.getElementById('f-paket').value;
+  const tipe      = document.getElementById('f-tipe').value;
+  const alamat    = document.getElementById('f-alamat').value.trim();
+  const latitude  = document.getElementById('f-latitude')?.value || '';
+  const longitude = document.getElementById('f-longitude')?.value || '';
+  const odc       = document.getElementById('f-odc')?.value.trim() || '';
+  const odp       = document.getElementById('f-odp')?.value.trim() || '';
   if (!nama||!username||!password||!no_hp||!paket_id)
     return toast('❌ Semua field wajib diisi', true);
   try {
     await apiFetch('/api/pelanggan', { method:'POST',
-      body: JSON.stringify({nama,username,password,no_hp,paket_id:parseInt(paket_id),tipe_koneksi:tipe,alamat})
+      body: JSON.stringify({nama, username, password, no_hp,
+        paket_id: parseInt(paket_id), tipe_koneksi: tipe, alamat,
+        latitude: latitude ? parseFloat(latitude) : null,
+        longitude: longitude ? parseFloat(longitude) : null,
+        odc: odc || null, odp: odp || null
+      })
     });
     toast('✅ Pelanggan ditambahkan & RADIUS aktif');
     closeModal('m-add-pelanggan');
-    ['f-nama','f-username','f-password','f-nohp','f-alamat'].forEach(id=>{
+    ['f-nama','f-username','f-password','f-nohp','f-alamat','f-latitude','f-longitude','f-odc','f-odp'].forEach(id=>{
       const el = document.getElementById(id); if (el) el.value = '';
     });
     loadPelanggan();
@@ -7359,6 +7475,106 @@ async function irExportExcel() {
 // ══════════════════════════════════════════════════
 
 // ══════════════════════════════════════════════════
+// PETA JARINGAN
+// ══════════════════════════════════════════════════
+let _petaMap       = null;
+let _petaMarkers   = [];
+let _petaData      = [];
+let _petaGeserMode = false;
+
+function loadPeta() {
+  // Init peta Leaflet saat pertama
+  if (!_petaMap) {
+    _petaMap = L.map('peta-map', { scrollWheelZoom: false }).setView([0.7893, 113.9213], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://leaflet.js.com">Leaflet</a> | © OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(_petaMap);
+  }
+  apiFetch('/api/pelanggan/peta').then(function(rows) {
+    _petaData = rows;
+    // Populate filter ODC & ODP
+    const odcSet = [...new Set(rows.map(r=>r.odc).filter(Boolean))].sort();
+    const odpSet = [...new Set(rows.map(r=>r.odp).filter(Boolean))].sort();
+    const selOdc = document.getElementById('peta-filter-odc');
+    const selOdp = document.getElementById('peta-filter-odp');
+    selOdc.innerHTML = '<option value="">Semua ODC</option>' + odcSet.map(v=>`<option value="${v}">${v}</option>`).join('');
+    selOdp.innerHTML = '<option value="">Semua ODP</option>' + odpSet.map(v=>`<option value="${v}">${v}</option>`).join('');
+    petaFilter();
+    // Fit ke bounds jika ada data
+    if (rows.length) {
+      const bounds = rows.map(r => [parseFloat(r.latitude), parseFloat(r.longitude)]);
+      _petaMap.fitBounds(bounds, { padding:[30,30], maxZoom:14 });
+    }
+  }).catch(e => toast('❌ Gagal muat peta: ' + e.message, true));
+}
+
+function petaFilter() {
+  const q   = (document.getElementById('peta-search')?.value || '').toLowerCase();
+  const odc = document.getElementById('peta-filter-odc')?.value || '';
+  const odp = document.getElementById('peta-filter-odp')?.value || '';
+
+  const filtered = _petaData.filter(r =>
+    (!q   || (r.nama||'').toLowerCase().includes(q) || (r.username||'').toLowerCase().includes(q) || (r.alamat||'').toLowerCase().includes(q)) &&
+    (!odc || r.odc === odc) &&
+    (!odp || r.odp === odp)
+  );
+
+  // Hapus marker lama
+  _petaMarkers.forEach(m => _petaMap.removeLayer(m));
+  _petaMarkers = [];
+
+  filtered.forEach(function(r) {
+    const lat = parseFloat(r.latitude), lng = parseFloat(r.longitude);
+    if (!lat || !lng) return;
+
+    const isAktif = r.status === 'aktif';
+    const color   = isAktif ? '#16a34a' : '#d97706';
+    const icon    = L.divIcon({
+      className: '',
+      html: `<div style="width:28px;height:28px;border-radius:50% 50% 50% 0;background:${color};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);transform:rotate(-45deg);display:flex;align-items:center;justify-content:center">
+               <i class="ti ti-wifi" style="transform:rotate(45deg);color:#fff;font-size:12px"></i>
+             </div>`,
+      iconSize:[28,28], iconAnchor:[14,28], popupAnchor:[0,-28]
+    });
+
+    const popup = `
+      <div style="min-width:180px;font-family:inherit">
+        <div style="font-weight:700;font-size:13px;margin-bottom:6px">${r.nama}</div>
+        <div style="font-size:11px;color:#64748b;line-height:1.8">
+          👤 ${r.username}<br>
+          📦 ${r.nama_paket}<br>
+          📍 ${r.alamat || '—'}<br>
+          ${r.odc ? `🔌 ODC: ${r.odc}<br>` : ''}
+          ${r.odp ? `🔌 ODP: ${r.odp}<br>` : ''}
+          📶 ${r.tipe_koneksi?.toUpperCase()}<br>
+          <span style="color:${color};font-weight:600">${isAktif?'● Aktif':'● Suspend'}</span>
+        </div>
+      </div>`;
+
+    const marker = L.marker([lat, lng], { icon }).addTo(_petaMap).bindPopup(popup);
+    _petaMarkers.push(marker);
+  });
+
+  const count = document.getElementById('peta-count');
+  if (count) count.textContent = `${filtered.length} titik`;
+}
+
+function petaToggleGeser() {
+  _petaGeserMode = !_petaGeserMode;
+  const btn = document.getElementById('peta-mode-geser');
+  if (_petaGeserMode) {
+    _petaMap.scrollWheelZoom.enable();
+    _petaMap.dragging.enable();
+    if (btn) { btn.innerHTML = '<i class="ti ti-lock-open"></i> Mode Geser: ON'; btn.classList.add('primary'); }
+  } else {
+    _petaMap.scrollWheelZoom.disable();
+    if (btn) { btn.innerHTML = '<i class="ti ti-lock"></i> Mode Geser: OFF'; btn.classList.remove('primary'); }
+  }
+}
+// ══════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════
 // SESI AKTIF
 // ══════════════════════════════════════════════════
 let _sesiTab  = 'pppoe';
@@ -8095,6 +8311,7 @@ async function apiTestRADIUS() {
 }
 </script>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 // ================================================================

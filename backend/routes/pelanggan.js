@@ -60,7 +60,8 @@ router.post('/', async (req, res, next) => {
     let step = 'validasi';
     try {
         const { nama, username, password, no_hp, email, alamat,
-                paket_id, tipe_koneksi, ip_tetap, notes } = req.body;
+                paket_id, tipe_koneksi, ip_tetap, notes,
+                latitude, longitude, odc, odp } = req.body;
 
         if (!nama || !username || !password || !no_hp || !paket_id)
             return res.status(400).json({ error: 'nama, username, password, no_hp, paket_id wajib diisi' });
@@ -75,8 +76,13 @@ router.post('/', async (req, res, next) => {
         const paket = await queryOne('SELECT * FROM paket WHERE id = ?', [paket_id]);
         if (!paket) return res.status(400).json({ error: 'Paket tidak ditemukan' });
 
+        // Auto-migrate kolom peta jika belum ada
+        await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS latitude DECIMAL(10,7) NULL`).catch(()=>{});
+        await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS longitude DECIMAL(10,7) NULL`).catch(()=>{});
+        await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS odc VARCHAR(64) NULL`).catch(()=>{});
+        await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS odp VARCHAR(64) NULL`).catch(()=>{});
+
         step = 'siapkan_data';
-        // masa berlaku dihitung via hitungExpired
         const tgl_aktif    = dayjs().format('YYYY-MM-DD');
         const tgl_expired  = hitungExpired(paket.masa_aktif, paket.satuan_masa).format('YYYY-MM-DD');
         const hash         = await bcrypt.hash(password, 12);
@@ -84,10 +90,12 @@ router.post('/', async (req, res, next) => {
         step = 'insert_pelanggan';
         const result = await query(`
             INSERT INTO pelanggan (nama, username, password, no_hp, email, alamat,
-                paket_id, tipe_koneksi, tgl_aktif, tgl_expired, ip_tetap, notes)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+                paket_id, tipe_koneksi, tgl_aktif, tgl_expired, ip_tetap, notes,
+                latitude, longitude, odc, odp)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         `, [nama, username, hash, no_hp, email || null, alamat || null,
-            paket_id, tipe_koneksi, tgl_aktif, tgl_expired, ip_tetap || null, notes || null]);
+            paket_id, tipe_koneksi, tgl_aktif, tgl_expired, ip_tetap || null, notes || null,
+            latitude || null, longitude || null, odc || null, odp || null]);
 
         step = 'sync_radius';
         // Sync ke FreeRADIUS — jika gagal, hapus dulu baris pelanggan agar tidak ada data
@@ -166,10 +174,14 @@ router.put('/:id', async (req, res, next) => {
 
         await query(`
             UPDATE pelanggan SET nama=?, no_hp=?, email=?, alamat=?,
-                paket_id=?, tipe_koneksi=?, notes=?, username=?
+                paket_id=?, tipe_koneksi=?, notes=?, username=?,
+                latitude=?, longitude=?, odc=?, odp=?
             WHERE id = ?
         `, [nama, no_hp, email || null, alamat || null, paketIdBaru, tipeBaru,
-            notes || null, usernameBaru, req.params.id]);
+            notes || null, usernameBaru,
+            req.body.latitude || null, req.body.longitude || null,
+            req.body.odc || null, req.body.odp || null,
+            req.params.id]);
 
         // Update atribut RADIUS jika paket berubah
         if (paketIdBaru !== p.paket_id) {
@@ -323,6 +335,27 @@ router.post('/import/csv', async (req, res, next) => {
 
         res.json({ sukses, gagal, errors });
     } catch (e) { next(e); }
+});
+
+// ── GET /api/pelanggan/peta — data pelanggan untuk peta ──────
+router.get('/peta', async (req, res, next) => {
+    try {
+        await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS latitude DECIMAL(10,7) NULL`).catch(()=>{});
+        await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS longitude DECIMAL(10,7) NULL`).catch(()=>{});
+        await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS odc VARCHAR(64) NULL`).catch(()=>{});
+        await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS odp VARCHAR(64) NULL`).catch(()=>{});
+
+        const rows = await query(`
+            SELECT p.id, p.nama, p.username, p.no_hp, p.tipe_koneksi, p.status,
+                   p.latitude, p.longitude, p.odc, p.odp, p.alamat,
+                   pk.nama AS nama_paket
+            FROM pelanggan p
+            JOIN paket pk ON p.paket_id = pk.id
+            WHERE p.latitude IS NOT NULL AND p.longitude IS NOT NULL
+              AND p.status != 'nonaktif'
+        `);
+        res.json(rows);
+    } catch(e) { next(e); }
 });
 
 module.exports = router;
