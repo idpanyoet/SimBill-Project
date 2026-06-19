@@ -58,6 +58,24 @@ router.get('/', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// GET /api/invoice/:id — detail invoice
+router.get('/:id', async (req, res, next) => {
+    try {
+        const row = await queryOne(`
+            SELECT i.*,
+                COALESCE(p.nama, 'Pembeli Voucher') AS nama_pelanggan,
+                p.no_hp, p.alamat, p.tipe_koneksi,
+                pk.nama AS nama_paket, pk.tipe AS paket_tipe, pk.kecepatan_dn, pk.masa_aktif, pk.satuan_masa
+            FROM invoice i
+            LEFT JOIN pelanggan p ON i.pelanggan_id = p.id
+            LEFT JOIN paket pk ON i.paket_id = pk.id
+            WHERE i.id = ?
+        `, [req.params.id]);
+        if (!row) return res.status(404).json({ error: 'Invoice tidak ditemukan' });
+        res.json(row);
+    } catch(e) { next(e); }
+});
+
 // POST /api/invoice — buat invoice manual
 router.post('/', async (req, res, next) => {
     try {

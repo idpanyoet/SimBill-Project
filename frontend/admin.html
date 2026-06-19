@@ -7261,13 +7261,293 @@ function renderTblInvoice(rows) {
         ${i.status!=='paid' ? `<button class="btn sm" onclick="apiKirimReminder(${i.id})" title="Kirim reminder WA"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i></button>
         <button class="btn sm" onclick="apiBayarTunai(${i.id})" title="Lunasi manual"><i class="ti ti-check" aria-hidden="true"></i> Lunasi</button>` : ''}
         ${i.status==='overdue' ? `<button class="btn sm danger" onclick="apiSuspendDariInvoice(${i.id}, '${i.nama_pelanggan}')" title="Suspend pelanggan"><i class="ti ti-ban" aria-hidden="true"></i></button>` : ''}
+        <button class="btn sm" onclick="cetakInvoice(${i.id},'a4')" title="Print A4"><i class="ti ti-printer" style="font-size:12px" aria-hidden="true"></i> A4</button>
+        <button class="btn sm" onclick="cetakInvoice(${i.id},'thermal')" title="Print Thermal 58mm"><i class="ti ti-receipt" style="font-size:12px" aria-hidden="true"></i> 58mm</button>
         ${i.status!=='paid' ? `<button class="btn sm danger" onclick="apiHapusInvoice(${i.id}, '${i.no_invoice}')" title="Hapus invoice"><i class="ti ti-trash" aria-hidden="true"></i></button>` : ''}
       </td>
     </tr>`).join('');
 }
 
+// ══════════════════════════════════════════════════════════════
+// CETAK INVOICE
+// ══════════════════════════════════════════════════════════════
+async function cetakInvoice(id, mode) {
+  try {
+    toast('⏳ Menyiapkan invoice...');
+    const [inv, settings] = await Promise.all([
+      apiFetch('/api/invoice/' + id),
+      apiFetch('/api/setting')
+    ]);
+    const cfg = {};
+    (settings || []).forEach(s => cfg[s.kunci] = s.nilai);
+
+    const appName    = cfg.app_name    || 'SimBill ISP';
+    const appAlamat  = cfg.alamat      || '';
+    const appWa      = cfg.wa_number   || '';
+    const appLogo    = cfg.app_logo    || '';
+    const appUrl     = cfg.app_url     || '';
+
+    const isLunas    = inv.status === 'paid';
+    const statusLabel= isLunas ? 'LUNAS' : (inv.status === 'overdue' ? 'TERLAMBAT' : 'BELUM BAYAR');
+    const statusColor= isLunas ? '#16a34a' : (inv.status === 'overdue' ? '#dc2626' : '#d97706');
+
+    const tglInvoice = inv.tgl_invoice ? new Date(inv.tgl_invoice).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}) : '—';
+    const tglTempo   = inv.tgl_jatuh_tempo ? new Date(inv.tgl_jatuh_tempo).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}) : '—';
+    const tglBayar   = inv.tgl_bayar ? new Date(inv.tgl_bayar).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'}) : null;
+    const jumlah     = Number(inv.jumlah || 0);
+    const fmtRp      = n => 'Rp ' + n.toLocaleString('id-ID');
+
+    // Terbilang sederhana
+    const terbilang = (n) => {
+      const s = ['','satu','dua','tiga','empat','lima','enam','tujuh','delapan','sembilan','sepuluh','sebelas'];
+      if (n < 12) return s[n];
+      if (n < 20) return s[n-10] + ' belas';
+      if (n < 100) return s[Math.floor(n/10)] + ' puluh' + (n%10 ? ' '+s[n%10] : '');
+      if (n < 200) return 'seratus' + (n%100 ? ' '+terbilang(n%100) : '');
+      if (n < 1000) return s[Math.floor(n/100)] + ' ratus' + (n%100 ? ' '+terbilang(n%100) : '');
+      if (n < 2000) return 'seribu' + (n%1000 ? ' '+terbilang(n%1000) : '');
+      if (n < 1000000) return terbilang(Math.floor(n/1000)) + ' ribu' + (n%1000 ? ' '+terbilang(n%1000) : '');
+      if (n < 1000000000) return terbilang(Math.floor(n/1000000)) + ' juta' + (n%1000000 ? ' '+terbilang(n%1000000) : '');
+      return terbilang(Math.floor(n/1000000000)) + ' miliar' + (n%1000000000 ? ' '+terbilang(n%1000000000) : '');
+    };
+    const terbilangStr = terbilang(jumlah);
+
+    // QR Code URL — mengarah ke nomor invoice
+    const qrData = inv.no_invoice;
+    const qrUrl  = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(qrData)}`;
+
+    let html = '';
+
+    if (mode === 'a4') {
+      html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Invoice ${inv.no_invoice}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:11pt;color:#1a1a1a;background:#fff}
+.page{width:210mm;min-height:297mm;padding:14mm 16mm;margin:0 auto;background:#fff;position:relative}
+.noprint{text-align:center;padding:10px;background:#f1f5f9;margin-bottom:16px}
+.noprint button{padding:7px 20px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;margin:0 4px}
+.noprint button.sec{background:#64748b}
+.header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1a1a1a;padding-bottom:10px;margin-bottom:12px}
+.company-name{font-size:16pt;font-weight:700;margin-bottom:2px}
+.company-sub{font-size:9pt;color:#555;margin-bottom:3px}
+.company-info{font-size:8pt;color:#666}
+.invoice-title{font-size:28pt;font-weight:700;color:#1a3a6e;text-align:right;letter-spacing:2px}
+.logo{height:50px;object-fit:contain;display:block;margin-bottom:4px;margin-left:auto}
+.row2{display:flex;justify-content:space-between;margin-bottom:14px}
+.to-box{font-size:9pt}
+.to-box .label{color:#777;font-size:8pt;margin-bottom:2px}
+.to-box .nama{font-size:13pt;font-weight:700;margin-bottom:2px}
+.info-table{font-size:9pt;border-collapse:collapse}
+.info-table td{padding:1px 4px}
+.info-table td:first-child{color:#777;white-space:nowrap}
+.info-table td:last-child{font-weight:600}
+.period{font-size:9pt;color:#444;margin-bottom:10px}
+.status-badge{display:inline-block;font-size:9pt;font-weight:700;padding:2px 10px;border-radius:4px;border:1.5px solid;margin-top:2px}
+table.items{width:100%;border-collapse:collapse;margin-bottom:10px}
+table.items th{background:#1a3a6e;color:#fff;padding:6px 8px;font-size:9pt;text-align:left}
+table.items th:nth-child(3),table.items th:nth-child(4),table.items th:nth-child(5),table.items th:nth-child(6){text-align:right}
+table.items td{padding:6px 8px;border-bottom:1px solid #e5e7eb;font-size:9pt}
+table.items td:nth-child(3),table.items td:nth-child(4),table.items td:nth-child(5),table.items td:nth-child(6){text-align:right}
+.total-row{display:flex;justify-content:flex-end;margin-bottom:4px}
+.total-box{background:#f1f5f9;border:1px solid #ddd;border-radius:6px;padding:8px 16px;min-width:220px}
+.total-box .row{display:flex;justify-content:space-between;font-size:10pt;padding:2px 0}
+.total-box .row.grand{font-weight:700;font-size:11pt;border-top:1px solid #ccc;margin-top:4px;padding-top:4px}
+.terbilang{font-size:8.5pt;font-style:italic;color:#555;margin-bottom:14px}
+.bottom{display:flex;justify-content:space-between;align-items:flex-end;margin-top:16px}
+.qr-box{text-align:center}
+.qr-box img{width:100px;height:100px;display:block;margin:0 auto 4px}
+.qr-box .qr-label{font-size:7pt;color:#888}
+.stamp-area{position:relative;min-width:180px;min-height:80px;border:1px dashed #ccc;border-radius:6px;padding:8px;text-align:center}
+.stamp-area .label{font-size:8pt;color:#888;margin-bottom:4px}
+.stamp-lunas{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-20deg);font-size:28pt;font-weight:700;color:#16a34a;opacity:.7;border:3px solid #16a34a;padding:2px 12px;border-radius:6px;white-space:nowrap;letter-spacing:3px}
+.syarat{border-left:3px solid #dc2626;padding-left:10px;font-size:8pt;color:#dc2626;max-width:200px}
+.syarat b{display:block;margin-bottom:3px}
+.thanks{font-size:14pt;font-weight:700;color:#1a3a6e}
+.footer-bottom{text-align:center;font-size:8pt;color:#aaa;margin-top:20px;border-top:1px solid #eee;padding-top:8px}
+@media print{.noprint{display:none!important}@page{size:A4;margin:0}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body>
+<div class="noprint">
+  <button onclick="window.print()">🖨️ Print</button>
+  <button class="sec" onclick="window.close()">✕ Tutup</button>
+</div>
+<div class="page">
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <div class="company-name">${appName}</div>
+      <div class="company-sub">High Speed Internet</div>
+      <div class="company-info">${appAlamat ? 'Alamat : ' + appAlamat : ''}</div>
+      <div class="company-info">${appWa ? 'No HP : ' + appWa + (appUrl ? ' &nbsp;|&nbsp; ' + appUrl : '') : appUrl}</div>
+    </div>
+    <div style="text-align:right">
+      ${appLogo ? `<img src="${appLogo}" class="logo" alt="Logo">` : ''}
+      <div class="invoice-title">INVOICE</div>
+    </div>
+  </div>
+
+  <!-- Kepada & Info -->
+  <div class="row2">
+    <div class="to-box">
+      <div class="label">Kepada :</div>
+      <div class="nama">${inv.nama_pelanggan || '—'}</div>
+      <div style="font-size:9pt;color:#444">${inv.no_hp || ''}</div>
+      <div style="font-size:9pt;color:#444">${inv.alamat || ''}</div>
+    </div>
+    <table class="info-table">
+      <tr><td>ID Pelanggan</td><td>:</td><td>${inv.pelanggan_id || '—'}</td></tr>
+      <tr><td>No Invoice</td><td>:</td><td>${inv.no_invoice}</td></tr>
+      <tr><td>Tanggal Invoice</td><td>:</td><td>${tglInvoice}</td></tr>
+      <tr><td>Jatuh Tempo</td><td>:</td><td>${tglTempo}</td></tr>
+    </table>
+  </div>
+
+  <div class="period" style="display:flex;align-items:center;gap:10px">
+    <span>Periode ${tglInvoice}</span>
+    <span class="status-badge" style="color:${statusColor};border-color:${statusColor}">${statusLabel}</span>
+  </div>
+
+  <!-- Tabel Item -->
+  <table class="items">
+    <thead><tr><th style="width:30px">No</th><th>Item</th><th style="width:40px">Qty</th><th>Harga</th><th>Disc</th><th>Total</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>1.</td>
+        <td>${inv.nama_paket || 'Paket Internet'}</td>
+        <td style="text-align:center">1</td>
+        <td>${(jumlah).toLocaleString('id-ID')}</td>
+        <td>-</td>
+        <td>${(jumlah).toLocaleString('id-ID')}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Total -->
+  <div class="total-row">
+    <div class="total-box">
+      <div class="row"><span>Sub Total</span><span>${(jumlah).toLocaleString('id-ID')}</span></div>
+      <div class="row"><span>Diskon</span><span>-</span></div>
+      <div class="row grand"><span>Total Tagihan</span><span>${(jumlah).toLocaleString('id-ID')}</span></div>
+    </div>
+  </div>
+
+  <div class="terbilang">* Terbilang : <i>${terbilangStr} rupiah</i></div>
+
+  <!-- Bottom -->
+  <div class="bottom">
+    <!-- QR Code -->
+    <div class="qr-box">
+      <img src="${qrUrl}" alt="QR">
+      <div class="qr-label">${inv.no_invoice}</div>
+    </div>
+
+    <!-- Stamp & Syarat -->
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px">
+      <div class="stamp-area">
+        <div class="label">Tanda Terima</div>
+        ${isLunas ? `<div class="stamp-lunas">LUNAS</div>` : ''}
+        <div style="font-size:7.5pt;color:#888;margin-top:30px">Diterima Oleh : _______________</div>
+        ${tglBayar ? `<div style="font-size:7.5pt;color:#555;margin-top:4px">Pada Tanggal ${tglBayar}</div>` : ''}
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="thanks">Terimakasih</div>
+        <div class="syarat">
+          <b>Syarat dan Ketentuan</b>
+          ${isLunas ? 'Terimakasih sudah melakukan pembayaran tepat waktu' : 'Mohon lakukan pembayaran tepat waktu'}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">${appName} &mdash; ${appUrl || ''}</div>
+</div>
+<script>window.addEventListener('load',function(){setTimeout(function(){window.print();},600);});<\/script>
+</body></html>`;
+
+    } else {
+      // ── THERMAL 58mm ──────────────────────────────────────────
+      html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Invoice ${inv.no_invoice}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Courier New',monospace;font-size:9pt;color:#000;background:#fff;width:58mm}
+.page{width:58mm;padding:3mm 2mm;background:#fff}
+.noprint{text-align:center;padding:6px;background:#f1f5f9;margin-bottom:8px;width:100vw}
+.noprint button{padding:5px 14px;background:#2563eb;color:#fff;border:none;border-radius:5px;font-size:11px;cursor:pointer;margin:0 3px}
+.noprint button.sec{background:#64748b}
+.center{text-align:center}
+.bold{font-weight:700}
+.big{font-size:11pt;font-weight:700}
+.line{border-top:1px dashed #000;margin:3px 0}
+.row{display:flex;justify-content:space-between;font-size:8pt;margin:1px 0}
+.row.bold{font-weight:700}
+.status{text-align:center;font-size:12pt;font-weight:700;border:2px solid #000;padding:2px 6px;display:inline-block;margin:3px auto;letter-spacing:2px}
+.qr{text-align:center;margin:4px 0}
+.qr img{width:90px;height:90px}
+@media print{.noprint{display:none!important}@page{size:58mm auto;margin:0}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body>
+<div class="noprint">
+  <button onclick="window.print()">🖨️ Print 58mm</button>
+  <button class="sec" onclick="window.close()">✕</button>
+</div>
+<div class="page">
+  <div class="center bold big">${appName}</div>
+  ${appAlamat ? `<div class="center" style="font-size:7pt">${appAlamat}</div>` : ''}
+  ${appWa ? `<div class="center" style="font-size:7pt">WA: ${appWa}</div>` : ''}
+
+  <div class="line"></div>
+  <div class="center bold" style="font-size:11pt;letter-spacing:3px">INVOICE</div>
+  <div class="line"></div>
+
+  <div class="row"><span>No Invoice</span><span>${inv.no_invoice}</span></div>
+  <div class="row"><span>Tanggal</span><span>${tglInvoice}</span></div>
+  <div class="row"><span>Jatuh Tempo</span><span>${tglTempo}</span></div>
+
+  <div class="line"></div>
+  <div class="bold" style="font-size:9pt">${inv.nama_pelanggan}</div>
+  ${inv.no_hp ? `<div style="font-size:8pt">${inv.no_hp}</div>` : ''}
+
+  <div class="line"></div>
+  <div class="row bold"><span>Item</span><span>Total</span></div>
+  <div class="line"></div>
+  <div style="font-size:8.5pt">${inv.nama_paket || 'Paket Internet'}</div>
+  <div class="row"><span>  1 x ${(jumlah).toLocaleString('id-ID')}</span><span>${(jumlah).toLocaleString('id-ID')}</span></div>
+
+  <div class="line"></div>
+  <div class="row bold"><span>TOTAL</span><span>Rp ${(jumlah).toLocaleString('id-ID')}</span></div>
+  <div style="font-size:7pt;font-style:italic">${terbilangStr} rupiah</div>
+  <div class="line"></div>
+
+  <!-- Status -->
+  <div class="center" style="margin:4px 0">
+    <div class="status" style="color:${statusColor};border-color:${statusColor}">${statusLabel}</div>
+  </div>
+  ${tglBayar ? `<div class="center" style="font-size:7.5pt">Dibayar: ${tglBayar}</div>` : ''}
+
+  <!-- QR -->
+  <div class="qr">
+    <img src="${qrUrl}" alt="QR">
+    <div style="font-size:7pt">${inv.no_invoice}</div>
+  </div>
+
+  <div class="line"></div>
+  <div class="center bold" style="font-size:10pt">Terimakasih</div>
+  <div class="center" style="font-size:7pt">${isLunas ? 'Pembayaran diterima ✓' : 'Mohon bayar tepat waktu'}</div>
+  <div class="line"></div>
+</div>
+<script>window.addEventListener('load',function(){setTimeout(function(){window.print();},600);});<\/script>
+</body></html>`;
+    }
+
+    const win = window.open('', '_blank', 'width=' + (mode === 'thermal' ? '320' : '900') + ',height=700');
+    win.document.write(html);
+    win.document.close();
+
+  } catch(e) {
+    toast('❌ Gagal cetak invoice: ' + e.message, true);
+  }
+}
+// ══════════════════════════════════════════════════════════════
+
 function invToggleAll(checked) {
-  document.querySelectorAll('.inv-chk').forEach(function(c) { c.checked = checked; });
   invUpdateSelBtn();
 }
 
