@@ -1171,67 +1171,99 @@ Selamat menikmati! 🌐</textarea>
 
       <!-- ══ PENGGUNA ADMIN ══ -->
       <div class="page" id="p-pengguna">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
           <div>
-            <h2 style="font-size:18px;font-weight:700;color:#2563eb">Pengguna Admin</h2>
-            <div class="td-text-sub" style="font-size:12px;margin-top:4px">Kelola akun admin, peran, dan level akses.</div>
+            <h2 style="font-size:18px;font-weight:700;color:var(--text);margin:0">Pengguna Admin</h2>
+            <div class="td-text-sub" style="font-size:12px;margin-top:3px">Kelola akun admin, peran, dan level akses</div>
           </div>
-          <button class="btn primary" onclick="openModal('m-add-pengguna')">
-            <i class="ti ti-plus" aria-hidden="true"></i> Tambah Pengguna
+          <button class="btn primary" onclick="openModal('m-add-pengguna')" style="gap:6px">
+            <i class="ti ti-user-plus" style="font-size:14px" aria-hidden="true"></i> Tambah Pengguna
           </button>
         </div>
 
-        <div class="card">
-          <!-- Filter -->
-          <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
-            <div style="position:relative;min-width:220px">
-              <i class="ti ti-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px" aria-hidden="true"></i>
-              <input id="pg-search" placeholder="Cari username, nama, atau kontak" oninput="loadPengguna()" style="width:100%;padding:7px 12px 7px 32px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+        <!-- Stats bar -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+            <div style="width:38px;height:38px;border-radius:10px;background:rgba(124,58,237,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ti-shield-star" style="font-size:18px;color:#7c3aed" aria-hidden="true"></i>
             </div>
-            <select id="pg-filter-role" onchange="loadPengguna()" style="padding:7px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+            <div>
+              <div id="pg-stat-superadmin" style="font-size:20px;font-weight:700;color:var(--text)">—</div>
+              <div class="td-text-sub" style="font-size:11px">Super Admin</div>
+            </div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+            <div style="width:38px;height:38px;border-radius:10px;background:rgba(37,99,235,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ti-user-cog" style="font-size:18px;color:#2563eb" aria-hidden="true"></i>
+            </div>
+            <div>
+              <div id="pg-stat-admin" style="font-size:20px;font-weight:700;color:var(--text)">—</div>
+              <div class="td-text-sub" style="font-size:11px">Admin</div>
+            </div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+            <div style="width:38px;height:38px;border-radius:10px;background:rgba(8,145,178,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ti-user" style="font-size:18px;color:#0891b2" aria-hidden="true"></i>
+            </div>
+            <div>
+              <div id="pg-stat-operator" style="font-size:20px;font-weight:700;color:var(--text)">—</div>
+              <div class="td-text-sub" style="font-size:11px">Operator</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <!-- Filter bar -->
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+            <div style="position:relative;flex:1;min-width:200px">
+              <i class="ti ti-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px" aria-hidden="true"></i>
+              <input id="pg-search" placeholder="Cari username, nama, atau kontak..." oninput="loadPengguna()" style="width:100%;padding:8px 12px 8px 34px;border:1px solid var(--border);border-radius:9px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+            </div>
+            <select id="pg-filter-role" onchange="loadPengguna()" style="padding:8px 12px;border:1px solid var(--border);border-radius:9px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
               <option value="semua">Semua peran</option>
               <option value="superadmin">Super Admin</option>
               <option value="admin">Admin</option>
               <option value="operator">Operator</option>
             </select>
-            <span id="pg-count" class="td-text-sub" style="font-size:12px;margin-left:auto"></span>
+            <span id="pg-count" class="td-text-sub" style="font-size:12px;white-space:nowrap"></span>
           </div>
 
           <!-- Tabel -->
           <table>
             <thead>
               <tr>
-                <th>USERNAME</th>
-                <th>NAMA</th>
+                <th>PENGGUNA</th>
                 <th>PERAN</th>
                 <th>STATUS</th>
                 <th>KONTAK</th>
                 <th>DIPERBARUI</th>
-                <th style="width:40px"></th>
+                <th style="width:48px"></th>
               </tr>
             </thead>
             <tbody id="tbl-pengguna">
-              <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3)">Memuat...</td></tr>
+              <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Memuat...</td></tr>
             </tbody>
           </table>
 
           <!-- Pagination -->
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
             <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)">
               Baris per halaman
-              <select id="pg-per-halaman" onchange="pgHalaman=0;loadPengguna()" style="padding:3px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit">
+              <select id="pg-per-halaman" onchange="pgHalaman=0;loadPengguna()" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit">
                 <option value="25">25</option>
                 <option value="50">50</option>
                 <option value="100">100</option>
               </select>
-              <span id="pg-info"></span>
+              <span id="pg-info" class="td-text-sub"></span>
             </div>
-            <div style="display:flex;gap:4px">
-              <button class="btn sm" id="pg-btn-first"  onclick="pgHalaman=0;loadPengguna()">«</button>
-              <button class="btn sm" id="pg-btn-prev"   onclick="pgHalaman=Math.max(0,pgHalaman-1);loadPengguna()">‹</button>
-              <span id="pg-page-num" style="padding:4px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--accent);color:#fff;font-weight:600">1</span>
-              <button class="btn sm" id="pg-btn-next"   onclick="pgHalaman++;loadPengguna()">›</button>
-              <button class="btn sm" id="pg-btn-last"   onclick="pgHalaman=pgTotalHalaman-1;loadPengguna()">»</button>
+            <div style="display:flex;gap:4px;align-items:center">
+              <button class="btn sm" id="pg-btn-first" onclick="pgHalaman=0;loadPengguna()">«</button>
+              <button class="btn sm" id="pg-btn-prev" onclick="pgHalaman=Math.max(0,pgHalaman-1);loadPengguna()">‹</button>
+              <span id="pg-page-num" style="padding:4px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--accent);color:#fff;font-weight:600;min-width:32px;text-align:center">1</span>
+              <button class="btn sm" id="pg-btn-next" onclick="pgHalaman++;loadPengguna()">›</button>
+              <button class="btn sm" id="pg-btn-last" onclick="pgHalaman=pgTotalHalaman-1;loadPengguna()">»</button>
             </div>
           </div>
         </div>
@@ -7116,37 +7148,70 @@ async function loadPengguna() {
     document.getElementById('pg-btn-next').disabled  = pgHalaman >= pgTotalHalaman - 1;
     document.getElementById('pg-btn-last').disabled  = pgHalaman >= pgTotalHalaman - 1;
 
+    // Update stat cards
+    const sa = rows.filter(r=>r.role==='superadmin').length;
+    const ad = rows.filter(r=>r.role==='admin').length;
+    const op = rows.filter(r=>r.role==='operator').length;
+    const saStat = document.getElementById('pg-stat-superadmin');
+    const adStat = document.getElementById('pg-stat-admin');
+    const opStat = document.getElementById('pg-stat-operator');
+    if (saStat) saStat.textContent = sa;
+    if (adStat) adStat.textContent = ad;
+    if (opStat) opStat.textContent = op;
+
     if (!tbody) return;
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3)">Tidak ada pengguna</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text3)">Tidak ada pengguna</td></tr>';
       return;
     }
 
-    const fmtDT = dt => dt ? new Date(dt).toLocaleString('id-ID',{day:'numeric',month:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '—';
+    const fmtDT = dt => dt ? new Date(dt).toLocaleString('id-ID',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+    const AVATAR_COLORS = ['#7c3aed','#2563eb','#0891b2','#16a34a','#d97706','#dc2626','#db2777'];
 
-    tbody.innerHTML = rows.map(r => {
+    tbody.innerHTML = rows.map((r,i) => {
       const col   = PERAN_COLOR[r.role] || '#64748b';
       const label = PERAN_LABEL[r.role]  || r.role;
       const aktif = r.aktif ? 1 : 0;
+      const inisial = (r.nama||r.username||'?').substring(0,2).toUpperCase();
+      const avColor = AVATAR_COLORS[i % AVATAR_COLORS.length];
       return `<tr>
-        <td class="td-text-main" style="font-weight:600">${r.username || r.email?.split('@')[0] || '—'}</td>
-        <td class="td-text-main">${r.nama}</td>
-        <td><span style="font-size:12px;color:${col}">${label}</span></td>
         <td>
-          <span style="background:${aktif?'#dcfce7':'#f1f5f9'};color:${aktif?'#15803d':'#94a3b8'};font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px">
-            ${aktif ? 'Active' : 'Inactive'}
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:10px;background:${avColor};color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${inisial}</div>
+            <div>
+              <div class="td-text-main" style="font-weight:600;font-size:13px">${r.nama}</div>
+              <div class="td-text-sub" style="font-size:11px">@${r.username || r.email?.split('@')[0] || '—'}</div>
+            </div>
+          </div>
+        </td>
+        <td>
+          <span style="display:inline-flex;align-items:center;gap:5px;background:${col}18;color:${col};font-size:11px;font-weight:600;padding:4px 10px;border-radius:99px">
+            <span style="width:5px;height:5px;border-radius:50%;background:${col};flex-shrink:0"></span>
+            ${label}
+          </span>
+        </td>
+        <td>
+          <span style="display:inline-flex;align-items:center;gap:5px;background:${aktif?'#dcfce7':'#f1f5f9'};color:${aktif?'#15803d':'#94a3b8'};font-size:11px;font-weight:600;padding:4px 10px;border-radius:99px">
+            <span style="width:5px;height:5px;border-radius:50%;background:${aktif?'#16a34a':'#94a3b8'};flex-shrink:0"></span>
+            ${aktif ? 'Aktif' : 'Nonaktif'}
           </span>
         </td>
         <td class="td-text-sub" style="font-size:12px">${r.no_hp || '—'}</td>
-        <td class="td-text-sub" style="font-size:11px">${fmtDT(r.updated_at || r.created_at)}</td>
+        <td class="td-text-sub" style="font-size:11px;white-space:nowrap">${fmtDT(r.updated_at || r.created_at)}</td>
         <td>
-          <div class="dropdown" style="position:relative">
-            <button class="btn sm" onclick="pgToggleMenu(${r.id},this)" style="padding:4px 8px;font-size:16px;line-height:1">⋯</button>
-            <div id="pg-menu-${r.id}" style="display:none;position:absolute;right:0;top:100%;z-index:100;background:var(--bg2);border:1px solid var(--border);border-radius:8px;min-width:150px;box-shadow:0 4px 16px rgba(0,0,0,.15);overflow:hidden">
-              <button onclick="bukaPgEdit(${r.id},'${r.username||''}','${r.nama}','${r.email}','${r.no_hp||''}','${r.role}')" style="display:block;width:100%;text-align:left;padding:9px 14px;background:none;border:none;color:var(--text);cursor:pointer;font-size:13px;font-family:inherit">✏️ Edit</button>
-              <button onclick="apiToggleAktifPg(${r.id},'${r.username||r.nama}',${aktif})" style="display:block;width:100%;text-align:left;padding:9px 14px;background:none;border:none;color:${aktif?'#d97706':'#16a34a'};cursor:pointer;font-size:13px;font-family:inherit">${aktif?'⏸ Nonaktifkan':'▶ Aktifkan'}</button>
-              <div style="border-top:1px solid var(--border)"></div>
-              <button onclick="apiHapusPg(${r.id},'${r.nama}')" style="display:block;width:100%;text-align:left;padding:9px 14px;background:none;border:none;color:#dc2626;cursor:pointer;font-size:13px;font-family:inherit">🗑️ Hapus</button>
+          <div style="position:relative">
+            <button class="btn sm" onclick="pgToggleMenu(${r.id},this)" style="padding:5px 9px;font-size:16px;line-height:1;border-radius:8px">⋯</button>
+            <div id="pg-menu-${r.id}" style="display:none;position:absolute;right:0;top:calc(100% + 4px);z-index:100;background:var(--bg2);border:1px solid var(--border);border-radius:10px;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.15);overflow:hidden">
+              <button onclick="bukaPgEdit(${r.id},'${(r.username||'').replace(/'/g,"\\'")}','${r.nama.replace(/'/g,"\\'")}','${(r.email||'').replace(/'/g,"\\'")}','${(r.no_hp||'').replace(/'/g,"\\'")}','${r.role}')" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:var(--text);cursor:pointer;font-size:13px;font-family:inherit">
+                <i class="ti ti-edit" style="font-size:14px;color:#2563eb" aria-hidden="true"></i> Edit
+              </button>
+              <button onclick="apiToggleAktifPg(${r.id},'${r.nama.replace(/'/g,"\\'")}',${aktif})" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:${aktif?'#d97706':'#16a34a'};cursor:pointer;font-size:13px;font-family:inherit">
+                <i class="ti ti-${aktif?'player-pause':'player-play'}" style="font-size:14px" aria-hidden="true"></i> ${aktif?'Nonaktifkan':'Aktifkan'}
+              </button>
+              <div style="height:1px;background:var(--border);margin:2px 0"></div>
+              <button onclick="apiHapusPg(${r.id},'${r.nama.replace(/'/g,"\\'")}' )" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:#dc2626;cursor:pointer;font-size:13px;font-family:inherit">
+                <i class="ti ti-trash" style="font-size:14px" aria-hidden="true"></i> Hapus
+              </button>
             </div>
           </div>
         </td>
