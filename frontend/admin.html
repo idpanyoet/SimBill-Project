@@ -2415,7 +2415,7 @@ Selamat menikmati! 🌐</textarea>
     </div>
 
     <!-- Tab 1: Data Utama -->
-    <div id="ap-tab-1" style="padding:14px 20px;display:flex;flex-direction:column;gap:12px">
+    <div id="ap-tab-1" style="display:none;padding:14px 20px;flex-direction:column;gap:12px">
       <!-- Tipe Koneksi -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div id="f-tipe-card-pppoe" onclick="pilihTipePelanggan('pppoe')" style="border:2px solid #BA7517;border-radius:9px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;background:rgba(186,117,23,.06);transition:all .15s">
@@ -2564,10 +2564,13 @@ Selamat menikmati! 🌐</textarea>
       <button id="ep-tab-btn-2" onclick="epSwitchTab(2)" style="flex:1;padding:10px;font-size:12px;font-weight:600;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
         <i class="ti ti-map-pin" style="font-size:14px" aria-hidden="true"></i> Lokasi & Jaringan
       </button>
+      <button id="ep-tab-btn-3" onclick="epSwitchTab(3)" style="flex:1;padding:10px;font-size:12px;font-weight:600;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+        <i class="ti ti-id-badge" style="font-size:14px" aria-hidden="true"></i> KTP
+      </button>
     </div>
 
     <!-- Tab 1: Data Utama -->
-    <div id="ep-tab-1" style="padding:14px 20px;display:flex;flex-direction:column;gap:12px">
+    <div id="ep-tab-1" style="display:none;padding:14px 20px;flex-direction:column;gap:12px">
       <input type="hidden" id="ep-id">
       <div id="ep-info-card" class="ep-info-card" style="display:flex;align-items:center;gap:12px;border-radius:10px;padding:11px 14px">
         <div id="ep-avatar" style="width:38px;height:38px;border-radius:9px;background:#7F77DD;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">—</div>
@@ -2674,6 +2677,63 @@ Selamat menikmati! 🌐</textarea>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
         <button class="btn" onclick="epSwitchTab(1)"><i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> Kembali</button>
+        <button class="btn primary" onclick="apiUpdatePelanggan()"><i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan Perubahan</button>
+      </div>
+    </div>
+
+    <!-- Tab 3: KTP -->
+    <div id="ep-tab-3" style="display:none;padding:14px 20px;flex-direction:column;gap:14px">
+      <div style="font-size:12px;color:var(--text2)">Upload atau perbarui foto KTP pelanggan. Format: JPG, PNG, WEBP. Maks 5MB.</div>
+
+      <!-- Preview KTP yang sudah ada -->
+      <div id="ep-ktp-existing" style="display:none;margin-bottom:4px">
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">KTP Tersimpan:</div>
+        <div style="position:relative;display:inline-block;width:100%">
+          <img id="ep-ktp-existing-img" src="" alt="KTP"
+            style="width:100%;max-height:180px;object-fit:contain;border-radius:10px;border:1px solid var(--border);background:#000">
+          <div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;display:flex;align-items:center;gap:4px">
+            <i class="ti ti-id" style="font-size:11px" aria-hidden="true"></i> KTP Lama
+          </div>
+          <a id="ep-ktp-existing-link" href="" target="_blank" style="position:absolute;bottom:8px;right:8px;background:rgba(37,99,235,.9);color:#fff;font-size:10px;font-weight:600;padding:4px 10px;border-radius:6px;text-decoration:none">
+            🔍 Lihat
+          </a>
+        </div>
+      </div>
+
+      <!-- Upload area baru -->
+      <div id="ep-ktp-dropzone" onclick="document.getElementById('ep-ktp-file').click()"
+        style="border:2px dashed var(--border);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg3)"
+        ondragover="event.preventDefault();this.style.borderColor='#BA7517';this.style.background='rgba(186,117,23,.06)'"
+        ondragleave="this.style.borderColor='var(--border)';this.style.background='var(--bg3)'"
+        ondrop="epKtpHandleDrop(event)">
+        <i class="ti ti-cloud-upload" style="font-size:32px;color:#94a3b8;display:block;margin-bottom:6px" aria-hidden="true"></i>
+        <div style="font-size:13px;font-weight:600;color:var(--text2)">Klik atau drag & drop foto KTP baru</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">JPG, PNG, WEBP — maks 5MB</div>
+        <input type="file" id="ep-ktp-file" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="epKtpPreview(this)">
+      </div>
+
+      <!-- Preview KTP baru -->
+      <div id="ep-ktp-preview-wrap" style="display:none">
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Preview KTP Baru:</div>
+        <div style="position:relative;display:inline-block;width:100%">
+          <img id="ep-ktp-preview-img" src="" alt="Preview KTP"
+            style="width:100%;max-height:200px;object-fit:contain;border-radius:10px;border:2px solid #BA7517;background:#000">
+          <div style="position:absolute;top:8px;left:8px;background:rgba(186,117,23,.9);color:#fff;font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px">
+            KTP Baru
+          </div>
+          <button onclick="epKtpClear()" style="position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(220,38,38,.9);border:none;color:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;line-height:1">✕</button>
+        </div>
+        <div id="ep-ktp-filename" style="font-size:11px;color:var(--text3);margin-top:6px;text-align:center"></div>
+      </div>
+
+      <!-- Info fields -->
+      <div class="fg-row">
+        <div class="fg"><label>No. KTP (NIK)</label><input id="ep-no-ktp" placeholder="16 digit NIK" maxlength="16" oninput="this.value=this.value.replace(/\D/g,'')"></div>
+        <div class="fg"><label>Tgl. Lahir</label><input id="ep-tgl-lahir" type="date"></div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
+        <button class="btn" onclick="epSwitchTab(2)"><i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> Kembali</button>
         <button class="btn primary" onclick="apiUpdatePelanggan()"><i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan Perubahan</button>
       </div>
     </div>
@@ -4879,26 +4939,32 @@ function apSwitchTab(n) {
     const btn = document.getElementById('ap-tab-btn-' + i);
     if (!tab || !btn) return;
     const active = i === n;
-    tab.style.display = active ? 'flex' : 'none';
+    tab.setAttribute('style', tab.getAttribute('style')
+      .replace(/display:[^;]+;?/g, '')
+      .trim() + (active ? ';display:flex' : ';display:none'));
     btn.style.borderBottomColor = active ? '#BA7517' : 'transparent';
     btn.style.color = active ? '#BA7517' : 'var(--text2)';
+    btn.style.fontWeight = active ? '600' : '500';
   });
   if (n === 2) initMiniMap('add');
 }
 
 function epSwitchTab(n) {
-  [1,2].forEach(function(i) {
+  [1,2,3].forEach(function(i) {
     const tab = document.getElementById('ep-tab-' + i);
     const btn = document.getElementById('ep-tab-btn-' + i);
     if (!tab || !btn) return;
     const active = i === n;
-    tab.style.display = active ? 'flex' : 'none';
+    // Pakai setAttribute untuk override inline style dengan pasti
+    tab.setAttribute('style', tab.getAttribute('style')
+      .replace(/display:[^;]+;?/g, '')
+      .trim() + (active ? ';display:flex' : ';display:none'));
     btn.style.borderBottomColor = active ? '#BA7517' : 'transparent';
     btn.style.color = active ? '#BA7517' : 'var(--text2)';
+    btn.style.fontWeight = active ? '600' : '500';
   });
   if (n === 2) {
     initMiniMap('edit');
-    // Set pin ke koordinat yang sudah ada
     const lat = parseFloat(document.getElementById('ep-latitude')?.value);
     const lng = parseFloat(document.getElementById('ep-longitude')?.value);
     if (lat && lng) setTimeout(function() { setMapPin('edit', lat, lng); }, 200);
@@ -5076,6 +5142,9 @@ async function bukaModalEdit(id) {
     document.getElementById('ep-odc').value       = p.odc       || '';
     document.getElementById('ep-odp').value       = p.odp       || '';
 
+    // Load data KTP
+    epKtpLoadExisting(p.ktp_url || '', p.no_ktp || '', p.tgl_lahir || '');
+
     // Update info card
     const initials = (p.nama||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
     document.getElementById('ep-avatar').textContent         = initials;
@@ -5120,21 +5189,45 @@ async function apiUpdatePelanggan() {
   const longitude = document.getElementById('ep-longitude')?.value || '';
   const odc       = document.getElementById('ep-odc')?.value.trim()  || '';
   const odp       = document.getElementById('ep-odp')?.value.trim()  || '';
+  const no_ktp    = document.getElementById('ep-no-ktp')?.value.trim() || '';
+  const tgl_lahir = document.getElementById('ep-tgl-lahir')?.value || '';
 
   if (!nama || !no_hp || !paket_id)
     return toast('❌ Nama, nomor HP, dan paket wajib diisi', true);
   if (!username)
     return toast('❌ Username RADIUS wajib diisi', true);
 
-  const body = { nama, no_hp, email, alamat,
-    paket_id: parseInt(paket_id), tipe_koneksi: tipe, notes, username,
-    latitude:  latitude  ? parseFloat(latitude)  : null,
-    longitude: longitude ? parseFloat(longitude) : null,
-    odc: odc || null, odp: odp || null
-  };
-  if (password) body.password = password;
-
   try {
+    // Upload KTP baru jika ada file dipilih
+    let ktp_url = null;
+    const ktpFile = document.getElementById('ep-ktp-file');
+    if (ktpFile && ktpFile.files[0]) {
+      const file = ktpFile.files[0];
+      const ext  = file.name.split('.').pop().toLowerCase();
+      const b64  = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload  = () => res(r.result);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+      toast('⏳ Mengupload KTP...');
+      const up = await apiFetch('/api/pelanggan/upload-ktp', {
+        method: 'POST',
+        body: JSON.stringify({ data: b64, ext, username })
+      });
+      ktp_url = up.url;
+    }
+
+    const body = { nama, no_hp, email, alamat,
+      paket_id: parseInt(paket_id), tipe_koneksi: tipe, notes, username,
+      latitude:  latitude  ? parseFloat(latitude)  : null,
+      longitude: longitude ? parseFloat(longitude) : null,
+      odc: odc || null, odp: odp || null,
+      no_ktp: no_ktp || null, tgl_lahir: tgl_lahir || null,
+    };
+    if (ktp_url) body.ktp_url = ktp_url;
+    if (password) body.password = password;
+
     await apiFetch('/api/pelanggan/' + id, { method: 'PUT', body: JSON.stringify(body) });
 
     // Handle perubahan status
@@ -9029,6 +9122,69 @@ async function apiUpdateReseller() {
     loadReseller();
   } catch(e) { toast('❌ '+e.message, true); }
 }
+
+// ── KTP HELPERS EDIT PELANGGAN ───────────────────────────────
+function epKtpPreview(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { toast('❌ File terlalu besar, maks 5MB', true); input.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img   = document.getElementById('ep-ktp-preview-img');
+    const wrap  = document.getElementById('ep-ktp-preview-wrap');
+    const zone  = document.getElementById('ep-ktp-dropzone');
+    const fname = document.getElementById('ep-ktp-filename');
+    if (img)   img.src = e.target.result;
+    if (wrap)  wrap.style.display = '';
+    if (zone)  zone.style.display = 'none';
+    if (fname) fname.textContent  = file.name + ' (' + (file.size/1024).toFixed(0) + ' KB)';
+  };
+  reader.readAsDataURL(file);
+}
+
+function epKtpHandleDrop(event) {
+  event.preventDefault();
+  const dz = document.getElementById('ep-ktp-dropzone');
+  if (dz) { dz.style.borderColor = 'var(--border)'; dz.style.background = 'var(--bg3)'; }
+  const file = event.dataTransfer.files[0];
+  if (!file || !file.type.startsWith('image/')) { toast('❌ File harus berupa gambar', true); return; }
+  const input = document.getElementById('ep-ktp-file');
+  const dt = new DataTransfer(); dt.items.add(file);
+  input.files = dt.files;
+  epKtpPreview(input);
+}
+
+function epKtpClear() {
+  const input = document.getElementById('ep-ktp-file');
+  const img   = document.getElementById('ep-ktp-preview-img');
+  const wrap  = document.getElementById('ep-ktp-preview-wrap');
+  const zone  = document.getElementById('ep-ktp-dropzone');
+  const fname = document.getElementById('ep-ktp-filename');
+  if (input) input.value = '';
+  if (img)   img.src = '';
+  if (wrap)  wrap.style.display = 'none';
+  if (zone)  zone.style.display = '';
+  if (fname) fname.textContent  = '';
+}
+
+function epKtpLoadExisting(ktp_url, no_ktp, tgl_lahir) {
+  const existWrap = document.getElementById('ep-ktp-existing');
+  const existImg  = document.getElementById('ep-ktp-existing-img');
+  const existLink = document.getElementById('ep-ktp-existing-link');
+  if (ktp_url && existWrap && existImg) {
+    existImg.src   = ktp_url;
+    if (existLink) { existLink.href = ktp_url; }
+    existWrap.style.display = '';
+  } else if (existWrap) {
+    existWrap.style.display = 'none';
+  }
+  const noKtpEl  = document.getElementById('ep-no-ktp');
+  const tglEl    = document.getElementById('ep-tgl-lahir');
+  if (noKtpEl)  noKtpEl.value  = no_ktp  || '';
+  if (tglEl)    tglEl.value    = tgl_lahir ? tgl_lahir.substring(0,10) : '';
+  epKtpClear();
+}
+// ── END KTP HELPERS EDIT ─────────────────────────────────────
 
 // ── RESELLER IZIN PAKET ──────────────────────────────────────
 function rsRenderPaketList(containerId, checkedIds = [], semapaChkId) {

@@ -310,12 +310,16 @@ router.put('/:id', async (req, res, next) => {
         await query(`
             UPDATE pelanggan SET nama=?, no_hp=?, email=?, alamat=?,
                 paket_id=?, tipe_koneksi=?, notes=?, username=?,
-                latitude=?, longitude=?, odc=?, odp=?
+                latitude=?, longitude=?, odc=?, odp=?,
+                no_ktp=?, tgl_lahir=?
+                ${req.body.ktp_url ? ', ktp_url=?' : ''}
             WHERE id = ?
         `, [nama, no_hp, email || null, alamat || null, paketIdBaru, tipeBaru,
             notes || null, usernameBaru,
             req.body.latitude || null, req.body.longitude || null,
             req.body.odc || null, req.body.odp || null,
+            req.body.no_ktp || null, req.body.tgl_lahir || null,
+            ...(req.body.ktp_url ? [req.body.ktp_url] : []),
             req.params.id]);
 
         // Update atribut RADIUS jika paket berubah
