@@ -3330,6 +3330,96 @@ Selamat menikmati! 🌐</textarea>
 <div id="sidebar-overlay" onclick="closeSidebar()"></div>
 
 <!-- MODAL MIKROTIK SCRIPT -->
+<!-- MODAL ACS DETAIL -->
+<div class="overlay" id="m-acs-detail">
+  <div class="modal" style="max-width:600px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:34px;height:34px;border-radius:9px;background:rgba(37,99,235,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-router" style="font-size:16px;color:#2563eb" aria-hidden="true"></i>
+        </div>
+        <h3 id="acs-detail-title" style="font-size:15px;font-weight:700;color:var(--text);margin:0">Detail Device</h3>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-acs-detail')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
+
+      <!-- Info grid -->
+      <div id="acs-detail-info" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+
+      <!-- Link pelanggan -->
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Tautkan ke Pelanggan</label>
+        <div style="display:flex;gap:8px">
+          <select id="acs-pel-select" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+            <option value="">— Tidak ditautkan —</option>
+          </select>
+          <button class="btn primary" onclick="acsLinkPelanggan()" style="gap:6px">
+            <i class="ti ti-link" style="font-size:13px" aria-hidden="true"></i> Simpan
+          </button>
+        </div>
+      </div>
+
+      <!-- Param cache -->
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Parameter Cache</div>
+        <div id="acs-param-list" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;max-height:160px;overflow-y:auto">
+          <div style="color:var(--text3);grid-column:1/-1;font-size:12px;padding:8px 0">Belum ada data</div>
+        </div>
+      </div>
+
+      <!-- Task log -->
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Log Task</div>
+        <div id="acs-task-mini" style="max-height:120px;overflow-y:auto">
+          <div style="color:var(--text3);font-size:12px">Belum ada task</div>
+        </div>
+      </div>
+
+      <!-- Aksi -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:4px;border-top:1px solid var(--border)">
+        <button class="btn" onclick="acsRefresh()" style="gap:6px">
+          <i class="ti ti-refresh" style="font-size:13px" aria-hidden="true"></i> Ambil Status
+        </button>
+        <button class="btn" onclick="bukaModalWifi()" style="gap:6px">
+          <i class="ti ti-wifi" style="font-size:13px" aria-hidden="true"></i> Ganti WiFi
+        </button>
+        <button class="btn" onclick="acsReboot()" style="gap:6px">
+          <i class="ti ti-refresh-alert" style="font-size:13px" aria-hidden="true"></i> Reboot
+        </button>
+        <button class="btn danger" onclick="acsHapus()" style="gap:6px;margin-left:auto">
+          <i class="ti ti-trash" style="font-size:13px" aria-hidden="true"></i> Hapus Device
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL GANTI WIFI ACS -->
+<div class="overlay" id="m-acs-wifi">
+  <div class="modal" style="max-width:400px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:34px;height:34px;border-radius:9px;background:rgba(22,163,74,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-wifi" style="font-size:16px;color:#16a34a" aria-hidden="true"></i>
+        </div>
+        <h3 style="font-size:15px;font-weight:700;color:var(--text);margin:0">Ganti Konfigurasi WiFi</h3>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-acs-wifi')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+      <div class="fg"><label>Nama WiFi (SSID) <span style="font-size:10px;color:var(--text3)">(kosongkan = tidak diubah)</span></label><input id="acs-wifi-ssid" placeholder="Nama jaringan WiFi"></div>
+      <div class="fg"><label>Password WiFi <span style="font-size:10px;color:#dc2626">*wajib, min. 8 karakter</span></label><input id="acs-wifi-pw" type="password" placeholder="••••••••"></div>
+      <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
+        <button class="btn" onclick="closeModal('m-acs-wifi')">Batal</button>
+        <button class="btn primary" onclick="acsGantiWifi()" style="gap:6px">
+          <i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Terapkan
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="m-mikrotik-script">
   <div class="modal" style="max-width:580px">
     <div class="modal-hdr"><h3 id="mks-title">📋 Script MikroTik</h3><button class="btn-x" onclick="closeModal('m-mikrotik-script')">✕</button></div>
