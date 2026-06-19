@@ -229,4 +229,82 @@ function _acak(charset, panjang) {
   return Array.from({ length: panjang }, () => charset[Math.floor(Math.random() * charset.length)]).join('');
 }
 
+// ============================================================
+// EXPORT BATCH — Excel (.xlsx) & PDF kartu
+// ============================================================
+const ExcelJS = require('exceljs');
+const { renderHtmlToPdf } = require('../services/invoice-pdf');
+
+async function ambilBatch(batchId) {
+    return await query(`
+        SELECT v.*, p.nama AS nama_paket, p.kecepatan_dn, p.harga, p.masa_aktif, p.satuan_masa
+        FROM voucher v LEFT JOIN paket p ON v.paket_id = p.id
+        WHERE v.batch_id = ?
+        ORDER BY v.id
+    `, [batchId]);
+}
+
+// GET /api/voucher/batch/:batchId/export-xlsx — unduh daftar voucher batch (Excel)
+router.get('/batch/:batchId/export-xlsx', async (req, res, next) => {
+    try {
+        const rows = await ambilBatch(req.params.batchId);
+        if (!rows.length) return res.status(404).json({ error: 'Batch tidak ditemukan' });
+
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet('Voucher');
+        ws.columns = [
+            { header: 'No',       key: 'no',       width: 6  },
+            { header: 'Username', key: 'username', width: 18 },
+            { header: 'Password', key: 'password', width: 18 },
+            { header: 'Paket',    key: 'paket',    width: 24 },
+            { header: 'Status',   key: 'status',   width: 12 },
+            { header: 'Harga',    key: 'harga',    width: 14 },
+            { header: 'Dibuat',   key: 'dibuat',   width: 20 },
+        ];
+        ws.getRow(1).font = { bold: true };
+        rows.forEach((v, i) => ws.addRow({
+            no: i + 1, username: v.username, password: v.password,
+            paket: v.nama_paket || '-', status: v.status,
+            harga: v.harga ? Number(v.harga) : 0,
+            dibuat: v.created_at ? new Date(v.created_at).toLocaleString('id-ID') : ''
+        }));
+        ws.getColumn('harga').numFmt = '#,##0';
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${req.params.batchId}.xlsx"`);
+        await wb.xlsx.write(res);
+        res.end();
+    } catch (e) { next(e); }
+});
+
+// GET /api/voucher/batch/:batchId/export-pdf — unduh kartu voucher batch (PDF, pakai template default)
+router.get('/batch/:batchId/export-pdf', async (req, res, next) => {
+    try {
+        const rows = await ambilBatch(req.params.batchId);
+        if (!rows.length) return res.status(404).json({ error: 'Batch tidak ditemukan' });
+
+        const tpl = await queryOne(`SELECT * FROM voucher_template WHERE is_default=1 LIMIT 1`)
+                 || await queryOne(`SELECT * FROM voucher_template ORDER BY id LIMIT 1`);
+        if (!tpl) return res.status(400).json({ error: 'Template voucher belum dikonfigurasi' });
+
+        const isi = (s, v, i) => (s || '')
+            .replace(/%username%/g, v.username || '')
+            .replace(/%password%/g, v.password || v.username || '')
+            .replace(/%profile%/g,  v.nama_paket || '—')
+            .replace(/%validity%/g, v.masa_aktif
+                ? `${v.masa_aktif} ${v.satuan_masa === 'jam' ? 'Jam' : v.satuan_masa === 'bulan' ? 'Bulan' : 'Hari'}` : '—')
+            .replace(/%price%/g,    v.harga ? 'Rp ' + Number(v.harga).toLocaleString('id-ID') : '—')
+            .replace(/%no_urut%/g,  String(i + 1).padStart(3, '0'));
+
+        const body   = rows.map((v, i) => isi(tpl.row_html, v, i)).join('');
+        const header = (tpl.header_html || '').replace(/<script[\s\S]*?<\/script>/gi, '');
+        const html   = header + body + (tpl.footer_html || '');
+
+        const pdf = await renderHtmlToPdf(html, { margin: { top: '8mm', right: '8mm', bottom: '8mm', left: '8mm' } });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${req.params.batchId}.pdf"`);
+        res.end(pdf);
+    } catch (e) { next(e); }
+});
+
 module.exports = router;

@@ -8001,6 +8001,8 @@ async function loadBatchHistory() {
           <div style="color:var(--text3);margin-top:1px">${tgl} &nbsp;·&nbsp; ${b.jumlah} voucher &nbsp;·&nbsp; <span style="color:var(--green)">${sisaAktif} aktif</span></div>
         </div>
         <button class="btn sm primary" onclick="printBatch('${b.batch_id}',${b.jumlah})">🖨️ Print</button>
+        <button class="btn sm" onclick="exportBatchXlsx('${b.batch_id}')" title="Export Excel">📊 Excel</button>
+        <button class="btn sm" onclick="exportBatchPdf('${b.batch_id}')" title="Export PDF kartu">📄 PDF</button>
       </div>`;
     }).join('') + '<div style="text-align:center;font-size:11px;color:var(--text3);padding-top:8px">Menampilkan 20 batch terakhir</div>';
   } catch(e) {
@@ -8262,6 +8264,28 @@ async function printBatch(batchId, jumlah) {
     if (!list.length) { toast('❌ Tidak ada voucher batch ini', true); return; }
     await printBatchDenganTemplate(list);
   } catch(e) { toast('❌ ' + e.message, true); }
+}
+
+// Unduh file export batch (Excel/PDF) — perlu kirim token, jadi via fetch+blob
+async function _unduhBatch(path, batchId, ext) {
+  try {
+    toast('⏳ Menyiapkan file...');
+    const res = await fetch(API + path, { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || 'Gagal'); }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = batchId + '.' + ext;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    toast('✅ File diunduh');
+  } catch (e) { toast('❌ ' + e.message, true); }
+}
+function exportBatchXlsx(batchId) {
+  _unduhBatch('/api/voucher/batch/' + encodeURIComponent(batchId) + '/export-xlsx', batchId, 'xlsx');
+}
+function exportBatchPdf(batchId) {
+  _unduhBatch('/api/voucher/batch/' + encodeURIComponent(batchId) + '/export-pdf', batchId, 'pdf');
 }
 
 function bukaWindowPrint(appName, vouchers) {

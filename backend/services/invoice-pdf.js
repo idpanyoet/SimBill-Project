@@ -273,4 +273,21 @@ function bersihkanPdfLama(maxHari = 7) {
     } catch (e) { return 0; }
 }
 
-module.exports = { buatInvoicePDF, bersihkanPdfLama, terbilang };
+// Render HTML apa pun → Buffer PDF (pakai ulang browser yang sama). Dipakai juga
+// untuk export kartu voucher per batch.
+async function renderHtmlToPdf(html, pdfOptions = {}) {
+    if (!puppeteer) throw new Error('puppeteer belum terinstall. Jalankan: npm install puppeteer');
+    const browser = await getBrowser();
+    const page = await browser.newPage();
+    try {
+        await page.setContent(html, { waitUntil: 'networkidle0' });
+        return await page.pdf(Object.assign(
+            { format: 'A4', printBackground: true, margin: { top: '8mm', right: '8mm', bottom: '8mm', left: '8mm' } },
+            pdfOptions
+        ));
+    } finally {
+        await page.close().catch(() => {});
+    }
+}
+
+module.exports = { buatInvoicePDF, bersihkanPdfLama, terbilang, renderHtmlToPdf };
