@@ -3816,29 +3816,31 @@ function applyLang() {
   const lbl  = document.getElementById('topbar-lang-label');
   if (lbl) lbl.textContent = _lang;
 
+  // Helper: terjemahkan atau kembalikan ke asli
+  const tx = (orig) => isEN ? (I18N.EN[orig] || orig) : orig;
+
   // 1. Search placeholder
   const searchEl = document.getElementById('topbar-search');
-  if (searchEl) searchEl.placeholder = t('Cari invoice belum dibayar');
+  if (searchEl) searchEl.placeholder = tx('Cari invoice belum dibayar');
 
-  // 2. Sidebar sections (.sb-section)
+  // 2. Sidebar sections
   document.querySelectorAll('.sb-section').forEach(el => {
     if (!el.dataset.orig) el.dataset.orig = el.textContent.trim();
-    el.textContent = t(el.dataset.orig);
+    el.textContent = tx(el.dataset.orig);
   });
 
-  // 3. Sidebar items & sub-items — hanya text node (bukan ikon)
+  // 3. Sidebar items & sub-items
   document.querySelectorAll('.sb-item, .sb-sub-item').forEach(el => {
-    // Cari semua child text nodes
     el.childNodes.forEach(n => {
       if (n.nodeType !== 3) return;
       const raw = n.textContent.replace(/\s+/g,' ').trim();
       if (!raw || raw.length < 2) return;
       if (!n._orig) n._orig = raw;
-      n.textContent = ' ' + t(n._orig) + ' ';
+      n.textContent = ' ' + tx(n._orig) + ' ';
     });
   });
 
-  // 4. Group headers (Laporan, Lainnya)
+  // 4. Group headers
   document.querySelectorAll('.sb-group-hdr').forEach(el => {
     const inner = el.querySelector('div');
     if (!inner) return;
@@ -3847,7 +3849,7 @@ function applyLang() {
       const raw = n.textContent.replace(/\s+/g,' ').trim();
       if (!raw || raw.length < 2) return;
       if (!n._orig) n._orig = raw;
-      n.textContent = ' ' + t(n._orig);
+      n.textContent = ' ' + tx(n._orig);
     });
   });
 
@@ -3855,70 +3857,77 @@ function applyLang() {
   const titleEl = document.getElementById('page-title');
   if (titleEl) {
     if (!titleEl._orig) titleEl._orig = titleEl.textContent.trim();
-    titleEl.textContent = t(titleEl._orig);
+    titleEl.textContent = tx(titleEl._orig);
   }
 
-  // 6. Semua label form
+  // 6. Label form (di luar modal — modal ditangani saat openModal)
   document.querySelectorAll('label').forEach(el => {
-    // Hanya text langsung (bukan wrapper yg punya child input/span penting)
     const text = el.childNodes[0];
     if (!text || text.nodeType !== 3) return;
     const raw = text.textContent.trim();
     if (!raw || raw.length < 2) return;
     if (!text._orig) text._orig = raw;
-    text.textContent = t(text._orig);
+    text.textContent = tx(text._orig);
   });
 
-  // 7. Table headers <th>
+  // 7. Table headers
   document.querySelectorAll('th').forEach(el => {
     if (!el.dataset.orig) el.dataset.orig = el.textContent.trim();
-    const trans = t(el.dataset.orig);
-    if (trans !== el.dataset.orig) el.textContent = trans;
+    el.textContent = tx(el.dataset.orig);
   });
 
-  // 8. Semua elemen dengan data-i18n
+  // 8. data-i18n — SELALU gunakan key (bukan textContent) sebagai sumber
   document.querySelectorAll('[data-i18n]').forEach(el => {
-    el.textContent = t(el.getAttribute('data-i18n'));
+    el.textContent = tx(el.getAttribute('data-i18n'));
   });
 
-  // 9. Elemen .lbl dan .sub yang ada teks (metric labels di dashboard)
+  // 9. .lbl dan .sub
   document.querySelectorAll('.lbl, .sub').forEach(el => {
     if (el.children.length > 0) return;
     const raw = el.textContent.trim();
     if (!raw || raw.length < 2) return;
     if (!el._orig) el._orig = raw;
-    const trans = t(el._orig);
-    if (trans !== el._orig) el.textContent = trans;
+    el.textContent = tx(el._orig);
   });
 
-  // 9. Card titles — text langsung (bukan span anak)
+  // 10. Card titles
   document.querySelectorAll('.card-title').forEach(el => {
     el.childNodes.forEach(n => {
       if (n.nodeType !== 3) return;
       const raw = n.textContent.trim();
       if (!raw || raw.length < 2) return;
       if (!n._orig) n._orig = raw;
-      n.textContent = ' ' + t(n._orig);
+      n.textContent = ' ' + tx(n._orig);
     });
-    // Juga cek span langsung
     el.querySelectorAll('span').forEach(span => {
-      if (span.children.length > 0) return; // skip span dengan anak
+      if (span.children.length > 0) return;
       const raw = span.textContent.trim();
       if (!raw || raw.length < 2) return;
       if (!span._orig) span._orig = raw;
-      span.textContent = t(span._orig);
+      span.textContent = tx(span._orig);
     });
   });
 
-  // 10. Buttons — text langsung
-  document.querySelectorAll('button').forEach(el => {
-    el.childNodes.forEach(n => {
-      if (n.nodeType !== 3) return;
-      const raw = n.textContent.trim();
-      if (!raw || raw.length < 2) return;
-      if (!n._orig) n._orig = raw;
-      const trans = t(n._orig);
-      if (trans !== n._orig) n.textContent = trans.startsWith(' ') ? trans : ' ' + trans;
+  // 11. Semua modal yang sedang terbuka
+  document.querySelectorAll('.overlay.open').forEach(modal => {
+    modal.querySelectorAll('[data-i18n]').forEach(el => {
+      el.textContent = tx(el.getAttribute('data-i18n'));
+    });
+    modal.querySelectorAll('label').forEach(el => {
+      const tn = el.childNodes[0];
+      if (!tn || tn.nodeType !== 3) return;
+      if (!tn._orig) tn._orig = tn.textContent.trim();
+      if (!tn._orig || tn._orig.length < 2) return;
+      tn.textContent = tx(tn._orig);
+    });
+    modal.querySelectorAll('button').forEach(el => {
+      el.childNodes.forEach(n => {
+        if (n.nodeType !== 3) return;
+        if (!n._orig) n._orig = n.textContent.trim();
+        if (!n._orig || n._orig.length < 2) return;
+        const trans = tx(n._orig);
+        if (trans !== n._orig || !isEN) n.textContent = ' ' + trans + ' ';
+      });
     });
   });
 }
@@ -4124,8 +4133,9 @@ function openModal(id) {
   if (_lang !== 'ID') {
     const modal = document.getElementById(id);
     if (modal) {
+      const tx = (orig) => _lang === 'EN' ? (I18N.EN[orig] || orig) : orig;
       modal.querySelectorAll('[data-i18n]').forEach(function(el) {
-        el.textContent = t(el.getAttribute('data-i18n'));
+        el.textContent = tx(el.getAttribute('data-i18n'));
       });
       modal.querySelectorAll('label').forEach(function(el) {
         const tn = el.childNodes[0];
@@ -4133,7 +4143,7 @@ function openModal(id) {
         const raw = tn._orig || tn.textContent.trim();
         if (!raw || raw.length < 2) return;
         tn._orig = raw;
-        tn.textContent = t(raw);
+        tn.textContent = tx(raw);
       });
       modal.querySelectorAll('button').forEach(function(el) {
         el.childNodes.forEach(function(n) {
@@ -4141,7 +4151,7 @@ function openModal(id) {
           const raw = n._orig || n.textContent.trim();
           if (!raw || raw.length < 2) return;
           n._orig = raw;
-          const trans = t(raw);
+          const trans = tx(raw);
           if (trans !== raw) n.textContent = ' ' + trans + ' ';
         });
       });
