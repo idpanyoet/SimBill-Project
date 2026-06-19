@@ -7787,11 +7787,18 @@ async function _invoicePdfBlob(id) {
 
 // ══════════════════════════════════════════════════════════════
 
-// ── Download PDF (identik dengan hasil print A4) ──
+// ── Download PDF (digenerate server pakai Chromium → identik dengan print) ──
 async function unduhInvoicePDF(id, noInv) {
   try {
     toast('⏳ Membuat PDF...');
-    const blob = await _invoicePdfBlob(id);
+    const res = await fetch(API + '/api/invoice/' + id + '/pdf', {
+      headers: { 'Authorization': 'Bearer ' + TOKEN }
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.error || 'Gagal membuat PDF');
+    }
+    const blob = await res.blob();
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href = url; a.download = (noInv || 'invoice') + '.pdf';
@@ -7806,17 +7813,8 @@ async function kirimInvoicePDFwa(id, noInv) {
   if (!confirm('Kirim invoice ' + (noInv || '') + ' ke WhatsApp pelanggan?')) return;
   try {
     toast('⏳ Membuat & mengirim PDF...');
-    const blob = await _invoicePdfBlob(id);
-    const fd   = new FormData();
-    fd.append('file', blob, (noInv || 'invoice') + '.pdf');
-    const res = await fetch(API + '/api/invoice/' + id + '/kirim-wa-pdf', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + TOKEN },   // jangan set Content-Type — biar browser isi boundary
-      body: fd
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Gagal mengirim');
-    toast('✅ ' + (data.pesan || 'Invoice terkirim ke WhatsApp'));
+    const r = await apiFetch('/api/invoice/' + id + '/kirim-wa-pdf', { method: 'POST' });
+    toast('✅ ' + (r.pesan || 'Invoice terkirim ke WhatsApp'));
   } catch (e) { toast('❌ ' + e.message, true); }
 }
 

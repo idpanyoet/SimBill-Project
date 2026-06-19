@@ -1,21 +1,16 @@
-// services/invoice-pdf.js — Generator PDF invoice (server-side, tanpa Chromium)
-// Memakai pdfkit (layout PDF murni JS) + qrcode (QR untuk link pembayaran).
-// Dipakai oleh: GET /api/invoice/:id/pdf (download) dan kirim PDF ke WhatsApp.
+// services/invoice-pdf.js — Generator PDF invoice via Puppeteer (Chromium headless).
+// Me-render HTML A4 yang SAMA PERSIS dengan tampilan cetak di dashboard, jadi
+// PDF yang dihasilkan identik dengan hasil print. QR & logo di-embed sebagai
+// data URL (tidak perlu akses jaringan saat render → tanpa CORS/CDN).
 const fs   = require('fs');
 const path = require('path');
 const { query, queryOne } = require('../config/db');
 
-let PDFDocument, QRCode;
-try {
-    PDFDocument = require('pdfkit');
-    QRCode     = require('qrcode');
-} catch (e) {
-    console.warn('[INVOICE-PDF] Package pdfkit/qrcode belum terinstall. Jalankan: npm install pdfkit qrcode');
-}
+let QRCode, puppeteer;
+try { QRCode    = require('qrcode'); }   catch (e) {}
+try { puppeteer = require('puppeteer'); } catch (e) {}
 
 const OUT_DIR = path.join(__dirname, '../../frontend/uploads/invoice');
-
-function fmtRp(n) { return 'Rp ' + Number(n || 0).toLocaleString('id-ID'); }
 
 function fmtTgl(d) {
     if (!d) return '—';
@@ -23,17 +18,16 @@ function fmtTgl(d) {
     catch (e) { return String(d); }
 }
 
-// Angka → kata (Bahasa Indonesia)
 function terbilang(n) {
     n = Math.floor(Math.abs(Number(n) || 0));
     const s = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
-    if (n < 12)        return s[n];
-    if (n < 20)        return s[n - 10] + ' belas';
-    if (n < 100)       return s[Math.floor(n / 10)] + ' puluh' + (n % 10 ? ' ' + s[n % 10] : '');
-    if (n < 200)       return 'seratus' + (n % 100 ? ' ' + terbilang(n % 100) : '');
-    if (n < 1000)      return s[Math.floor(n / 100)] + ' ratus' + (n % 100 ? ' ' + terbilang(n % 100) : '');
-    if (n < 2000)      return 'seribu' + (n % 1000 ? ' ' + terbilang(n % 1000) : '');
-    if (n < 1000000)   return terbilang(Math.floor(n / 1000)) + ' ribu' + (n % 1000 ? ' ' + terbilang(n % 1000) : '');
+    if (n < 12)         return s[n];
+    if (n < 20)         return s[n - 10] + ' belas';
+    if (n < 100)        return s[Math.floor(n / 10)] + ' puluh' + (n % 10 ? ' ' + s[n % 10] : '');
+    if (n < 200)        return 'seratus' + (n % 100 ? ' ' + terbilang(n % 100) : '');
+    if (n < 1000)       return s[Math.floor(n / 100)] + ' ratus' + (n % 100 ? ' ' + terbilang(n % 100) : '');
+    if (n < 2000)       return 'seribu' + (n % 1000 ? ' ' + terbilang(n % 1000) : '');
+    if (n < 1000000)    return terbilang(Math.floor(n / 1000)) + ' ribu' + (n % 1000 ? ' ' + terbilang(n % 1000) : '');
     if (n < 1000000000) return terbilang(Math.floor(n / 1000000)) + ' juta' + (n % 1000000 ? ' ' + terbilang(n % 1000000) : '');
     return terbilang(Math.floor(n / 1000000000)) + ' miliar' + (n % 1000000000 ? ' ' + terbilang(n % 1000000000) : '');
 }
@@ -53,51 +47,194 @@ async function ambilData(invoiceId) {
 
     const rows = await query(
         `SELECT kunci, nilai FROM setting WHERE kunci IN
-         ('app_name','alamat','wa_number','app_logo','app_url','pajak_persen')`
+         ('app_name','alamat','wa_number','app_logo','app_url')`
     );
     const cfg = {};
     rows.forEach(r => cfg[r.kunci] = r.nilai);
     return { inv, cfg };
 }
 
-// ============================================================
-// GENERATE PDF — mengembalikan { filePath, publicUrl, no_invoice }
-// ============================================================
-async function buatInvoicePDF(invoiceId) {
-    if (!PDFDocument) throw new Error('pdfkit belum terinstall di server. Jalankan: npm install pdfkit qrcode');
-
-    const { inv, cfg } = await ambilData(invoiceId);
-
+// HTML A4 — disalin persis dari tampilan cetak dashboard agar identik.
+function buildHtmlA4(inv, cfg, qrDataUrl, logoDataUrl) {
     const appName   = cfg.app_name  || 'SimBill ISP';
     const appAlamat = cfg.alamat    || '';
     const appWa     = cfg.wa_number || '';
-    const appUrl    = (cfg.app_url  || '').replace(/\/+$/, '');
-    const pajak     = parseFloat(cfg.pajak_persen || 0) || 0;
+    const appUrl    = cfg.app_url   || '';
 
-    const total    = Number(inv.jumlah || 0);
-    const subtotal = pajak > 0 ? Math.round(total / (1 + pajak / 100)) : total;
-    const ppn      = total - subtotal;
-
-    const isLunas = inv.status === 'paid';
+    const isLunas     = inv.status === 'paid';
     const statusLabel = isLunas ? 'LUNAS' : (inv.status === 'overdue' ? 'TERLAMBAT' : 'BELUM BAYAR');
-    const warna = {
-        biru:  '#1a3a6e', teks: '#1a1a1a', abu: '#6b7280', garis: '#e5e7eb',
-        hijau: '#16a34a', merah: '#dc2626', kuning: '#d97706'
-    };
-    const statusColor = isLunas ? warna.hijau : (inv.status === 'overdue' ? warna.merah : warna.kuning);
+    const statusColor = isLunas ? '#16a34a' : (inv.status === 'overdue' ? '#dc2626' : '#d97706');
 
-    // QR: untuk invoice belum lunas arahkan ke link bayar; jika lunas/no link → nomor invoice
-    const qrData = (!isLunas && inv.payment_url) ? inv.payment_url : inv.no_invoice;
-    let qrBuf = null;
-    try { if (QRCode) qrBuf = await QRCode.toBuffer(String(qrData), { margin: 1, width: 240 }); }
-    catch (e) { console.warn('[INVOICE-PDF] QR gagal dibuat:', e.message); }
+    const tglInvoice = fmtTgl(inv.tgl_invoice);
+    const tglTempo   = fmtTgl(inv.tgl_jatuh_tempo);
+    const tglBayar   = inv.tgl_bayar ? fmtTgl(inv.tgl_bayar) : null;
+    const jumlah     = Number(inv.jumlah || 0);
+    const terbilangStr = terbilang(jumlah);
 
-    // Logo dari disk (app_logo = '/uploads/xxx.png')
-    let logoPath = null;
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Invoice ${inv.no_invoice}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:11pt;color:#1a1a1a;background:#fff}
+.page{width:210mm;min-height:297mm;padding:14mm 16mm;margin:0 auto;background:#fff;position:relative}
+.header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1a1a1a;padding-bottom:10px;margin-bottom:12px}
+.company-name{font-size:16pt;font-weight:700;margin-bottom:2px}
+.company-sub{font-size:9pt;color:#555;margin-bottom:3px}
+.company-info{font-size:8pt;color:#666}
+.invoice-title{font-size:28pt;font-weight:700;color:#1a3a6e;text-align:right;letter-spacing:2px}
+.logo{height:50px;object-fit:contain;display:block;margin-bottom:4px;margin-left:auto}
+.row2{display:flex;justify-content:space-between;margin-bottom:14px}
+.to-box{font-size:9pt}
+.to-box .label{color:#777;font-size:8pt;margin-bottom:2px}
+.to-box .nama{font-size:13pt;font-weight:700;margin-bottom:2px}
+.info-table{font-size:9pt;border-collapse:collapse}
+.info-table td{padding:1px 4px}
+.info-table td:first-child{color:#777;white-space:nowrap}
+.info-table td:last-child{font-weight:600}
+.period{font-size:9pt;color:#444;margin-bottom:10px}
+.status-badge{display:inline-block;font-size:9pt;font-weight:700;padding:2px 10px;border-radius:4px;border:1.5px solid;margin-top:2px}
+table.items{width:100%;border-collapse:collapse;margin-bottom:10px}
+table.items th{background:#1a3a6e;color:#fff;padding:6px 8px;font-size:9pt;text-align:left}
+table.items th:nth-child(3),table.items th:nth-child(4),table.items th:nth-child(5),table.items th:nth-child(6){text-align:right}
+table.items td{padding:6px 8px;border-bottom:1px solid #e5e7eb;font-size:9pt}
+table.items td:nth-child(3),table.items td:nth-child(4),table.items td:nth-child(5),table.items td:nth-child(6){text-align:right}
+.total-row{display:flex;justify-content:flex-end;margin-bottom:4px}
+.total-box{background:#f1f5f9;border:1px solid #ddd;border-radius:6px;padding:8px 16px;min-width:220px}
+.total-box .row{display:flex;justify-content:space-between;font-size:10pt;padding:2px 0}
+.total-box .row.grand{font-weight:700;font-size:11pt;border-top:1px solid #ccc;margin-top:4px;padding-top:4px}
+.terbilang{font-size:8.5pt;font-style:italic;color:#555;margin-bottom:14px}
+.bottom{display:flex;justify-content:space-between;align-items:flex-end;margin-top:16px}
+.qr-box{text-align:center}
+.qr-box img{width:100px;height:100px;display:block;margin:0 auto 4px}
+.qr-box .qr-label{font-size:7pt;color:#888}
+.stamp-area{position:relative;min-width:180px;min-height:80px;border:1px dashed #ccc;border-radius:6px;padding:8px;text-align:center}
+.stamp-area .label{font-size:8pt;color:#888;margin-bottom:4px}
+.stamp-lunas{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-20deg);font-size:28pt;font-weight:700;color:#16a34a;opacity:.7;border:3px solid #16a34a;padding:2px 12px;border-radius:6px;white-space:nowrap;letter-spacing:3px}
+.syarat{border-left:3px solid #dc2626;padding-left:10px;font-size:8pt;color:#dc2626;max-width:200px}
+.syarat b{display:block;margin-bottom:3px}
+.thanks{font-size:14pt;font-weight:700;color:#1a3a6e}
+.footer-bottom{text-align:center;font-size:8pt;color:#aaa;margin-top:20px;border-top:1px solid #eee;padding-top:8px}
+@page{size:A4;margin:0}
+body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+</style></head><body>
+<div class="page">
+  <div class="header">
+    <div>
+      <div class="company-name">${appName}</div>
+      <div class="company-sub">High Speed Internet</div>
+      <div class="company-info">${appAlamat ? 'Alamat : ' + appAlamat : ''}</div>
+      <div class="company-info">${appWa ? 'No HP : ' + appWa + (appUrl ? ' &nbsp;|&nbsp; ' + appUrl : '') : appUrl}</div>
+    </div>
+    <div style="text-align:right">
+      ${logoDataUrl ? `<img src="${logoDataUrl}" class="logo" alt="Logo">` : ''}
+      <div class="invoice-title">INVOICE</div>
+    </div>
+  </div>
+
+  <div class="row2">
+    <div class="to-box">
+      <div class="label">Kepada :</div>
+      <div class="nama">${inv.nama_pelanggan || '—'}</div>
+      <div style="font-size:9pt;color:#444">${inv.no_hp || ''}</div>
+      <div style="font-size:9pt;color:#444">${inv.alamat || ''}</div>
+    </div>
+    <table class="info-table">
+      <tr><td>ID Pelanggan</td><td>:</td><td>${inv.pelanggan_id || '—'}</td></tr>
+      <tr><td>No Invoice</td><td>:</td><td>${inv.no_invoice}</td></tr>
+      <tr><td>Tanggal Invoice</td><td>:</td><td>${tglInvoice}</td></tr>
+      <tr><td>Jatuh Tempo</td><td>:</td><td>${tglTempo}</td></tr>
+    </table>
+  </div>
+
+  <div class="period" style="display:flex;align-items:center;gap:10px">
+    <span>Periode ${tglInvoice}</span>
+    <span class="status-badge" style="color:${statusColor};border-color:${statusColor}">${statusLabel}</span>
+  </div>
+
+  <table class="items">
+    <thead><tr><th style="width:30px">No</th><th>Item</th><th style="width:40px">Qty</th><th>Harga</th><th>Disc</th><th>Total</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>1.</td>
+        <td>${inv.nama_paket || 'Paket Internet'}</td>
+        <td style="text-align:center">1</td>
+        <td>${jumlah.toLocaleString('id-ID')}</td>
+        <td>-</td>
+        <td>${jumlah.toLocaleString('id-ID')}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="total-row">
+    <div class="total-box">
+      <div class="row"><span>Sub Total</span><span>${jumlah.toLocaleString('id-ID')}</span></div>
+      <div class="row"><span>Diskon</span><span>-</span></div>
+      <div class="row grand"><span>Total Tagihan</span><span>${jumlah.toLocaleString('id-ID')}</span></div>
+    </div>
+  </div>
+
+  <div class="terbilang">* Terbilang : <i>${terbilangStr} rupiah</i></div>
+
+  <div class="bottom">
+    <div class="qr-box">
+      ${qrDataUrl ? `<img src="${qrDataUrl}" alt="QR">` : ''}
+      <div class="qr-label">${inv.no_invoice}</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px">
+      <div class="stamp-area">
+        <div class="label">Tanda Terima</div>
+        ${isLunas ? `<div class="stamp-lunas">LUNAS</div>` : ''}
+        <div style="font-size:7.5pt;color:#888;margin-top:30px">Diterima Oleh : _______________</div>
+        ${tglBayar ? `<div style="font-size:7.5pt;color:#555;margin-top:4px">Pada Tanggal ${tglBayar}</div>` : ''}
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="thanks">Terimakasih</div>
+        <div class="syarat">
+          <b>Syarat dan Ketentuan</b>
+          ${isLunas ? 'Terimakasih sudah melakukan pembayaran tepat waktu' : 'Mohon lakukan pembayaran tepat waktu'}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">${appName} &mdash; ${appUrl || ''}</div>
+</div>
+</body></html>`;
+}
+
+// Browser dipakai ulang antar permintaan (launch sekali) agar cepat.
+let _browser = null;
+async function getBrowser() {
+    if (_browser && _browser.isConnected && _browser.isConnected()) return _browser;
+    _browser = await puppeteer.launch({
+        headless: 'new',
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+    });
+    return _browser;
+}
+
+async function buatInvoicePDF(invoiceId) {
+    if (!puppeteer) throw new Error('puppeteer belum terinstall. Jalankan: npm install puppeteer');
+
+    const { inv, cfg } = await ambilData(invoiceId);
+
+    // QR (data URL) — sama dengan print: encode nomor invoice
+    let qrDataUrl = '';
+    try { if (QRCode) qrDataUrl = await QRCode.toDataURL(String(inv.no_invoice), { margin: 1, width: 240 }); }
+    catch (e) { console.warn('[INVOICE-PDF] QR gagal:', e.message); }
+
+    // Logo (data URL) dari disk
+    let logoDataUrl = '';
     if (cfg.app_logo) {
         const p = path.join(__dirname, '../../frontend', cfg.app_logo.replace(/^\//, ''));
-        if (fs.existsSync(p)) logoPath = p;
+        if (fs.existsSync(p)) {
+            const ext  = (path.extname(p).slice(1) || 'png').toLowerCase();
+            const mime = ext === 'svg' ? 'image/svg+xml' : (ext === 'jpg' ? 'image/jpeg' : 'image/' + ext);
+            logoDataUrl = `data:${mime};base64,` + fs.readFileSync(p).toString('base64');
+        }
     }
+
+    const html = buildHtmlA4(inv, cfg, qrDataUrl, logoDataUrl);
 
     if (!fs.existsSync(OUT_DIR)) fs.mkdirSync(OUT_DIR, { recursive: true });
     const safeNo   = String(inv.no_invoice).replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -105,132 +242,23 @@ async function buatInvoicePDF(invoiceId) {
     const filename = `${safeNo}_${rand}.pdf`;
     const filePath = path.join(OUT_DIR, filename);
 
-    const doc = new PDFDocument({ size: 'A4', margin: 40 });
-    const stream = fs.createWriteStream(filePath);
-    doc.pipe(stream);
-
-    const L = 40, R = 555; // margin kiri/kanan (A4 = 595pt lebar)
-
-    // ── HEADER ──────────────────────────────────────────────
-    if (logoPath) {
-        try { doc.image(logoPath, L, 40, { fit: [90, 50] }); } catch (e) {}
-    }
-    doc.fillColor(warna.teks).font('Helvetica-Bold').fontSize(16)
-       .text(appName, logoPath ? 140 : L, 42);
-    doc.font('Helvetica').fontSize(8).fillColor(warna.abu);
-    if (appAlamat) doc.text(appAlamat, logoPath ? 140 : L, 64, { width: 300 });
-    if (appWa)     doc.text('WA: ' + appWa + (appUrl ? '  |  ' + appUrl : ''), logoPath ? 140 : L);
-
-    doc.font('Helvetica-Bold').fontSize(26).fillColor(warna.biru)
-       .text('INVOICE', R - 200, 42, { width: 200, align: 'right' });
-
-    doc.moveTo(L, 95).lineTo(R, 95).lineWidth(2).strokeColor(warna.teks).stroke();
-
-    // ── KEPADA & META ───────────────────────────────────────
-    let y = 110;
-    doc.font('Helvetica').fontSize(8).fillColor(warna.abu).text('Kepada:', L, y);
-    doc.font('Helvetica-Bold').fontSize(13).fillColor(warna.teks).text(inv.nama_pelanggan || '—', L, y + 11);
-    doc.font('Helvetica').fontSize(9).fillColor('#444');
-    if (inv.no_hp)  doc.text(inv.no_hp, L, y + 30);
-    if (inv.alamat) doc.text(inv.alamat, L, y + 43, { width: 250 });
-
-    const metaX = 330, valX = 430;
-    const meta = [
-        ['No Invoice', inv.no_invoice],
-        ['Tanggal', fmtTgl(inv.tgl_invoice)],
-        ['Jatuh Tempo', fmtTgl(inv.tgl_jatuh_tempo)],
-        ['Status', statusLabel],
-    ];
-    meta.forEach((m, i) => {
-        const yy = y + i * 14;
-        doc.font('Helvetica').fontSize(9).fillColor(warna.abu).text(m[0], metaX, yy, { width: 95 });
-        doc.font('Helvetica-Bold').fontSize(9)
-           .fillColor(m[0] === 'Status' ? statusColor : warna.teks)
-           .text(': ' + m[1], valX, yy, { width: 125 });
-    });
-
-    // ── TABEL ITEM ──────────────────────────────────────────
-    y = 185;
-    doc.rect(L, y, R - L, 20).fill(warna.biru);
-    doc.fillColor('#fff').font('Helvetica-Bold').fontSize(9);
-    doc.text('No', L + 6, y + 6, { width: 24 });
-    doc.text('Deskripsi', L + 34, y + 6, { width: 230 });
-    doc.text('Qty', L + 270, y + 6, { width: 40, align: 'center' });
-    doc.text('Harga', L + 320, y + 6, { width: 90, align: 'right' });
-    doc.text('Total', L + 415, y + 6, { width: 95, align: 'right' });
-
-    y += 20;
-    doc.fillColor(warna.teks).font('Helvetica').fontSize(9);
-    doc.text('1', L + 6, y + 6, { width: 24 });
-    const deskripsi = (inv.nama_paket || 'Paket Internet') +
-        (inv.kecepatan_dn ? ` (${inv.kecepatan_dn} Mbps)` : '');
-    doc.text(deskripsi, L + 34, y + 6, { width: 230 });
-    doc.text('1', L + 270, y + 6, { width: 40, align: 'center' });
-    doc.text(fmtRp(subtotal), L + 320, y + 6, { width: 90, align: 'right' });
-    doc.text(fmtRp(subtotal), L + 415, y + 6, { width: 95, align: 'right' });
-    doc.moveTo(L, y + 24).lineTo(R, y + 24).lineWidth(0.5).strokeColor(warna.garis).stroke();
-
-    // ── TOTAL ───────────────────────────────────────────────
-    y += 36;
-    const boxX = 330, boxW = R - boxX;
-    function totalRow(label, val, bold) {
-        doc.font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(bold ? 11 : 9)
-           .fillColor(warna.teks);
-        doc.text(label, boxX, y, { width: 120 });
-        doc.text(fmtRp(val), boxX + 120, y, { width: boxW - 120, align: 'right' });
-        y += bold ? 18 : 14;
-    }
-    totalRow('Sub Total', subtotal);
-    if (pajak > 0) totalRow(`PPN ${pajak}%`, ppn);
-    doc.moveTo(boxX, y).lineTo(R, y).lineWidth(0.5).strokeColor('#ccc').stroke();
-    y += 4;
-    totalRow('Total Tagihan', total, true);
-
-    // Terbilang
-    y += 6;
-    doc.font('Helvetica-Oblique').fontSize(8.5).fillColor('#555')
-       .text('Terbilang: ' + terbilang(total) + ' rupiah', L, y, { width: R - L });
-
-    // ── QR + STATUS ─────────────────────────────────────────
-    y += 30;
-    if (qrBuf) {
-        try { doc.image(qrBuf, L, y, { fit: [90, 90] }); } catch (e) {}
-        doc.font('Helvetica').fontSize(7).fillColor(warna.abu)
-           .text((!isLunas && inv.payment_url) ? 'Scan untuk bayar' : inv.no_invoice,
-                 L, y + 92, { width: 90, align: 'center' });
+    const browser = await getBrowser();
+    const page = await browser.newPage();
+    try {
+        await page.setContent(html, { waitUntil: 'networkidle0' });
+        await page.pdf({
+            path: filePath, format: 'A4', printBackground: true,
+            margin: { top: '0', right: '0', bottom: '0', left: '0' }
+        });
+    } finally {
+        await page.close().catch(() => {});
     }
 
-    // Stempel LUNAS / area tanda terima
-    const stX = 360, stY = y;
-    doc.roundedRect(stX, stY, R - stX, 90, 6).lineWidth(1).dash(3, { space: 2 }).strokeColor('#ccc').stroke().undash();
-    doc.font('Helvetica').fontSize(8).fillColor(warna.abu).text('Tanda Terima', stX + 10, stY + 8);
-    if (isLunas) {
-        doc.save();
-        doc.rotate(-15, { origin: [stX + (R - stX) / 2, stY + 45] });
-        doc.font('Helvetica-Bold').fontSize(26).fillColor(warna.hijau)
-           .text('LUNAS', stX, stY + 30, { width: R - stX, align: 'center' });
-        doc.restore();
-        if (inv.tgl_bayar)
-            doc.font('Helvetica').fontSize(7.5).fillColor('#555')
-               .text('Dibayar: ' + fmtTgl(inv.tgl_bayar) + (inv.metode_bayar ? ' (' + inv.metode_bayar + ')' : ''),
-                     stX + 10, stY + 72);
-    } else {
-        doc.font('Helvetica').fontSize(7.5).fillColor('#888')
-           .text('Diterima oleh: _______________', stX + 10, stY + 55);
-    }
-
-    // ── FOOTER ──────────────────────────────────────────────
-    doc.font('Helvetica').fontSize(8).fillColor('#aaa')
-       .text(`${appName}${appUrl ? ' — ' + appUrl : ''}`, L, 770, { width: R - L, align: 'center' });
-
-    doc.end();
-    await new Promise((res, rej) => { stream.on('finish', res); stream.on('error', rej); });
-
+    const appUrl = (cfg.app_url || '').replace(/\/+$/, '');
     const publicUrl = appUrl ? `${appUrl}/uploads/invoice/${filename}` : `/uploads/invoice/${filename}`;
     return { filePath, publicUrl, filename, no_invoice: inv.no_invoice };
 }
 
-// Hapus file PDF invoice yang lebih tua dari N hari (privasi + hemat disk).
 function bersihkanPdfLama(maxHari = 7) {
     try {
         if (!fs.existsSync(OUT_DIR)) return 0;
