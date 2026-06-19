@@ -1105,6 +1105,47 @@ Selamat menikmati! 🌐</textarea>
               </button>
             </div>
 
+            <!-- Card Broadcast Massal -->
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(220,38,38,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-speakerphone" style="font-size:17px;color:#dc2626" aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Broadcast Massal</div>
+                  <div class="td-text-sub" style="font-size:11px">Kirim pesan ke banyak pelanggan sekaligus</div>
+                </div>
+              </div>
+
+              <div class="fg">
+                <label>Target Penerima</label>
+                <select id="wa-broadcast-target" style="width:100%">
+                  <option value="unpaid">📋 Semua belum bayar</option>
+                  <option value="overdue">⚠️ Sudah terlambat</option>
+                  <option value="semua">👥 Semua pelanggan</option>
+                </select>
+              </div>
+
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+                <div class="fg" style="margin-bottom:0;flex:none;width:100px">
+                  <label>Delay (detik)</label>
+                  <input id="wa-broadcast-delay" type="number" value="3" min="1" max="60" style="width:100%;text-align:center;font-weight:700;font-size:16px">
+                </div>
+                <div style="font-size:11px;color:var(--text2);margin-top:18px;flex:1">
+                  Disarankan <b>3–5 detik</b> antar pesan agar tidak terkena blokir WhatsApp
+                </div>
+              </div>
+
+              <div style="background:rgba(220,38,38,.05);border:1px solid rgba(220,38,38,.15);border-radius:9px;padding:10px 13px;font-size:11px;color:#b91c1c;margin-bottom:14px;display:flex;gap:8px">
+                <i class="ti ti-alert-triangle" style="font-size:14px;flex-shrink:0;margin-top:1px" aria-hidden="true"></i>
+                Broadcast akan mengirim pesan ke semua pelanggan dalam target. Pastikan konten pesan tidak melanggar kebijakan WhatsApp.
+              </div>
+
+              <button class="btn danger" style="width:100%;justify-content:center;gap:6px;background:#dc2626;border-color:#dc2626;color:#fff" onclick="apiBroadcastWA()">
+                <i class="ti ti-speakerphone" style="font-size:14px" aria-hidden="true"></i> Kirim Broadcast
+              </button>
+            </div>
+
           </div>
 
           <!-- ══ KOLOM KANAN ══ -->
@@ -1170,47 +1211,6 @@ Selamat menikmati! 🌐</textarea>
                   <div style="text-align:center;color:#aaa;font-size:12px;padding:20px 0">Kirim pesan test untuk melihat preview</div>
                 </div>
               </div>
-            </div>
-
-            <!-- Card Broadcast Massal -->
-            <div class="card">
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
-                <div style="width:34px;height:34px;border-radius:9px;background:rgba(220,38,38,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                  <i class="ti ti-speakerphone" style="font-size:17px;color:#dc2626" aria-hidden="true"></i>
-                </div>
-                <div>
-                  <div style="font-size:13px;font-weight:700;color:var(--text)">Broadcast Massal</div>
-                  <div class="td-text-sub" style="font-size:11px">Kirim pesan ke banyak pelanggan sekaligus</div>
-                </div>
-              </div>
-
-              <div class="fg">
-                <label>Target Penerima</label>
-                <select id="wa-broadcast-target" style="width:100%">
-                  <option value="unpaid">📋 Semua belum bayar</option>
-                  <option value="overdue">⚠️ Sudah terlambat</option>
-                  <option value="semua">👥 Semua pelanggan</option>
-                </select>
-              </div>
-
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-                <div class="fg" style="margin-bottom:0;flex:none;width:100px">
-                  <label>Delay (detik)</label>
-                  <input id="wa-broadcast-delay" type="number" value="3" min="1" max="60" style="width:100%;text-align:center;font-weight:700;font-size:16px">
-                </div>
-                <div style="font-size:11px;color:var(--text2);margin-top:18px;flex:1">
-                  Disarankan <b>3–5 detik</b> antar pesan agar tidak terkena blokir WhatsApp
-                </div>
-              </div>
-
-              <div style="background:rgba(220,38,38,.05);border:1px solid rgba(220,38,38,.15);border-radius:9px;padding:10px 13px;font-size:11px;color:#b91c1c;margin-bottom:14px;display:flex;gap:8px">
-                <i class="ti ti-alert-triangle" style="font-size:14px;flex-shrink:0;margin-top:1px" aria-hidden="true"></i>
-                Broadcast akan mengirim pesan ke semua pelanggan dalam target. Pastikan konten pesan tidak melanggar kebijakan WhatsApp.
-              </div>
-
-              <button class="btn danger" style="width:100%;justify-content:center;gap:6px;background:#dc2626;border-color:#dc2626;color:#fff" onclick="apiBroadcastWA()">
-                <i class="ti ti-speakerphone" style="font-size:14px" aria-hidden="true"></i> Kirim Broadcast
-              </button>
             </div>
 
           </div>
