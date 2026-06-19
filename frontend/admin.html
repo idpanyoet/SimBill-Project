@@ -459,7 +459,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-item" onclick="goto('pelanggan',this)"><i class="ti ti-users icon" aria-hidden="true"></i> Pelanggan</div>
     <div class="sb-item" onclick="goto('paket',this)"><i class="ti ti-package icon" aria-hidden="true"></i> Paket Internet</div>
     <div class="sb-item" onclick="goto('invoice',this)"><i class="ti ti-receipt icon" aria-hidden="true"></i> Invoice</div>
-    <div class="sb-item" onclick="goto('voucher',this)"><i class="ti ti-ticket icon" aria-hidden="true"></i> Voucher Online</div>
+    <div class="sb-item" onclick="goto('voucher',this)"><i class="ti ti-ticket icon" aria-hidden="true"></i> Voucher</div>
 
     <div class="sb-item" onclick="goto('reseller',this)"><i class="ti ti-building-store icon" aria-hidden="true"></i> Reseller</div>
     <div class="sb-section">Gateway</div>
@@ -740,7 +740,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
         <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:12px">
           <button id="inv-tab-pppoe"   onclick="switchInvTab('pppoe')"   style="padding:8px 20px;font-size:13px;font-weight:500;border:none;background:none;border-bottom:2px solid var(--accent);margin-bottom:-2px;color:var(--accent);cursor:pointer">📡 PPPoE</button>
           <button id="inv-tab-hotspot" onclick="switchInvTab('hotspot')" style="padding:8px 20px;font-size:13px;font-weight:500;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text2);cursor:pointer">📶 Hotspot</button>
-          <button id="inv-tab-voucher" onclick="switchInvTab('voucher')" style="padding:8px 20px;font-size:13px;font-weight:500;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text2);cursor:pointer">🎟️ Voucher Online</button>
+          <button id="inv-tab-voucher" onclick="switchInvTab('voucher')" style="padding:8px 20px;font-size:13px;font-weight:500;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text2);cursor:pointer">🎟️ Voucher</button>
         </div>
 
         <div class="card">
@@ -953,7 +953,7 @@ Selamat menikmati! 🌐</textarea>
                 <option value="reminder">Reminder Jatuh Tempo</option>
                 <option value="suspend">Notifikasi Suspend</option>
                 <option value="konfirmasi">Konfirmasi Pembayaran</option>
-                <option value="voucher_sukses">🎟️ Voucher Online Sukses</option>
+                <option value="voucher_sukses">🎟️ Voucher Sukses</option>
               </select>
             </div>
 
@@ -1286,7 +1286,7 @@ Selamat menikmati! 🌐</textarea>
               <option value="">- All Transactions -</option>
               <option value="pppoe">PPPoE</option>
               <option value="hotspot">Hotspot</option>
-              <option value="voucher">Voucher Online</option>
+              <option value="voucher">Voucher</option>
             </select>
           </div>
 
@@ -2117,7 +2117,7 @@ Selamat menikmati! 🌐</textarea>
         <span class="vcr-toggle-track" id="fp-vcr-track" style="flex-shrink:0"><span class="vcr-toggle-thumb"></span></span>
         <input type="checkbox" id="fp-izin-voucher" style="display:none" onchange="paketToggleVcrLabel('fp')">
         <div>
-          <div class="td-text-main" style="font-size:13px;font-weight:600">Izinkan e-Voucher Online</div>
+          <div class="td-text-main" style="font-size:13px;font-weight:600">Izinkan e-Voucher</div>
           <div id="fp-vcr-lbl" class="td-text-sub" style="font-size:11px;margin-top:1px">Tidak diizinkan — paket tidak muncul di storefront</div>
         </div>
       </label>
@@ -2223,7 +2223,7 @@ Selamat menikmati! 🌐</textarea>
         <span class="vcr-toggle-track" id="ep2-vcr-track" style="flex-shrink:0"><span class="vcr-toggle-thumb"></span></span>
         <input type="checkbox" id="ep2-izin-voucher" style="display:none" onchange="paketToggleVcrLabel('ep2')">
         <div>
-          <div class="td-text-main" style="font-size:13px;font-weight:600">Izinkan e-Voucher Online</div>
+          <div class="td-text-main" style="font-size:13px;font-weight:600">Izinkan e-Voucher</div>
           <div id="ep2-vcr-lbl" class="td-text-sub" style="font-size:11px;margin-top:1px">Tidak diizinkan — paket tidak muncul di storefront</div>
         </div>
       </label>
@@ -3854,7 +3854,7 @@ function tampilApp() {
 const titles = {
   dashboard:'Dashboard', pelanggan:'Manajemen Pelanggan',
   paket:'Paket Internet', invoice:'Invoice & Tagihan',
-  voucher:'Voucher Online', whatsapp:'WhatsApp Gateway',
+  voucher:'Voucher', whatsapp:'WhatsApp Gateway',
   payment:'Payment Gateway', radius:'RADIUS / NAS',
   laporan:'Laporan — Ringkasan', acs:'ACS TR-069',
   'income-report':'Period Income Report',
@@ -6281,7 +6281,7 @@ const TPL_META = {
     default: `Halo *{nama}*,\n\nPembayaran Anda telah kami terima! ✅\n\n💰 Jumlah: *Rp {jumlah}*\n📅 Aktif hingga: *{tgl_expired}*\n\nInternet Anda sudah aktif kembali. Terima kasih! 🙏`
   },
   voucher_sukses: {
-    title: 'Voucher Online Sukses',
+    title: 'Voucher Sukses',
     slug:  'wa_tpl_voucher_sukses',
     placeholders: ['{nama}','{username}','{paket}','{masa_aktif}','{kecepatan}'],
     default: `Halo *{nama}*,\n\nTerima kasih! Pembayaran voucher diterima ✅\n\nBerikut voucher internet Anda:\n\n🔑 Username/Password: *{username}*\n📦 Paket: *{paket}*\n⏱ Berlaku: *{masa_aktif}*\n🚀 Kecepatan: *{kecepatan}*\n\nCara pakai:\n1️⃣ Sambungkan ke WiFi hotspot\n2️⃣ Buka browser, masuk halaman login\n3️⃣ Masukkan username & password di atas\n\nSelamat menikmati! 🌐`
