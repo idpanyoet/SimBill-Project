@@ -1,5 +1,7 @@
 // services/whatsapp.js — WhatsApp Gateway (Fonnte / Wablas / WA Business / WaNotif)
 const axios = require('axios');
+const fs    = require('fs');
+const FormData = require('form-data');
 const { query, queryOne } = require('../config/db');
 
 // ============================================================
@@ -307,9 +309,22 @@ async function kirimDokumen(no_hp, {
     try {
         let response;
         if (cfg.provider === 'fonnte') {
-            response = await axios.post('https://api.fonnte.com/send',
-                { target: no_hp, message: caption, url },
-                { headers: { Authorization: cfg.token } });
+            // Kirim byte file langsung via multipart (lebih andal — Fonnte tidak perlu
+            // mem-fetch URL dari server kita, jadi tak bergantung /uploads bisa diakses publik).
+            if (filePath && fs.existsSync(filePath)) {
+                const form = new FormData();
+                form.append('target', String(no_hp));
+                form.append('message', caption || '');
+                form.append('file', fs.createReadStream(filePath), { filename });
+                response = await axios.post('https://api.fonnte.com/send', form, {
+                    headers: { Authorization: cfg.token, ...form.getHeaders() },
+                    maxContentLength: Infinity, maxBodyLength: Infinity
+                });
+            } else {
+                response = await axios.post('https://api.fonnte.com/send',
+                    { target: no_hp, message: caption, url },
+                    { headers: { Authorization: cfg.token } });
+            }
         } else if (cfg.provider === 'wablas') {
             response = await axios.post('https://solo.wablas.com/api/send-document',
                 { phone: no_hp, document: url, caption },
