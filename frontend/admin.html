@@ -588,19 +588,19 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
         <div class="metrics">
           <div class="metric blue">
             <div class="metric-ico"><i class="ti ti-ticket" aria-hidden="true"></i></div>
-            <div><div class="lbl">Pendapatan Voucher</div><div class="val" id="m-vcr-pendapatan">—</div><div class="sub" id="m-vcr-pendapatan-sub"></div></div>
+            <div><div class="lbl" data-i18n="Pendapatan Voucher">Pendapatan Voucher</div><div class="val" id="m-vcr-pendapatan">—</div><div class="sub" id="m-vcr-pendapatan-sub"></div></div>
           </div>
           <div class="metric green">
             <div class="metric-ico"><i class="ti ti-cash" aria-hidden="true"></i></div>
-            <div><div class="lbl">Pendapatan Hari Ini</div><div class="val" id="m-pendapatan-hari">—</div><div class="sub" id="m-pendapatan-hari-sub"></div></div>
+            <div><div class="lbl" data-i18n="Pendapatan Hari Ini">Pendapatan Hari Ini</div><div class="val" id="m-pendapatan-hari">—</div><div class="sub" id="m-pendapatan-hari-sub"></div></div>
           </div>
           <div class="metric amber">
             <div class="metric-ico"><i class="ti ti-receipt" aria-hidden="true"></i></div>
-            <div><div class="lbl">Tagihan Bulan Ini</div><div class="val" id="m-tagihan">—</div><div class="sub" id="m-tagihan-sub"></div></div>
+            <div><div class="lbl" data-i18n="Tagihan Bulan Ini">Tagihan Bulan Ini</div><div class="val" id="m-tagihan">—</div><div class="sub" id="m-tagihan-sub"></div></div>
           </div>
           <div class="metric red" onclick="goto('invoice', document.querySelector('.sb-item[onclick*=invoice]'))" style="cursor:pointer" title="Klik untuk lihat invoice belum bayar">
             <div class="metric-ico"><i class="ti ti-alert-circle" aria-hidden="true"></i></div>
-            <div><div class="lbl">Belum Bayar</div><div class="val" id="m-belumbayar">—</div><div class="sub" id="m-belumbayar-sub"></div></div>
+            <div><div class="lbl" data-i18n="Belum Bayar">Belum Bayar</div><div class="val" id="m-belumbayar">—</div><div class="sub" id="m-belumbayar-sub"></div></div>
           </div>
         </div>
 
@@ -609,12 +609,12 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
               <div style="width:36px;height:36px;border-radius:8px;background:#7F77DD;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0"><i class="ti ti-router" aria-hidden="true"></i></div>
               <div>
-                <div style="font-size:13px;font-weight:500;color:var(--text)">User PPPoE</div>
-                <div style="font-size:11px;color:var(--text3)">Statistik koneksi real-time</div>
+                <div style="font-size:13px;font-weight:500;color:var(--text)" data-i18n="User PPPoE">User PPPoE</div>
+                <div style="font-size:11px;color:var(--text3)" data-i18n="Statistik koneksi real-time">Statistik koneksi real-time</div>
               </div>
               <div style="margin-left:auto;text-align:right">
                 <div class="td-text-main" style="font-size:28px;font-weight:700" id="pppoe-total">—</div>
-                <div class="td-text-sub" style="font-size:11px">total user</div>
+                <div class="td-text-sub" style="font-size:11px" data-i18n="total user">total user</div>
               </div>
             </div>
             <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--border);border-radius:8px;overflow:hidden">
@@ -639,7 +639,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
               <div style="width:36px;height:36px;border-radius:8px;background:#1D9E75;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0"><i class="ti ti-wifi" aria-hidden="true"></i></div>
               <div>
-                <div style="font-size:13px;font-weight:500;color:var(--text)">User Hotspot</div>
+                <div style="font-size:13px;font-weight:500;color:var(--text)" data-i18n="User Hotspot">User Hotspot</div>
                 <div style="font-size:11px;color:var(--text3)">Statistik koneksi real-time</div>
               </div>
               <div style="margin-left:auto;text-align:right">
@@ -674,14 +674,14 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
               <div style="width:36px;height:36px;border-radius:8px;background:#E24B4A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0"><i class="ti ti-calendar-due" aria-hidden="true"></i></div>
               <div>
-                <div style="font-size:13px;font-weight:500;color:var(--text)">Jatuh Tempo Dekat</div>
-                <div style="font-size:11px;color:var(--text3)">7 hari ke depan</div>
+                <div style="font-size:13px;font-weight:500;color:var(--text)" data-i18n="Jatuh Tempo Dekat">Jatuh Tempo Dekat</div>
+                <div style="font-size:11px;color:var(--text3)" data-i18n="7 hari ke depan">7 hari ke depan</div>
               </div>
             </div>
             <div id="jt-list">
               <div style="text-align:center;color:var(--text3);padding:16px">Tidak ada data</div>
             </div>
-            <button class="btn primary" style="width:100%;justify-content:center;margin-top:8px" onclick="kirimReminderMassal()">💬 Kirim Reminder WA</button>
+            <button class="btn primary" style="width:100%;justify-content:center;margin-top:8px" onclick="kirimReminderMassal()">💬 <span data-i18n="Kirim Reminder WA">Kirim Reminder WA</span></button>
           </div>
         </div>
 
@@ -691,8 +691,8 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
               <div style="width:36px;height:36px;border-radius:8px;background:#1D9E75;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0"><i class="ti ti-activity" aria-hidden="true"></i></div>
               <div style="flex:1">
-                <div style="font-size:13px;font-weight:500;color:var(--text)">Statistik Jaringan <span id="nas-live-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#1D9E75;margin:0 4px;vertical-align:middle"></span><span style="font-size:11px;color:#1D9E75">Live</span></div>
-                <div style="font-size:11px;color:var(--text3)">Traffic real-time per NAS</div>
+                <div style="font-size:13px;font-weight:500;color:var(--text)" data-i18n="Statistik Jaringan">Statistik Jaringan</span> <span id="nas-live-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#1D9E75;margin:0 4px;vertical-align:middle"></span><span style="font-size:11px;color:#1D9E75">Live</span></div>
+                <div style="font-size:11px;color:var(--text3)" data-i18n="Traffic real-time per NAS">Traffic real-time per NAS</div>
               </div>
             </div>
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
@@ -713,26 +713,26 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
             <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px">
               <div style="background:var(--bg3);border-radius:8px;padding:10px 12px;text-align:center">
                 <div id="nas-s-dl" class="td-text-main" style="font-size:17px;font-weight:700">—</div>
-                <div style="font-size:11px;color:var(--text3);margin-top:2px">Unduh</div>
+                <div style="font-size:11px;color:var(--text3);margin-top:2px" data-i18n="Unduh">Unduh</div>
               </div>
               <div style="background:var(--bg3);border-radius:8px;padding:10px 12px;text-align:center">
                 <div id="nas-s-ul" class="td-text-main" style="font-size:17px;font-weight:700">—</div>
-                <div style="font-size:11px;color:var(--text3);margin-top:2px">Unggah</div>
+                <div style="font-size:11px;color:var(--text3);margin-top:2px" data-i18n="Unggah">Unggah</div>
               </div>
               <div style="background:var(--bg3);border-radius:8px;padding:10px 12px;text-align:center">
                 <div id="nas-s-sesi" class="td-text-main" style="font-size:17px;font-weight:700">—</div>
-                <div style="font-size:11px;color:var(--text3);margin-top:2px">Sesi aktif</div>
+                <div style="font-size:11px;color:var(--text3);margin-top:2px" data-i18n="Sesi aktif">Sesi aktif</div>
               </div>
             </div>
           </div>
           <div class="card">
             <div class="card-title">WA Gateway — 30 Hari</div>
-            <div class="stat-row"><span class="lbl">Reminder terkirim</span><span class="val" style="color:var(--green)" id="wa-stat-reminder">—</span></div>
-            <div class="stat-row"><span class="lbl">Notif suspend</span><span class="val" style="color:var(--red)" id="wa-stat-suspend">—</span></div>
-            <div class="stat-row"><span class="lbl">Konfirmasi bayar</span><span class="val" style="color:var(--accent)" id="wa-stat-konfirmasi">—</span></div>
-            <div class="stat-row"><span class="lbl">Voucher terkirim</span><span class="val" id="wa-stat-voucher">—</span></div>
+            <div class="stat-row"><span class="lbl" data-i18n="Reminder terkirim">Reminder terkirim</span><span class="val" style="color:var(--green)" id="wa-stat-reminder">—</span></div>
+            <div class="stat-row"><span class="lbl" data-i18n="Notif suspend">Notif suspend</span><span class="val" style="color:var(--red)" id="wa-stat-suspend">—</span></div>
+            <div class="stat-row"><span class="lbl" data-i18n="Konfirmasi bayar">Konfirmasi bayar</span><span class="val" style="color:var(--accent)" id="wa-stat-konfirmasi">—</span></div>
+            <div class="stat-row"><span class="lbl" data-i18n="Voucher terkirim">Voucher terkirim</span><span class="val" id="wa-stat-voucher">—</span></div>
             <div class="divider"></div>
-            <div class="stat-row"><span class="lbl">Delivery rate</span><span class="val" style="color:var(--green)" id="wa-stat-rate">—</span></div>
+            <div class="stat-row"><span class="lbl" data-i18n="Delivery rate">Delivery rate</span><span class="val" style="color:var(--green)" id="wa-stat-rate">—</span></div>
           </div>
         </div>
 
@@ -3676,6 +3676,121 @@ const I18N = {
     'Total Online':'Total Online', 'Terakhir diperbarui':'Last updated',
     'Memuat...':'Loading...', 'Tidak ada data':'No data',
     'Tidak ada hasil':'No results',
+    // ── DASHBOARD ─────────────────────────────────
+    'Pendapatan Voucher':'Voucher Revenue',
+    'Pendapatan Hari Ini':'Today Revenue',
+    'Tagihan Bulan Ini':'This Month Bills',
+    'Belum Bayar':'Unpaid',
+    'User PPPoE':'PPPoE Users',
+    'User Hotspot':'Hotspot Users',
+    'Statistik koneksi real-time':'Real-time connection stats',
+    'total user':'total users',
+    'Jatuh Tempo Dekat':'Upcoming Due Dates',
+    '7 hari ke depan':'Next 7 days',
+    'Tidak ada data':'No data',
+    'Kirim Reminder WA':'Send WA Reminder',
+    'Statistik Jaringan':'Network Statistics',
+    'Traffic real-time per NAS':'Real-time traffic per NAS',
+    '— Pilih NAS —':'— Select NAS —',
+    'Unduh':'Download',
+    'Unggah':'Upload',
+    'Sesi aktif':'Active sessions',
+    'WA Gateway — 30 Hari':'WA Gateway — 30 Days',
+    'Reminder terkirim':'Reminders sent',
+    'Notif suspend':'Suspend notif',
+    'Konfirmasi bayar':'Payment confirm',
+    'Voucher terkirim':'Vouchers sent',
+    'Delivery rate':'Delivery rate',
+    'Expired':'Expired',
+    'Live':'Live',
+    // ── LAPORAN ───────────────────────────────────
+    'Pendapatan Bulan Ini':'This Month Revenue',
+    'Tagihan Tertunggak':'Outstanding Bills',
+    'Pelanggan Baru':'New Customers',
+    'Pelanggan Aktif':'Active Customers',
+    'Total Pelanggan':'Total Customers',
+    'Pendapatan per Paket — Bulan Ini':'Revenue by Plan — This Month',
+    'Transaksi Terbaru':'Latest Transactions',
+    'Dari':'From','Sampai':'To','Pilih Tanggal':'Select Date',
+    'Semua Tipe':'All Types','Semua Metode':'All Methods',
+    'Semua User':'All Users',
+    'Terapkan Filter':'Apply Filter',
+    'Total Pendapatan':'Total Revenue',
+    'Grafik':'Chart','Tabel':'Table',
+    // ── PELANGGAN ─────────────────────────────────
+    '+ Tambah Pelanggan':'+ Add Customer',
+    'Cari nama, username, HP...':'Search name, username, phone...',
+    'Tipe Koneksi':'Connection Type','Tipe':'Type',
+    'Aktifkan':'Activate','Suspend':'Suspend','Nonaktifkan':'Deactivate',
+    'Hapus Pelanggan':'Delete Customer',
+    'Tgl Aktif':'Active Date','Tgl Expired':'Expiry Date',
+    'Jatuh Tempo':'Due Date','Paket':'Plan',
+    'Sesi':'Sessions','Riwayat':'History',
+    // ── INVOICE ───────────────────────────────────
+    'Buat Invoice':'Create Invoice','Tandai Lunas':'Mark Paid',
+    'Invoice Baru':'New Invoice','Kirim WA':'Send WA',
+    'Lunas':'Paid','Pending':'Pending','Batal':'Cancelled',
+    'Metode Bayar':'Payment Method','Tgl Bayar':'Payment Date',
+    'Jumlah':'Amount','Sub Total':'Sub Total',
+    'Konfirmasi':'Confirm','Batalkan':'Cancel',
+    // ── VOUCHER ───────────────────────────────────
+    'Generate Voucher':'Generate Voucher',
+    'Riwayat Sesi Pengguna Voucher':'Voucher User Session History',
+    'Penjualan per Paket Voucher':'Voucher Sales by Plan',
+    'Riwayat Batch Generate':'Batch Generate History',
+    'Total Pendapatan':'Total Revenue',
+    'Buka Halaman Voucher Publik':'Open Public Voucher Page',
+    'Cari username...':'Search username...',
+    // ── RESELLER ──────────────────────────────────
+    'Tambah Saldo':'Add Balance','Lihat Mutasi':'View Mutations',
+    'Saldo':'Balance','Level':'Level','Komisi':'Commission',
+    'Pending':'Pending','Disetujui':'Approved',
+    // ── SESI AKTIF ────────────────────────────────
+    'PPPoE Aktif':'Active PPPoE','Hotspot Aktif':'Active Hotspot',
+    'Total Online':'Total Online','Terakhir diperbarui':'Last updated',
+    'Cari username, IP, atau NAS...':'Search username, IP, or NAS...',
+    'Putus Sesi':'Disconnect',
+    'Bersihkan Stale':'Clear Stale',
+    // ── LOG ───────────────────────────────────────
+    'Bersihkan Lama':'Clear Old',
+    'Cari pelaku, aksi, atau target...':'Search user, action, or target...',
+    // ── PETA ──────────────────────────────────────
+    'Semua ODC':'All ODC','Semua ODP':'All ODP',
+    'Cari node...':'Search node...','titik':'points',
+    // ── SETTING ───────────────────────────────────
+    'Simpan Pengaturan':'Save Settings',
+    'Identitas Aplikasi':'App Identity',
+    'Kontak & Lokasi':'Contact & Location',
+    'Konfigurasi Billing':'Billing Configuration',
+    'Reminder H- (hari)':'Reminder H- (days)',
+    'Auto-Suspend H+ (hari)':'Auto-Suspend H+ (days)',
+    'No. WA Kontak Bantuan':'Support WA Number',
+    'Alamat Usaha':'Business Address',
+    'URL Logo':'Logo URL','Upload Logo':'Upload Logo',
+    'Nama Aplikasi':'App Name','URL Aplikasi':'App URL',
+    'Versi App':'App Version','Uptime':'Uptime',
+    'Terhubung':'Connected','Tidak terhubung':'Disconnected',
+    'Test Koneksi RADIUS':'Test RADIUS Connection',
+    'Sync Radcheck':'Sync Radcheck','Restart RADIUS':'Restart RADIUS',
+    // ── PENGGUNA ──────────────────────────────────
+    'Kelola akun admin, peran, dan level akses':'Manage admin accounts, roles, and access levels',
+    'Semua peran':'All roles',
+    'Cari username, nama, atau kontak...':'Search username, name, or contact...',
+    'Super Admin':'Super Admin',
+    'Operator':'Operator',
+    // ── BACKUP ────────────────────────────────────
+    'Backup Database':'Backup Database',
+    'Download Backup SQL':'Download SQL Backup',
+    'Restore Database':'Restore Database',
+    'Pilih file SQL':'Choose SQL file',
+    // ── MODAL UMUM ────────────────────────────────
+    'Simpan & Aktifkan':'Save & Activate',
+    'Simpan Perubahan':'Save Changes',
+    'Klik pada peta untuk memperbarui koordinat.':'Click the map to update coordinates.',
+    'Klik pada peta untuk mengisi koordinat secara otomatis.':'Click the map to auto-fill coordinates.',
+    'Izinkan semua paket':'Allow all plans',
+    'Paket yang Diizinkan':'Allowed Plans',
+    'Kosongkan untuk izinkan semua paket.':'Leave empty to allow all plans.',
   }
 };
 
@@ -3759,6 +3874,16 @@ function applyLang() {
   // 8. Semua elemen dengan data-i18n
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = t(el.getAttribute('data-i18n'));
+  });
+
+  // 9. Elemen .lbl dan .sub yang ada teks (metric labels di dashboard)
+  document.querySelectorAll('.lbl, .sub').forEach(el => {
+    if (el.children.length > 0) return;
+    const raw = el.textContent.trim();
+    if (!raw || raw.length < 2) return;
+    if (!el._orig) el._orig = raw;
+    const trans = t(el._orig);
+    if (trans !== el._orig) el.textContent = trans;
   });
 
   // 9. Card titles — text langsung (bukan span anak)
