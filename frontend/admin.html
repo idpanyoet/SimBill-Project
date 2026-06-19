@@ -446,6 +446,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-section">Sistem</div>
     <div class="sb-item" onclick="goto('radius',this)"><i class="ti ti-server icon" aria-hidden="true"></i> RADIUS / NAS</div>
     <div class="sb-item" onclick="goto('laporan',this)"><i class="ti ti-chart-bar icon" aria-hidden="true"></i> Laporan</div>
+    <div class="sb-item" onclick="goto('income-report',this)"><i class="ti ti-report-money icon" aria-hidden="true"></i> Period Income Report</div>
     <div class="sb-item" onclick="goto('voucher-template',this)"><i class="ti ti-palette icon" aria-hidden="true"></i> Template Voucher</div>
     <div class="sb-item" onclick="goto('acs',this)"><i class="ti ti-router icon" aria-hidden="true"></i> ACS TR-069</div>
     <div class="sb-item" onclick="goto('setting',this)"><i class="ti ti-settings icon" aria-hidden="true"></i> Setting</div>
@@ -1116,6 +1117,130 @@ Selamat menikmati! 🌐</textarea>
           </tbody></table>
           <div style="display:flex;gap:8px;margin-top:12px">
             <button class="btn" onclick="apiExportExcelLaporan()">📊 Export Excel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ PERIOD INCOME REPORT ══ -->
+      <div class="page" id="p-income-report">
+
+        <!-- Filter Card -->
+        <div class="card" style="max-width:680px">
+          <div class="card-title">
+            <span><i class="ti ti-report-money" style="color:#BA7517;margin-right:6px" aria-hidden="true"></i>Period Income Report</span>
+          </div>
+
+          <div class="fg-row">
+            <div class="fg">
+              <label>From Date</label>
+              <input type="date" id="ir-from" style="width:100%">
+            </div>
+            <div class="fg">
+              <label>Till Date</label>
+              <input type="date" id="ir-till" style="width:100%">
+            </div>
+          </div>
+
+          <div class="fg">
+            <label>User Type</label>
+            <div style="display:flex;gap:16px;margin-top:4px">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+                <input type="radio" name="ir-user-type" value="all" checked style="accent-color:#BA7517"> All Type
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+                <input type="radio" name="ir-user-type" value="customer" style="accent-color:#BA7517"> Customer
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
+                <input type="radio" name="ir-user-type" value="voucher" style="accent-color:#BA7517"> Voucher
+              </label>
+            </div>
+          </div>
+
+          <div class="fg">
+            <label>Service Type</label>
+            <select id="ir-service-type" style="width:100%">
+              <option value="">- All Transactions -</option>
+              <option value="pppoe">PPPoE</option>
+              <option value="hotspot">Hotspot</option>
+              <option value="voucher">Voucher Online</option>
+            </select>
+          </div>
+
+          <div class="fg">
+            <label>Payment Method</label>
+            <select id="ir-payment-method" style="width:100%">
+              <option value="">- All Payment Method -</option>
+              <option value="cash">Cash / Tunai</option>
+              <option value="transfer">Transfer Bank</option>
+              <option value="qris">QRIS</option>
+              <option value="va">Virtual Account</option>
+              <option value="ewallet">E-Wallet</option>
+            </select>
+          </div>
+
+          <button class="btn primary" style="margin-top:4px" onclick="apiIncomeReport()">
+            <i class="ti ti-search" aria-hidden="true"></i> View Reports
+          </button>
+        </div>
+
+        <!-- Summary Metrics -->
+        <div id="ir-metrics" style="display:none">
+          <div class="metrics" style="grid-template-columns:repeat(4,1fr)">
+            <div class="metric green">
+              <div class="metric-ico"><i class="ti ti-cash" aria-hidden="true"></i></div>
+              <div><div class="lbl">Total Pendapatan</div><div class="val" id="ir-m-total">—</div></div>
+            </div>
+            <div class="metric blue">
+              <div class="metric-ico"><i class="ti ti-receipt" aria-hidden="true"></i></div>
+              <div><div class="lbl">Total Transaksi</div><div class="val" id="ir-m-trx">—</div></div>
+            </div>
+            <div class="metric amber">
+              <div class="metric-ico"><i class="ti ti-users" aria-hidden="true"></i></div>
+              <div><div class="lbl">Customer</div><div class="val" id="ir-m-cust">—</div></div>
+            </div>
+            <div class="metric teal">
+              <div class="metric-ico"><i class="ti ti-ticket" aria-hidden="true"></i></div>
+              <div><div class="lbl">Voucher</div><div class="val" id="ir-m-vcr">—</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hasil Tabel -->
+        <div class="card" id="ir-result-card" style="display:none">
+          <div class="card-title">
+            Hasil Laporan
+            <div style="display:flex;gap:8px">
+              <span id="ir-period-label" class="td-text-sub" style="font-size:11px;font-weight:400"></span>
+              <button class="btn sm" onclick="irExportCSV()"><i class="ti ti-download" aria-hidden="true"></i> Export CSV</button>
+              <button class="btn sm" onclick="irExportExcel()"><i class="ti ti-table-export" aria-hidden="true"></i> Export Excel</button>
+            </div>
+          </div>
+
+          <!-- Summary per tipe -->
+          <div id="ir-summary-row" style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap"></div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>No.</th>
+                <th>Tanggal</th>
+                <th>No. Invoice</th>
+                <th>Nama</th>
+                <th>Tipe</th>
+                <th>Paket</th>
+                <th>Metode Bayar</th>
+                <th>Jumlah</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="tbl-income-report">
+              <tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text3)">Klik View Reports untuk melihat data</td></tr>
+            </tbody>
+          </table>
+
+          <div id="ir-total-bar" style="display:none;margin-top:12px;padding:10px 14px;background:var(--bg3);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
+            <span class="td-text-sub" style="font-size:13px">Total Pendapatan (Paid)</span>
+            <span id="ir-grand-total" class="td-accent-bold" style="font-size:16px;font-weight:700"></span>
           </div>
         </div>
       </div>
@@ -3506,7 +3631,7 @@ const loaders = {
   paket: loadPaket, invoice: loadInvoice,
   voucher: loadVoucher, whatsapp: loadWALog,
   payment: loadPayment, radius: loadRadius,
-  laporan: loadLaporan, reseller: loadReseller,
+  laporan: loadLaporan, 'income-report': loadIncomeReport, reseller: loadReseller,
   acs: loadACS, 'voucher-template': loadVoucherTemplate,
   setting: loadSetting,
   backup:  loadBackup
@@ -6654,6 +6779,146 @@ async function apiExportExcelLaporan() {
     toast('✅ File Excel berhasil diunduh');
   } catch(e) { toast('❌ ' + e.message, true); }
 }
+
+// ══════════════════════════════════════════════════
+// PERIOD INCOME REPORT
+// ══════════════════════════════════════════════════
+let _irData = null;
+
+function loadIncomeReport() {
+  // Set default tanggal: awal bulan ini s/d hari ini
+  const now   = new Date();
+  const y     = now.getFullYear();
+  const m     = String(now.getMonth() + 1).padStart(2,'0');
+  const d     = String(now.getDate()).padStart(2,'0');
+  const dari  = `${y}-${m}-01`;
+  const sampai= `${y}-${m}-${d}`;
+  const elF   = document.getElementById('ir-from');
+  const elT   = document.getElementById('ir-till');
+  if (elF && !elF.value) elF.value = dari;
+  if (elT && !elT.value) elT.value = sampai;
+}
+
+async function apiIncomeReport() {
+  const dari    = document.getElementById('ir-from').value;
+  const sampai  = document.getElementById('ir-till').value;
+  const userType= document.querySelector('input[name="ir-user-type"]:checked')?.value || 'all';
+  const service = document.getElementById('ir-service-type').value;
+  const payment = document.getElementById('ir-payment-method').value;
+
+  if (!dari || !sampai) return toast('❌ Pilih rentang tanggal', true);
+  if (dari > sampai)    return toast('❌ From Date harus sebelum Till Date', true);
+
+  try {
+    const params = new URLSearchParams({ dari, sampai, user_type: userType });
+    if (service) params.append('service_type', service);
+    if (payment) params.append('payment_method', payment);
+
+    const d = await apiFetch('/api/laporan/income-report?' + params.toString());
+    _irData  = d;
+
+    // Update metrics
+    document.getElementById('ir-m-total').textContent = fmt(d.summary.total);
+    document.getElementById('ir-m-trx').textContent   = d.summary.trx;
+    document.getElementById('ir-m-cust').textContent  = d.summary.customer;
+    document.getElementById('ir-m-vcr').textContent   = d.summary.voucher;
+    document.getElementById('ir-metrics').style.display = 'block';
+
+    // Summary per tipe chips
+    const srBox = document.getElementById('ir-summary-row');
+    const colors = { PPPoE:'#dbeafe:#1d4ed8', Hotspot:'#f3e8ff:#7e22ce', Voucher:'#dcfce7:#15803d', Lainnya:'#f1f5f9:#64748b' };
+    srBox.innerHTML = Object.entries(d.summary.per_tipe).map(([k,v]) => {
+      const [bg, col] = (colors[k] || '#f1f5f9:#64748b').split(':');
+      return `<div style="background:${bg};border-radius:8px;padding:8px 14px;text-align:center">
+        <div style="font-size:10px;font-weight:600;color:${col};text-transform:uppercase">${k}</div>
+        <div style="font-size:14px;font-weight:700;color:${col};margin-top:2px">${fmt(v)}</div>
+      </div>`;
+    }).join('');
+
+    // Label periode
+    document.getElementById('ir-period-label').textContent = `${dari} s/d ${sampai}`;
+
+    // Render tabel
+    const tbody = document.getElementById('tbl-income-report');
+    if (!d.rows.length) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3)">Tidak ada transaksi pada periode ini</td></tr>';
+    } else {
+      tbody.innerHTML = d.rows.map((r, i) => {
+        const metode = r.metode_bayar || 'cash';
+        const tipe   = r.user_type === 'Voucher'
+          ? '<span class="tag hotspot">Voucher</span>'
+          : (r.tipe_paket === 'pppoe' ? '<span class="tag pppoe">PPPoE</span>' : '<span class="tag hotspot">Hotspot</span>');
+        return `<tr>
+          <td class="td-text-sub">${i+1}</td>
+          <td class="td-text-sub td-mono" style="font-size:11px">${r.tgl_bayar ? r.tgl_bayar.toString().slice(0,10) : '—'}</td>
+          <td class="td-mono" style="font-size:11px">${r.no_invoice}</td>
+          <td class="td-text-main">${r.nama}</td>
+          <td>${tipe}</td>
+          <td class="td-text-sub" style="font-size:11px">${r.nama_paket}</td>
+          <td><span class="badge blue" style="font-size:10px;text-transform:capitalize">${metode}</span></td>
+          <td class="td-text-bold">${fmt(r.jumlah)}</td>
+          <td><span class="tag paid">Lunas</span></td>
+        </tr>`;
+      }).join('');
+    }
+
+    // Grand total
+    document.getElementById('ir-grand-total').textContent = fmt(d.summary.total);
+    document.getElementById('ir-total-bar').style.display  = 'flex';
+    document.getElementById('ir-result-card').style.display = 'block';
+
+    if (!d.rows.length) toast('⚠️ Tidak ada data pada periode ini');
+    else toast(`✅ ${d.rows.length} transaksi ditemukan`);
+
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+
+function irExportCSV() {
+  if (!_irData?.rows?.length) return toast('❌ Tidak ada data', true);
+  const header = ['No','Tanggal','No Invoice','Nama','Tipe','Paket','Metode Bayar','Jumlah','Status'];
+  const rows   = _irData.rows.map((r,i) => [
+    i+1,
+    r.tgl_bayar?.toString().slice(0,10)||'',
+    r.no_invoice, r.nama, r.user_type,
+    r.nama_paket, r.metode_bayar||'cash',
+    r.jumlah, r.status
+  ]);
+  const csv  = [header, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF'+csv], { type:'text/csv;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `income-report-${_irData.summary.periode?.replace(/ /g,'')}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  toast('✅ Export CSV berhasil');
+}
+
+async function irExportExcel() {
+  if (!_irData?.rows?.length) return toast('❌ Tidak ada data', true);
+  const dari   = document.getElementById('ir-from').value;
+  const sampai = document.getElementById('ir-till').value;
+  const userType = document.querySelector('input[name="ir-user-type"]:checked')?.value || 'all';
+  const service  = document.getElementById('ir-service-type').value;
+  const payment  = document.getElementById('ir-payment-method').value;
+  const params   = new URLSearchParams({ dari, sampai, user_type: userType, format: 'xlsx' });
+  if (service) params.append('service_type', service);
+  if (payment) params.append('payment_method', payment);
+  try {
+    toast('⏳ Menyiapkan Excel...');
+    const resp = await fetch('/api/laporan/income-report-excel?' + params.toString(), {
+      headers: { 'Authorization': `Bearer ${TOKEN}` }
+    });
+    if (!resp.ok) throw new Error('Gagal export Excel');
+    const blob = await resp.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `income-report-${dari}-${sampai}.xlsx`;
+    a.click(); URL.revokeObjectURL(url);
+    toast('✅ Export Excel berhasil');
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+// ══════════════════════════════════════════════════
 
 async function loadLaporan() {
   try {

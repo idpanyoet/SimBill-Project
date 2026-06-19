@@ -326,4 +326,150 @@ router.get('/export-excel', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// ── GET /api/laporan/income-report ────────────────────────────
+router.get('/income-report', async (req, res, next) => {
+    try {
+        const { dari, sampai, user_type = 'all', service_type = '', payment_method = '' } = req.query;
+
+        if (!dari || !sampai)
+            return res.status(400).json({ error: 'Parameter dari dan sampai wajib diisi' });
+
+        let where = [`i.status = 'paid'`, `DATE(i.tgl_bayar) BETWEEN ? AND ?`];
+        let params = [dari, sampai];
+
+        // Filter user type
+        if (user_type === 'customer') where.push('i.pelanggan_id IS NOT NULL');
+        else if (user_type === 'voucher') where.push('i.pelanggan_id IS NULL');
+
+        // Filter service type
+        if (service_type === 'pppoe')   where.push("(pk.tipe = 'pppoe' OR (pk.tipe = 'keduanya' AND i.pelanggan_id IS NOT NULL))");
+        else if (service_type === 'hotspot') where.push("(pk.tipe = 'hotspot' OR (pk.tipe = 'keduanya' AND i.pelanggan_id IS NOT NULL))");
+        else if (service_type === 'voucher') where.push('i.pelanggan_id IS NULL');
+
+        // Filter payment method
+        if (payment_method) {
+            where.push('i.metode_bayar = ?');
+            params.push(payment_method);
+        }
+
+        const rows = await query(`
+            SELECT
+                i.id, i.no_invoice, i.jumlah, i.tgl_bayar, i.metode_bayar, i.status,
+                COALESCE(p.nama, 'Pembeli Voucher') AS nama,
+                pk.nama AS nama_paket, pk.tipe AS tipe_paket,
+                CASE WHEN i.pelanggan_id IS NOT NULL THEN 'Customer' ELSE 'Voucher' END AS user_type
+            FROM invoice i
+            JOIN paket pk ON i.paket_id = pk.id
+            LEFT JOIN pelanggan p ON i.pelanggan_id = p.id
+            WHERE ${where.join(' AND ')}
+            ORDER BY i.tgl_bayar DESC
+        `, params);
+
+        // Summary
+        const totalPendapatan = rows.reduce((s, r) => s + parseFloat(r.jumlah || 0), 0);
+        const totalCustomer   = rows.filter(r => r.user_type === 'Customer').length;
+        const totalVoucher    = rows.filter(r => r.user_type === 'Voucher').length;
+
+        // Summary per tipe paket
+        const perTipe = {};
+        rows.forEach(r => {
+            const k = r.user_type === 'Voucher' ? 'Voucher' : (r.tipe_paket === 'pppoe' ? 'PPPoE' : r.tipe_paket === 'hotspot' ? 'Hotspot' : 'Lainnya');
+            perTipe[k] = (perTipe[k] || 0) + parseFloat(r.jumlah || 0);
+        });
+
+        res.json({
+            rows,
+            summary: {
+                total:    totalPendapatan,
+                trx:      rows.length,
+                customer: totalCustomer,
+                voucher:  totalVoucher,
+                per_tipe: perTipe,
+                periode:  `${dari} s/d ${sampai}`
+            }
+        });
+    } catch(e) { next(e); }
+});
+
+// ── GET /api/laporan/income-report-excel ──────────────────────
+router.get('/income-report-excel', async (req, res, next) => {
+    try {
+        const { dari, sampai, user_type = 'all', service_type = '', payment_method = '' } = req.query;
+        if (!dari || !sampai) return res.status(400).json({ error: 'Parameter dari dan sampai wajib diisi' });
+
+        let where = [`i.status = 'paid'`, `DATE(i.tgl_bayar) BETWEEN ? AND ?`];
+        let params = [dari, sampai];
+        if (user_type === 'customer') where.push('i.pelanggan_id IS NOT NULL');
+        else if (user_type === 'voucher') where.push('i.pelanggan_id IS NULL');
+        if (service_type === 'pppoe')   where.push("pk.tipe = 'pppoe'");
+        else if (service_type === 'hotspot') where.push("pk.tipe = 'hotspot'");
+        else if (service_type === 'voucher') where.push('i.pelanggan_id IS NULL');
+        if (payment_method) { where.push('i.metode_bayar = ?'); params.push(payment_method); }
+
+        const rows = await query(`
+            SELECT i.no_invoice, i.jumlah, i.tgl_bayar, i.metode_bayar,
+                   COALESCE(p.nama, 'Pembeli Voucher') AS nama,
+                   pk.nama AS nama_paket, pk.tipe AS tipe_paket,
+                   CASE WHEN i.pelanggan_id IS NOT NULL THEN 'Customer' ELSE 'Voucher' END AS user_type
+            FROM invoice i
+            JOIN paket pk ON i.paket_id = pk.id
+            LEFT JOIN pelanggan p ON i.pelanggan_id = p.id
+            WHERE ${where.join(' AND ')}
+            ORDER BY i.tgl_bayar DESC
+        `, params);
+
+        const ExcelJS = require('exceljs');
+        const wb = new ExcelJS.Workbook();
+        wb.creator = 'SimBill';
+        const ws  = wb.addWorksheet('Income Report');
+
+        ws.columns = [
+            { header:'No',           key:'no',      width:6  },
+            { header:'Tanggal',      key:'tgl',     width:14 },
+            { header:'No Invoice',   key:'inv',     width:20 },
+            { header:'Nama',         key:'nama',    width:24 },
+            { header:'Tipe',         key:'tipe',    width:12 },
+            { header:'Paket',        key:'paket',   width:24 },
+            { header:'Metode Bayar', key:'metode',  width:16 },
+            { header:'Jumlah (Rp)',  key:'jumlah',  width:16 },
+        ];
+
+        // Style header
+        ws.getRow(1).eachCell(cell => {
+            cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFBA7517' } };
+            cell.font = { bold:true, color:{ argb:'FFFFFFFF' } };
+            cell.alignment = { vertical:'middle', horizontal:'center' };
+        });
+
+        let total = 0;
+        rows.forEach((r, i) => {
+            const tgl = r.tgl_bayar ? new Date(r.tgl_bayar).toISOString().slice(0,10) : '';
+            ws.addRow({
+                no:     i + 1,
+                tgl,
+                inv:    r.no_invoice,
+                nama:   r.nama,
+                tipe:   r.user_type,
+                paket:  r.nama_paket,
+                metode: r.metode_bayar || 'cash',
+                jumlah: parseFloat(r.jumlah || 0)
+            });
+            total += parseFloat(r.jumlah || 0);
+        });
+
+        // Total row
+        const totalRow = ws.addRow({ no:'', tgl:'', inv:'', nama:'TOTAL', tipe:'', paket:'', metode:'', jumlah: total });
+        totalRow.eachCell(cell => { cell.font = { bold:true }; });
+
+        // Format kolom jumlah
+        ws.getColumn('jumlah').numFmt = '#,##0';
+
+        const tglStr = `${dari}_${sampai}`;
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="income-report-${tglStr}.xlsx"`);
+        await wb.xlsx.write(res);
+        res.end();
+    } catch(e) { next(e); }
+});
+
 module.exports = router;
