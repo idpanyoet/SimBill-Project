@@ -2393,26 +2393,13 @@ Selamat menikmati! 🌐</textarea>
       </div>
 
       <!-- Level -->
-      <div>
-        <label class="fg-label">Level Reseller</label>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
-          <div id="rs-level-silver" onclick="rsSetLevel('silver')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all .15s">
-            <span style="font-size:22px;display:block;margin-bottom:5px">🥈</span>
-            <div class="td-text-main" style="font-size:12px;font-weight:700">Silver</div>
-            <div class="td-text-sub" style="font-size:9px;margin-top:2px">Dasar</div>
-          </div>
-          <div id="rs-level-gold" onclick="rsSetLevel('gold')" style="border:2px solid #d97706;background:#fef3c7;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all .15s">
-            <span style="font-size:22px;display:block;margin-bottom:5px">🥇</span>
-            <div style="font-size:12px;font-weight:700;color:#b45309">Gold</div>
-            <div style="font-size:9px;color:#d97706;margin-top:2px">Menengah</div>
-          </div>
-          <div id="rs-level-platinum" onclick="rsSetLevel('platinum')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all .15s">
-            <span style="font-size:22px;display:block;margin-bottom:5px">💎</span>
-            <div class="td-text-main" style="font-size:12px;font-weight:700">Platinum</div>
-            <div class="td-text-sub" style="font-size:9px;margin-top:2px">Premium</div>
-          </div>
-        </div>
-        <input type="hidden" id="nr-level" value="gold">
+      <div class="fg">
+        <label>Level Reseller</label>
+        <select id="nr-level" style="width:100%">
+          <option value="silver">🥈 Silver — Dasar</option>
+          <option value="gold" selected>🥇 Gold — Menengah</option>
+          <option value="platinum">💎 Platinum — Premium</option>
+        </select>
       </div>
 
       <!-- Komisi -->
@@ -2483,26 +2470,13 @@ Selamat menikmati! 🌐</textarea>
       <input type="hidden" id="er-id">
 
       <!-- Level -->
-      <div>
-        <label class="fg-label">Level Reseller</label>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:2px">
-          <div id="er-level-card-silver" onclick="erSetLevel('silver')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all .15s">
-            <span style="font-size:22px;display:block;margin-bottom:5px">🥈</span>
-            <div class="td-text-main" style="font-size:12px;font-weight:700">Silver</div>
-            <div class="td-text-sub" style="font-size:9px;margin-top:2px">Dasar</div>
-          </div>
-          <div id="er-level-card-gold" onclick="erSetLevel('gold')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all .15s">
-            <span style="font-size:22px;display:block;margin-bottom:5px">🥇</span>
-            <div class="td-text-main" style="font-size:12px;font-weight:700">Gold</div>
-            <div class="td-text-sub" style="font-size:9px;margin-top:2px">Menengah</div>
-          </div>
-          <div id="er-level-card-platinum" onclick="erSetLevel('platinum')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all .15s">
-            <span style="font-size:22px;display:block;margin-bottom:5px">💎</span>
-            <div class="td-text-main" style="font-size:12px;font-weight:700">Platinum</div>
-            <div class="td-text-sub" style="font-size:9px;margin-top:2px">Premium</div>
-          </div>
-        </div>
-        <input type="hidden" id="er-level" value="gold">
+      <div class="fg">
+        <label>Level Reseller</label>
+        <select id="er-level" style="width:100%;margin-top:4px">
+          <option value="silver">🥈 Silver — Dasar</option>
+          <option value="gold">🥇 Gold — Menengah</option>
+          <option value="platinum">💎 Platinum — Premium</option>
+        </select>
       </div>
 
       <!-- Komisi -->
@@ -4795,32 +4769,8 @@ function nasSetTipe(prefix, tipe) {
 
 // ── RESELLER MODAL HELPERS ──────────────────────────────────
 function rsSetLevel(level) {
-  document.getElementById('nr-level').value = level;
-  const isDark = document.body.classList.contains('dark');
-  const cfg = {
-    silver:   { border:'#94a3b8', bg: isDark ? 'rgba(148,163,184,.15)' : '#f8fafc',  titleColor: isDark ? '#94a3b8' : '#64748b',  descColor: isDark ? '#64748b' : '#94a3b8' },
-    gold:     { border:'#d97706', bg: isDark ? 'rgba(217,119,6,.15)'   : '#fef3c7',  titleColor: isDark ? '#fbbf24' : '#b45309',  descColor: isDark ? '#d97706' : '#d97706' },
-    platinum: { border:'#7c3aed', bg: isDark ? 'rgba(124,58,237,.15)'  : '#f3e8ff',  titleColor: isDark ? '#c4b5fd' : '#6d28d9',  descColor: isDark ? '#a78bfa' : '#7c3aed' }
-  };
-  ['silver','gold','platinum'].forEach(function(l) {
-    const el = document.getElementById('rs-level-' + l);
-    if (!el) return;
-    if (l === level) {
-      el.style.borderColor = cfg[l].border;
-      el.style.background  = cfg[l].bg;
-      const title = el.querySelector('[style*="font-weight:700"]');
-      const desc  = el.querySelector('[style*="font-size:9px"]');
-      if (title) title.style.color = cfg[l].titleColor;
-      if (desc)  desc.style.color  = cfg[l].descColor;
-    } else {
-      el.style.borderColor = isDark ? '#30363d' : '#e2e7ef';
-      el.style.background  = isDark ? '#1c2128' : 'transparent';
-      const title = el.querySelector('[style*="font-weight:700"]');
-      const desc  = el.querySelector('[style*="font-size:9px"]');
-      if (title) title.style.color = '';
-      if (desc)  desc.style.color  = '';
-    }
-  });
+  const sel = document.getElementById('nr-level');
+  if (sel) sel.value = level || 'gold';
 }
 
 function rsSyncKomisi(src) {
@@ -7947,29 +7897,8 @@ function bukaEditReseller(id, nama, komisi, level, status) {
 }
 
 function erSetLevel(level) {
-  document.getElementById('er-level').value = level;
-  const isDark = document.body.classList.contains('dark');
-  const cfg = {
-    silver:   { border:'#94a3b8', bg:'#f8fafc', bgD:'rgba(100,116,139,.15)', title:'#64748b', desc:'#94a3b8' },
-    gold:     { border:'#d97706', bg:'#fef3c7', bgD:'rgba(217,119,6,.15)',   title:'#b45309', desc:'#d97706' },
-    platinum: { border:'#7c3aed', bg:'#f3e8ff', bgD:'rgba(124,58,237,.15)',  title:'#6d28d9', desc:'#7c3aed' }
-  };
-  ['silver','gold','platinum'].forEach(function(l) {
-    const el = document.getElementById('er-level-card-' + l);
-    if (!el) return;
-    const divs = el.querySelectorAll('div');
-    if (l === level) {
-      el.style.borderColor = cfg[l].border;
-      el.style.background  = isDark ? cfg[l].bgD : cfg[l].bg;
-      if (divs[0]) { divs[0].style.color = cfg[l].title; divs[0].classList.remove('td-text-main'); }
-      if (divs[1]) { divs[1].style.color = cfg[l].desc;  divs[1].classList.remove('td-text-sub'); }
-    } else {
-      el.style.borderColor = isDark ? '#30363d' : '#e2e7ef';
-      el.style.background  = isDark ? '#1c2128' : 'transparent';
-      if (divs[0]) { divs[0].style.color = ''; divs[0].classList.add('td-text-main'); }
-      if (divs[1]) { divs[1].style.color = ''; divs[1].classList.add('td-text-sub'); }
-    }
-  });
+  const sel = document.getElementById('er-level');
+  if (sel) sel.value = level || 'gold';
 }
 
 function erSetStatus(status) {
