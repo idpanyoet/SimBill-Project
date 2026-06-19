@@ -4999,34 +4999,6 @@ function npExportCSV() {
 // ══════════════════════════════════════════════════
 
 // ── RESELLER MODAL HELPERS ──────────────────────────────────
-function rsSetLevel(level) {
-  document.getElementById('nr-level').value = level;
-  const isDark = document.body.classList.contains('dark');
-  const cfg = {
-    silver:   { border:'#94a3b8', bg:'#f8fafc', bgD:'rgba(100,116,139,.15)', title:'#64748b', desc:'#94a3b8' },
-    gold:     { border:'#d97706', bg:'#fef3c7', bgD:'rgba(217,119,6,.15)',   title:'#b45309', desc:'#d97706' },
-    platinum: { border:'#7c3aed', bg:'#f3e8ff', bgD:'rgba(124,58,237,.15)',  title:'#6d28d9', desc:'#7c3aed' }
-  };
-  ['silver','gold','platinum'].forEach(function(l) {
-    const el = document.getElementById('nr-level-card-' + l);
-    if (!el) return;
-    if (l === level) {
-      el.style.borderColor = cfg[l].border;
-      el.style.background  = isDark ? cfg[l].bgD : cfg[l].bg;
-      el.classList.add('rs-active');
-      const divs = el.querySelectorAll('div');
-      if (divs[0]) { divs[0].style.color = cfg[l].title; divs[0].classList.remove('td-text-main'); }
-      if (divs[1]) { divs[1].style.color = cfg[l].desc;  divs[1].classList.remove('td-text-sub'); }
-    } else {
-      el.style.borderColor = isDark ? '#30363d' : '#e2e7ef';
-      el.style.background  = isDark ? '#1c2128' : 'transparent';
-      el.classList.remove('rs-active');
-      const divs = el.querySelectorAll('div');
-      if (divs[0]) { divs[0].style.color = ''; divs[0].classList.add('td-text-main'); }
-      if (divs[1]) { divs[1].style.color = ''; divs[1].classList.add('td-text-sub'); }
-    }
-  });
-}
 
 function rsSyncKomisi(src) {
   const range = document.getElementById('nr-komisi-range');
