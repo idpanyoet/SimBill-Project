@@ -7667,38 +7667,78 @@ function _loadHtml2Pdf() {
   });
 }
 
+// Scope semua aturan CSS ke dalam container tertentu (pakai CSSOM agar parsing benar),
+// supaya gaya invoice tidak bentrok dengan CSS panel admin saat dirender di dokumen utama.
+function _scopeCss(css, scope) {
+  const styleEl = document.createElement('style');
+  document.head.appendChild(styleEl);
+  styleEl.textContent = css;
+  let out = '';
+  try {
+    for (const rule of Array.from(styleEl.sheet.cssRules)) {
+      if (rule.type === CSSRule.STYLE_RULE) {
+        const sel = rule.selectorText.split(',').map(s => {
+          s = s.trim();
+          return (s === 'body' || s === 'html' || s === '*') ? scope : scope + ' ' + s;
+        }).join(', ');
+        out += `${sel}{${rule.style.cssText}}\n`;
+      }
+      // @media print / @page diabaikan — tidak relevan untuk render ke canvas
+    }
+  } finally { styleEl.remove(); }
+  return out;
+}
+
 // Render HTML invoice A4 → Blob PDF (pixel-identik dengan print A4).
-// Dirender di iframe tersembunyi supaya CSS invoice tidak bentrok dengan CSS admin.
 async function _invoicePdfBlob(id) {
   await _loadHtml2Pdf();
   const htmlRaw = await _invoiceHtml(id, 'a4');
   if (!htmlRaw) throw new Error('Gagal menyiapkan invoice');
-  // Buang script auto-print agar iframe tersembunyi tidak memunculkan dialog print
-  const html = htmlRaw.replace(/<script>[\s\S]*?window\.print[\s\S]*?<\/script>/gi, '');
 
-  const iframe = document.createElement('iframe');
-  iframe.style.cssText = 'position:fixed;left:-99999px;top:0;width:210mm;height:297mm;border:0';
-  document.body.appendChild(iframe);
-  const doc = iframe.contentDocument || iframe.contentWindow.document;
-  doc.open(); doc.write(html); doc.close();
+  // Ambil <style> dan elemen .page dari HTML cetak
+  const fdoc    = new DOMParser().parseFromString(htmlRaw, 'text/html');
+  const css     = Array.from(fdoc.querySelectorAll('style')).map(s => s.textContent).join('\n');
+  const pageSrc = fdoc.querySelector('.page');
+  if (!pageSrc) throw new Error('Konten invoice tidak ditemukan');
 
-  // Tunggu dokumen + semua gambar (logo & QR) selesai dimuat
-  await new Promise(res => { if (doc.readyState === 'complete') res(); else iframe.onload = res; });
-  await Promise.all(Array.from(doc.images).map(img =>
-    img.complete ? Promise.resolve() : new Promise(r => { img.onload = img.onerror = r; })));
+  // Bangun container off-screen di dokumen utama dengan CSS yang sudah di-scope
+  const root = document.createElement('div');
+  root.id = 'inv-pdf-root';
+  root.style.cssText = 'position:fixed;left:-99999px;top:0;width:210mm;background:#fff;z-index:-1';
+  const styleScoped = document.createElement('style');
+  styleScoped.textContent = _scopeCss(css, '#inv-pdf-root');
+  root.appendChild(styleScoped);
 
-  const el = doc.querySelector('.page') || doc.body;
+  const pageClone = document.importNode(pageSrc, true);
+  // Set crossOrigin SEBELUM gambar dimuat (QR dari api.qrserver.com lintas-origin) —
+  // tanpa ini canvas bisa "tainted" dan hasil PDF kosong.
+  pageClone.querySelectorAll('img').forEach(img => {
+    const src = img.getAttribute('src');
+    img.setAttribute('crossorigin', 'anonymous');
+    if (src) img.setAttribute('src', src);
+  });
+  root.appendChild(pageClone);
+  document.body.appendChild(root);
+
+  // Tunggu semua gambar (logo & QR) selesai dimuat
+  await Promise.all(Array.from(root.querySelectorAll('img')).map(img =>
+    img.complete && img.naturalWidth ? Promise.resolve()
+      : new Promise(r => { img.onload = img.onerror = r; })));
+  await new Promise(r => setTimeout(r, 150)); // beri waktu layout
+
+  const target = root.querySelector('.page') || root;
   try {
     return await window.html2pdf().set({
       margin: 0,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).from(el).outputPdf('blob');
+    }).from(target).outputPdf('blob');
   } finally {
-    iframe.remove();
+    root.remove();
   }
 }
+
 
 // ══════════════════════════════════════════════════════════════
 
