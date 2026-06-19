@@ -31,6 +31,13 @@ router.post('/login', async (req, res, next) => {
             { expiresIn: process.env.JWT_EXPIRES || '8h' }
         );
 
+        // Audit log
+        const { tulisLog } = require('./log');
+        tulisLog({ kategori:'Auth', pelaku: admin.nama || admin.email,
+            aksi:'LOGIN', target: admin.nama,
+            detail:'User logged in via Web UI',
+            ip: req.headers['x-forwarded-for'] || req.ip });
+
         res.json({
             token,
             admin: { id: admin.id, nama: admin.nama, email: admin.email, role: admin.role }

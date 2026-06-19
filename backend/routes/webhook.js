@@ -148,6 +148,9 @@ async function _prosesKonfirmasiBayar(order_id, payment_type, sukses, cancelled,
     if (invVoucher && sukses && invVoucher.status !== 'paid') {
         await query(`UPDATE invoice SET status='paid', tgl_bayar=NOW(), metode_bayar=? WHERE id=?`,
             [payment_type, invVoucher.id]);
+        require('./log').tulisLog({ kategori:'Billing', pelaku: payment_type||'Gateway',
+            aksi:'INVOICE_PAID', target: invVoucher.no_invoice,
+            detail:`Amount: ${invVoucher.jumlah}, Method: ${payment_type}` });
 
         // Ambil info pembeli dari keterangan invoice
         // Format baru: "Voucher PENDING — WA: 628xxx — Nama: Budi — Paket: 5"
@@ -185,6 +188,9 @@ async function _prosesKonfirmasiBayar(order_id, payment_type, sukses, cancelled,
             SET status='paid', tgl_bayar=NOW(), metode_bayar=?
             WHERE id=?
         `, [payment_type, inv.id]);
+        require('./log').tulisLog({ kategori:'Billing', pelaku: payment_type||'Gateway',
+            aksi:'INVOICE_PAID', target: inv.no_invoice,
+            detail:`Amount: ${inv.jumlah}, Method: ${payment_type}` });
 
         // Aktifkan pelanggan
         await query(`

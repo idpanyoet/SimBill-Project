@@ -227,6 +227,11 @@ router.post('/', async (req, res, next) => {
             tgl_expired: tgl_expired
         }).catch(e => console.warn('[WA] kirimPelangganBaru gagal:', e.message));
 
+        const { tulisLog } = require('./log');
+        tulisLog({ kategori:'Pelanggan', pelaku: req.user?.nama || 'Admin',
+            aksi:'PELANGGAN_TAMBAH', target: username,
+            detail:`Nama: ${nama}, Paket: ${paket.nama}, Tipe: ${tipe_koneksi}` });
+
         res.status(201).json({
             pesan: 'Pelanggan berhasil ditambahkan',
             id: result.insertId
@@ -316,6 +321,8 @@ router.post('/:id/suspend', async (req, res, next) => {
         await waService.kirimSuspend(p);
 
         res.json({ pesan: `${p.nama} berhasil disuspend` });
+        require('./log').tulisLog({ kategori:'Pelanggan', pelaku: req.user?.nama||'Admin',
+            aksi:'PELANGGAN_SUSPEND', target: p.username, detail:`Nama: ${p.nama}` });
     } catch (e) { next(e); }
 });
 
@@ -334,6 +341,8 @@ router.post('/:id/aktifkan', async (req, res, next) => {
         await radiusService.aktifkanUser(p.username);
 
         res.json({ pesan: `${p.nama} berhasil diaktifkan` });
+        require('./log').tulisLog({ kategori:'Pelanggan', pelaku: req.user?.nama||'Admin',
+            aksi:'PELANGGAN_AKTIFKAN', target: p.username, detail:`Nama: ${p.nama}` });
     } catch (e) { next(e); }
 });
 

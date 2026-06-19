@@ -490,6 +490,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-item" onclick="goto('acs',this)"><i class="ti ti-router icon" aria-hidden="true"></i> ACS TR-069</div>
     <div class="sb-item" onclick="goto('setting',this)"><i class="ti ti-settings icon" aria-hidden="true"></i> Setting</div>
     <div class="sb-item" onclick="goto('backup',this)"><i class="ti ti-database-export icon" aria-hidden="true"></i> Backup & Restore</div>
+    <div class="sb-item" onclick="goto('log',this)"><i class="ti ti-clipboard-list icon" aria-hidden="true"></i> Log Admin</div>
 
     <div class="sb-bottom">
       <div class="sb-user">
@@ -1151,6 +1152,71 @@ Selamat menikmati! 🌐</textarea>
                 <button class="btn sm" onclick="apiTestRADIUS()">🔌 Test Koneksi</button>
                 <small style="font-size:10px;color:var(--text3)">Cek koneksi FreeRADIUS</small>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ LOG ADMIN ══ -->
+      <div class="page" id="p-log">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+          <div>
+            <h2 style="font-size:18px;font-weight:700;color:#2563eb">Log Admin</h2>
+            <div class="td-text-sub" style="font-size:12px;margin-top:4px">Jejak audit untuk aksi admin dan perubahan penting.</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="logReset()"><i class="ti ti-refresh" aria-hidden="true"></i> Reset</button>
+            <button class="btn danger" onclick="logBersihkan()"><i class="ti ti-trash" aria-hidden="true"></i> Bersihkan Lama</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <!-- Filter bar -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+            <select id="log-filter-kategori" onchange="loadLog()" style="padding:7px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+              <option value="semua">Semua kategori</option>
+              <option value="Auth">Auth</option>
+              <option value="Billing">Billing</option>
+              <option value="Pelanggan">Pelanggan</option>
+              <option value="Hotspot">Hotspot</option>
+              <option value="Pppoe">Pppoe</option>
+              <option value="Reseller">Reseller</option>
+              <option value="System">System</option>
+            </select>
+            <input type="date" id="log-filter-tanggal" onchange="loadLog()" style="padding:7px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+            <div style="position:relative;flex:1;min-width:200px">
+              <i class="ti ti-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px" aria-hidden="true"></i>
+              <input id="log-search" placeholder="Cari pelaku..." oninput="loadLog()" style="width:100%;padding:7px 12px 7px 32px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+            </div>
+            <button class="btn sm" onclick="logReset()">Reset</button>
+            <span id="log-count" class="td-text-sub" style="font-size:12px;white-space:nowrap">— log</span>
+          </div>
+
+          <!-- Tabel -->
+          <div style="overflow-x:auto">
+            <table style="min-width:900px">
+              <thead>
+                <tr>
+                  <th style="width:130px">WAKTU</th>
+                  <th style="width:90px">KATEGORI</th>
+                  <th style="width:90px">PELAKU</th>
+                  <th style="width:200px">AKSI</th>
+                  <th>TARGET</th>
+                  <th>DETAIL</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-log">
+                <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text3)">Memuat log...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px">
+            <div id="log-page-info" class="td-text-sub" style="font-size:12px"></div>
+            <div style="display:flex;gap:6px">
+              <button id="log-btn-prev" class="btn sm" onclick="logChangePage(-1)">‹ Sebelumnya</button>
+              <button id="log-btn-next" class="btn sm" onclick="logChangePage(1)">Berikutnya ›</button>
             </div>
           </div>
         </div>
@@ -3150,6 +3216,7 @@ const titles = {
   laporan:'Laporan — Ringkasan', acs:'ACS TR-069',
   'income-report':'Period Income Report',
   'net-profit':'Net Profit',
+  'log':'Log Admin',
   'sesi':'Sesi Aktif',
   'peta':'Peta Jaringan',
   'voucher-template':'Template Voucher', setting:'Setting Sistem'
@@ -3161,6 +3228,7 @@ const loaders = {
   payment: loadPayment, radius: loadRadius,
   laporan: loadLaporan, 'income-report': loadIncomeReport, 'net-profit': loadNetProfit, reseller: loadReseller,
   sesi: loadSesi,
+  log:  loadLog,
   peta: loadPeta,
   acs: loadACS, 'voucher-template': loadVoucherTemplate,
   setting: loadSetting,
@@ -6819,6 +6887,95 @@ function petaToggleGeser() {
 // ══════════════════════════════════════════════════
 
 // ══════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
+// LOG ADMIN
+// ══════════════════════════════════════════════════
+let _logPage   = 0;
+const _logLimit = 100;
+
+async function loadLog() {
+  const tbody = document.getElementById('tbl-log');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--text3)"><i class="ti ti-loader"></i> Memuat...</td></tr>';
+  try {
+    const kat    = document.getElementById('log-filter-kategori')?.value || 'semua';
+    const tgl    = document.getElementById('log-filter-tanggal')?.value  || '';
+    const q      = document.getElementById('log-search')?.value          || '';
+    const params = new URLSearchParams({ limit: _logLimit, offset: _logPage * _logLimit });
+    if (kat && kat !== 'semua') params.append('kategori', kat);
+    if (tgl) params.append('tanggal', tgl);
+    if (q)   params.append('q', q);
+
+    const d = await apiFetch('/api/log?' + params.toString());
+    const rows  = d.rows  || [];
+    const total = d.total || 0;
+
+    document.getElementById('log-count').textContent      = total.toLocaleString('id-ID') + ' log';
+    document.getElementById('log-page-info').textContent  =
+      `Halaman ${_logPage + 1} · ${_logPage * _logLimit + 1}–${Math.min((_logPage+1)*_logLimit, total)} dari ${total}`;
+    document.getElementById('log-btn-prev').disabled = _logPage === 0;
+    document.getElementById('log-btn-next').disabled = (_logPage+1)*_logLimit >= total;
+
+    if (!tbody) return;
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text3)">Tidak ada log</td></tr>';
+      return;
+    }
+
+    const katColor = {
+      'Auth':'#2563eb','Billing':'#16a34a','Pelanggan':'#d97706',
+      'Hotspot':'#7c3aed','Pppoe':'#0891b2','Reseller':'#dc2626',
+      'System':'#64748b'
+    };
+    const fmtWaktu = dt => {
+      const d = new Date(dt);
+      return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) +
+        ', ' + d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+    };
+
+    tbody.innerHTML = rows.map(r => {
+      const col = katColor[r.kategori] || '#64748b';
+      return `<tr>
+        <td class="td-text-sub" style="font-size:11px;white-space:nowrap">${fmtWaktu(r.waktu)}</td>
+        <td><span style="background:${col}18;color:${col};font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;white-space:nowrap">${r.kategori}</span></td>
+        <td class="td-text-main" style="font-size:12px;font-weight:600">${r.pelaku}</td>
+        <td class="td-mono" style="font-size:11px;color:var(--text2)">${r.aksi}</td>
+        <td class="td-text-sub" style="font-size:12px">${r.target||'—'}</td>
+        <td class="td-text-sub" style="font-size:11px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.detail||''}">${r.detail||'—'}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:#dc2626">❌ ${e.message}</td></tr>`;
+  }
+}
+
+function logChangePage(dir) {
+  _logPage = Math.max(0, _logPage + dir);
+  loadLog();
+}
+
+function logReset() {
+  _logPage = 0;
+  const kat = document.getElementById('log-filter-kategori');
+  const tgl = document.getElementById('log-filter-tanggal');
+  const q   = document.getElementById('log-search');
+  if (kat) kat.value = 'semua';
+  if (tgl) tgl.value = '';
+  if (q)   q.value   = '';
+  loadLog();
+}
+
+async function logBersihkan() {
+  const hari = prompt('Hapus log lebih dari berapa hari? (default: 90)', '90');
+  if (!hari) return;
+  if (!confirm(`Hapus semua log lebih dari ${hari} hari?`)) return;
+  try {
+    const d = await apiFetch('/api/log/bersihkan', { method:'DELETE', body: JSON.stringify({ hari: parseInt(hari) }) });
+    toast(`✅ ${d.jumlah} log dihapus`);
+    loadLog();
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+// ══════════════════════════════════════════════════
+
 // SESI AKTIF
 // ══════════════════════════════════════════════════
 let _sesiTab  = 'pppoe';
