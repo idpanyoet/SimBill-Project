@@ -3560,47 +3560,122 @@ function toggleDarkMode() {
 // TERJEMAHAN ID / EN
 // ══════════════════════════════════════════════════
 const I18N = {
-  ID: {
-    // Sidebar sections
-    'Utama':'Utama','Gateway':'Gateway','Sistem':'Sistem','Laporan':'Laporan','Lainnya':'Lainnya','Admin':'Admin',
-    // Sidebar items
-    'Dashboard':'Dashboard','Pelanggan':'Pelanggan','Paket Internet':'Paket Internet','Invoice':'Invoice',
-    'Voucher':'Voucher','Reseller':'Reseller','WhatsApp':'WhatsApp','Payment':'Payment',
-    'RADIUS / NAS':'RADIUS / NAS','Sesi Aktif':'Sesi Aktif','Peta Jaringan':'Peta Jaringan',
-    'Ringkasan':'Ringkasan','Period Income':'Period Income','Net Profit':'Net Profit',
-    'Template Voucher':'Template Voucher','ACS TR-069':'ACS TR-069','Setting':'Setting',
-    'Backup & Restore':'Backup & Restore','Pengguna Admin':'Pengguna Admin','Log Admin':'Log Admin',
-    // Topbar
-    'Cari invoice belum dibayar':'Cari invoice belum dibayar',
-    // Page titles
-    'Pengaturan Sistem':'Pengaturan Sistem','Sesi Aktif':'Sesi Aktif','Peta Jaringan':'Peta Jaringan',
-    'Log Admin':'Log Admin','Pengguna Admin':'Pengguna Admin',
-    // Common buttons
-    'Tambah':'Tambah','Simpan':'Simpan','Batal':'Batal','Hapus':'Hapus','Edit':'Edit',
-    'Refresh':'Refresh','Reset':'Reset','Export':'Export','Import':'Import',
-    'Aktif':'Aktif','Nonaktif':'Nonaktif','Suspend':'Suspend',
-    'Semua':'Semua','Cari':'Cari','Filter':'Filter','Tutup':'Tutup',
-  },
+  ID: {},  // ID = teks asli, return key jika tidak ada
   EN: {
-    // Sidebar sections
-    'Utama':'Main','Gateway':'Gateway','Sistem':'System','Laporan':'Reports','Lainnya':'Other','Admin':'Admin',
-    // Sidebar items
-    'Dashboard':'Dashboard','Pelanggan':'Customers','Paket Internet':'Internet Plans','Invoice':'Invoice',
-    'Voucher':'Voucher','Reseller':'Reseller','WhatsApp':'WhatsApp','Payment':'Payment',
-    'RADIUS / NAS':'RADIUS / NAS','Sesi Aktif':'Active Sessions','Peta Jaringan':'Network Map',
-    'Ringkasan':'Summary','Period Income':'Period Income','Net Profit':'Net Profit',
-    'Template Voucher':'Voucher Template','ACS TR-069':'ACS TR-069','Setting':'Settings',
-    'Backup & Restore':'Backup & Restore','Pengguna Admin':'Admin Users','Log Admin':'Admin Log',
-    // Topbar
+    // ── SIDEBAR SECTIONS ──────────────────────────
+    'Utama':'Main', 'Gateway':'Gateway', 'Sistem':'System',
+    'Laporan':'Reports', 'Lainnya':'Other', 'Admin':'Admin',
+    // ── SIDEBAR ITEMS ─────────────────────────────
+    'Dashboard':'Dashboard', 'Pelanggan':'Customers', 'Paket Internet':'Internet Plans',
+    'Invoice':'Invoice', 'Voucher':'Voucher', 'Reseller':'Reseller',
+    'WhatsApp':'WhatsApp', 'Payment':'Payment', 'RADIUS / NAS':'RADIUS / NAS',
+    'Sesi Aktif':'Active Sessions', 'Peta Jaringan':'Network Map',
+    'Ringkasan':'Summary', 'Period Income':'Period Income', 'Net Profit':'Net Profit',
+    'Template Voucher':'Voucher Template', 'ACS TR-069':'ACS TR-069',
+    'Setting':'Settings', 'Backup & Restore':'Backup & Restore',
+    'Pengguna Admin':'Admin Users', 'Log Admin':'Admin Log',
+    // ── PAGE HEADERS ──────────────────────────────
+    'Dashboard':'Dashboard', 'Pengaturan Sistem':'System Settings',
+    'Pengguna Admin':'Admin Users', 'Log Admin':'Admin Log',
+    'Sesi Aktif':'Active Sessions', 'Peta Jaringan':'Network Map',
+    'RADIUS / NAS':'RADIUS / NAS', 'Paket Internet':'Internet Plans',
+    'Backup & Restore':'Backup & Restore', 'ACS TR-069':'ACS TR-069',
+    // ── TOPBAR ────────────────────────────────────
     'Cari invoice belum dibayar':'Search unpaid invoices',
-    // Page titles
-    'Pengaturan Sistem':'System Settings','Sesi Aktif':'Active Sessions','Peta Jaringan':'Network Map',
-    'Log Admin':'Admin Log','Pengguna Admin':'Admin Users',
-    // Common buttons
-    'Tambah':'Add','Simpan':'Save','Batal':'Cancel','Hapus':'Delete','Edit':'Edit',
-    'Refresh':'Refresh','Reset':'Reset','Export':'Export','Import':'Import',
-    'Aktif':'Active','Nonaktif':'Inactive','Suspend':'Suspend',
-    'Semua':'All','Cari':'Search','Filter':'Filter','Tutup':'Close',
+    // ── CARD TITLES ───────────────────────────────
+    'Identitas Aplikasi':'App Identity', 'Kontak & Lokasi':'Contact & Location',
+    'Konfigurasi Billing':'Billing Configuration', 'Info Sistem':'System Info',
+    'Konfigurasi Autentikasi':'Authentication Config', 'Daftar NAS':'NAS List',
+    'Konfigurasi WA Gateway':'WA Gateway Config', 'Test Kirim Pesan':'Send Test Message',
+    'Broadcast Massal':'Mass Broadcast', 'WA Gateway — 30 Hari':'WA Gateway — 30 Days',
+    'Preview Chat':'Chat Preview', 'Placeholder Tersedia':'Available Placeholders',
+    'Log Task Terakhir':'Last Task Log', 'Konfigurasi Payment Gateway':'Payment Gateway Config',
+    'Metode Aktif':'Active Methods', 'Daftar Voucher':'Voucher List',
+    'Riwayat Batch Generate':'Batch Generate History', 'Penjualan per Paket Voucher':'Voucher Sales by Plan',
+    'Riwayat Sesi Pengguna Voucher':'Voucher User Session History',
+    'Daftar Reseller':'Reseller List', 'Topup Pending':'Pending Top-up',
+    'Daftar Device TR-069':'TR-069 Device List', 'Konfigurasi Router ke ACS':'Router to ACS Config',
+    'Hasil Laporan':'Report Results', 'Pendapatan per Paket — Bulan Ini':'Revenue by Plan — This Month',
+    'Transaksi Terbaru':'Latest Transactions',
+    'Template Voucher':'Voucher Template', 'Header HTML':'Header HTML',
+    'Row HTML (per voucher)':'Row HTML (per voucher)', 'Footer HTML':'Footer HTML',
+    'Preview':'Preview', 'Backup Database':'Backup Database',
+    'Download Backup SQL':'Download SQL Backup',
+    'NAS':'NAS', 'WireGuard VPN':'WireGuard VPN', 'L2TP/IPSec VPN':'L2TP/IPSec VPN',
+    // ── FORM LABELS ───────────────────────────────
+    'Nama Aplikasi':'App Name', 'URL Aplikasi':'App URL', 'Logo Aplikasi':'App Logo',
+    'URL Logo':'Logo URL', 'Upload Logo':'Upload Logo',
+    'No. WA Kontak Bantuan':'Support WA Number', 'Alamat Usaha':'Business Address',
+    'Prefix Invoice':'Invoice Prefix', 'Reminder H- (hari)':'Reminder H- (days)',
+    'Auto-Suspend H+ (hari)':'Auto-Suspend H+ (days)',
+    'Nama Lengkap':'Full Name', 'No. WhatsApp':'WhatsApp Number',
+    'Username RADIUS':'RADIUS Username', 'Pilih Paket':'Select Plan',
+    'Tipe Koneksi':'Connection Type', 'Alamat':'Address',
+    'Email':'Email', 'Catatan Internal':'Internal Notes',
+    'Password':'Password', 'Password baru':'New Password',
+    'No. HP / Kontak':'Phone / Contact', 'Peran':'Role',
+    'Status Akun':'Account Status', 'Kredensial RADIUS':'RADIUS Credentials',
+    'Lokasi & Jaringan':'Location & Network', 'Data Utama':'Main Data',
+    'Latitude':'Latitude', 'Longitude':'Longitude',
+    'ODC':'ODC', 'ODP':'ODP',
+    'Level Reseller':'Reseller Level', 'Komisi / Diskon':'Commission / Discount',
+    'Nama / Toko':'Name / Store', 'Nama Template':'Template Name',
+    'Jumlah Saldo (Rp)':'Balance Amount (Rp)',
+    'Keterangan':'Notes', 'Jumlah (+/-)':'Amount (+/-)',
+    'From Date':'From Date', 'To Date':'To Date',
+    'API Token':'API Token', 'API Key':'API Key',
+    'Client Key':'Client Key', 'Server Key':'Server Key',
+    'Merchant ID':'Merchant ID', 'Merchant Code':'Merchant Code',
+    'Business ID':'Business ID',
+    'Delay antar pesan (detik)':'Message delay (seconds)',
+    'Jumlah preview':'Preview count',
+    'ACS URL (arahkan router pelanggan ke URL ini)':'ACS URL (point customer router here)',
+    'Auth Mode':'Auth Mode', 'Single Session':'Single Session',
+    // ── BUTTONS ───────────────────────────────────
+    'Tambah':'Add', 'Tambah Pelanggan':'Add Customer',
+    'Tambah Pengguna':'Add User', 'Tambah Reseller':'Add Reseller',
+    'Tambah NAS':'Add NAS', 'Tambah Paket':'Add Plan',
+    'Simpan':'Save', 'Simpan & Aktifkan':'Save & Activate',
+    'Simpan Pengaturan':'Save Settings', 'Simpan Perubahan':'Save Changes',
+    'Simpan Konfigurasi':'Save Configuration',
+    'Batal':'Cancel', 'Hapus':'Delete', 'Edit':'Edit',
+    'Refresh':'Refresh', 'Reset':'Reset', 'Muat Ulang':'Reload',
+    'Export':'Export', 'Export CSV':'Export CSV', 'Export Excel':'Export Excel',
+    'Import CSV':'Import CSV', 'Import':'Import',
+    'Keluar':'Logout', 'Kembali':'Back', 'Berikutnya':'Next',
+    'Lihat':'View', 'Lunasi':'Pay', 'Konfirmasi bayar':'Confirm Payment',
+    'Bersihkan Lama':'Clear Old', 'Bersihkan Stale':'Clear Stale',
+    'Download Backup SQL':'Download SQL Backup',
+    'Test Koneksi RADIUS':'Test RADIUS Connection',
+    'Sync Radcheck':'Sync Radcheck', 'Restart RADIUS':'Restart RADIUS',
+    'Refresh Info':'Refresh Info', 'Kirim Test':'Send Test',
+    'Kirim Broadcast':'Send Broadcast', 'Pilih File':'Choose File',
+    'Kirim notifikasi WA setelah simpan':'Send WA notification after save',
+    'Aksi Massal':'Bulk Action',
+    // ── TABLE HEADERS ─────────────────────────────
+    'WAKTU':'TIME', 'KATEGORI':'CATEGORY', 'PELAKU':'USER',
+    'AKSI':'ACTION', 'TARGET':'TARGET', 'DETAIL':'DETAIL', 'IP':'IP',
+    'USERNAME':'USERNAME', 'NAMA':'NAME', 'PERAN':'ROLE',
+    'STATUS':'STATUS', 'KONTAK':'CONTACT', 'DIPERBARUI':'UPDATED',
+    'PENGGUNA':'USER', 'MULAI':'START', 'DURASI':'DURATION',
+    'ALAMAT IP':'IP ADDRESS', 'NAS':'NAS',
+    'PAKET':'PLAN', 'HARGA':'PRICE', 'TIPE':'TYPE',
+    'PELANGGAN':'CUSTOMER', 'TANGGAL':'DATE', 'TOTAL':'TOTAL',
+    'METODE':'METHOD', 'KECEPATAN':'SPEED',
+    // ── STATUS LABELS ─────────────────────────────
+    'Aktif':'Active', 'Nonaktif':'Inactive', 'Suspend':'Suspend',
+    'Suspended':'Suspended', 'Online':'Online', 'Offline':'Offline',
+    'Semua':'All', 'Semua peran':'All roles', 'Semua kategori':'All categories',
+    'Cari':'Search', 'Filter':'Filter', 'Tutup':'Close',
+    'Baris per halaman':'Rows per page',
+    // ── SECTION LABELS ────────────────────────────
+    'Data Utama':'Main Data', 'Lokasi & Jaringan':'Location & Network',
+    'Identitas Aplikasi':'App Identity', 'Kontak & Lokasi':'Contact & Location',
+    'Konfigurasi Billing':'Billing Config', 'Info Sistem':'System Info',
+    'PPPoE Aktif':'Active PPPoE', 'Hotspot Aktif':'Active Hotspot',
+    'Total Online':'Total Online', 'Terakhir diperbarui':'Last updated',
+    'Memuat...':'Loading...', 'Tidak ada data':'No data',
+    'Tidak ada hasil':'No results',
   }
 };
 
@@ -3617,56 +3692,105 @@ function toggleLang() {
 }
 
 function applyLang() {
-  const lbl = document.getElementById('topbar-lang-label');
+  const isEN = _lang === 'EN';
+  const lbl  = document.getElementById('topbar-lang-label');
   if (lbl) lbl.textContent = _lang;
 
-  // Search placeholder
+  // 1. Search placeholder
   const searchEl = document.getElementById('topbar-search');
   if (searchEl) searchEl.placeholder = t('Cari invoice belum dibayar');
 
-  // Terjemahkan semua elemen yang punya data-i18n
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    el.textContent = t(key);
+  // 2. Sidebar sections (.sb-section)
+  document.querySelectorAll('.sb-section').forEach(el => {
+    if (!el.dataset.orig) el.dataset.orig = el.textContent.trim();
+    el.textContent = t(el.dataset.orig);
   });
 
-  // Terjemahkan sidebar sections & items
-  document.querySelectorAll('.sb-section').forEach(el => {
-    const orig = el.getAttribute('data-orig') || el.textContent.trim();
-    el.setAttribute('data-orig', orig);
-    el.textContent = t(orig);
-  });
+  // 3. Sidebar items & sub-items — hanya text node (bukan ikon)
   document.querySelectorAll('.sb-item, .sb-sub-item').forEach(el => {
-    // Cari text node (bukan ikon)
-    const textNodes = [...el.childNodes].filter(n => n.nodeType === 3 && n.textContent.trim());
-    textNodes.forEach(n => {
-      const orig = n._orig || n.textContent.trim();
-      n._orig = orig;
-      n.textContent = ' ' + t(orig);
+    // Cari semua child text nodes
+    el.childNodes.forEach(n => {
+      if (n.nodeType !== 3) return;
+      const raw = n.textContent.replace(/\s+/g,' ').trim();
+      if (!raw || raw.length < 2) return;
+      if (!n._orig) n._orig = raw;
+      n.textContent = ' ' + t(n._orig) + ' ';
     });
   });
 
-  // Terjemahkan group header (Finance Report / Laporan / Lainnya)
+  // 4. Group headers (Laporan, Lainnya)
   document.querySelectorAll('.sb-group-hdr').forEach(el => {
-    const span = el.querySelector('span') || el.querySelector('div > span');
-    // Cari text node anak langsung dari div dalam hdr
     const inner = el.querySelector('div');
-    if (inner) {
-      [...inner.childNodes].filter(n => n.nodeType === 3 && n.textContent.trim()).forEach(n => {
-        const orig = n._orig || n.textContent.trim();
-        n._orig = orig;
-        n.textContent = ' ' + t(orig);
-      });
-    }
+    if (!inner) return;
+    inner.childNodes.forEach(n => {
+      if (n.nodeType !== 3) return;
+      const raw = n.textContent.replace(/\s+/g,' ').trim();
+      if (!raw || raw.length < 2) return;
+      if (!n._orig) n._orig = raw;
+      n.textContent = ' ' + t(n._orig);
+    });
   });
 
-  // Page title saat ini
+  // 5. Page title
   const titleEl = document.getElementById('page-title');
   if (titleEl) {
-    const orig = titleEl._orig || titleEl.textContent.trim();
-    titleEl._orig = orig;
-    titleEl.textContent = t(orig);
+    if (!titleEl._orig) titleEl._orig = titleEl.textContent.trim();
+    titleEl.textContent = t(titleEl._orig);
   }
+
+  // 6. Semua label form
+  document.querySelectorAll('label').forEach(el => {
+    // Hanya text langsung (bukan wrapper yg punya child input/span penting)
+    const text = el.childNodes[0];
+    if (!text || text.nodeType !== 3) return;
+    const raw = text.textContent.trim();
+    if (!raw || raw.length < 2) return;
+    if (!text._orig) text._orig = raw;
+    text.textContent = t(text._orig);
+  });
+
+  // 7. Table headers <th>
+  document.querySelectorAll('th').forEach(el => {
+    if (!el.dataset.orig) el.dataset.orig = el.textContent.trim();
+    const trans = t(el.dataset.orig);
+    if (trans !== el.dataset.orig) el.textContent = trans;
+  });
+
+  // 8. Semua elemen dengan data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+
+  // 9. Card titles — text langsung (bukan span anak)
+  document.querySelectorAll('.card-title').forEach(el => {
+    el.childNodes.forEach(n => {
+      if (n.nodeType !== 3) return;
+      const raw = n.textContent.trim();
+      if (!raw || raw.length < 2) return;
+      if (!n._orig) n._orig = raw;
+      n.textContent = ' ' + t(n._orig);
+    });
+    // Juga cek span langsung
+    el.querySelectorAll('span').forEach(span => {
+      if (span.children.length > 0) return; // skip span dengan anak
+      const raw = span.textContent.trim();
+      if (!raw || raw.length < 2) return;
+      if (!span._orig) span._orig = raw;
+      span.textContent = t(span._orig);
+    });
+  });
+
+  // 10. Buttons — text langsung
+  document.querySelectorAll('button').forEach(el => {
+    el.childNodes.forEach(n => {
+      if (n.nodeType !== 3) return;
+      const raw = n.textContent.trim();
+      if (!raw || raw.length < 2) return;
+      if (!n._orig) n._orig = raw;
+      const trans = t(n._orig);
+      if (trans !== n._orig) n.textContent = trans.startsWith(' ') ? trans : ' ' + trans;
+    });
+  });
 }
 
 // Terapkan bahasa saat load
