@@ -554,9 +554,10 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
           <i id="topbar-dark-ico" class="ti ti-sun" style="font-size:16px;color:#d97706" aria-hidden="true"></i>
         </button>
 
-        <!-- Translate / Bahasa (cosmetic) -->
-        <button title="Bahasa" style="width:36px;height:36px;border-radius:10px;border:1px solid #e2e7ef;background:#f8fafc;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s" onmouseover="this.style.background='#f0fdf4';this.style.borderColor='#16a34a'" onmouseout="this.style.background='#f8fafc';this.style.borderColor='#e2e7ef'">
-          <i class="ti ti-language" style="font-size:16px;color:#16a34a" aria-hidden="true"></i>
+        <!-- Toggle Bahasa ID/EN -->
+        <button id="topbar-lang-btn" onclick="toggleLang()" title="Ganti Bahasa / Switch Language" style="min-width:44px;height:36px;border-radius:10px;border:1px solid #e2e7ef;background:#f8fafc;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;padding:0 10px;transition:all .15s;font-size:11px;font-weight:700;font-family:inherit;color:#16a34a" onmouseover="this.style.background='#f0fdf4';this.style.borderColor='#16a34a'" onmouseout="this.style.background='#f8fafc';this.style.borderColor='#e2e7ef'">
+          <i class="ti ti-language" style="font-size:14px" aria-hidden="true"></i>
+          <span id="topbar-lang-label">ID</span>
         </button>
 
         <!-- Avatar / Profil -->
@@ -3555,6 +3556,126 @@ function toggleDarkMode() {
   }
 })();
 
+// ══════════════════════════════════════════════════
+// TERJEMAHAN ID / EN
+// ══════════════════════════════════════════════════
+const I18N = {
+  ID: {
+    // Sidebar sections
+    'Utama':'Utama','Gateway':'Gateway','Sistem':'Sistem','Laporan':'Laporan','Lainnya':'Lainnya','Admin':'Admin',
+    // Sidebar items
+    'Dashboard':'Dashboard','Pelanggan':'Pelanggan','Paket Internet':'Paket Internet','Invoice':'Invoice',
+    'Voucher':'Voucher','Reseller':'Reseller','WhatsApp':'WhatsApp','Payment':'Payment',
+    'RADIUS / NAS':'RADIUS / NAS','Sesi Aktif':'Sesi Aktif','Peta Jaringan':'Peta Jaringan',
+    'Ringkasan':'Ringkasan','Period Income':'Period Income','Net Profit':'Net Profit',
+    'Template Voucher':'Template Voucher','ACS TR-069':'ACS TR-069','Setting':'Setting',
+    'Backup & Restore':'Backup & Restore','Pengguna Admin':'Pengguna Admin','Log Admin':'Log Admin',
+    // Topbar
+    'Cari invoice belum dibayar':'Cari invoice belum dibayar',
+    // Page titles
+    'Pengaturan Sistem':'Pengaturan Sistem','Sesi Aktif':'Sesi Aktif','Peta Jaringan':'Peta Jaringan',
+    'Log Admin':'Log Admin','Pengguna Admin':'Pengguna Admin',
+    // Common buttons
+    'Tambah':'Tambah','Simpan':'Simpan','Batal':'Batal','Hapus':'Hapus','Edit':'Edit',
+    'Refresh':'Refresh','Reset':'Reset','Export':'Export','Import':'Import',
+    'Aktif':'Aktif','Nonaktif':'Nonaktif','Suspend':'Suspend',
+    'Semua':'Semua','Cari':'Cari','Filter':'Filter','Tutup':'Tutup',
+  },
+  EN: {
+    // Sidebar sections
+    'Utama':'Main','Gateway':'Gateway','Sistem':'System','Laporan':'Reports','Lainnya':'Other','Admin':'Admin',
+    // Sidebar items
+    'Dashboard':'Dashboard','Pelanggan':'Customers','Paket Internet':'Internet Plans','Invoice':'Invoice',
+    'Voucher':'Voucher','Reseller':'Reseller','WhatsApp':'WhatsApp','Payment':'Payment',
+    'RADIUS / NAS':'RADIUS / NAS','Sesi Aktif':'Active Sessions','Peta Jaringan':'Network Map',
+    'Ringkasan':'Summary','Period Income':'Period Income','Net Profit':'Net Profit',
+    'Template Voucher':'Voucher Template','ACS TR-069':'ACS TR-069','Setting':'Settings',
+    'Backup & Restore':'Backup & Restore','Pengguna Admin':'Admin Users','Log Admin':'Admin Log',
+    // Topbar
+    'Cari invoice belum dibayar':'Search unpaid invoices',
+    // Page titles
+    'Pengaturan Sistem':'System Settings','Sesi Aktif':'Active Sessions','Peta Jaringan':'Network Map',
+    'Log Admin':'Admin Log','Pengguna Admin':'Admin Users',
+    // Common buttons
+    'Tambah':'Add','Simpan':'Save','Batal':'Cancel','Hapus':'Delete','Edit':'Edit',
+    'Refresh':'Refresh','Reset':'Reset','Export':'Export','Import':'Import',
+    'Aktif':'Active','Nonaktif':'Inactive','Suspend':'Suspend',
+    'Semua':'All','Cari':'Search','Filter':'Filter','Tutup':'Close',
+  }
+};
+
+let _lang = localStorage.getItem('simBillLang') || 'ID';
+
+function t(key) {
+  return (I18N[_lang] && I18N[_lang][key]) || key;
+}
+
+function toggleLang() {
+  _lang = _lang === 'ID' ? 'EN' : 'ID';
+  localStorage.setItem('simBillLang', _lang);
+  applyLang();
+}
+
+function applyLang() {
+  const lbl = document.getElementById('topbar-lang-label');
+  if (lbl) lbl.textContent = _lang;
+
+  // Search placeholder
+  const searchEl = document.getElementById('topbar-search');
+  if (searchEl) searchEl.placeholder = t('Cari invoice belum dibayar');
+
+  // Terjemahkan semua elemen yang punya data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    el.textContent = t(key);
+  });
+
+  // Terjemahkan sidebar sections & items
+  document.querySelectorAll('.sb-section').forEach(el => {
+    const orig = el.getAttribute('data-orig') || el.textContent.trim();
+    el.setAttribute('data-orig', orig);
+    el.textContent = t(orig);
+  });
+  document.querySelectorAll('.sb-item, .sb-sub-item').forEach(el => {
+    // Cari text node (bukan ikon)
+    const textNodes = [...el.childNodes].filter(n => n.nodeType === 3 && n.textContent.trim());
+    textNodes.forEach(n => {
+      const orig = n._orig || n.textContent.trim();
+      n._orig = orig;
+      n.textContent = ' ' + t(orig);
+    });
+  });
+
+  // Terjemahkan group header (Finance Report / Laporan / Lainnya)
+  document.querySelectorAll('.sb-group-hdr').forEach(el => {
+    const span = el.querySelector('span') || el.querySelector('div > span');
+    // Cari text node anak langsung dari div dalam hdr
+    const inner = el.querySelector('div');
+    if (inner) {
+      [...inner.childNodes].filter(n => n.nodeType === 3 && n.textContent.trim()).forEach(n => {
+        const orig = n._orig || n.textContent.trim();
+        n._orig = orig;
+        n.textContent = ' ' + t(orig);
+      });
+    }
+  });
+
+  // Page title saat ini
+  const titleEl = document.getElementById('page-title');
+  if (titleEl) {
+    const orig = titleEl._orig || titleEl.textContent.trim();
+    titleEl._orig = orig;
+    titleEl.textContent = t(orig);
+  }
+}
+
+// Terapkan bahasa saat load
+document.addEventListener('DOMContentLoaded', function() {
+  sbRestoreGroups();
+  setTimeout(applyLang, 100);
+});
+// ══════════════════════════════════════════════════
+
 // ── TOPBAR SEARCH INVOICE ─────────────────────────────────────
 let _tsTimer = null;
 function topbarSearchInvoice(q) {
@@ -3638,8 +3759,7 @@ async function topbarCekNotif() {
 }
 // ── END TOPBAR ────────────────────────────────────────────────
 
-// Restore sidebar group states
-document.addEventListener('DOMContentLoaded', function() { sbRestoreGroups(); });
+// Restore sidebar group states via DOMContentLoaded handled above
 async function apiFetch(path, opts={}) {
   const res = await fetch(API + path, {
     ...opts,
@@ -3942,6 +4062,11 @@ function goto(id, el) {
     }
   }
   document.getElementById('page-title').textContent = titles[id] || id;
+  document.getElementById('page-title')._orig = titles[id] || id;
+  if (_lang !== 'ID') {
+    const el = document.getElementById('page-title');
+    if (el) el.textContent = t(el._orig || el.textContent);
+  }
   if (loaders[id]) loaders[id]();
   closeSidebar();
 }
