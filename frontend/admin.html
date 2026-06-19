@@ -3896,7 +3896,11 @@ Selamat menikmati! 🌐</textarea>
         <div class="fg"><label>Username</label><input id="l2p-user" placeholder="username VPN"></div>
         <div class="fg"><label>Password</label><input id="l2p-pass" type="password" placeholder="••••••••"></div>
       </div>
-      <div class="fg"><label>IP Statis <span class="td-text-sub" style="font-size:10px">(opsional, cth: 10.10.29.2)</span></label><input id="l2p-ip" placeholder="Kosongkan untuk IP dinamis"></div>
+      <div class="fg"><label>IP Statis <span class="td-text-sub" style="font-size:10px">(opsional, cth: 10.10.29.2)</span></label>
+        <input id="l2p-ip" placeholder="Kosongkan untuk IP dinamis">
+        <div id="l2p-ip-hint" style="font-size:11px;color:var(--text3);margin-top:3px"></div>
+        <div id="l2p-ip-list"></div>
+      </div>
       <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
         <button class="btn" onclick="closeModal('m-add-l2tp-user')">Batal</button>
         <button class="btn primary" onclick="apiTambahL2tpUser()" style="gap:6px">
@@ -8510,7 +8514,7 @@ async function apiHapusWgPeer(id) {
   } catch(e) { toast('❌ '+e.message, true); }
 }
 
-async function bukaModalL2tpUser() {
+async function bukaModalL2tpUserOLD_REMOVED() {
   document.getElementById('l2p-user').value = '';
   document.getElementById('l2p-pass').value = '';
   document.getElementById('l2p-ip').value   = '';
