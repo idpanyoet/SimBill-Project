@@ -1187,7 +1187,10 @@ Selamat menikmati! 🌐</textarea>
                   </button>
                 </div>
                 <div class="wa-chat" id="wa-chat">
-                  <div style="text-align:center;color:#aaa;font-size:12px;padding:20px 0">Kirim pesan test untuk melihat preview</div>
+                  <div style="text-align:center;color:var(--text3);padding:20px;font-size:12px">
+                    <i class="ti ti-loader" style="font-size:20px;display:block;margin-bottom:8px;opacity:.4" aria-hidden="true"></i>
+                    Memuat riwayat pesan...
+                  </div>
                 </div>
               </div>
             </div>
@@ -7548,8 +7551,9 @@ async function loadWALog() {
     renderWAChatPreview(rows);
   } catch(e) {
     console.warn('WA log API:', e.message);
-    document.getElementById('wa-chat').innerHTML =
-      '<div style="text-align:center;color:var(--text3);padding:16px;font-size:12px">Belum ada riwayat pesan</div>';
+    const chat = document.getElementById('wa-chat');
+    if (chat) chat.innerHTML =
+      '<div style="text-align:center;color:var(--text3);padding:20px;font-size:12px"><i class="ti ti-message-off" style="font-size:24px;display:block;margin-bottom:8px;opacity:.4"></i>Belum ada riwayat pengiriman WA<br><span style="font-size:11px">Riwayat akan muncul setelah pesan pertama dikirim</span></div>';
   }
 
   // Statistik 30 hari
@@ -7561,16 +7565,19 @@ async function loadWALog() {
 
 function renderWAChatPreview(rows) {
   const chat = document.getElementById('wa-chat');
-  if (!rows.length) {
-    chat.innerHTML = '<div style="text-align:center;color:var(--text3);padding:16px;font-size:12px">Belum ada riwayat pesan</div>';
+  if (!chat) return;
+  if (!rows || !rows.length) {
+    chat.innerHTML = '<div style="text-align:center;color:var(--text3);padding:20px;font-size:12px"><i class="ti ti-message-off" style="font-size:24px;display:block;margin-bottom:8px;opacity:.4"></i>Belum ada riwayat pengiriman WA<br><span style="font-size:11px">Riwayat akan muncul setelah pesan pertama dikirim</span></div>';
     return;
   }
   chat.innerHTML = rows.slice(0,10).reverse().map(r => {
-    const waktu = r.sent_at || r.created_at;
-    const jam = waktu ? new Date(waktu).toLocaleTimeString('id',{hour:'2-digit',minute:'2-digit'}) : '';
-    const centang = r.status === 'sent' ? '✓✓' : r.status === 'failed' ? '✗' : '⏳';
-    const pesanRingkas = (r.pesan||'').replace(/\*(.*?)\*/g,'<b>$1</b>').slice(0,200);
-    return `<div class="wa-msg out">${pesanRingkas}<div class="time">${jam} ${centang}</div></div>`;
+    const waktu    = r.sent_at || r.created_at;
+    const jam      = waktu ? new Date(waktu).toLocaleTimeString('id',{hour:'2-digit',minute:'2-digit'}) : '';
+    const centang  = r.status === 'sent' ? '✓✓' : r.status === 'failed' ? '✗' : '⏳';
+    const centangColor = r.status === 'sent' ? '#53bdeb' : r.status === 'failed' ? '#dc2626' : '#94a3b8';
+    const pesanRingkas = (r.pesan||'').replace(/\*(.*?)\*/g,'<b>$1</b>').slice(0, 300);
+    const nama     = r.nama_pelanggan ? `<div style="font-size:10px;color:#94a3b8;margin-bottom:3px">${r.nama_pelanggan} · ${r.no_hp||''}</div>` : '';
+    return `<div class="wa-msg out">${nama}${pesanRingkas}<div class="time">${jam} <span style="color:${centangColor}">${centang}</span></div></div>`;
   }).join('');
   chat.scrollTop = chat.scrollHeight;
 }
