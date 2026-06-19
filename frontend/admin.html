@@ -250,14 +250,9 @@ body.dark [style*="color:#15803d"]:not(.btn){color:#4ade80!important}
 body.dark #ts-jumlah{background:#0d1117!important;border-color:#30363d!important;color:#e6edf3!important}
 /* ── VCR TOGGLE ── */
 .vcr-toggle{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
-.vcr-toggle-track{display:inline-block;width:36px;height:20px;border-radius:99px;background:#e2e7ef;position:relative;transition:background .2s;flex-shrink:0;cursor:pointer}
+.vcr-toggle-track{display:inline-block;width:36px;height:20px;border-radius:99px;background:#e2e7ef;position:relative;transition:background .2s;flex-shrink:0;cursor:pointer;vertical-align:middle}
 .vcr-toggle-thumb{display:block;width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
-input[type=checkbox]:checked + .vcr-toggle-track,
-.vcr-toggle input:checked ~ .vcr-toggle-track,
-.vcr-toggle-track.on{background:#16a34a}
-.vcr-toggle-track.on .vcr-toggle-thumb{left:19px}
 body.dark .vcr-toggle-track{background:#30363d}
-body.dark .vcr-toggle-track.on{background:#16a34a}
 /* ── EDIT PAKET MODAL ── */
 body.dark #ep2-tipe-card-pppoe,body.dark #ep2-tipe-card-hotspot,body.dark #ep2-tipe-card-keduanya{background:#1c2128;border-color:#30363d}
 body.dark #ep2-harga-preview{color:#fbbf24!important}
@@ -684,7 +679,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
               </tr>
             </thead>
             <tbody id="plan-tbody">
-              <tr><td colspan="8" style="text-align:center;color:var(--text3);padding:30px">Tidak ada data</td></tr>
+              <tr><td colspan="9" style="text-align:center;color:var(--text3);padding:30px">Tidak ada data</td></tr>
             </tbody>
           </table>
         </div>
@@ -1752,6 +1747,7 @@ Selamat menikmati! 🌐</textarea>
         <input id="ep2-deskripsi" placeholder="cth: Cocok untuk streaming & gaming">
       </div>
 
+      <div id="ep2-vcr-wrap">
       <label for="ep2-izin-voucher" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
         <span class="vcr-toggle-track" id="ep2-vcr-track" style="flex-shrink:0"><span class="vcr-toggle-thumb"></span></span>
         <input type="checkbox" id="ep2-izin-voucher" style="display:none" onchange="paketToggleVcrLabel('ep2')">
@@ -1760,6 +1756,7 @@ Selamat menikmati! 🌐</textarea>
           <div id="ep2-vcr-lbl" class="td-text-sub" style="font-size:11px;margin-top:1px">Tidak diizinkan — paket tidak muncul di storefront</div>
         </div>
       </label>
+      </div>
 
       <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
         <button class="btn" onclick="closeModal('m-edit-paket')">Batal</button>
@@ -4249,11 +4246,14 @@ function renderPaket(rows) {
       <td><span class="td-text-sub td-mono">${p.pool_name || '—'}</span></td>
       <td><span class="badge blue">${p.jumlah_pelanggan || 0}</span></td>
       <td>
-        <label class="vcr-toggle" title="${izinVcr ? 'Izinkan e-voucher' : 'Tidak diizinkan'}">
-          <input type="checkbox" ${izinVcr ? 'checked' : ''} onchange="apiToggleIzinVoucher(${p.id},this.checked,this)" style="display:none">
-          <span class="vcr-toggle-track"><span class="vcr-toggle-thumb"></span></span>
+        ${p.tipe === 'pppoe' ? '<span class="td-text-sub">—</span>' : `
+        <label for="vcr-chk-${p.id}" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+          <span class="vcr-toggle-track" id="vcr-track-${p.id}" style="flex-shrink:0;${izinVcr ? 'background:#16a34a' : ''}">
+            <span class="vcr-toggle-thumb" style="left:${izinVcr ? '19px' : '3px'}"></span>
+          </span>
+          <input type="checkbox" id="vcr-chk-${p.id}" ${izinVcr ? 'checked' : ''} onchange="apiToggleIzinVoucher(${p.id},this.checked,this)" style="display:none">
           <span class="td-text-sub" style="font-size:11px">${izinVcr ? 'Ya' : 'Tidak'}</span>
-        </label>
+        </label>`}
       </td>
       <td style="white-space:nowrap">
         <button class="btn sm" onclick="bukaEditPaket(${p.id})"><i class="ti ti-edit" aria-hidden="true"></i> Edit</button>
@@ -4373,7 +4373,9 @@ function bukaEditPaket(id) {
   document.getElementById('ep2-deskripsi').value= p.deskripsi || '';
   document.getElementById('ep2-title').textContent = 'Edit: ' + p.nama;
   ep2SetTipe(p.tipe || 'pppoe');
-  // Set toggle izin_voucher
+  // Toggle izin_voucher — sembunyikan untuk PPPoE
+  const vcrWrap = document.getElementById('ep2-vcr-wrap');
+  if (vcrWrap) vcrWrap.style.display = p.tipe === 'pppoe' ? 'none' : '';
   const chkVcr = document.getElementById('ep2-izin-voucher');
   if (chkVcr) { chkVcr.checked = p.izin_voucher ? true : false; paketToggleVcrLabel('ep2'); }
   ep2UpdatePreview();
@@ -4403,6 +4405,9 @@ function ep2SetTipe(tipe) {
       if (lbl) { lbl.style.color = ''; lbl.classList.add('td-text-main'); }
     }
   });
+  // Sembunyikan toggle e-Voucher untuk PPPoE
+  const vcrWrap = document.getElementById('ep2-vcr-wrap');
+  if (vcrWrap) vcrWrap.style.display = tipe === 'pppoe' ? 'none' : '';
 }
 
 function ep2UpdatePreview() {
