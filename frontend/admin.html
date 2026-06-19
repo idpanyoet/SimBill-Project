@@ -3944,6 +3944,67 @@ Selamat menikmati! 🌐</textarea>
   </div>
 </div>
 
+<!-- MODAL EDIT NAS -->
+<div class="overlay" id="m-edit-nas">
+  <div class="modal" style="max-width:460px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:9px;background:rgba(217,119,6,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-server" style="font-size:18px;color:#d97706" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">Edit NAS</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Perbarui konfigurasi Network Access Server</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-edit-nas')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+      <input type="hidden" id="en-id">
+      <div class="fg-row">
+        <div class="fg"><label>Nama / Shortname</label><input id="en-nama" placeholder="cth: Router-01"></div>
+        <div class="fg"><label>IP Address NAS</label><input id="en-ip" placeholder="cth: 192.168.1.1"></div>
+      </div>
+      <div class="fg-row">
+        <div class="fg">
+          <label>Tipe</label>
+          <select id="en-tipe" style="width:100%">
+            <option value="other">other</option>
+            <option value="Cisco">Cisco</option>
+            <option value="Computone">Computone</option>
+            <option value="Livingston">Livingston</option>
+            <option value="Max40xx">Max40xx</option>
+            <option value="Multitech">Multitech</option>
+            <option value="NetServer">NetServer</option>
+            <option value="PathSystems">PathSystems</option>
+            <option value="Portslave">Portslave</option>
+            <option value="TC">TC</option>
+            <option value="Usr">Usr</option>
+            <option value="mikrotik">Mikrotik</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Secret</label>
+          <div style="position:relative">
+            <input id="en-secret" type="password" placeholder="shared secret" style="padding-right:36px">
+            <button type="button" onclick="togglePwVis('en-secret',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:14px;padding:0">👁</button>
+          </div>
+        </div>
+      </div>
+      <div class="fg-row">
+        <div class="fg"><label>Community <span class="td-text-sub" style="font-size:10px">(opsional)</span></label><input id="en-community" placeholder="public"></div>
+        <div class="fg"><label>Ports <span class="td-text-sub" style="font-size:10px">(opsional)</span></label><input id="en-ports" type="number" placeholder="0"></div>
+      </div>
+      <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
+        <button class="btn" onclick="closeModal('m-edit-nas')">Batal</button>
+        <button class="btn primary" onclick="apiEditNAS()" style="gap:6px">
+          <i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan Perubahan
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="m-mikrotik-script">
   <div class="modal" style="max-width:580px">
     <div class="modal-hdr"><h3 id="mks-title">📋 Script MikroTik</h3><button class="btn-x" onclick="closeModal('m-mikrotik-script')">✕</button></div>
