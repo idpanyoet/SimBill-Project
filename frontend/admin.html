@@ -484,7 +484,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     </div>
     <div class="sb-group-body open" id="sb-finance-body">
       <div class="sb-sub-item" onclick="goto('laporan',this)"><span class="sb-sub-dot"></span> Ringkasan</div>
-      <div class="sb-sub-item" onclick="goto('income-report',this)"><span class="sb-sub-dot"></span> Period Income</div>
+      <div class="sb-sub-item" onclick="goto('income-report',this)"><span class="sb-sub-dot"></span> Priode Pemasukan</div>
       <div class="sb-sub-item" onclick="goto('net-profit',this)"><span class="sb-sub-dot"></span> Net Profit</div>
     </div>
 
@@ -1819,128 +1819,162 @@ Selamat menikmati! 🌐</textarea>
       <!-- ══ PERIOD INCOME REPORT ══ -->
       <div class="page" id="p-income-report">
 
-        <!-- Filter Card -->
-        <div class="card" style="max-width:680px">
-          <div class="card-title">
-            <span><i class="ti ti-report-money" style="color:#BA7517;margin-right:6px" aria-hidden="true"></i>Period Income Report</span>
-          </div>
-
-          <div class="fg-row">
-            <div class="fg">
-              <label>From Date</label>
-              <input type="date" id="ir-from" style="width:100%">
-            </div>
-            <div class="fg">
-              <label>Till Date</label>
-              <input type="date" id="ir-till" style="width:100%">
-            </div>
-          </div>
-
-          <div class="fg">
-            <label>User Type</label>
-            <div style="display:flex;gap:16px;margin-top:4px">
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
-                <input type="radio" name="ir-user-type" value="all" checked style="accent-color:#BA7517"> All Type
-              </label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
-                <input type="radio" name="ir-user-type" value="customer" style="accent-color:#BA7517"> Customer
-              </label>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px">
-                <input type="radio" name="ir-user-type" value="voucher" style="accent-color:#BA7517"> Voucher
-              </label>
-            </div>
-          </div>
-
-          <div class="fg">
-            <label>Service Type</label>
-            <select id="ir-service-type" style="width:100%">
-              <option value="">- All Transactions -</option>
-              <option value="pppoe">PPPoE</option>
-              <option value="hotspot">Hotspot</option>
-              <option value="voucher">Voucher</option>
-            </select>
-          </div>
-
-          <div class="fg">
-            <label>Payment Method</label>
-            <select id="ir-payment-method" style="width:100%">
-              <option value="">- All Payment Method -</option>
-              <option value="cash">Cash / Tunai</option>
-              <option value="transfer">Transfer Bank</option>
-              <option value="qris">QRIS</option>
-              <option value="va">Virtual Account</option>
-              <option value="ewallet">E-Wallet</option>
-            </select>
-          </div>
-
-          <button class="btn primary" style="margin-top:4px" onclick="apiIncomeReport()">
-            <i class="ti ti-search" aria-hidden="true"></i> View Reports
-          </button>
-        </div>
-
-        <!-- Summary Metrics -->
-        <div id="ir-metrics" style="display:none">
-          <div class="metrics" style="grid-template-columns:repeat(4,1fr)">
-            <div class="metric green">
-              <div class="metric-ico"><i class="ti ti-cash" aria-hidden="true"></i></div>
-              <div><div class="lbl">Total Pendapatan</div><div class="val" id="ir-m-total">—</div></div>
-            </div>
-            <div class="metric blue">
-              <div class="metric-ico"><i class="ti ti-receipt" aria-hidden="true"></i></div>
-              <div><div class="lbl">Total Transaksi</div><div class="val" id="ir-m-trx">—</div></div>
-            </div>
-            <div class="metric amber">
-              <div class="metric-ico"><i class="ti ti-users" aria-hidden="true"></i></div>
-              <div><div class="lbl">Customer</div><div class="val" id="ir-m-cust">—</div></div>
-            </div>
-            <div class="metric teal">
-              <div class="metric-ico"><i class="ti ti-ticket" aria-hidden="true"></i></div>
-              <div><div class="lbl">Voucher</div><div class="val" id="ir-m-vcr">—</div></div>
-            </div>
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <h2 style="font-size:18px;font-weight:700;color:var(--text);margin:0">Priode Pemasukan</h2>
+            <div class="td-text-sub" style="font-size:12px;margin-top:3px">Laporan pemasukan berdasarkan periode, tipe layanan, dan metode pembayaran</div>
           </div>
         </div>
 
-        <!-- Hasil Tabel -->
-        <div class="card" id="ir-result-card" style="display:none">
-          <div class="card-title">
-            Hasil Laporan
-            <div style="display:flex;gap:8px">
-              <span id="ir-period-label" class="td-text-sub" style="font-size:11px;font-weight:400"></span>
-              <button class="btn sm" onclick="irExportCSV()"><i class="ti ti-download" aria-hidden="true"></i> Export CSV</button>
-              <button class="btn sm" onclick="irExportExcel()"><i class="ti ti-table-export" aria-hidden="true"></i> Export Excel</button>
+        <!-- Filter + Metrics grid -->
+        <div style="display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start;margin-bottom:16px">
+
+          <!-- Filter Card (kiri, sticky) -->
+          <div style="position:sticky;top:70px">
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(186,117,23,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-filter" style="font-size:17px;color:#BA7517" aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Filter Laporan</div>
+                  <div class="td-text-sub" style="font-size:11px">Pilih periode dan parameter</div>
+                </div>
+              </div>
+
+              <!-- Rentang tanggal -->
+              <div class="fg-row" style="margin-bottom:12px">
+                <div class="fg" style="margin-bottom:0">
+                  <label>From Date</label>
+                  <input type="date" id="ir-from" style="width:100%">
+                </div>
+                <div class="fg" style="margin-bottom:0">
+                  <label>Till Date</label>
+                  <input type="date" id="ir-till" style="width:100%">
+                </div>
+              </div>
+
+              <!-- Quick date chips -->
+              <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px">
+                <button onclick="irSetRange('today')" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.borderColor='#BA7517';this.style.color='#BA7517'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">Hari Ini</button>
+                <button onclick="irSetRange('week')" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.borderColor='#BA7517';this.style.color='#BA7517'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">7 Hari</button>
+                <button onclick="irSetRange('month')" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.borderColor='#BA7517';this.style.color='#BA7517'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">Bulan Ini</button>
+                <button onclick="irSetRange('last30')" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.borderColor='#BA7517';this.style.color='#BA7517'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">30 Hari</button>
+                <button onclick="irSetRange('year')" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s" onmouseover="this.style.borderColor='#BA7517';this.style.color='#BA7517'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">Tahun Ini</button>
+              </div>
+
+              <!-- User Type -->
+              <div style="margin-bottom:12px">
+                <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:8px">User Type</label>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+                  <label style="display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;padding:7px;border:2px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;transition:all .15s" id="ir-type-all">
+                    <input type="radio" name="ir-user-type" value="all" checked style="display:none" onchange="irUpdateTypeCards()"> Semua
+                  </label>
+                  <label style="display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;padding:7px;border:2px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;transition:all .15s" id="ir-type-customer">
+                    <input type="radio" name="ir-user-type" value="customer" style="display:none" onchange="irUpdateTypeCards()"> Customer
+                  </label>
+                  <label style="display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;padding:7px;border:2px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;transition:all .15s" id="ir-type-voucher">
+                    <input type="radio" name="ir-user-type" value="voucher" style="display:none" onchange="irUpdateTypeCards()"> Voucher
+                  </label>
+                </div>
+              </div>
+
+              <!-- Service Type -->
+              <div class="fg" style="margin-bottom:12px">
+                <label>Service Type</label>
+                <select id="ir-service-type" style="width:100%">
+                  <option value="">— Semua Transaksi —</option>
+                  <option value="pppoe">PPPoE</option>
+                  <option value="hotspot">Hotspot</option>
+                  <option value="voucher">Voucher</option>
+                </select>
+              </div>
+
+              <!-- Payment Method -->
+              <div class="fg" style="margin-bottom:16px">
+                <label>Payment Method</label>
+                <select id="ir-payment-method" style="width:100%">
+                  <option value="">— Semua Metode —</option>
+                  <option value="cash">💵 Cash / Tunai</option>
+                  <option value="transfer">🏦 Transfer Bank</option>
+                  <option value="qris">⬛ QRIS</option>
+                  <option value="va">🏧 Virtual Account</option>
+                  <option value="ewallet">📱 E-Wallet</option>
+                </select>
+              </div>
+
+              <button class="btn primary" style="width:100%;justify-content:center;gap:8px" onclick="apiIncomeReport()">
+                <i class="ti ti-chart-bar" style="font-size:14px" aria-hidden="true"></i> Tampilkan Laporan
+              </button>
             </div>
           </div>
 
-          <!-- Summary per tipe -->
-          <div id="ir-summary-row" style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap"></div>
+          <!-- Kanan: Stats + hasil -->
+          <div style="display:flex;flex-direction:column;gap:14px">
 
-          <table>
-            <thead>
-              <tr>
-                <th>No.</th>
-                <th>Tanggal</th>
-                <th>No. Invoice</th>
-                <th>Nama</th>
-                <th>Tipe</th>
-                <th>Paket</th>
-                <th>Metode Bayar</th>
-                <th>Jumlah</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="tbl-income-report">
-              <tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text3)">Klik View Reports untuk melihat data</td></tr>
-            </tbody>
-          </table>
+            <!-- Stat Cards -->
+            <div id="ir-metrics" style="display:none;grid-template-columns:repeat(4,1fr);gap:10px"></div>
 
-          <div id="ir-total-bar" style="display:none;margin-top:12px;padding:10px 14px;background:var(--bg3);border-radius:8px;display:flex;justify-content:space-between;align-items:center">
-            <span class="td-text-sub" style="font-size:13px">Total Pendapatan (Paid)</span>
-            <span id="ir-grand-total" class="td-accent-bold" style="font-size:16px;font-weight:700"></span>
+            <!-- Hasil Laporan -->
+            <div class="card" id="ir-result-card" style="display:none">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Hasil Laporan</div>
+                  <div id="ir-period-label" class="td-text-sub" style="font-size:11px;margin-top:2px"></div>
+                </div>
+                <div style="display:flex;gap:8px">
+                  <button class="btn sm" onclick="irExportCSV()" style="gap:5px">
+                    <i class="ti ti-download" style="font-size:12px" aria-hidden="true"></i> CSV
+                  </button>
+                  <button class="btn sm" onclick="irExportExcel()" style="gap:5px">
+                    <i class="ti ti-file-spreadsheet" style="font-size:12px" aria-hidden="true"></i> Excel
+                  </button>
+                </div>
+              </div>
+
+              <!-- Summary chips per tipe -->
+              <div id="ir-summary-row" style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap"></div>
+
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:40px">No</th>
+                    <th style="width:90px">Tanggal</th>
+                    <th style="width:110px">Invoice</th>
+                    <th>Nama</th>
+                    <th style="width:70px">Tipe</th>
+                    <th>Paket</th>
+                    <th style="width:90px">Metode</th>
+                    <th style="width:100px">Jumlah</th>
+                    <th style="width:70px">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="tbl-income-report">
+                  <tr><td colspan="9" style="text-align:center;padding:28px;color:var(--text3)">Klik Tampilkan Laporan untuk melihat data</td></tr>
+                </tbody>
+              </table>
+
+              <!-- Grand total bar -->
+              <div id="ir-total-bar" style="display:none;margin-top:12px;padding:12px 16px;background:linear-gradient(135deg,rgba(22,163,74,.08),rgba(22,163,74,.04));border:1px solid rgba(22,163,74,.2);border-radius:10px;display:flex;justify-content:space-between;align-items:center">
+                <span style="font-size:13px;font-weight:600;color:var(--text2);display:flex;align-items:center;gap:7px">
+                  <i class="ti ti-coins" style="font-size:15px;color:#16a34a" aria-hidden="true"></i>
+                  Total Pendapatan (Paid)
+                </span>
+                <span id="ir-grand-total" style="font-size:18px;font-weight:700;color:#16a34a"></span>
+              </div>
+            </div>
+
+            <!-- Empty state -->
+            <div id="ir-empty-state" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 20px;color:var(--text3)">
+              <i class="ti ti-chart-bar-off" style="font-size:48px;margin-bottom:12px;opacity:.3" aria-hidden="true"></i>
+              <div style="font-size:14px;font-weight:600;margin-bottom:6px">Belum ada data</div>
+              <div style="font-size:12px">Pilih periode dan klik Tampilkan Laporan</div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- ══ NET PROFIT ══ -->
       <div class="page" id="p-net-profit">
 
         <!-- Header bar -->
@@ -2091,93 +2125,187 @@ Selamat menikmati! 🌐</textarea>
 
       <!-- ══ VOUCHER TEMPLATE ══ -->
       <div class="page" id="p-voucher-template">
-        <div class="grid2" style="align-items:start">
-          <!-- Panel kiri: editor -->
-          <div style="display:flex;flex-direction:column;gap:10px">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <h2 style="font-size:18px;font-weight:700;color:var(--text);margin:0">Template Voucher</h2>
+            <div class="td-text-sub" style="font-size:12px;margin-top:3px">Desain tampilan cetak voucher dengan HTML kustom</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span id="vt-badge-default" class="badge green" style="display:none;gap:4px"><i class="ti ti-star-filled" style="font-size:10px"></i> Default</span>
+            <div id="vt-dirty-badge" style="display:none;background:rgba(217,119,6,.12);color:#d97706;font-size:11px;font-weight:600;padding:4px 10px;border-radius:8px;align-items:center;gap:5px">
+              <i class="ti ti-pencil" style="font-size:12px"></i> Belum disimpan
+            </div>
+            <button class="btn" onclick="vtBaru()" style="gap:6px">
+              <i class="ti ti-plus" style="font-size:13px" aria-hidden="true"></i> Template Baru
+            </button>
+            <button class="btn danger" onclick="vtHapus()" id="vt-btn-hapus" style="gap:6px">
+              <i class="ti ti-trash" style="font-size:13px" aria-hidden="true"></i> Hapus
+            </button>
+            <button class="btn primary" onclick="vtSimpan()" style="gap:6px">
+              <i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan
+            </button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+
+          <!-- ══ KOLOM KIRI: EDITOR ══ -->
+          <div style="display:flex;flex-direction:column;gap:14px">
+
+            <!-- Card Template Info -->
             <div class="card">
-              <div class="card-title">🎨 Template Voucher
-                <div style="display:flex;gap:6px">
-                  <span id="vt-badge-default" class="badge green" style="display:none">Default</span>
-                  <button class="btn sm primary" onclick="vtSimpan()">💾 Simpan</button>
-                  <button class="btn sm danger" onclick="vtHapus()" id="vt-btn-hapus">🗑️ Hapus</button>
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(186,117,23,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-ticket" style="font-size:17px;color:#BA7517" aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Pilih Template</div>
+                  <div class="td-text-sub" style="font-size:11px">Kelola template cetak voucher</div>
                 </div>
               </div>
-              <div class="fg" style="margin-bottom:10px">
-                <label>Pilih Template</label>
-                <select id="vt-select" onchange="vtLoad(this.value)" style="width:100%">
-                  <option value="">Memuat...</option>
-                </select>
+              <div class="fg-row" style="margin-bottom:0">
+                <div class="fg">
+                  <label>Template Aktif</label>
+                  <select id="vt-select" onchange="vtLoad(this.value)" style="width:100%">
+                    <option value="">Memuat...</option>
+                  </select>
+                </div>
+                <div class="fg">
+                  <label>Nama Template</label>
+                  <input type="text" id="vt-nama" placeholder="Nama template...">
+                </div>
               </div>
-              <div class="fg" style="margin-bottom:10px">
-                <label>Nama Template</label>
-                <input type="text" id="vt-nama" placeholder="Nama template...">
-              </div>
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-                <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
-                  <input type="checkbox" id="vt-is-default"> Set sebagai Default
-                </label>
-                <button class="btn sm" onclick="vtBaru()">+ Template Baru</button>
-              </div>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:12px;padding:9px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px">
+                <input type="checkbox" id="vt-is-default" style="width:15px;height:15px;accent-color:#BA7517;cursor:pointer">
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:var(--text)">Set sebagai Default</div>
+                  <div class="td-text-sub" style="font-size:11px;margin-top:1px">Template ini dipakai saat generate & print voucher</div>
+                </div>
+              </label>
             </div>
 
+            <!-- Card Header HTML -->
             <div class="card">
-              <div class="card-title">Header HTML
-                <span class="sub">Bagian atas halaman print (html, head, css, pembuka grid)</span>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Header HTML</div>
+                  <div class="td-text-sub" style="font-size:11px;margin-top:1px">Bagian atas halaman print (html, head, css, pembuka grid)</div>
+                </div>
+                <span style="font-size:10px;font-weight:600;background:rgba(37,99,235,.1);color:#2563eb;padding:2px 8px;border-radius:99px">1×</span>
               </div>
-              <textarea id="vt-header" style="width:100%;min-height:130px;font-family:var(--font-mono,monospace);font-size:11px;padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);resize:vertical;line-height:1.5" placeholder="<html><head>...</head><body><div class=&quot;grid&quot;>"></textarea>
+              <textarea id="vt-header" oninput="vtMarkDirty()"
+                style="width:100%;min-height:120px;font-family:monospace;font-size:11px;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);resize:vertical;line-height:1.6;box-sizing:border-box"
+                placeholder="<!DOCTYPE html><html><head>...</head><body><div class=&quot;grid&quot;>"></textarea>
             </div>
 
+            <!-- Card Row HTML -->
             <div class="card">
-              <div class="card-title">Row HTML (per voucher)
-                <span class="sub">Diulang untuk setiap voucher</span>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Row HTML</div>
+                  <div class="td-text-sub" style="font-size:11px;margin-top:1px">Diulang untuk setiap voucher — gunakan placeholder di bawah</div>
+                </div>
+                <span style="font-size:10px;font-weight:600;background:rgba(22,163,74,.1);color:#16a34a;padding:2px 8px;border-radius:99px">N×</span>
               </div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">
-                <span class="badge blue" style="cursor:pointer;font-family:monospace" onclick="vtInsert('vt-row','%username%')">%username%</span>
-                <span class="badge blue" style="cursor:pointer;font-family:monospace" onclick="vtInsert('vt-row','%password%')">%password%</span>
-                <span class="badge blue" style="cursor:pointer;font-family:monospace" onclick="vtInsert('vt-row','%profile%')">%profile%</span>
-                <span class="badge blue" style="cursor:pointer;font-family:monospace" onclick="vtInsert('vt-row','%validity%')">%validity%</span>
-                <span class="badge blue" style="cursor:pointer;font-family:monospace" onclick="vtInsert('vt-row','%price%')">%price%</span>
-                <span class="badge blue" style="cursor:pointer;font-family:monospace" onclick="vtInsert('vt-row','%no_urut%')">%no_urut%</span>
+              <!-- Placeholder chips -->
+              <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
+                <span style="font-size:10px;font-weight:600;font-family:monospace;background:rgba(37,99,235,.1);color:#2563eb;padding:3px 9px;border-radius:6px;cursor:pointer;transition:opacity .15s" onclick="vtInsert('vt-row','%username%')" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">%username%</span>
+                <span style="font-size:10px;font-weight:600;font-family:monospace;background:rgba(37,99,235,.1);color:#2563eb;padding:3px 9px;border-radius:6px;cursor:pointer;transition:opacity .15s" onclick="vtInsert('vt-row','%password%')" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">%password%</span>
+                <span style="font-size:10px;font-weight:600;font-family:monospace;background:rgba(37,99,235,.1);color:#2563eb;padding:3px 9px;border-radius:6px;cursor:pointer;transition:opacity .15s" onclick="vtInsert('vt-row','%profile%')" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">%profile%</span>
+                <span style="font-size:10px;font-weight:600;font-family:monospace;background:rgba(37,99,235,.1);color:#2563eb;padding:3px 9px;border-radius:6px;cursor:pointer;transition:opacity .15s" onclick="vtInsert('vt-row','%validity%')" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">%validity%</span>
+                <span style="font-size:10px;font-weight:600;font-family:monospace;background:rgba(37,99,235,.1);color:#2563eb;padding:3px 9px;border-radius:6px;cursor:pointer;transition:opacity .15s" onclick="vtInsert('vt-row','%price%')" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">%price%</span>
+                <span style="font-size:10px;font-weight:600;font-family:monospace;background:rgba(37,99,235,.1);color:#2563eb;padding:3px 9px;border-radius:6px;cursor:pointer;transition:opacity .15s" onclick="vtInsert('vt-row','%no_urut%')" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">%no_urut%</span>
               </div>
-              <textarea id="vt-row" style="width:100%;min-height:180px;font-family:var(--font-mono,monospace);font-size:11px;padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);resize:vertical;line-height:1.5" placeholder="<div class=&quot;voucher&quot;>...</div>" oninput="vtPreview()"></textarea>
+              <textarea id="vt-row" oninput="vtPreview();vtMarkDirty()"
+                style="width:100%;min-height:180px;font-family:monospace;font-size:11px;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);resize:vertical;line-height:1.6;box-sizing:border-box"
+                placeholder="<div class=&quot;vcr&quot;>...</div>"></textarea>
             </div>
 
+            <!-- Card Footer HTML -->
             <div class="card">
-              <div class="card-title">Footer HTML
-                <span class="sub">Penutup halaman (tutup grid, body, html)</span>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Footer HTML</div>
+                  <div class="td-text-sub" style="font-size:11px;margin-top:1px">Penutup halaman (tutup grid, body, html)</div>
+                </div>
+                <span style="font-size:10px;font-weight:600;background:rgba(186,117,23,.1);color:#BA7517;padding:2px 8px;border-radius:99px">1×</span>
               </div>
-              <textarea id="vt-footer" style="width:100%;min-height:80px;font-family:var(--font-mono,monospace);font-size:11px;padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);resize:vertical;line-height:1.5" placeholder="</div></body></html>"></textarea>
+              <textarea id="vt-footer" oninput="vtMarkDirty()"
+                style="width:100%;min-height:70px;font-family:monospace;font-size:11px;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);resize:vertical;line-height:1.6;box-sizing:border-box"
+                placeholder="</div></body></html>"></textarea>
             </div>
           </div>
 
-          <!-- Panel kanan: preview -->
-          <div style="position:sticky;top:70px;display:flex;flex-direction:column;gap:10px">
+          <!-- ══ KOLOM KANAN: PREVIEW ══ -->
+          <div style="position:sticky;top:70px;display:flex;flex-direction:column;gap:14px">
+
+            <!-- Card Preview -->
             <div class="card">
-              <div class="card-title">Preview
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="width:32px;height:32px;border-radius:8px;background:rgba(124,58,237,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <i class="ti ti-eye" style="font-size:15px;color:#7c3aed" aria-hidden="true"></i>
+                  </div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Preview</div>
+                </div>
                 <div style="display:flex;align-items:center;gap:8px">
-                  <label style="font-size:12px;color:var(--text2)">Jumlah preview</label>
-                  <select id="vt-preview-count" onchange="vtPreview()" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text)">
-                    <option value="4" selected>4</option>
-                    <option value="8">8</option>
-                    <option value="12">12</option>
+                  <select id="vt-preview-count" onchange="vtPreview()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:7px;background:var(--bg2);color:var(--text);font-family:inherit">
+                    <option value="4" selected>4 voucher</option>
+                    <option value="8">8 voucher</option>
+                    <option value="12">12 voucher</option>
                   </select>
-                  <button class="btn sm primary" onclick="vtTestPrint()">🖨️ Test Print</button>
+                  <button class="btn primary" onclick="vtTestPrint()" style="gap:6px">
+                    <i class="ti ti-printer" style="font-size:13px" aria-hidden="true"></i> Test Print
+                  </button>
                 </div>
               </div>
-              <div id="vt-preview-area" style="background:#f8f9fc;border:1px solid var(--border);border-radius:8px;padding:12px;min-height:200px;overflow:auto"></div>
-            </div>
-
-            <div class="card">
-              <div class="card-title">Placeholder Tersedia</div>
-              <div style="font-size:12px;color:var(--text2);line-height:2">
-                <div><code>%username%</code> — username / kode voucher</div>
-                <div><code>%password%</code> — password voucher</div>
-                <div><code>%profile%</code> — nama paket</div>
-                <div><code>%validity%</code> — masa aktif (misal: 30 Hari)</div>
-                <div><code>%price%</code> — harga paket</div>
-                <div><code>%no_urut%</code> — nomor urut (001, 002, ...)</div>
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+                <div id="vt-preview-area" style="min-height:200px;overflow:auto"></div>
               </div>
             </div>
+
+            <!-- Card Placeholder -->
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+                <div style="width:32px;height:32px;border-radius:8px;background:rgba(37,99,235,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-code" style="font-size:15px;color:#2563eb" aria-hidden="true"></i>
+                </div>
+                <div style="font-size:13px;font-weight:700;color:var(--text)">Placeholder Tersedia</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg3);border-radius:7px">
+                  <code style="font-size:11px;font-weight:600;color:#2563eb;background:rgba(37,99,235,.1);padding:2px 7px;border-radius:5px">%username%</code>
+                  <span class="td-text-sub" style="font-size:11px">Username / kode voucher</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg3);border-radius:7px">
+                  <code style="font-size:11px;font-weight:600;color:#2563eb;background:rgba(37,99,235,.1);padding:2px 7px;border-radius:5px">%password%</code>
+                  <span class="td-text-sub" style="font-size:11px">Password voucher</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg3);border-radius:7px">
+                  <code style="font-size:11px;font-weight:600;color:#2563eb;background:rgba(37,99,235,.1);padding:2px 7px;border-radius:5px">%profile%</code>
+                  <span class="td-text-sub" style="font-size:11px">Nama paket</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg3);border-radius:7px">
+                  <code style="font-size:11px;font-weight:600;color:#2563eb;background:rgba(37,99,235,.1);padding:2px 7px;border-radius:5px">%validity%</code>
+                  <span class="td-text-sub" style="font-size:11px">Masa aktif (cth: 30 Hari)</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg3);border-radius:7px">
+                  <code style="font-size:11px;font-weight:600;color:#2563eb;background:rgba(37,99,235,.1);padding:2px 7px;border-radius:5px">%price%</code>
+                  <span class="td-text-sub" style="font-size:11px">Harga paket</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg3);border-radius:7px">
+                  <code style="font-size:11px;font-weight:600;color:#2563eb;background:rgba(37,99,235,.1);padding:2px 7px;border-radius:5px">%no_urut%</code>
+                  <span class="td-text-sub" style="font-size:11px">Nomor urut (001, 002, ...)</span>
+                </div>
+              </div>
+              <!-- Reset ke default -->
+              <button onclick="vtReset()" style="width:100%;margin-top:12px;padding:8px;border:1px dashed var(--border);border-radius:8px;background:none;color:var(--text2);font-size:12px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">
+                <i class="ti ti-rotate-clockwise" style="font-size:13px" aria-hidden="true"></i> Reset ke Default
+              </button>
+            </div>
+
           </div>
         </div>
       </div>
@@ -3937,7 +4065,7 @@ const I18N = {
     'Invoice':'Invoice', 'Voucher':'Voucher', 'Reseller':'Reseller',
     'WhatsApp':'WhatsApp', 'Payment':'Payment', 'RADIUS / NAS':'RADIUS / NAS',
     'Sesi Aktif':'Active Sessions', 'Peta Jaringan':'Network Map',
-    'Ringkasan':'Summary', 'Period Income':'Period Income', 'Net Profit':'Net Profit',
+    'Ringkasan':'Summary', 'Period Income':'Period Income', 'Priode Pemasukan':'Period Income', 'Net Profit':'Net Profit',
     'Template Voucher':'Voucher Template', 'ACS TR-069':'ACS TR-069',
     'Setting':'Settings', 'Backup & Restore':'Backup & Restore',
     'Pengguna Admin':'Admin Users', 'Log Admin':'Admin Log',
@@ -4658,7 +4786,7 @@ const titles = {
   voucher:'Voucher', whatsapp:'WhatsApp Gateway',
   payment:'Payment Gateway', radius:'RADIUS / NAS',
   laporan:'Laporan — Ringkasan', acs:'ACS TR-069',
-  'income-report':'Period Income Report',
+  'income-report':'Priode Pemasukan',
   'net-profit':'Net Profit',
   'log':'Log Admin',
   'pengguna':'Pengguna Admin',
@@ -8092,6 +8220,31 @@ async function apiExportExcelLaporan() {
 
 // ══════════════════════════════════════════════════
 // PERIOD INCOME REPORT
+// ── INCOME REPORT HELPERS ──────────────────────────────────
+function irSetRange(range) {
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  let from, till = fmt(now);
+  if (range === 'today')  { from = till; }
+  else if (range === 'week')  { const d=new Date(now); d.setDate(d.getDate()-6); from=fmt(d); }
+  else if (range === 'month') { from=`${now.getFullYear()}-${pad(now.getMonth()+1)}-01`; }
+  else if (range === 'last30'){ const d=new Date(now); d.setDate(d.getDate()-29); from=fmt(d); }
+  else if (range === 'year')  { from=`${now.getFullYear()}-01-01`; till=`${now.getFullYear()}-12-31`; }
+  const f=document.getElementById('ir-from'); const t=document.getElementById('ir-till');
+  if(f) f.value=from; if(t) t.value=till;
+}
+function irUpdateTypeCards() {
+  const val = document.querySelector('input[name="ir-user-type"]:checked')?.value || 'all';
+  ['all','customer','voucher'].forEach(function(v) {
+    const el = document.getElementById('ir-type-'+v);
+    if (!el) return;
+    el.style.borderColor = v===val ? '#BA7517' : 'var(--border)';
+    el.style.color       = v===val ? '#BA7517' : 'var(--text2)';
+    el.style.background  = v===val ? 'rgba(186,117,23,.08)' : 'transparent';
+  });
+}
+// ── END INCOME REPORT HELPERS ──────────────────────────────
 // ══════════════════════════════════════════════════
 let _irData = null;
 
@@ -8127,21 +8280,66 @@ async function apiIncomeReport() {
     const d = await apiFetch('/api/laporan/income-report?' + params.toString());
     _irData  = d;
 
-    // Update metrics
-    document.getElementById('ir-m-total').textContent = fmt(d.summary.total);
-    document.getElementById('ir-m-trx').textContent   = d.summary.trx;
-    document.getElementById('ir-m-cust').textContent  = d.summary.customer;
-    document.getElementById('ir-m-vcr').textContent   = d.summary.voucher;
-    document.getElementById('ir-metrics').style.display = 'block';
+    // Sembunyikan empty state
+    const empty = document.getElementById('ir-empty-state');
+    if (empty) empty.style.display = 'none';
+
+    // Update stat cards modern
+    const metricsEl = document.getElementById('ir-metrics');
+    if (metricsEl) {
+      metricsEl.style.display = 'grid';
+      metricsEl.innerHTML = `
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;border-radius:11px;background:rgba(22,163,74,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="ti ti-cash" style="font-size:20px;color:#16a34a" aria-hidden="true"></i>
+          </div>
+          <div>
+            <div style="font-size:16px;font-weight:700;color:#16a34a">${fmt(d.summary.total)}</div>
+            <div class="td-text-sub" style="font-size:11px">Total Pendapatan</div>
+          </div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;border-radius:11px;background:rgba(37,99,235,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="ti ti-receipt" style="font-size:20px;color:#2563eb" aria-hidden="true"></i>
+          </div>
+          <div>
+            <div style="font-size:24px;font-weight:700;color:var(--text)">${d.summary.trx}</div>
+            <div class="td-text-sub" style="font-size:11px">Total Transaksi</div>
+          </div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;border-radius:11px;background:rgba(217,119,6,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="ti ti-users" style="font-size:20px;color:#d97706" aria-hidden="true"></i>
+          </div>
+          <div>
+            <div style="font-size:24px;font-weight:700;color:var(--text)">${d.summary.customer}</div>
+            <div class="td-text-sub" style="font-size:11px">Customer</div>
+          </div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;border-radius:11px;background:rgba(124,58,237,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="ti ti-ticket" style="font-size:20px;color:#7c3aed" aria-hidden="true"></i>
+          </div>
+          <div>
+            <div style="font-size:24px;font-weight:700;color:var(--text)">${d.summary.voucher}</div>
+            <div class="td-text-sub" style="font-size:11px">Voucher</div>
+          </div>
+        </div>`;
+    }
 
     // Summary per tipe chips
     const srBox = document.getElementById('ir-summary-row');
-    const colors = { PPPoE:'#dbeafe:#1d4ed8', Hotspot:'#f3e8ff:#7e22ce', Voucher:'#dcfce7:#15803d', Lainnya:'#f1f5f9:#64748b' };
+    const TIPE_CFG = {
+      PPPoE:   { bg:'rgba(37,99,235,.1)',  col:'#2563eb' },
+      Hotspot: { bg:'rgba(124,58,237,.1)', col:'#7c3aed' },
+      Voucher: { bg:'rgba(22,163,74,.1)',  col:'#16a34a' },
+      Lainnya: { bg:'var(--bg3)',          col:'var(--text2)' },
+    };
     srBox.innerHTML = Object.entries(d.summary.per_tipe).map(([k,v]) => {
-      const [bg, col] = (colors[k] || '#f1f5f9:#64748b').split(':');
-      return `<div style="background:${bg};border-radius:8px;padding:8px 14px;text-align:center">
-        <div style="font-size:10px;font-weight:600;color:${col};text-transform:uppercase">${k}</div>
-        <div style="font-size:14px;font-weight:700;color:${col};margin-top:2px">${fmt(v)}</div>
+      const cfg = TIPE_CFG[k] || TIPE_CFG.Lainnya;
+      return `<div style="background:${cfg.bg};border-radius:9px;padding:8px 16px;text-align:center;min-width:100px">
+        <div style="font-size:10px;font-weight:700;color:${cfg.col};text-transform:uppercase;letter-spacing:.04em">${k}</div>
+        <div style="font-size:15px;font-weight:700;color:${cfg.col};margin-top:3px">${fmt(v)}</div>
       </div>`;
     }).join('');
 
