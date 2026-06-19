@@ -297,7 +297,9 @@ router.get('/batch/:batchId/export-pdf', async (req, res, next) => {
             .replace(/%no_urut%/g,  String(i + 1).padStart(3, '0'));
 
         const body   = rows.map((v, i) => isi(tpl.row_html, v, i)).join('');
-        const header = (tpl.header_html || '').replace(/<script[\s\S]*?<\/script>/gi, '');
+        // Pertahankan script INLINE (mis. pewarna kartu via window.onload), tapi buang
+        // script eksternal (src=...) yang bisa bikin render lambat/menggantung.
+        const header = (tpl.header_html || '').replace(/<script[^>]*\ssrc=[^>]*>\s*<\/script>/gi, '');
         const html   = header + body + (tpl.footer_html || '');
 
         const pdf = await renderHtmlToPdf(html, { margin: { top: '8mm', right: '8mm', bottom: '8mm', left: '8mm' } });

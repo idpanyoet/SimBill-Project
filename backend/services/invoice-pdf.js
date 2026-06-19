@@ -275,12 +275,22 @@ function bersihkanPdfLama(maxHari = 7) {
 
 // Render HTML apa pun → Buffer PDF (pakai ulang browser yang sama). Dipakai juga
 // untuk export kartu voucher per batch.
-async function renderHtmlToPdf(html, pdfOptions = {}) {
+// opsi tambahan: { emulateScreen } untuk template yang mewarnai via JS onload.
+async function renderHtmlToPdf(html, pdfOptions = {}, opts = {}) {
     if (!puppeteer) throw new Error('puppeteer belum terinstall. Jalankan: npm install puppeteer');
     const browser = await getBrowser();
     const page = await browser.newPage();
     try {
-        await page.setContent(html, { waitUntil: 'networkidle0' });
+        // Beberapa template mewarnai kartu lewat script window.onload + memuat script
+        // eksternal. 'load' menunggu resource utama; bila script eksternal lambat/timeout,
+        // jangan gagal total — tetap lanjut setelah batas waktu.
+        try {
+            await page.setContent(html, { waitUntil: 'load', timeout: 15000 });
+        } catch (e) {
+            await page.setContent(html, { waitUntil: 'domcontentloaded' });
+        }
+        // Beri waktu script onload selesai mewarnai elemen sebelum "memotret".
+        await new Promise(r => setTimeout(r, 600));
         return await page.pdf(Object.assign(
             { format: 'A4', printBackground: true, margin: { top: '8mm', right: '8mm', bottom: '8mm', left: '8mm' } },
             pdfOptions
