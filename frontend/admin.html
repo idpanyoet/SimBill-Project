@@ -7531,7 +7531,12 @@ async function loadWALog() {
     }
     if (map.wa_sender)   document.getElementById('wa-sender').value   = map.wa_sender;
     if (map.wa_phone_id) document.getElementById('wa-phone-id').value = map.wa_phone_id;
-    // Load template pesan
+    // Tampilkan token tersimpan (sebagai placeholder agar user tahu sudah terisi)
+    const tokenEl = document.getElementById('wa-token');
+    if (tokenEl && map.wa_token) {
+      tokenEl.value = map.wa_token;
+      tokenEl.setAttribute('data-saved', '1');
+    }
     if (map.wa_tpl_daftar)          document.getElementById('wa-tpl-daftar').value          = map.wa_tpl_daftar;
     if (map.wa_tpl_reminder)        document.getElementById('wa-tpl-reminder').value        = map.wa_tpl_reminder;
     if (map.wa_tpl_suspend)         document.getElementById('wa-tpl-suspend').value         = map.wa_tpl_suspend;
@@ -7620,10 +7625,10 @@ async function apiSimpanConfigWA() {
   const sender   = document.getElementById('wa-sender').value.trim();
   const phoneId  = document.getElementById('wa-phone-id').value.trim();
   if (!sender) return toast('❌ Nomor pengirim wajib diisi', true);
+  if (!token)  return toast('❌ API Token wajib diisi', true);
   if (provider === 'wa_business' && !phoneId) return toast('❌ Phone Number ID wajib diisi untuk WA Business API', true);
   try {
-    const body = { wa_provider: provider, wa_sender: sender };
-    if (token) body.wa_token = token;
+    const body = { wa_provider: provider, wa_sender: sender, wa_token: token };
     if (provider === 'wa_business') body.wa_phone_id = phoneId;
     // Simpan template pesan
     const tplDaftar    = document.getElementById('wa-tpl-daftar')?.value.trim();
@@ -7635,6 +7640,8 @@ async function apiSimpanConfigWA() {
     if (tplSuspend)    body.wa_tpl_suspend    = tplSuspend;
     if (tplKonfirmasi) body.wa_tpl_konfirmasi = tplKonfirmasi;
     await apiFetch('/api/setting', {method:'PUT', body: JSON.stringify(body)});
+    // Invalidate cache WA di backend agar token baru langsung berlaku
+    await apiFetch('/api/whatsapp/invalidate-cache', {method:'POST'}).catch(()=>{});
     toast('✅ Konfigurasi & template WA disimpan');
   } catch(e) { toast('❌ '+e.message, true); }
 }

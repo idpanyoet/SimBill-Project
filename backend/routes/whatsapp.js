@@ -48,6 +48,12 @@ router.get('/statistik', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// POST /api/whatsapp/invalidate-cache — reset cache config WA
+router.post('/invalidate-cache', (req, res) => {
+    waService.invalidateCache();
+    res.json({ ok: true });
+});
+
 // POST /api/whatsapp/kirim — kirim pesan manual
 router.post('/kirim', async (req, res, next) => {
     try {
