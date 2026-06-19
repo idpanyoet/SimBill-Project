@@ -3878,33 +3878,68 @@ Selamat menikmati! 🌐</textarea>
 
 <!-- MODAL TAMBAH L2TP USER -->
 <div class="overlay" id="m-add-l2tp-user">
-  <div class="modal" style="max-width:440px">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:36px;height:36px;border-radius:9px;background:rgba(217,119,6,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ti-shield-lock" style="font-size:18px;color:#d97706" aria-hidden="true"></i>
+  <div class="modal" style="max-width:480px">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,rgba(217,119,6,.08),rgba(217,119,6,.03));border-radius:12px 12px 0 0">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:42px;height:42px;border-radius:11px;background:rgba(217,119,6,.15);border:1px solid rgba(217,119,6,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-shield-lock" style="font-size:20px;color:#d97706" aria-hidden="true"></i>
         </div>
         <div>
-          <div style="font-size:15px;font-weight:700;color:var(--text)">Tambah User L2TP</div>
-          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Tambah akun VPN L2TP/IPSec</div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">Tambah User L2TP/IPSec</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:2px">Buat akun VPN baru untuk pelanggan</div>
         </div>
       </div>
       <button class="btn-x" onclick="closeModal('m-add-l2tp-user')">✕</button>
     </div>
-    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
-      <div class="fg-row">
-        <div class="fg"><label>Username</label><input id="l2p-user" placeholder="username VPN"></div>
-        <div class="fg"><label>Password</label><input id="l2p-pass" type="password" placeholder="••••••••"></div>
+
+    <div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px">
+
+      <!-- Username & Password -->
+      <div class="fg-row" style="gap:10px">
+        <div class="fg" style="margin-bottom:0">
+          <label style="display:flex;align-items:center;gap:5px;margin-bottom:6px">
+            <i class="ti ti-user" style="font-size:12px;color:var(--text3)" aria-hidden="true"></i> Username
+          </label>
+          <input id="l2p-user" placeholder="cth: pelanggan01" style="font-family:monospace">
+        </div>
+        <div class="fg" style="margin-bottom:0">
+          <label style="display:flex;align-items:center;gap:5px;margin-bottom:6px">
+            <i class="ti ti-lock" style="font-size:12px;color:var(--text3)" aria-hidden="true"></i> Password
+          </label>
+          <div style="position:relative">
+            <input id="l2p-pass" type="password" placeholder="Min. 8 karakter" style="padding-right:36px">
+            <button type="button" onclick="togglePwVis('l2p-pass',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:14px;padding:0;line-height:1">👁</button>
+          </div>
+        </div>
       </div>
-      <div class="fg"><label>IP Statis <span class="td-text-sub" style="font-size:10px">(opsional, cth: 10.10.29.2)</span></label>
-        <input id="l2p-ip" placeholder="Kosongkan untuk IP dinamis">
-        <div id="l2p-ip-hint" style="font-size:11px;color:var(--text3);margin-top:3px"></div>
-        <div id="l2p-ip-list"></div>
+
+      <!-- IP Statis -->
+      <div>
+        <label style="display:flex;align-items:center;gap:5px;margin-bottom:6px">
+          <i class="ti ti-network" style="font-size:12px;color:var(--text3)" aria-hidden="true"></i>
+          IP Statis
+          <span class="td-text-sub" style="font-size:10px;font-weight:400">— opsional, range 10.10.29.2–.200</span>
+        </label>
+        <input id="l2p-ip" placeholder="Kosongkan = IP dinamis otomatis" style="font-family:monospace">
+
+        <!-- Hint & saran IP -->
+        <div id="l2p-ip-hint" style="font-size:11px;color:var(--text3);margin-top:5px;min-height:18px;display:flex;align-items:center;gap:6px"></div>
+        <div id="l2p-ip-list" style="margin-top:4px"></div>
       </div>
-      <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
+
+      <!-- Info box -->
+      <div style="background:rgba(217,119,6,.06);border:1px solid rgba(217,119,6,.2);border-radius:9px;padding:10px 13px;font-size:11px;color:#92400e;display:flex;gap:9px;align-items:flex-start">
+        <i class="ti ti-info-circle" style="font-size:15px;flex-shrink:0;margin-top:1px;color:#d97706" aria-hidden="true"></i>
+        <span>User akan ditambahkan ke <code style="background:rgba(0,0,0,.1);padding:1px 5px;border-radius:4px">/etc/ppp/chap-secrets</code> dan xl2tpd di-reload otomatis. Koneksi baru bisa langsung digunakan.</span>
+      </div>
+
+      <!-- Footer -->
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:2px;padding-top:12px;border-top:1px solid var(--border)">
         <button class="btn" onclick="closeModal('m-add-l2tp-user')">Batal</button>
-        <button class="btn primary" onclick="apiTambahL2tpUser()" style="gap:6px">
-          <i class="ti ti-check" style="font-size:13px" aria-hidden="true"></i> Tambah User
+        <button class="btn primary" onclick="apiTambahL2tpUser()" style="gap:6px;background:#d97706;border-color:#d97706">
+          <i class="ti ti-shield-plus" style="font-size:13px" aria-hidden="true"></i> Tambah User VPN
         </button>
       </div>
     </div>
