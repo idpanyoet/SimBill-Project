@@ -7262,7 +7262,7 @@ function renderTblInvoice(rows) {
         <button class="btn sm" onclick="apiBayarTunai(${i.id})" title="Lunasi manual"><i class="ti ti-check" aria-hidden="true"></i> Lunasi</button>` : ''}
         ${i.status==='overdue' ? `<button class="btn sm danger" onclick="apiSuspendDariInvoice(${i.id}, '${i.nama_pelanggan}')" title="Suspend pelanggan"><i class="ti ti-ban" aria-hidden="true"></i></button>` : ''}
         <button class="btn sm" onclick="cetakInvoice(${i.id},'a4')" title="Print A4"><i class="ti ti-printer" style="font-size:12px" aria-hidden="true"></i> A4</button>
-        <button class="btn sm" onclick="cetakInvoice(${i.id},'thermal')" title="Print Thermal 58mm"><i class="ti ti-receipt" style="font-size:12px" aria-hidden="true"></i> 58mm</button>
+        <button class="btn sm" onclick="cetakInvoice(${i.id},'thermal')" title="Print Thermal 58mm"><i class="ti ti-receipt" style="font-size:12px" aria-hidden="true"></i> Thermal</button>
         ${i.status!=='paid' ? `<button class="btn sm danger" onclick="apiHapusInvoice(${i.id}, '${i.no_invoice}')" title="Hapus invoice"><i class="ti ti-trash" aria-hidden="true"></i></button>` : ''}
       </td>
     </tr>`).join('');
