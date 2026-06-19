@@ -3662,12 +3662,15 @@ async function loadACS() {
   // Load ACS URL dari setting
   try {
     const s = await apiFetch('/api/setting');
-    const url = s.acs_url || (window.location.protocol + '//' + window.location.hostname + ':7547/');
+    const map = {};
+    (Array.isArray(s) ? s : []).forEach(function(row){ map[row.kunci] = row.nilai; });
+    // ACS server selalu HTTP (port 7547 tidak pakai SSL)
+    const url = map.acs_url || ('http://' + window.location.hostname + ':7547/');
     const inp = document.getElementById('acs-url-input');
     if (inp) inp.value = url;
   } catch(e) {
     const inp = document.getElementById('acs-url-input');
-    if (inp) inp.value = window.location.protocol + '//' + window.location.hostname + ':7547/';
+    if (inp) inp.value = 'http://' + window.location.hostname + ':7547/';
   }
 }
 
