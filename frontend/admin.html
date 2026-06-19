@@ -1377,62 +1377,105 @@ Selamat menikmati! 🌐</textarea>
       </div>
       <!-- ══ SESI AKTIF ══ -->
       <div class="page" id="p-sesi">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
           <div>
-            <h2 class="td-text-main" style="font-size:18px;font-weight:700;color:#2563eb">Sesi</h2>
-            <div class="td-text-sub" style="font-size:12px;margin-top:4px">Pantau dan putuskan sesi PPPoE dan Hotspot yang aktif.</div>
+            <h2 style="font-size:18px;font-weight:700;color:var(--text);margin:0">Sesi Aktif</h2>
+            <div class="td-text-sub" style="font-size:12px;margin-top:3px">Pantau dan putuskan sesi PPPoE dan Hotspot secara real-time</div>
           </div>
           <div style="display:flex;gap:8px">
-            <button class="btn danger" onclick="apiBersihkanStale()">
-              <i class="ti ti-trash" aria-hidden="true"></i> Bersihkan stale
+            <button class="btn" onclick="loadSesi()" style="gap:6px">
+              <i class="ti ti-refresh" style="font-size:13px" aria-hidden="true"></i> Refresh
             </button>
-            <button class="btn" onclick="loadSesi()">
-              <i class="ti ti-refresh" aria-hidden="true"></i> Refresh
+            <button class="btn danger" onclick="apiBersihkanStale()" style="gap:6px">
+              <i class="ti ti-trash" style="font-size:13px" aria-hidden="true"></i> Bersihkan Stale
             </button>
+          </div>
+        </div>
+
+        <!-- Stat cards -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;border-radius:11px;background:rgba(37,99,235,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ti-router" style="font-size:20px;color:#2563eb" aria-hidden="true"></i>
+            </div>
+            <div>
+              <div id="sesi-stat-pppoe" style="font-size:22px;font-weight:700;color:var(--text)">—</div>
+              <div class="td-text-sub" style="font-size:11px">PPPoE Aktif</div>
+            </div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;border-radius:11px;background:rgba(124,58,237,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ti-wifi" style="font-size:20px;color:#7c3aed" aria-hidden="true"></i>
+            </div>
+            <div>
+              <div id="sesi-stat-hotspot" style="font-size:22px;font-weight:700;color:var(--text)">—</div>
+              <div class="td-text-sub" style="font-size:11px">Hotspot Aktif</div>
+            </div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;border-radius:11px;background:rgba(22,163,74,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ti-users" style="font-size:20px;color:#16a34a" aria-hidden="true"></i>
+            </div>
+            <div>
+              <div id="sesi-stat-total" style="font-size:22px;font-weight:700;color:var(--text)">—</div>
+              <div class="td-text-sub" style="font-size:11px">Total Online</div>
+            </div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;border-radius:11px;background:rgba(217,119,6,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ti-clock" style="font-size:20px;color:#d97706" aria-hidden="true"></i>
+            </div>
+            <div>
+              <div id="sesi-stat-update" style="font-size:13px;font-weight:600;color:var(--text)">—</div>
+              <div class="td-text-sub" style="font-size:11px">Terakhir diperbarui</div>
+            </div>
           </div>
         </div>
 
         <div class="card">
           <!-- Tab PPPoE / Hotspot -->
           <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:14px">
-            <button id="sesi-tab-pppoe" onclick="sesiSwitchTab('pppoe')" style="padding:8px 20px;font-size:13px;font-weight:600;border:none;background:none;border-bottom:2px solid #2563eb;margin-bottom:-2px;color:#2563eb;cursor:pointer">PPPoE</button>
-            <button id="sesi-tab-hotspot" onclick="sesiSwitchTab('hotspot')" style="padding:8px 20px;font-size:13px;font-weight:500;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text2);cursor:pointer">Hotspot</button>
+            <button id="sesi-tab-pppoe" onclick="sesiSwitchTab('pppoe')" style="display:flex;align-items:center;gap:6px;padding:9px 20px;font-size:13px;font-weight:600;border:none;background:none;border-bottom:2px solid #2563eb;margin-bottom:-2px;color:#2563eb;cursor:pointer">
+              <i class="ti ti-router" style="font-size:14px" aria-hidden="true"></i> PPPoE
+            </button>
+            <button id="sesi-tab-hotspot" onclick="sesiSwitchTab('hotspot')" style="display:flex;align-items:center;gap:6px;padding:9px 20px;font-size:13px;font-weight:600;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text2);cursor:pointer">
+              <i class="ti ti-wifi" style="font-size:14px" aria-hidden="true"></i> Hotspot
+            </button>
           </div>
 
-          <!-- Search -->
-          <div style="position:relative;margin-bottom:12px;max-width:360px">
-            <i class="ti ti-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px" aria-hidden="true"></i>
-            <input id="sesi-search" placeholder="Cari username, IP, atau NAS" oninput="sesiFilter()" style="width:100%;padding:8px 12px 8px 32px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+          <!-- Search & count -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+            <div style="position:relative;flex:1;max-width:380px">
+              <i class="ti ti-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px" aria-hidden="true"></i>
+              <input id="sesi-search" placeholder="Cari username, IP, atau NAS..." oninput="sesiFilter()" style="width:100%;padding:8px 12px 8px 34px;border:1px solid var(--border);border-radius:9px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+            </div>
+            <div id="sesi-count" class="td-text-sub" style="font-size:12px">— sesi</div>
           </div>
-
-          <!-- Count -->
-          <div id="sesi-count" class="td-text-sub" style="font-size:12px;margin-bottom:10px">— sesi</div>
 
           <!-- Tabel -->
           <div style="overflow-x:auto">
-            <table style="min-width:1100px">
+            <table style="min-width:1000px">
               <thead>
                 <tr>
-                  <th style="width:90px">ID SESI</th>
                   <th>USERNAME</th>
-                  <th>ALAMAT IP</th>
+                  <th style="width:110px">ALAMAT IP</th>
                   <th>NAS</th>
-                  <th>MAC</th>
-                  <th>MULAI</th>
-                  <th>UPDATE TERAKHIR</th>
-                  <th>DURASI</th>
-                  <th>PEMAKAIAN</th>
-                  <th style="width:40px"></th>
+                  <th style="width:130px">MULAI</th>
+                  <th style="width:80px">DURASI</th>
+                  <th style="width:80px">↓ MASUK</th>
+                  <th style="width:80px">↑ KELUAR</th>
+                  <th style="width:48px"></th>
                 </tr>
               </thead>
               <tbody id="tbl-sesi">
-                <tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text3)">Memuat sesi...</td></tr>
+                <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3)">Memuat sesi...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
       </div>
-
       <!-- ══ PETA JARINGAN ══ -->
       <div class="page" id="p-peta">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
@@ -7461,7 +7504,7 @@ let _sesiRows = [];
 
 async function loadSesi() {
   const tbody = document.getElementById('tbl-sesi');
-  if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text3)"><i class="ti ti-loader"></i> Memuat...</td></tr>';
+  if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3)"><i class="ti ti-loader"></i> Memuat...</td></tr>';
   try {
     const q   = document.getElementById('sesi-search')?.value || '';
     const url = `/api/radius/sesi?tipe=${_sesiTab}&limit=1000${q ? '&q='+encodeURIComponent(q) : ''}`;
@@ -7470,8 +7513,22 @@ async function loadSesi() {
     renderSesi(_sesiRows);
     const count = document.getElementById('sesi-count');
     if (count) count.textContent = `${_sesiRows.length} sesi`;
+
+    // Update stat cards
+    const allD = await apiFetch('/api/radius/sesi?limit=5000');
+    const allRows = allD.rows || [];
+    const nPppoe   = allRows.filter(r => r.nasporttype === 'Ethernet').length;
+    const nHotspot = allRows.filter(r => r.nasporttype === 'Wireless-802.11').length;
+    const elP = document.getElementById('sesi-stat-pppoe');
+    const elH = document.getElementById('sesi-stat-hotspot');
+    const elT = document.getElementById('sesi-stat-total');
+    const elU = document.getElementById('sesi-stat-update');
+    if (elP) elP.textContent = nPppoe;
+    if (elH) elH.textContent = nHotspot;
+    if (elT) elT.textContent = allRows.length;
+    if (elU) elU.textContent = new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
   } catch(e) {
-    if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:24px;color:#dc2626">❌ ${e.message}</td></tr>`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:#dc2626">❌ ${e.message}</td></tr>`;
   }
 }
 
@@ -7531,28 +7588,35 @@ function renderSesi(rows) {
   const tbody = document.getElementById('tbl-sesi');
   if (!tbody) return;
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:28px;color:var(--text3)">Tidak ada sesi aktif</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3)">Tidak ada sesi aktif</td></tr>';
     return;
   }
+  const fmtMulai = dt => dt ? new Date(dt).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
   tbody.innerHTML = rows.map(r => {
-    const idSesi  = (r.id_sesi || '').toString().slice(-8);
-    const mac     = (r.mac || '—').toUpperCase();
+    const tipe  = r.nasporttype === 'Ethernet' ? 'pppoe' : 'hotspot';
+    const tipeColor = tipe === 'pppoe' ? '#2563eb' : '#7c3aed';
+    const tipeIcon  = tipe === 'pppoe' ? 'ti-router' : 'ti-wifi';
     return `<tr>
-      <td class="td-mono" style="font-size:11px;color:var(--text3)">${idSesi}</td>
-      <td class="td-text-main" style="font-weight:600">${r.username}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:30px;height:30px;border-radius:8px;background:${tipeColor}18;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="ti ${tipeIcon}" style="font-size:14px;color:${tipeColor}" aria-hidden="true"></i>
+          </div>
+          <div>
+            <div class="td-text-main" style="font-weight:600;font-size:13px">${r.username}</div>
+            <div class="td-mono" style="font-size:10px;color:var(--text3)">${(r.mac||'').toUpperCase()||'—'}</div>
+          </div>
+        </div>
+      </td>
       <td class="td-mono" style="font-size:12px">${r.ip || '—'}</td>
       <td class="td-text-sub" style="font-size:12px">${r.nas_ip || '—'}</td>
-      <td class="td-mono" style="font-size:11px;color:var(--text3)">${mac}</td>
-      <td class="td-text-sub" style="font-size:11px">${fmtDT(r.mulai)}</td>
-      <td class="td-text-sub" style="font-size:11px">${fmtDT(r.update_terakhir)}</td>
-      <td class="td-text-bold" style="font-size:12px">${fmtDurasi(r.durasi_menit)}</td>
-      <td style="font-size:11px;line-height:1.6">
-        <div style="color:#2563eb">Masuk ${fmtBytes(r.mb_in)}</div>
-        <div style="color:#64748b">Keluar ${fmtBytes(r.mb_out)}</div>
-      </td>
+      <td class="td-text-sub" style="font-size:11px;white-space:nowrap">${fmtMulai(r.mulai)}</td>
+      <td style="font-size:12px;font-weight:600;color:var(--text)">${fmtDurasi(r.durasi_menit)}</td>
+      <td style="font-size:12px;color:#2563eb;font-weight:500">${fmtBytes(r.mb_in)}</td>
+      <td style="font-size:12px;color:#64748b">${fmtBytes(r.mb_out)}</td>
       <td>
-        <button class="btn sm danger" onclick="apiPutusSesi('${r.username}')" title="Putus sesi">
-          <i class="ti ti-plug-x" aria-hidden="true"></i>
+        <button class="btn sm danger" onclick="apiPutusSesi('${r.username}')" title="Putus sesi" style="padding:4px 8px;border-radius:7px">
+          <i class="ti ti-plug-x" style="font-size:13px" aria-hidden="true"></i>
         </button>
       </td>
     </tr>`;
