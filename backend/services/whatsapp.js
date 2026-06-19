@@ -272,8 +272,76 @@ async function broadcast(daftarPelanggan, pesanTemplate, tipe = 'broadcast', del
     return hasil;
 }
 
+// ============================================================
+// KIRIM DOKUMEN (mis. PDF invoice)
+// ============================================================
+// Otomatis pilih jalur: jika sesi WhatsApp QR (whatsapp-web.js) tersambung →
+// kirim file lokal langsung; selain itu pakai provider API (butuh URL publik
+// yang bisa di-fetch provider, jadi app_url harus mengarah ke server publik).
+async function kirimDokumen(no_hp, {
+    url = null, filePath = null, filename = 'dokumen.pdf', caption = '',
+    pelanggan_id = null, invoice_id = null, tipe = 'dokumen'
+} = {}) {
+    // 1) Coba via mode QR bila tersambung & file lokal tersedia
+    try {
+        const waqr = require('./whatsapp-qr');
+        if (filePath && waqr.getStatus && waqr.getStatus().status === 'connected') {
+            return await waqr.kirimDokumenQR(no_hp, { filePath, caption, filename, pelanggan_id, invoice_id, tipe });
+        }
+    } catch (e) { /* modul QR tidak tersedia — lanjut ke provider */ }
+
+    // 2) Mode provider — wajib URL publik
+    const cfg = await getConfig();
+    if (!cfg.token)
+        return { sukses: false, error: 'Token WhatsApp Gateway belum dikonfigurasi.' };
+    if (!url)
+        return { sukses: false, error: 'URL dokumen publik tidak tersedia. Set app_url ke alamat server publik, atau aktifkan mode WhatsApp QR.' };
+
+    const logResult = await query(
+        `INSERT INTO wa_log (pelanggan_id, no_tujuan, pesan, tipe, invoice_id, status)
+         VALUES (?, ?, ?, ?, ?, 'pending')`,
+        [pelanggan_id, no_hp, caption || `[Dokumen] ${filename}`, tipe, invoice_id]
+    );
+    const logId = logResult.insertId;
+
+    try {
+        let response;
+        if (cfg.provider === 'fonnte') {
+            response = await axios.post('https://api.fonnte.com/send',
+                { target: no_hp, message: caption, url },
+                { headers: { Authorization: cfg.token } });
+        } else if (cfg.provider === 'wablas') {
+            response = await axios.post('https://solo.wablas.com/api/send-document',
+                { phone: no_hp, document: url, caption },
+                { headers: { Authorization: cfg.token } });
+        } else if (cfg.provider === 'wanotif') {
+            response = await axios.post('https://app.wanotif.id/api/v1/send',
+                { number: no_hp, message: caption, file: url },
+                { headers: { Authorization: `Bearer ${cfg.token}` } });
+        } else if (cfg.provider === 'wa_business') {
+            response = await axios.post(
+                `https://graph.facebook.com/v18.0/${cfg.phoneId}/messages`,
+                { messaging_product: 'whatsapp', to: no_hp, type: 'document',
+                  document: { link: url, filename, caption } },
+                { headers: { Authorization: `Bearer ${cfg.token}` } });
+        } else {
+            throw new Error(`Provider "${cfg.provider}" tidak dikenali`);
+        }
+
+        await query(`UPDATE wa_log SET status='sent', response=?, sent_at=NOW() WHERE id=?`,
+            [JSON.stringify(response?.data), logId]);
+        return { sukses: true };
+    } catch (err) {
+        const errMsg = err.response?.data ? JSON.stringify(err.response.data) : err.message;
+        await query(`UPDATE wa_log SET status='failed', response=? WHERE id=?`, [errMsg, logId]);
+        console.error(`[WA] Gagal kirim dokumen ke ${no_hp}:`, errMsg);
+        return { sukses: false, error: errMsg };
+    }
+}
+
 module.exports = {
     kirimPesan,
+    kirimDokumen,
     kirimReminder,
     kirimLinkBayar,
     kirimKonfirmasiBayar,

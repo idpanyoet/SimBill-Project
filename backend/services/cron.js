@@ -175,6 +175,12 @@ cron.schedule('0 2 * * 0', async () => {
             `DELETE FROM wa_log WHERE created_at < DATE_SUB(NOW(), INTERVAL 90 DAY)`
         );
         console.log(`[CRON] Hapus log WA lama: ${result.affectedRows} baris`);
+
+        // Bersihkan file PDF invoice lama (>7 hari) — privasi & hemat disk
+        try {
+            const n = require('./invoice-pdf').bersihkanPdfLama(7);
+            if (n > 0) console.log(`[CRON] Hapus ${n} PDF invoice lama`);
+        } catch (e) { /* modul/folder belum ada — abaikan */ }
     } catch (e) {
         console.error('[CRON] Error hapus log:', e.message);
     }

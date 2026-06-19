@@ -373,6 +373,23 @@ Authorization: Bearer <JWT_TOKEN>
 | POST   | `/invoice/generate-bulanan` | Generate tagihan semua pelanggan aktif |
 | POST   | `/invoice/:id/bayar-tunai` | Konfirmasi bayar manual |
 | POST   | `/invoice/:id/kirim-reminder` | Kirim ulang reminder WA |
+| GET    | `/invoice/:id/pdf` | Generate & download PDF invoice asli |
+| POST   | `/invoice/:id/kirim-wa-pdf` | Generate PDF lalu kirim sebagai dokumen ke WA pelanggan |
+
+**PDF Invoice & Kirim ke WhatsApp**
+
+Invoice kini bisa di-generate jadi file PDF asli (server-side, pakai `pdfkit` — tidak butuh Chromium) lengkap dengan kop usaha, logo, rincian PPN (kalau `pajak_persen` diisi), terbilang, stempel LUNAS, dan QR. QR mengarah ke `payment_url` untuk invoice belum lunas (pelanggan scan → langsung bayar), atau ke nomor invoice kalau sudah lunas.
+
+Setelah update kode, install dependency baru:
+```bash
+cd backend && npm install pdfkit qrcode
+```
+
+Dua jalur kirim PDF ke WhatsApp (otomatis dipilih sistem):
+- **Mode QR aktif** (whatsapp-web.js tersambung): PDF dikirim langsung sebagai file lokal — tidak perlu URL publik.
+- **Mode Provider** (Fonnte/Wablas/Wanotif/WA Business): provider mengambil file dari URL publik, jadi **`app_url` di Setting wajib diisi alamat server yang bisa diakses dari internet** (bukan `localhost`). File PDF disimpan di `frontend/uploads/invoice/` dengan nama acak dan otomatis dibersihkan tiap minggu (>7 hari).
+
+
 
 ---
 

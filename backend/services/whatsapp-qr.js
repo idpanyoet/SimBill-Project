@@ -158,4 +158,33 @@ async function kirimPesanQR(no_hp, pesan, pelanggan_id = null, tipe = 'manual', 
     }
 }
 
-module.exports = { start, stop, logout, getStatus, kirimPesanQR };
+// Kirim dokumen/file lokal (mis. PDF invoice) via WhatsApp Web (mode QR).
+async function kirimDokumenQR(no_hp, { filePath, caption = '', filename = null, pelanggan_id = null, invoice_id = null, tipe = 'dokumen' } = {}) {
+    const logResult = await query(`
+        INSERT INTO wa_log (pelanggan_id, no_tujuan, pesan, tipe, invoice_id, status)
+        VALUES (?, ?, ?, ?, ?, 'pending')
+    `, [pelanggan_id, no_hp, caption || `[Dokumen] ${filename || filePath}`, tipe, invoice_id]);
+    const logId = logResult.insertId;
+
+    if (status !== 'connected' || !client) {
+        const errMsg = 'WhatsApp QR belum tersambung. Buka menu WhatsApp Gateway dan scan QR terlebih dahulu.';
+        await query(`UPDATE wa_log SET status='failed', response=? WHERE id=?`, [errMsg, logId]);
+        return { sukses: false, error: errMsg };
+    }
+
+    try {
+        // MessageMedia dimuat dari whatsapp-web.js (sama paket dengan Client)
+        const { MessageMedia } = require('whatsapp-web.js');
+        const media = MessageMedia.fromFilePath(filePath);
+        if (filename) media.filename = filename;
+        await client.sendMessage(formatNomorWA(no_hp), media, { caption });
+        await query(`UPDATE wa_log SET status='sent', response='ok', sent_at=NOW() WHERE id=?`, [logId]);
+        return { sukses: true };
+    } catch (err) {
+        await query(`UPDATE wa_log SET status='failed', response=? WHERE id=?`, [err.message, logId]);
+        console.error(`[WA-QR] Gagal kirim dokumen ke ${no_hp}:`, err.message);
+        return { sukses: false, error: err.message };
+    }
+}
+
+module.exports = { start, stop, logout, getStatus, kirimPesanQR, kirimDokumenQR };

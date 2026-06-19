@@ -7363,6 +7363,8 @@ function renderTblInvoice(rows) {
         ${i.status==='overdue' ? `<button class="btn sm danger" onclick="apiSuspendDariInvoice(${i.id}, '${i.nama_pelanggan}')" title="Suspend pelanggan"><i class="ti ti-ban" aria-hidden="true"></i></button>` : ''}
         <button class="btn sm" onclick="cetakInvoice(${i.id},'a4')" title="Print A4"><i class="ti ti-printer" style="font-size:12px" aria-hidden="true"></i> A4</button>
         <button class="btn sm" onclick="cetakInvoice(${i.id},'thermal')" title="Print Thermal 58mm"><i class="ti ti-receipt" style="font-size:12px" aria-hidden="true"></i> Thermal</button>
+        <button class="btn sm" onclick="unduhInvoicePDF(${i.id},'${i.no_invoice}')" title="Download PDF"><i class="ti ti-file-type-pdf" style="font-size:12px" aria-hidden="true"></i> PDF</button>
+        <button class="btn sm" onclick="kirimInvoicePDFwa(${i.id},'${i.no_invoice}')" title="Kirim PDF ke WhatsApp"><i class="ti ti-send" style="font-size:12px" aria-hidden="true"></i> PDF→WA</button>
         ${i.status!=='paid' ? `<button class="btn sm danger" onclick="apiHapusInvoice(${i.id}, '${i.no_invoice}')" title="Hapus invoice"><i class="ti ti-trash" aria-hidden="true"></i></button>` : ''}
       </td>
     </tr>`).join('');
@@ -7646,6 +7648,37 @@ body{font-family:'Courier New',monospace;font-size:9pt;color:#000;background:#ff
   }
 }
 // ══════════════════════════════════════════════════════════════
+
+// ── Download PDF asli (perlu kirim token via fetch, lalu unduh blob) ──
+async function unduhInvoicePDF(id, noInv) {
+  try {
+    toast('⏳ Membuat PDF...');
+    const res = await fetch(API + '/api/invoice/' + id + '/pdf', {
+      headers: { 'Authorization': 'Bearer ' + TOKEN }
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.error || 'Gagal membuat PDF');
+    }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = (noInv || 'invoice') + '.pdf';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    toast('✅ PDF diunduh');
+  } catch (e) { toast('❌ ' + e.message, true); }
+}
+
+// ── Kirim PDF invoice ke WhatsApp pelanggan ──
+async function kirimInvoicePDFwa(id, noInv) {
+  if (!confirm('Kirim PDF invoice ' + (noInv || '') + ' ke WhatsApp pelanggan?')) return;
+  try {
+    toast('⏳ Mengirim PDF ke WhatsApp...');
+    const r = await apiFetch('/api/invoice/' + id + '/kirim-wa-pdf', { method: 'POST' });
+    toast('✅ ' + (r.pesan || 'PDF terkirim'));
+  } catch (e) { toast('❌ ' + e.message, true); }
+}
 
 function invToggleAll(checked) {
   invUpdateSelBtn();

@@ -319,4 +319,58 @@ router.delete('/:id', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// ============================================================
+// CETAK PDF & KIRIM KE WHATSAPP
+// ============================================================
+const invoicePdf = require('../services/invoice-pdf');
+
+// GET /api/invoice/:id/pdf — generate & download PDF asli
+router.get('/:id/pdf', async (req, res, next) => {
+    try {
+        const { filePath, no_invoice } = await invoicePdf.buatInvoicePDF(req.params.id);
+        res.download(filePath, `${no_invoice}.pdf`);
+    } catch (e) {
+        if (e.message === 'Invoice tidak ditemukan')
+            return res.status(404).json({ error: e.message });
+        next(e);
+    }
+});
+
+// POST /api/invoice/:id/kirim-wa-pdf — generate PDF lalu kirim ke WA pelanggan
+router.post('/:id/kirim-wa-pdf', async (req, res, next) => {
+    try {
+        const inv = await queryOne(`
+            SELECT i.no_invoice, i.jumlah, i.status, i.tgl_jatuh_tempo, i.payment_url,
+                   p.nama, p.no_hp
+            FROM invoice i LEFT JOIN pelanggan p ON i.pelanggan_id = p.id
+            WHERE i.id = ?`, [req.params.id]);
+        if (!inv) return res.status(404).json({ error: 'Invoice tidak ditemukan' });
+
+        const noHp = req.body?.no_hp || inv.no_hp;
+        if (!noHp) return res.status(400).json({ error: 'Nomor HP pelanggan tidak tersedia' });
+
+        const { filePath, publicUrl, filename } = await invoicePdf.buatInvoicePDF(req.params.id);
+
+        const isLunas = inv.status === 'paid';
+        const caption = isLunas
+            ? `Halo *${inv.nama || 'Pelanggan'}*, berikut bukti pembayaran invoice *${inv.no_invoice}*. Terima kasih 🙏`
+            : `Halo *${inv.nama || 'Pelanggan'}*, berikut invoice *${inv.no_invoice}* sebesar *Rp ${Number(inv.jumlah).toLocaleString('id-ID')}*` +
+              (inv.payment_url ? `\nBayar di sini: ${inv.payment_url}` : '');
+
+        const hasil = await waService.kirimDokumen(noHp, {
+            url: publicUrl, filePath, filename,
+            caption, invoice_id: req.params.id, tipe: 'invoice_pdf'
+        });
+
+        if (!hasil.sukses)
+            return res.status(502).json({ error: hasil.error || 'Gagal mengirim PDF ke WhatsApp', publicUrl });
+
+        res.json({ pesan: `PDF invoice ${inv.no_invoice} terkirim ke ${noHp}`, publicUrl });
+    } catch (e) {
+        if (e.message === 'Invoice tidak ditemukan')
+            return res.status(404).json({ error: e.message });
+        next(e);
+    }
+});
+
 module.exports = router;
