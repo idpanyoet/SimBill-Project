@@ -3921,9 +3921,10 @@ Selamat menikmati! 🌐</textarea>
           <i class="ti ti-network" style="font-size:11px" aria-hidden="true"></i> IP Statis
           <span style="font-size:10px;font-weight:400;text-transform:none;color:var(--text3)">— opsional, range 10.10.29.2–.200</span>
         </label>
-        <input id="l2p-ip" placeholder="Kosongkan = IP dinamis otomatis" style="font-family:monospace;font-size:13px">
+        <input id="l2p-ip" list="l2p-ip-datalist" placeholder="Kosongkan = IP dinamis otomatis" style="font-family:monospace;font-size:13px">
+        <datalist id="l2p-ip-datalist"></datalist>
         <div id="l2p-ip-hint" style="font-size:11px;color:var(--text3);margin-top:5px;min-height:16px"></div>
-        <div id="l2p-ip-list" style="margin-top:2px"></div>
+        <div id="l2p-ip-list" style="display:none"></div>
       </div>
 
       <!-- Info box -->
@@ -8565,40 +8566,41 @@ async function bukaModalL2tpUserOLD_REMOVED() {
 async function saranIPL2tp(senyap) {
   const hint = document.getElementById('l2p-ip-hint');
   const dl   = document.getElementById('l2p-ip-list');
+  if (!hint) return;
   hint.textContent = '⏳ Mencari IP tersedia...';
   hint.style.color = 'var(--text3)';
 
-  const usedIPs = new Set(['10.10.29.1']); // server gateway
+  const usedIPs = new Set(['10.10.29.1']);
   try {
     const d = await apiFetch('/api/radius/vpn/l2tp/status');
     (d.users || []).forEach(u => { if (u.ip && u.ip !== '*') usedIPs.add(u.ip); });
   } catch(e) {}
 
-  // Range 10.10.29.2 - 10.10.29.200
   const tersedia = [];
   for (let i = 2; i <= 200; i++) {
     const ip = `10.10.29.${i}`;
     if (!usedIPs.has(ip)) tersedia.push(ip);
   }
 
-  dl.innerHTML = tersedia.map(ip => `<option value="${ip}">`).join('');
+  // Isi datalist dengan 10 IP pertama
+  const datalist = document.getElementById('l2p-ip-datalist');
+  if (datalist) datalist.innerHTML = tersedia.slice(0, 10).map(ip => `<option value="${ip}">`).join('');
+  if (dl) dl.innerHTML = '';
 
   if (tersedia.length === 0) {
-    hint.textContent = '⚠️ Semua IP 10.10.29.2–200 sudah terpakai';
-    hint.style.color = 'var(--red)';
+    hint.textContent = '⚠️ Semua IP sudah terpakai';
+    hint.style.color = '#dc2626';
     return;
   }
 
   const next = tersedia[0];
   if (!senyap) {
-    // Klik tombol manual — langsung isi IP ke field
     document.getElementById('l2p-ip').value = next;
-    hint.innerHTML = `✅ IP <b>${next}</b> dipilih &nbsp;<span style="color:var(--text3)">(${tersedia.length} IP bebas dari range .2–.200)</span>`;
-    hint.style.color = 'var(--green)';
+    hint.textContent = `✅ IP ${next} dipilih (${tersedia.length} tersedia)`;
+    hint.style.color = '#16a34a';
   } else {
-    // Preload saat modal buka — tampilkan hint + tombol Pakai
-    hint.style.color = 'var(--accent)';
-    hint.innerHTML = `💡 IP tersedia: <b>${next}</b> &nbsp;<button type="button" class="btn sm" style="font-size:10px;padding:2px 7px" onclick="document.getElementById('l2p-ip').value='${next}';document.getElementById('l2p-ip-hint').textContent='✅ IP ${next} dipakai';">Pakai</button> &nbsp;<span style="color:var(--text3)">(${tersedia.length} IP tersedia dari range .2–.200)</span>`;
+    hint.style.color = '#d97706';
+    hint.innerHTML = `💡 <b>${next}</b> tersedia &nbsp;<button type="button" class="btn sm" style="font-size:10px;padding:2px 8px" onclick="document.getElementById('l2p-ip').value='${next}';document.getElementById('l2p-ip-hint').textContent='✅ ${next} dipilih';document.getElementById('l2p-ip-hint').style.color='#16a34a'">Pakai</button>`;
   }
 }
 
