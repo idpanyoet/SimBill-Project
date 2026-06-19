@@ -287,7 +287,6 @@ body.dark #ep2-speed-up-preview{background:rgba(20,184,166,.15);color:#34d399}
 body.dark .ep-info-card{background:#1c2128;border-color:#30363d}
 body.dark #ep-status-card-aktif,body.dark #ep-status-card-suspended,body.dark #ep-status-card-nonaktif{background:#1c2128;border-color:#30363d}
 body.dark #ep-tipe-card-pppoe,body.dark #ep-tipe-card-hotspot{background:#1c2128;border-color:#30363d}
-body.dark #ep-paket-grid [data-pid]{background:#1c2128!important;border-color:#30363d!important}
 body.dark #ep-username,body.dark #ep-password{background:#0d1117!important;border-color:#30363d!important;color:#e6edf3!important}
 /* ── L2TP MODAL ── */
 .l2tp-ip-box{background:#f8fafc;border:1px solid #e2e7ef;border-radius:10px;padding:12px 14px}
@@ -1936,8 +1935,7 @@ Selamat menikmati! 🌐</textarea>
 
       <div class="fg">
         <label>Pilih Paket</label>
-        <div id="f-paket-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:2px"></div>
-        <input type="hidden" id="f-paket">
+        <select id="f-paket" style="width:100%"><option value="">-- pilih paket --</option></select>
       </div>
 
       <div class="fg"><label>Alamat</label><input id="f-alamat" placeholder="Alamat lengkap (opsional)"></div>
@@ -2061,8 +2059,7 @@ Selamat menikmati! 🌐</textarea>
       </div>
       <div>
         <label class="fg-label">Pilih Paket</label>
-        <div id="ep-paket-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px"></div>
-        <input type="hidden" id="ep-paket">
+        <select id="ep-paket" style="width:100%;margin-top:4px"><option value="">-- pilih paket --</option></select>
       </div>
       <div class="nas-snmp-box">
         <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px;display:flex;align-items:center;gap:6px">
@@ -3912,45 +3909,10 @@ function epSetTipe(tipe) {
       if (lbl) { lbl.style.color = ''; lbl.classList.add('td-text-main'); }
     }
   });
-  epRenderPaketGrid(document.getElementById('ep-paket').value);
-}
-
-function epRenderPaketGrid(selectedPaketId) {
-  const tipe   = document.getElementById('ep-tipe').value || 'pppoe';
-  const grid   = document.getElementById('ep-paket-grid');
-  const input  = document.getElementById('ep-paket');
-  if (!grid || !LAST_PAKET_LIST) return;
-  const filtered = LAST_PAKET_LIST.filter(p => p.tipe === tipe || p.tipe === 'keduanya');
-  if (!filtered.length) {
-    grid.innerHTML = '<div class="td-text-sub" style="font-size:12px;padding:6px 0">Tidak ada paket untuk tipe ini</div>';
-    return;
-  }
-  const curVal = selectedPaketId || input.value || '';
-  grid.innerHTML = filtered.map(function(p) {
-    const satuan  = p.satuan_masa === 'jam' ? 'Jam' : p.satuan_masa === 'bulan' ? 'Bulan' : 'Hari';
-    const active  = String(p.id) === String(curVal);
-    const borderC = active ? '#BA7517' : 'var(--border)';
-    const bg      = active ? 'rgba(186,117,23,.08)' : 'transparent';
-    return `<div onclick="epPilihPaket(${p.id},this)" data-pid="${p.id}" style="border:2px solid ${borderC};background:${bg};border-radius:8px;padding:8px 10px;cursor:pointer;transition:all .15s">
-      <div class="td-text-main" style="font-size:12px;font-weight:600">${p.nama}</div>
-      <div class="td-accent-bold" style="font-size:11px;margin-top:2px">${fmt(p.harga)}</div>
-      <div class="td-text-sub" style="font-size:10px;margin-top:1px">${p.kecepatan_dn} Mbps · ${p.masa_aktif||30} ${satuan}</div>
-    </div>`;
-  }).join('');
-  // Auto-pilih jika belum ada
-  if (!curVal && filtered.length) {
-    epPilihPaket(filtered[0].id, grid.querySelector('[data-pid]'));
-  }
-}
-
-function epPilihPaket(id, el) {
-  document.getElementById('ep-paket').value = id;
-  const grid = document.getElementById('ep-paket-grid');
-  if (grid) grid.querySelectorAll('[data-pid]').forEach(function(c) {
-    c.style.borderColor = 'var(--border)';
-    c.style.background  = 'transparent';
-  });
-  if (el) { el.style.borderColor = '#BA7517'; el.style.background = 'rgba(186,117,23,.08)'; }
+  // Sembunyikan toggle e-Voucher untuk PPPoE
+  const vcrWrap = document.getElementById('ep2-vcr-wrap');
+  if (vcrWrap) vcrWrap.style.display = tipe === 'pppoe' ? 'none' : '';
+  filterEditPaketByTipe();
 }
 // ── EDIT PELANGGAN MODAL HELPERS END ────────────────────────
 
@@ -3986,9 +3948,11 @@ async function bukaModalEdit(id) {
     epSetStatus(p.status || 'aktif');
     epSetTipe(p.tipe_koneksi || 'pppoe');
 
-    // Populate & filter paket grid
+    // Populate & filter paket dropdown lalu set nilai
     await populateDropdowns();
-    epRenderPaketGrid(p.paket_id);
+    filterEditPaketByTipe();
+    const selPaket = document.getElementById('ep-paket');
+    if (selPaket) selPaket.value = p.paket_id || '';
 
     document.getElementById('ep-title').textContent = 'Edit: ' + p.nama;
     epSwitchTab(1); // selalu mulai dari tab 1
@@ -4225,49 +4189,19 @@ function pilihTipePelanggan(tipe) {
 }
 
 function filterPaketByTipe() {
-  const tipe  = document.getElementById('f-tipe')?.value || 'pppoe';
-  const grid  = document.getElementById('f-paket-grid');
-  const input = document.getElementById('f-paket');
-  if (!LAST_PAKET_LIST || !LAST_PAKET_LIST.length) return;
-
+  const tipe = document.getElementById('f-tipe')?.value || 'pppoe';
+  const sel  = document.getElementById('f-paket');
+  if (!sel || !LAST_PAKET_LIST) return;
+  const curVal  = sel.value;
   const filtered = LAST_PAKET_LIST.filter(function(p) {
     return p.tipe === tipe || p.tipe === 'keduanya';
   });
-
-  if (!grid) {
-    // Fallback: select biasa jika grid tidak ada
-    const sel = document.getElementById('f-paket');
-    if (sel) {
-      sel.innerHTML = '<option value="">-- pilih paket --</option>' +
-        filtered.map(function(p) {
-          return `<option value="${p.id}">${p.nama} — ${fmt(p.harga)}</option>`;
-        }).join('');
-    }
-    return;
-  }
-
-  // Render card grid
-  if (!filtered.length) {
-    grid.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px 0">Tidak ada paket untuk tipe ini</div>';
-    if (input) input.value = '';
-    return;
-  }
-
-  const curVal = input?.value || '';
-  grid.innerHTML = filtered.map(function(p) {
-    const satuan = p.satuan_masa === 'jam' ? 'Jam' : p.satuan_masa === 'bulan' ? 'Bulan' : 'Hari';
-    const active = String(p.id) === String(curVal) ? 'border-color:#BA7517;background:rgba(186,117,23,.08)' : 'border-color:var(--border)';
-    return `<div onclick="pilihPaketCard(${p.id},this)" style="border:2px solid;${active};border-radius:8px;padding:8px 10px;cursor:pointer;transition:all .15s" data-paket-id="${p.id}">
-      <div style="font-size:12px;font-weight:500;color:var(--text)">${p.nama}</div>
-      <div class="td-accent-bold" style="font-size:11px;margin-top:2px">${fmt(p.harga)} / bln</div>
-      <div style="font-size:10px;color:var(--text3);margin-top:1px">${p.kecepatan_dn} Mbps · ${p.masa_aktif || 30} ${satuan}</div>
-    </div>`;
-  }).join('');
-
-  // Auto-pilih pertama jika belum ada yang dipilih
-  if (!curVal && filtered.length) {
-    pilihPaketCard(filtered[0].id, grid.querySelector('[data-paket-id]'));
-  }
+  sel.innerHTML = '<option value="">-- pilih paket --</option>' +
+    filtered.map(function(p) {
+      const satuan = p.satuan_masa === 'jam' ? 'Jam' : p.satuan_masa === 'bulan' ? 'Bln' : 'Hari';
+      const speed  = p.rate_limit || (p.kecepatan_dn + ' Mbps');
+      return `<option value="${p.id}" ${p.id == curVal ? 'selected' : ''}>${p.nama} — ${fmt(p.harga)} · ${speed} · ${p.masa_aktif||30} ${satuan}</option>`;
+    }).join('');
 }
 
 function pilihPaketCard(id, el) {
