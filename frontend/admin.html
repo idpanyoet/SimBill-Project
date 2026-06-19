@@ -2077,6 +2077,25 @@ Selamat menikmati! 🌐</textarea>
       </div>
       <div class="fg"><label>Catatan Internal</label><input id="ep-notes" placeholder="Catatan internal (opsional)"></div>
 
+      <!-- Koordinat & Peta -->
+      <div class="nas-snmp-box">
+        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+          <i class="ti ti-map-pin" style="font-size:13px;color:#BA7517" aria-hidden="true"></i>
+          Lokasi & Jaringan
+          <span style="background:#f3e8ff;color:#7c3aed;font-size:9px;font-weight:600;padding:1px 7px;border-radius:99px">Opsional</span>
+        </div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:8px">Klik pada peta untuk memperbarui koordinat.</div>
+        <div id="ep-map" style="height:200px;border-radius:8px;border:1px solid var(--border);margin-bottom:10px;z-index:1"></div>
+        <div class="fg-row">
+          <div class="fg"><label>Latitude</label><input id="ep-latitude" type="number" step="any" placeholder="cth: 1.1234567" oninput="petaMovePin('edit')"></div>
+          <div class="fg"><label>Longitude</label><input id="ep-longitude" type="number" step="any" placeholder="cth: 104.0123456" oninput="petaMovePin('edit')"></div>
+        </div>
+        <div class="fg-row">
+          <div class="fg"><label>ODC</label><input id="ep-odc" placeholder="cth: ODC-A01"></div>
+          <div class="fg"><label>ODP</label><input id="ep-odp" placeholder="cth: ODP-A01-01"></div>
+        </div>
+      </div>
+
       <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
         <button class="btn" onclick="closeModal('m-edit-pelanggan')">Batal</button>
         <button class="btn primary" onclick="apiUpdatePelanggan()">
@@ -4510,39 +4529,60 @@ async function apiImportCSV() {
 
 // ── MINI MAP MODAL PELANGGAN ─────────────────────────────────
 let _fMap = null, _fMarker = null;
+let _epMap = null, _epMarker = null;
 
 function initMiniMap(prefix) {
-  const elId = prefix === 'add' ? 'f-map' : 'ep-map';
+  const elId  = prefix === 'add' ? 'f-map' : 'ep-map';
+  const latId = prefix === 'add' ? 'f-latitude' : 'ep-latitude';
+  const lngId = prefix === 'add' ? 'f-longitude' : 'ep-longitude';
   if (!document.getElementById(elId)) return;
   setTimeout(function() {
+    // Hapus peta lama
     if (prefix === 'add') {
-      if (_fMap) { _fMap.remove(); _fMap = null; _fMarker = null; }
-      _fMap = L.map(elId, { scrollWheelZoom: false }).setView([1.0857, 104.0305], 12);
+      if (_fMap)  { _fMap.remove();  _fMap  = null; _fMarker  = null; }
+      _fMap  = L.map(elId, { scrollWheelZoom: false }).setView([1.0857, 104.0305], 12);
+    } else {
+      if (_epMap) { _epMap.remove(); _epMap = null; _epMarker = null; }
+      _epMap = L.map(elId, { scrollWheelZoom: false }).setView([1.0857, 104.0305], 12);
     }
-    const map = _fMap;
-    if (!map) return;
+    const map = prefix === 'add' ? _fMap : _epMap;
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors', maxZoom: 19
     }).addTo(map);
+    // Klik peta → isi lat/lng
     map.on('click', function(e) {
       const lat = e.latlng.lat.toFixed(7);
       const lng = e.latlng.lng.toFixed(7);
-      document.getElementById(prefix === 'add' ? 'f-latitude' : 'ep-latitude').value = lat;
-      document.getElementById(prefix === 'add' ? 'f-longitude' : 'ep-longitude').value = lng;
-      petaMovePin(prefix, lat, lng);
+      document.getElementById(latId).value = lat;
+      document.getElementById(lngId).value = lng;
+      setMapPin(prefix, parseFloat(lat), parseFloat(lng));
     });
-  }, 100);
+    // Jika sudah ada koordinat, tampilkan pin
+    const lat0 = parseFloat(document.getElementById(latId)?.value);
+    const lng0 = parseFloat(document.getElementById(lngId)?.value);
+    if (lat0 && lng0) setMapPin(prefix, lat0, lng0);
+  }, 150);
 }
 
-function petaMovePin(prefix, lat, lng) {
-  const map    = _fMap;
-  if (!map) return;
-  const latVal = lat || parseFloat(document.getElementById(prefix === 'add' ? 'f-latitude' : 'ep-latitude')?.value);
-  const lngVal = lng || parseFloat(document.getElementById(prefix === 'add' ? 'f-longitude' : 'ep-longitude')?.value);
-  if (!latVal || !lngVal || isNaN(latVal) || isNaN(lngVal)) return;
-  if (_fMarker) map.removeLayer(_fMarker);
-  _fMarker = L.marker([latVal, lngVal]).addTo(map);
-  map.setView([latVal, lngVal], 16);
+function setMapPin(prefix, lat, lng) {
+  const map = prefix === 'add' ? _fMap : _epMap;
+  if (!map || !lat || !lng || isNaN(lat) || isNaN(lng)) return;
+  if (prefix === 'add') {
+    if (_fMarker)  map.removeLayer(_fMarker);
+    _fMarker  = L.marker([lat, lng]).addTo(map);
+  } else {
+    if (_epMarker) map.removeLayer(_epMarker);
+    _epMarker = L.marker([lat, lng]).addTo(map);
+  }
+  map.setView([lat, lng], 16);
+}
+
+function petaMovePin(prefix) {
+  const latId = prefix === 'add' ? 'f-latitude' : 'ep-latitude';
+  const lngId = prefix === 'add' ? 'f-longitude' : 'ep-longitude';
+  const lat = parseFloat(document.getElementById(latId)?.value);
+  const lng = parseFloat(document.getElementById(lngId)?.value);
+  if (lat && lng && !isNaN(lat) && !isNaN(lng)) setMapPin(prefix, lat, lng);
 }
 // ── END MINI MAP ─────────────────────────────────────────────
 
@@ -4681,6 +4721,12 @@ async function bukaModalEdit(id) {
     document.getElementById('ep-username').value = p.username || '';
     document.getElementById('ep-password').value = '';
 
+    // Lokasi & Jaringan
+    document.getElementById('ep-latitude').value  = p.latitude  || '';
+    document.getElementById('ep-longitude').value = p.longitude || '';
+    document.getElementById('ep-odc').value       = p.odc       || '';
+    document.getElementById('ep-odp').value       = p.odp       || '';
+
     // Update info card
     const initials = (p.nama||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
     document.getElementById('ep-avatar').textContent         = initials;
@@ -4701,6 +4747,7 @@ async function bukaModalEdit(id) {
 
     document.getElementById('ep-title').textContent = 'Edit: ' + p.nama;
     openModal('m-edit-pelanggan');
+    initMiniMap('edit');
   } catch(e) {
     toast('❌ Gagal memuat data: ' + e.message, true);
   }
@@ -4718,6 +4765,10 @@ async function apiUpdatePelanggan() {
   const notes    = document.getElementById('ep-notes').value.trim();
   const username = document.getElementById('ep-username').value.trim();
   const password = document.getElementById('ep-password').value;
+  const latitude  = document.getElementById('ep-latitude')?.value  || '';
+  const longitude = document.getElementById('ep-longitude')?.value || '';
+  const odc       = document.getElementById('ep-odc')?.value.trim()  || '';
+  const odp       = document.getElementById('ep-odp')?.value.trim()  || '';
 
   if (!nama || !no_hp || !paket_id)
     return toast('❌ Nama, nomor HP, dan paket wajib diisi', true);
@@ -4725,7 +4776,11 @@ async function apiUpdatePelanggan() {
     return toast('❌ Username RADIUS wajib diisi', true);
 
   const body = { nama, no_hp, email, alamat,
-    paket_id: parseInt(paket_id), tipe_koneksi: tipe, notes, username };
+    paket_id: parseInt(paket_id), tipe_koneksi: tipe, notes, username,
+    latitude:  latitude  ? parseFloat(latitude)  : null,
+    longitude: longitude ? parseFloat(longitude) : null,
+    odc: odc || null, odp: odp || null
+  };
   if (password) body.password = password;
 
   try {
