@@ -7655,15 +7655,43 @@ async function cetakInvoice(id, mode) {
   win.document.close();
 }
 
-// Muat html2pdf.js sekali (untuk PDF yang identik dengan hasil print A4)
-function _loadHtml2Pdf() {
+// Loader script eksternal sekali pakai (CDN)
+function _loadScript(src, isReady) {
   return new Promise((resolve, reject) => {
-    if (window.html2pdf) return resolve();
+    if (isReady && isReady()) return resolve();
     const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    s.src = src;
     s.onload = () => resolve();
-    s.onerror = () => reject(new Error('Gagal memuat html2pdf.js (cek koneksi internet)'));
+    s.onerror = () => reject(new Error('Gagal memuat ' + src + ' (cek koneksi internet)'));
     document.head.appendChild(s);
+  });
+}
+function _loadHtml2Pdf() {
+  return _loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js',
+    () => window.html2pdf);
+}
+
+// Generate QR sebagai data URL lokal (tanpa server luar → tanpa masalah CORS pada canvas)
+async function _makeQrDataUrl(text) {
+  try {
+    await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
+      () => window.QRCode);
+  } catch (e) { return ''; }
+  return new Promise(resolve => {
+    const box = document.createElement('div');
+    box.style.cssText = 'position:fixed;left:-99999px;top:0';
+    document.body.appendChild(box);
+    try {
+      new QRCode(box, { text: text || ' ', width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+    } catch (e) { box.remove(); return resolve(''); }
+    setTimeout(() => {
+      const c = box.querySelector('canvas');
+      const img = box.querySelector('img');
+      let url = '';
+      try { url = c ? c.toDataURL('image/png') : (img ? img.src : ''); } catch (e) {}
+      box.remove();
+      resolve(url);
+    }, 150);
   });
 }
 
@@ -7701,22 +7729,27 @@ async function _invoicePdfBlob(id) {
   const pageSrc = fdoc.querySelector('.page');
   if (!pageSrc) throw new Error('Konten invoice tidak ditemukan');
 
-  // Bangun container off-screen di dokumen utama dengan CSS yang sudah di-scope
+  // Bangun container di dokumen utama dengan CSS yang sudah di-scope.
+  // Posisikan on-screen tapi di belakang (z-index negatif) — JANGAN left:-99999px,
+  // karena html2canvas bisa menghasilkan canvas kosong untuk elemen sejauh itu.
   const root = document.createElement('div');
   root.id = 'inv-pdf-root';
-  root.style.cssText = 'position:fixed;left:-99999px;top:0;width:210mm;background:#fff;z-index:-1';
+  root.style.cssText = 'position:fixed;top:0;left:0;width:210mm;background:#fff;z-index:-99999;pointer-events:none';
   const styleScoped = document.createElement('style');
   styleScoped.textContent = _scopeCss(css, '#inv-pdf-root');
   root.appendChild(styleScoped);
 
   const pageClone = document.importNode(pageSrc, true);
-  // Set crossOrigin SEBELUM gambar dimuat (QR dari api.qrserver.com lintas-origin) —
-  // tanpa ini canvas bisa "tainted" dan hasil PDF kosong.
-  pageClone.querySelectorAll('img').forEach(img => {
-    const src = img.getAttribute('src');
-    img.setAttribute('crossorigin', 'anonymous');
-    if (src) img.setAttribute('src', src);
-  });
+
+  // Ganti QR lintas-origin (api.qrserver.com) dengan QR data URL lokal → tanpa CORS
+  const qrImg = pageClone.querySelector('img[src*="qrserver.com"]');
+  if (qrImg) {
+    const m = (qrImg.getAttribute('src') || '').match(/[?&]data=([^&]+)/);
+    const data = m ? decodeURIComponent(m[1]) : '';
+    const local = await _makeQrDataUrl(data);
+    if (local) qrImg.setAttribute('src', local);
+  }
+
   root.appendChild(pageClone);
   document.body.appendChild(root);
 
