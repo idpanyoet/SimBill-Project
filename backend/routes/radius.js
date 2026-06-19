@@ -29,6 +29,62 @@ router.get('/sesi-aktif', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// ── GET /api/radius/sesi — halaman Sesi ──────────────────────
+router.get('/sesi', async (req, res, next) => {
+    try {
+        const { tipe, q, limit = 500 } = req.query;
+        let where = ['ra.acctstoptime IS NULL'];
+        const params = [];
+        if (tipe === 'pppoe')   where.push("(ra.nasporttype = 'PPPoE' OR ra.nasporttype LIKE '%ppp%')");
+        else if (tipe === 'hotspot') where.push("(ra.nasporttype != 'PPPoE' AND ra.nasporttype NOT LIKE '%ppp%')");
+        if (q) {
+            where.push('(ra.username LIKE ? OR ra.framedipaddress LIKE ? OR ra.nasipaddress LIKE ? OR ra.callingstationid LIKE ?)');
+            params.push(`%${q}%`,`%${q}%`,`%${q}%`,`%${q}%`);
+        }
+        const rows = await query(`
+            SELECT ra.acctsessionid AS id_sesi,
+                ra.username,
+                ra.framedipaddress AS ip,
+                ra.nasipaddress AS nas_ip,
+                ra.callingstationid AS mac,
+                ra.acctstarttime AS mulai,
+                ra.acctupdatetime AS update_terakhir,
+                TIMESTAMPDIFF(MINUTE, ra.acctstarttime, NOW()) AS durasi_menit,
+                ROUND(ra.acctinputoctets/1048576, 2) AS mb_in,
+                ROUND(ra.acctoutputoctets/1048576, 2) AS mb_out,
+                ra.nasporttype,
+                COALESCE(n.shortname, ra.nasipaddress) AS nas_name,
+                p.nama AS nama_pelanggan,
+                p.tipe_koneksi
+            FROM radacct ra
+            LEFT JOIN nas n ON ra.nasipaddress = n.nasname
+            LEFT JOIN pelanggan p ON ra.username = p.username
+            WHERE ${where.join(' AND ')}
+            ORDER BY ra.acctstarttime DESC
+            LIMIT ?
+        `, [...params, parseInt(limit)]);
+
+        const total = rows.length;
+        const pppoe   = rows.filter(r => (r.nasporttype||'').toLowerCase().includes('ppp')).length;
+        const hotspot = total - pppoe;
+        res.json({ rows, total, pppoe, hotspot });
+    } catch(e) { next(e); }
+});
+
+// ── POST /api/radius/sesi/bersihkan-stale ─────────────────────
+router.post('/sesi/bersihkan-stale', async (req, res, next) => {
+    try {
+        // Hapus sesi yang tidak update lebih dari 30 menit (stale)
+        const result = await query(`
+            UPDATE radacct SET acctstoptime = NOW(), acctterminatecause = 'Stale-Cleaned'
+            WHERE acctstoptime IS NULL
+              AND acctupdatetime < DATE_SUB(NOW(), INTERVAL 30 MINUTE)
+        `);
+        res.json({ pesan: `${result.affectedRows} sesi stale dibersihkan`, jumlah: result.affectedRows });
+    } catch(e) { next(e); }
+});
+
+
 router.post('/putus/:username', async (req, res, next) => {
     try {
         const hasil = await radiusService.putusKoneksi(req.params.username);

@@ -186,12 +186,16 @@ async function getSesi(username) {
 // GET semua sesi aktif
 async function semuaSesiAktif() {
     return query(`
-        SELECT ra.username, ra.framedipaddress AS ip,
+        SELECT ra.acctsessionid AS id_sesi,
+            ra.username,
+            ra.framedipaddress AS ip,
             ra.nasipaddress AS nas_ip,
+            ra.callingstationid AS mac,
             ra.acctstarttime AS mulai,
+            ra.acctupdatetime AS update_terakhir,
             TIMESTAMPDIFF(MINUTE, ra.acctstarttime, NOW()) AS durasi_menit,
-            ROUND(ra.acctinputoctets/1048576, 4)  AS total_mb_in,
-            ROUND(ra.acctoutputoctets/1048576, 4) AS total_mb_out,
+            ROUND(ra.acctinputoctets/1048576, 2)  AS total_mb_in,
+            ROUND(ra.acctoutputoctets/1048576, 2) AS total_mb_out,
             ROUND((ra.acctinputoctets+ra.acctoutputoctets)/1048576, 2) AS total_mb,
             ra.nasporttype,
             n.shortname AS nas_name,

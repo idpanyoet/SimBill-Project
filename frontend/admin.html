@@ -468,12 +468,13 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 
     <div class="sb-section">Sistem</div>
     <div class="sb-item" onclick="goto('radius',this)"><i class="ti ti-server icon" aria-hidden="true"></i> RADIUS / NAS</div>
+    <div class="sb-item" onclick="goto('sesi',this)"><i class="ti ti-activity icon" aria-hidden="true"></i> Sesi Aktif</div>
 
-    <!-- Finance Report Group -->
+    <!-- Laporan Group -->
     <div class="sb-group-hdr" id="sb-finance-hdr" onclick="sbToggleGroup('finance')">
       <div style="display:flex;align-items:center;gap:9px">
         <i class="ti ti-report-analytics icon" aria-hidden="true"></i>
-        <span>Finance Report</span>
+        <span>Laporan</span>
       </div>
       <i class="ti ti-chevron-down sb-group-arrow" id="sb-finance-arrow" aria-hidden="true"></i>
     </div>
@@ -1122,6 +1123,64 @@ Selamat menikmati! 🌐</textarea>
                 <small style="font-size:10px;color:var(--text3)">Cek koneksi FreeRADIUS</small>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SESI AKTIF ══ -->
+      <div class="page" id="p-sesi">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">
+          <div>
+            <h2 class="td-text-main" style="font-size:18px;font-weight:700;color:#2563eb">Sesi</h2>
+            <div class="td-text-sub" style="font-size:12px;margin-top:4px">Pantau dan putuskan sesi PPPoE dan Hotspot yang aktif.</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn danger" onclick="apiBersihkanStale()">
+              <i class="ti ti-trash" aria-hidden="true"></i> Bersihkan stale
+            </button>
+            <button class="btn" onclick="loadSesi()">
+              <i class="ti ti-refresh" aria-hidden="true"></i> Refresh
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <!-- Tab PPPoE / Hotspot -->
+          <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:14px">
+            <button id="sesi-tab-pppoe" onclick="sesiSwitchTab('pppoe')" style="padding:8px 20px;font-size:13px;font-weight:600;border:none;background:none;border-bottom:2px solid #2563eb;margin-bottom:-2px;color:#2563eb;cursor:pointer">PPPoE</button>
+            <button id="sesi-tab-hotspot" onclick="sesiSwitchTab('hotspot')" style="padding:8px 20px;font-size:13px;font-weight:500;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text2);cursor:pointer">Hotspot</button>
+          </div>
+
+          <!-- Search -->
+          <div style="position:relative;margin-bottom:12px;max-width:360px">
+            <i class="ti ti-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px" aria-hidden="true"></i>
+            <input id="sesi-search" placeholder="Cari username, IP, atau NAS" oninput="sesiFilter()" style="width:100%;padding:8px 12px 8px 32px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+          </div>
+
+          <!-- Count -->
+          <div id="sesi-count" class="td-text-sub" style="font-size:12px;margin-bottom:10px">— sesi</div>
+
+          <!-- Tabel -->
+          <div style="overflow-x:auto">
+            <table style="min-width:1100px">
+              <thead>
+                <tr>
+                  <th style="width:90px">ID SESI</th>
+                  <th>USERNAME</th>
+                  <th>ALAMAT IP</th>
+                  <th>NAS</th>
+                  <th>MAC</th>
+                  <th>MULAI</th>
+                  <th>UPDATE TERAKHIR</th>
+                  <th>DURASI</th>
+                  <th>PEMAKAIAN</th>
+                  <th style="width:40px"></th>
+                </tr>
+              </thead>
+              <tbody id="tbl-sesi">
+                <tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text3)">Memuat sesi...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -3772,7 +3831,7 @@ const titles = {
   laporan:'Laporan — Ringkasan', acs:'ACS TR-069',
   'income-report':'Period Income Report',
   'net-profit':'Net Profit',
-  'backup':'Backup & Restore',
+  'sesi':'Sesi Aktif',
   'voucher-template':'Template Voucher', setting:'Setting Sistem'
 };
 const loaders = {
@@ -3781,6 +3840,7 @@ const loaders = {
   voucher: loadVoucher, whatsapp: loadWALog,
   payment: loadPayment, radius: loadRadius,
   laporan: loadLaporan, 'income-report': loadIncomeReport, 'net-profit': loadNetProfit, reseller: loadReseller,
+  sesi: loadSesi,
   acs: loadACS, 'voucher-template': loadVoucherTemplate,
   setting: loadSetting,
   backup:  loadBackup
@@ -7210,6 +7270,130 @@ async function irExportExcel() {
     a.download = `income-report-${dari}-${sampai}.xlsx`;
     a.click(); URL.revokeObjectURL(url);
     toast('✅ Export Excel berhasil');
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+// ══════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════
+// SESI AKTIF
+// ══════════════════════════════════════════════════
+let _sesiTab  = 'pppoe';
+let _sesiRows = [];
+
+async function loadSesi() {
+  const tbody = document.getElementById('tbl-sesi');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text3)"><i class="ti ti-loader"></i> Memuat...</td></tr>';
+  try {
+    const q   = document.getElementById('sesi-search')?.value || '';
+    const url = `/api/radius/sesi?tipe=${_sesiTab}&limit=1000${q ? '&q='+encodeURIComponent(q) : ''}`;
+    const d   = await apiFetch(url);
+    _sesiRows = d.rows || [];
+    renderSesi(_sesiRows);
+    const count = document.getElementById('sesi-count');
+    if (count) count.textContent = `${_sesiRows.length} sesi`;
+  } catch(e) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:24px;color:#dc2626">❌ ${e.message}</td></tr>`;
+  }
+}
+
+function sesiSwitchTab(tab) {
+  _sesiTab = tab;
+  ['pppoe','hotspot'].forEach(function(t) {
+    const btn = document.getElementById('sesi-tab-' + t);
+    if (!btn) return;
+    const isActive = t === tab;
+    btn.style.borderBottomColor = isActive ? '#2563eb' : 'transparent';
+    btn.style.color = isActive ? '#2563eb' : 'var(--text2)';
+    btn.style.fontWeight = isActive ? '600' : '500';
+  });
+  document.getElementById('sesi-search').value = '';
+  loadSesi();
+}
+
+function sesiFilter() {
+  const q = (document.getElementById('sesi-search')?.value || '').toLowerCase();
+  const filtered = q
+    ? _sesiRows.filter(r =>
+        (r.username||'').toLowerCase().includes(q) ||
+        (r.ip||'').includes(q) ||
+        (r.nas_ip||'').includes(q) ||
+        (r.mac||'').toLowerCase().includes(q) ||
+        (r.nas_name||'').toLowerCase().includes(q))
+    : _sesiRows;
+  renderSesi(filtered);
+  const count = document.getElementById('sesi-count');
+  if (count) count.textContent = `${filtered.length} sesi`;
+}
+
+function fmtDurasi(menit) {
+  if (!menit && menit !== 0) return '—';
+  const m = parseInt(menit);
+  if (m < 60)  return `${m}m`;
+  const j = Math.floor(m / 60), rm = m % 60;
+  if (j < 24) return `${j}j ${rm}m`;
+  const hr = Math.floor(j / 24), rj = j % 24;
+  return `${hr}h ${rj}j`;
+}
+
+function fmtBytes(mb) {
+  if (!mb || mb == 0) return '0 B';
+  if (mb < 1)    return `${(mb*1024).toFixed(0)} KB`;
+  if (mb < 1024) return `${mb.toFixed(1)} MB`;
+  return `${(mb/1024).toFixed(1)} GB`;
+}
+
+function fmtDT(dt) {
+  if (!dt) return '—';
+  return new Date(dt).toLocaleString('sv-SE').replace('T',' ') + '+07:00';
+}
+
+function renderSesi(rows) {
+  const tbody = document.getElementById('tbl-sesi');
+  if (!tbody) return;
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:28px;color:var(--text3)">Tidak ada sesi aktif</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r => {
+    const idSesi  = (r.id_sesi || '').toString().slice(-8);
+    const mac     = (r.mac || '—').toUpperCase();
+    return `<tr>
+      <td class="td-mono" style="font-size:11px;color:var(--text3)">${idSesi}</td>
+      <td class="td-text-main" style="font-weight:600">${r.username}</td>
+      <td class="td-mono" style="font-size:12px">${r.ip || '—'}</td>
+      <td class="td-text-sub" style="font-size:12px">${r.nas_ip || '—'}</td>
+      <td class="td-mono" style="font-size:11px;color:var(--text3)">${mac}</td>
+      <td class="td-text-sub" style="font-size:11px">${fmtDT(r.mulai)}</td>
+      <td class="td-text-sub" style="font-size:11px">${fmtDT(r.update_terakhir)}</td>
+      <td class="td-text-bold" style="font-size:12px">${fmtDurasi(r.durasi_menit)}</td>
+      <td style="font-size:11px;line-height:1.6">
+        <div style="color:#2563eb">Masuk ${fmtBytes(r.mb_in)}</div>
+        <div style="color:#64748b">Keluar ${fmtBytes(r.mb_out)}</div>
+      </td>
+      <td>
+        <button class="btn sm danger" onclick="apiPutusSesi('${r.username}')" title="Putus sesi">
+          <i class="ti ti-plug-x" aria-hidden="true"></i>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function apiPutusSesi(username) {
+  if (!confirm(`Putus sesi ${username}?`)) return;
+  try {
+    await apiFetch(`/api/radius/putus/${encodeURIComponent(username)}`, { method:'POST' });
+    toast(`✅ Sesi ${username} diputus`);
+    setTimeout(loadSesi, 1000);
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+
+async function apiBersihkanStale() {
+  if (!confirm('Bersihkan semua sesi stale (tidak update > 30 menit)?')) return;
+  try {
+    const d = await apiFetch('/api/radius/sesi/bersihkan-stale', { method:'POST' });
+    toast(`✅ ${d.jumlah} sesi stale dibersihkan`);
+    loadSesi();
   } catch(e) { toast('❌ ' + e.message, true); }
 }
 // ══════════════════════════════════════════════════
