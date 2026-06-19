@@ -1647,7 +1647,7 @@ Selamat menikmati! 🌐</textarea>
         <input id="fp-deskripsi" placeholder="cth: Cocok untuk streaming & gaming">
       </div>
 
-      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)" onclick="document.getElementById('fp-izin-voucher').click()">
+      <label for="fp-izin-voucher" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
         <span class="vcr-toggle-track" id="fp-vcr-track" style="flex-shrink:0"><span class="vcr-toggle-thumb"></span></span>
         <input type="checkbox" id="fp-izin-voucher" style="display:none" onchange="paketToggleVcrLabel('fp')">
         <div>
@@ -1752,7 +1752,7 @@ Selamat menikmati! 🌐</textarea>
         <input id="ep2-deskripsi" placeholder="cth: Cocok untuk streaming & gaming">
       </div>
 
-      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)" onclick="document.getElementById('ep2-izin-voucher').click()">
+      <label for="ep2-izin-voucher" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
         <span class="vcr-toggle-track" id="ep2-vcr-track" style="flex-shrink:0"><span class="vcr-toggle-thumb"></span></span>
         <input type="checkbox" id="ep2-izin-voucher" style="display:none" onchange="paketToggleVcrLabel('ep2')">
         <div>
@@ -4482,8 +4482,18 @@ function paketToggleVcrLabel(prefix) {
   const lbl   = document.getElementById(prefix + '-vcr-lbl');
   const track = document.getElementById(prefix + '-vcr-track');
   const on    = chk?.checked;
-  if (lbl)   lbl.textContent = on ? 'Diizinkan — paket muncul di storefront voucher' : 'Tidak diizinkan — paket tidak muncul di storefront';
-  if (track) { track.classList.toggle('on', on); }
+  if (lbl)   lbl.textContent = on
+    ? 'Diizinkan — paket muncul di storefront voucher'
+    : 'Tidak diizinkan — paket tidak muncul di storefront';
+  if (track) {
+    if (on) {
+      track.style.background = '#16a34a';
+      track.querySelector('.vcr-toggle-thumb').style.left = '19px';
+    } else {
+      track.style.background = '';
+      track.querySelector('.vcr-toggle-thumb').style.left = '3px';
+    }
+  }
 }
 
 async function apiToggleIzinVoucher(id, izin, el) {
