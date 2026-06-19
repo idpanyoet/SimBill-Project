@@ -51,20 +51,20 @@ body{font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;background:#f4f6
 .sb-group-hdr{
   display:flex;align-items:center;justify-content:space-between;
   padding:8px 18px 8px 12px;margin:1px 8px;cursor:pointer;border-radius:8px;
-  font-size:13px;color:rgba(255,255,255,.5);transition:all .12s;
+  font-size:12px;font-weight:600;color:rgba(255,255,255,.4);letter-spacing:.04em;text-transform:uppercase;transition:all .12s;
 }
-.sb-group-hdr:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.85)}
-.sb-group-hdr.open{color:rgba(255,255,255,.85)}
-.sb-group-arrow{font-size:13px;transition:transform .2s;flex-shrink:0}
+.sb-group-hdr:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.75)}
+.sb-group-hdr.open{color:rgba(255,255,255,.75)}
+.sb-group-arrow{font-size:12px;transition:transform .2s;flex-shrink:0}
 .sb-group-hdr.open .sb-group-arrow{transform:rotate(180deg)}
-.sb-group-body{overflow:hidden;max-height:0;transition:max-height .25s ease}
-.sb-group-body.open{max-height:300px}
+.sb-group-body{display:none}
+.sb-group-body.open{display:block}
 .sb-sub-item{
   display:flex;align-items:center;gap:10px;
   padding:7px 12px 7px 28px;cursor:pointer;border-radius:8px;margin:1px 8px;
-  font-size:13px;color:rgba(255,255,255,.4);transition:all .12s;
+  font-size:13px;color:rgba(255,255,255,.5);transition:all .12s;
 }
-.sb-sub-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.8)}
+.sb-sub-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.85)}
 .sb-sub-item.active{color:var(--accent);font-weight:500}
 .sb-sub-dot{
   width:6px;height:6px;border-radius:50%;
@@ -460,8 +460,8 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-item" onclick="goto('paket',this)"><i class="ti ti-package icon" aria-hidden="true"></i> Paket Internet</div>
     <div class="sb-item" onclick="goto('invoice',this)"><i class="ti ti-receipt icon" aria-hidden="true"></i> Invoice</div>
     <div class="sb-item" onclick="goto('voucher',this)"><i class="ti ti-ticket icon" aria-hidden="true"></i> Voucher</div>
-
     <div class="sb-item" onclick="goto('reseller',this)"><i class="ti ti-building-store icon" aria-hidden="true"></i> Reseller</div>
+
     <div class="sb-section">Gateway</div>
     <div class="sb-item" onclick="goto('whatsapp',this)"><i class="ti ti-brand-whatsapp icon" aria-hidden="true"></i> WhatsApp</div>
     <div class="sb-item" onclick="goto('payment',this)"><i class="ti ti-credit-card icon" aria-hidden="true"></i> Payment</div>
@@ -471,18 +471,28 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-item" onclick="goto('sesi',this)"><i class="ti ti-activity icon" aria-hidden="true"></i> Sesi Aktif</div>
     <div class="sb-item" onclick="goto('peta',this)"><i class="ti ti-map-pin icon" aria-hidden="true"></i> Peta Jaringan</div>
 
-    <!-- Laporan Group -->
-    <div class="sb-section">Laporan</div>
-    <div class="sb-item" onclick="goto('laporan',this)"><i class="ti ti-chart-bar icon" aria-hidden="true"></i> Ringkasan</div>
-    <div class="sb-item" onclick="goto('income-report',this)"><i class="ti ti-report-money icon" aria-hidden="true"></i> Period Income</div>
-    <div class="sb-item" onclick="goto('net-profit',this)"><i class="ti ti-trending-up icon" aria-hidden="true"></i> Net Profit</div>
+    <!-- Finance Report Group -->
+    <div class="sb-group-hdr open" id="sb-finance-hdr" onclick="sbToggleGroup('finance')">
+      <div style="display:flex;align-items:center;gap:8px">
+        <i class="ti ti-report-analytics" style="font-size:14px" aria-hidden="true"></i>
+        Finance Report
+      </div>
+      <i class="ti ti-chevron-down sb-group-arrow" aria-hidden="true"></i>
+    </div>
+    <div class="sb-group-body open" id="sb-finance-body">
+      <div class="sb-sub-item" onclick="goto('laporan',this)"><span class="sb-sub-dot"></span> Ringkasan</div>
+      <div class="sb-sub-item" onclick="goto('income-report',this)"><span class="sb-sub-dot"></span> Period Income</div>
+      <div class="sb-sub-item" onclick="goto('net-profit',this)"><span class="sb-sub-dot"></span> Net Profit</div>
+    </div>
 
     <div class="sb-section">Lainnya</div>
     <div class="sb-item" onclick="goto('voucher-template',this)"><i class="ti ti-palette icon" aria-hidden="true"></i> Template Voucher</div>
     <div class="sb-item" onclick="goto('acs',this)"><i class="ti ti-router icon" aria-hidden="true"></i> ACS TR-069</div>
     <div class="sb-item" onclick="goto('setting',this)"><i class="ti ti-settings icon" aria-hidden="true"></i> Setting</div>
-    <div class="sb-item" onclick="goto('pengguna',this)"><i class="ti ti-users-group icon" aria-hidden="true"></i> Pengguna Admin</div>
     <div class="sb-item" onclick="goto('backup',this)"><i class="ti ti-database-export icon" aria-hidden="true"></i> Backup & Restore</div>
+
+    <div class="sb-section">Admin</div>
+    <div class="sb-item" onclick="goto('pengguna',this)"><i class="ti ti-users-group icon" aria-hidden="true"></i> Pengguna Admin</div>
     <div class="sb-item" onclick="goto('log',this)"><i class="ti ti-clipboard-list icon" aria-hidden="true"></i> Log Admin</div>
 
     <div class="sb-bottom">
@@ -3425,15 +3435,24 @@ function closeSidebar() {
 function sbToggleGroup(name) {
   const hdr  = document.getElementById('sb-' + name + '-hdr');
   const body = document.getElementById('sb-' + name + '-body');
+  if (!hdr || !body) return;
   const isOpen = body.classList.contains('open');
   body.classList.toggle('open', !isOpen);
   hdr.classList.toggle('open', !isOpen);
-  // Simpan state ke localStorage
   localStorage.setItem('sb_group_' + name, !isOpen ? '1' : '0');
 }
 
 function sbRestoreGroups() {
-  // Tidak ada collapsible group saat ini
+  ['finance'].forEach(function(name) {
+    const saved = localStorage.getItem('sb_group_' + name);
+    // Default: open
+    const shouldOpen = saved === null ? true : saved === '1';
+    const hdr  = document.getElementById('sb-' + name + '-hdr');
+    const body = document.getElementById('sb-' + name + '-body');
+    if (!hdr || !body) return;
+    body.classList.toggle('open', shouldOpen);
+    hdr.classList.toggle('open', shouldOpen);
+  });
 }
 
 function goto(id, el) {
@@ -3444,7 +3463,7 @@ function goto(id, el) {
   if (!page) { console.warn('[goto] HALAMAN TIDAK DITEMUKAN: p-'+id); return; }
   page.classList.add('active');
   if (el) el.classList.add('active');
-  // Jika sub-item, buka groupnya otomatis
+  // Jika sub-item, pastikan group parent terbuka
   if (el && el.classList.contains('sb-sub-item')) {
     const body = el.closest('.sb-group-body');
     const hdr  = body?.previousElementSibling;
@@ -3453,7 +3472,7 @@ function goto(id, el) {
       if (hdr) hdr.classList.add('open');
     }
   }
-  document.getElementById('page-title').textContent = titles[id]||id;
+  document.getElementById('page-title').textContent = titles[id] || id;
   if (loaders[id]) loaders[id]();
   closeSidebar();
 }
