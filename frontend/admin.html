@@ -3786,7 +3786,7 @@ async function loadACSDevices() {
       return;
     }
     t.innerHTML = rows.map(d => {
-      const online = d.status === 'online' && d.last_inform && (Date.now() - new Date(d.last_inform).getTime()) < 15 * 60 * 1000;
+      const online    = d.status === 'online';  // backend sudah hitung status_live
       const dotCls = online ? 'dot-green' : 'dot-red';
       const stLabel = online ? '<span class="badge green">Online</span>' : '<span class="badge red">Offline</span>';
       const lastInform = d.last_inform ? new Date(d.last_inform).toLocaleString('id-ID') : '—';
@@ -3837,7 +3837,11 @@ async function bukaACSDetail(id) {
       ['SW Version', d.software_version||'—'],
       ['HW Version', d.hardware_version||'—'],
       ['Last Inform', d.last_inform ? new Date(d.last_inform).toLocaleString('id-ID') : '—'],
-      ['Status', d.status === 'online' ? '🟢 Online' : '🔴 Offline'],
+      ['Status', (() => {
+        const isOnline = d.status === 'online';  // backend sudah hitung status_live (NOW() server)
+        const dot   = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${isOnline?'#22c55e':'#ef4444'};margin-right:5px;vertical-align:middle"></span>`;
+        return dot + (isOnline ? 'Online' : 'Offline');
+      })()],
     ];
     document.getElementById('acs-detail-info').innerHTML = infoItems.map(([l,v]) =>
       `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 10px"><div style="font-size:10px;color:var(--text3);margin-bottom:2px">${l}</div><div style="font-size:12px;font-weight:500">${v}</div></div>`

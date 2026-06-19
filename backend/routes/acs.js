@@ -32,12 +32,16 @@ router.get('/devices', async (req, res, next) => {
 router.get('/devices/:id', async (req, res, next) => {
     try {
         const d = await queryOne(`
-            SELECT d.*, p.nama AS pelanggan_nama, p.username AS pelanggan_username
+            SELECT d.*,
+                p.nama AS pelanggan_nama, p.username AS pelanggan_username,
+                CASE WHEN d.last_inform > DATE_SUB(NOW(), INTERVAL 15 MINUTE)
+                     THEN 'online' ELSE 'offline' END AS status_live
             FROM acs_device d
             LEFT JOIN pelanggan p ON d.pelanggan_id = p.id
             WHERE d.id = ?
         `, [req.params.id]);
         if (!d) return res.status(404).json({ error: 'Device tidak ditemukan' });
+        d.status = d.status_live;   // selalu pakai status_live
         d.param_cache = (() => { try { return JSON.parse(d.param_cache || '{}'); } catch(e) { return {}; } })();
 
         // Ambil task terakhir
