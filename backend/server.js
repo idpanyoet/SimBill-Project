@@ -227,6 +227,7 @@ app.use('/api/payment',   require('./routes/payment'));
 app.use('/api/radius',    require('./routes/radius'));
 app.use('/api/laporan',   require('./routes/laporan'));
 app.use('/api/setting',   require('./routes/setting'));
+app.use('/api/backup',    require('./routes/backup'));
 app.use('/api/client',    require('./routes/client'));
 app.use('/api/acs',            require('./routes/acs'));
 app.use('/api/voucher-template', require('./routes/voucher-template'));

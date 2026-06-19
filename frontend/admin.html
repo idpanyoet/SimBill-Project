@@ -449,6 +449,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-item" onclick="goto('voucher-template',this)"><i class="ti ti-palette icon" aria-hidden="true"></i> Template Voucher</div>
     <div class="sb-item" onclick="goto('acs',this)"><i class="ti ti-router icon" aria-hidden="true"></i> ACS TR-069</div>
     <div class="sb-item" onclick="goto('setting',this)"><i class="ti ti-settings icon" aria-hidden="true"></i> Setting</div>
+    <div class="sb-item" onclick="goto('backup',this)"><i class="ti ti-database-export icon" aria-hidden="true"></i> Backup & Restore</div>
 
     <div class="sb-bottom">
       <div class="sb-user">
@@ -2292,6 +2293,119 @@ Selamat menikmati! 🌐</textarea>
 </div>
 
 
+<!-- HALAMAN BACKUP & RESTORE -->
+      <div class="page" id="p-backup">
+        <div class="grid2" style="align-items:start">
+
+          <!-- PANEL BACKUP -->
+          <div>
+            <div class="card">
+              <div class="card-title">
+                <span><i class="ti ti-database-export" style="color:#BA7517;margin-right:6px" aria-hidden="true"></i>Backup Database</span>
+                <button class="btn sm" onclick="loadTabelList()"><i class="ti ti-refresh" aria-hidden="true"></i> Refresh</button>
+              </div>
+
+              <!-- Pilih tabel -->
+              <div style="margin-bottom:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                  <label class="fg-label">Pilih Tabel</label>
+                  <div style="display:flex;gap:6px">
+                    <button class="btn sm" onclick="backupSelectAll(true)">Semua</button>
+                    <button class="btn sm" onclick="backupSelectAll(false)">Kosongkan</button>
+                  </div>
+                </div>
+                <div id="backup-tabel-list" style="border:1px solid var(--border);border-radius:8px;max-height:340px;overflow-y:auto">
+                  <div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">
+                    <i class="ti ti-loader" aria-hidden="true"></i> Memuat daftar tabel...
+                  </div>
+                </div>
+              </div>
+
+              <!-- Info terpilih -->
+              <div id="backup-sel-info" style="font-size:12px;color:var(--text2);margin-bottom:12px">
+                <span id="backup-sel-count">0</span> tabel dipilih
+              </div>
+
+              <!-- Tombol backup -->
+              <button class="btn primary" style="width:100%" onclick="apiBackupExport()">
+                <i class="ti ti-download" aria-hidden="true"></i> Download Backup SQL
+              </button>
+            </div>
+
+            <!-- Riwayat info -->
+            <div class="card" style="background:linear-gradient(135deg,#FAEEDA,#f5dfb0);border-color:rgba(186,117,23,.2)">
+              <div style="font-size:12px;color:#633806;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+                <i class="ti ti-bulb" style="font-size:14px" aria-hidden="true"></i> Tips Backup
+              </div>
+              <ul style="font-size:11px;color:#854F0B;line-height:1.8;padding-left:14px">
+                <li>Backup rutin sebelum update sistem</li>
+                <li>Simpan file .sql di lokasi aman</li>
+                <li>Tabel penting: pelanggan, invoice, paket, voucher, radcheck, radacct</li>
+                <li>File backup bisa dibuka dengan HeidiSQL atau phpMyAdmin</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- PANEL RESTORE -->
+          <div>
+            <div class="card">
+              <div class="card-title">
+                <span><i class="ti ti-database-import" style="color:#dc2626;margin-right:6px" aria-hidden="true"></i>Restore Database</span>
+              </div>
+
+              <!-- Warning -->
+              <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;font-size:12px;color:#b91c1c;margin-bottom:14px;display:flex;gap:8px">
+                <i class="ti ti-alert-triangle" style="font-size:16px;flex-shrink:0;margin-top:1px" aria-hidden="true"></i>
+                <div><b>Perhatian:</b> Restore akan menimpa data yang ada. Pastikan sudah backup data terkini sebelum melakukan restore.</div>
+              </div>
+
+              <!-- Drop area -->
+              <div id="restore-drop" style="border:2px dashed #e2e7ef;border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:12px"
+                onclick="document.getElementById('restore-file-input').click()"
+                ondragover="restoreDragOver(event)" ondragleave="restoreDragLeave(event)" ondrop="restoreDrop(event)">
+                <i class="ti ti-file-type-sql" style="font-size:40px;color:#94a3b8;display:block;margin-bottom:8px" aria-hidden="true"></i>
+                <div class="td-text-main" style="font-size:13px;font-weight:500">Klik atau drag & drop file SQL</div>
+                <div class="td-text-sub" style="font-size:11px;margin-top:4px">Format: .sql — hasil backup SimBill</div>
+                <input type="file" id="restore-file-input" accept=".sql" style="display:none" onchange="restoreFileSelected(this)">
+              </div>
+
+              <!-- File info -->
+              <div id="restore-file-info" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <div>
+                    <div id="restore-file-name" class="td-text-main" style="font-size:13px;font-weight:600"></div>
+                    <div id="restore-file-size" class="td-text-sub" style="font-size:11px;margin-top:2px"></div>
+                  </div>
+                  <button class="btn sm danger" onclick="restoreReset()"><i class="ti ti-x" aria-hidden="true"></i></button>
+                </div>
+              </div>
+
+              <!-- Preview statement -->
+              <div id="restore-preview" style="display:none;margin-bottom:12px">
+                <div class="fg-label" style="margin-bottom:6px">Preview SQL</div>
+                <div id="restore-preview-text" style="background:#0f172a;color:#a8b4c9;font-family:monospace;font-size:11px;padding:10px 12px;border-radius:8px;max-height:160px;overflow-y:auto;white-space:pre-wrap;line-height:1.6"></div>
+                <div id="restore-stmt-count" class="td-text-sub" style="font-size:11px;margin-top:5px"></div>
+              </div>
+
+              <!-- Konfirmasi & restore -->
+              <div id="restore-confirm" style="display:none;margin-bottom:12px">
+                <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
+                  <input type="checkbox" id="restore-confirm-chk" style="width:15px;height:15px;accent-color:#dc2626;cursor:pointer">
+                  <span class="td-text-main">Saya mengerti bahwa restore akan menimpa data yang ada</span>
+                </label>
+              </div>
+
+              <button id="restore-btn" class="btn danger" style="width:100%;display:none;border-color:#dc2626;color:#dc2626" onclick="apiRestore()">
+                <i class="ti ti-database-import" aria-hidden="true"></i> Restore Database
+              </button>
+            </div>
+
+            <!-- Hasil restore -->
+            <div id="restore-result" style="display:none"></div>
+          </div>
+        </div>
+      </div>
+
 <!-- MODAL IMPORT CSV PELANGGAN -->
 <div class="overlay" id="m-import-csv">
   <div class="modal" style="max-width:520px">
@@ -3393,7 +3507,8 @@ const loaders = {
   payment: loadPayment, radius: loadRadius,
   laporan: loadLaporan, reseller: loadReseller,
   acs: loadACS, 'voucher-template': loadVoucherTemplate,
-  setting: loadSetting
+  setting: loadSetting,
+  backup:  loadBackup
 };
 
 function toggleSidebar() {
@@ -6586,6 +6701,176 @@ function renderTblLaporan(rows) {
 // ================================================================
 // SETTING
 // ================================================================
+// ══════════════════════════════════════════════════
+// BACKUP & RESTORE
+// ══════════════════════════════════════════════════
+let _backupTabelData = [];
+let _restoreSQL      = '';
+
+async function loadBackup() {
+  loadTabelList();
+  restoreReset();
+}
+
+async function loadTabelList() {
+  const box = document.getElementById('backup-tabel-list');
+  if (!box) return;
+  box.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px"><i class="ti ti-loader"></i> Memuat...</div>';
+  try {
+    _backupTabelData = await apiFetch('/api/backup/tables');
+    renderTabelList();
+  } catch(e) {
+    box.innerHTML = `<div style="text-align:center;padding:20px;color:#dc2626;font-size:13px">❌ ${e.message}</div>`;
+  }
+}
+
+function renderTabelList() {
+  const box = document.getElementById('backup-tabel-list');
+  if (!box || !_backupTabelData.length) return;
+  box.innerHTML = _backupTabelData.map(function(t) {
+    return `<label style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background=''">
+      <input type="checkbox" class="backup-tbl-chk" value="${t.name}" checked onchange="backupUpdateCount()" style="width:15px;height:15px;accent-color:#BA7517;cursor:pointer;flex-shrink:0">
+      <div style="flex:1;min-width:0">
+        <div class="td-text-main" style="font-size:12px;font-weight:600">${t.name}</div>
+        <div class="td-text-sub" style="font-size:10px;margin-top:1px">${t.rows.toLocaleString('id-ID')} baris · ${t.size_kb} KB</div>
+      </div>
+      <span class="badge blue" style="font-size:10px">${t.rows.toLocaleString('id-ID')}</span>
+    </label>`;
+  }).join('');
+  backupUpdateCount();
+}
+
+function backupSelectAll(checked) {
+  document.querySelectorAll('.backup-tbl-chk').forEach(c => c.checked = checked);
+  backupUpdateCount();
+}
+
+function backupUpdateCount() {
+  const sel   = document.querySelectorAll('.backup-tbl-chk:checked');
+  const total = document.querySelectorAll('.backup-tbl-chk');
+  const el    = document.getElementById('backup-sel-count');
+  if (el) el.textContent = sel.length + ' / ' + total.length;
+}
+
+async function apiBackupExport() {
+  const selected = [...document.querySelectorAll('.backup-tbl-chk:checked')].map(c => c.value);
+  if (!selected.length) return toast('❌ Pilih minimal 1 tabel', true);
+  try {
+    toast('⏳ Menyiapkan backup...');
+    const resp = await fetch('/api/backup/export', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tables: selected })
+    });
+    if (!resp.ok) throw new Error('Gagal export');
+    const blob = await resp.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    const tgl  = new Date().toISOString().slice(0,19).replace(/[T:]/g,'-');
+    a.download = `simbill-backup-${tgl}.sql`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast(`✅ Backup ${selected.length} tabel berhasil didownload`);
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+
+// ── RESTORE ──
+function restoreReset() {
+  _restoreSQL = '';
+  const fileInput = document.getElementById('restore-file-input');
+  if (fileInput) fileInput.value = '';
+  ['restore-file-info','restore-preview','restore-confirm','restore-btn','restore-result']
+    .forEach(id => { const el = document.getElementById(id); if(el) el.style.display='none'; });
+  const drop = document.getElementById('restore-drop');
+  if (drop) { drop.style.borderColor='#e2e7ef'; drop.style.background='transparent'; drop.style.display='block'; }
+  const chk = document.getElementById('restore-confirm-chk');
+  if (chk) chk.checked = false;
+}
+
+function restoreDragOver(e) {
+  e.preventDefault();
+  const d = document.getElementById('restore-drop');
+  d.style.borderColor = '#dc2626'; d.style.background = '#fef2f2';
+}
+function restoreDragLeave(e) {
+  const d = document.getElementById('restore-drop');
+  d.style.borderColor = '#e2e7ef'; d.style.background = 'transparent';
+}
+function restoreDrop(e) {
+  e.preventDefault(); restoreDragLeave(e);
+  const file = e.dataTransfer.files[0];
+  if (file) restoreParseFile(file);
+}
+function restoreFileSelected(input) {
+  if (input.files[0]) restoreParseFile(input.files[0]);
+}
+
+function restoreParseFile(file) {
+  if (!file.name.endsWith('.sql')) return toast('❌ Pilih file .sql', true);
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    _restoreSQL = e.target.result;
+    // File info
+    document.getElementById('restore-file-name').textContent = file.name;
+    document.getElementById('restore-file-size').textContent =
+      (file.size / 1024).toFixed(1) + ' KB · ' +
+      (_restoreSQL.split(';').length - 1) + ' statement';
+    document.getElementById('restore-file-info').style.display = 'block';
+    // Preview 20 baris pertama
+    const lines = _restoreSQL.split('\n').slice(0, 20).join('\n');
+    document.getElementById('restore-preview-text').textContent = lines + '\n...';
+    const stmtCount = (_restoreSQL.match(/;\s*\n/g)||[]).length;
+    document.getElementById('restore-stmt-count').textContent = stmtCount + ' SQL statement terdeteksi';
+    document.getElementById('restore-preview').style.display = 'block';
+    document.getElementById('restore-confirm').style.display = 'block';
+    document.getElementById('restore-btn').style.display     = 'block';
+    document.getElementById('restore-drop').style.display    = 'none';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+async function apiRestore() {
+  const chk = document.getElementById('restore-confirm-chk');
+  if (!chk?.checked) return toast('❌ Centang konfirmasi terlebih dahulu', true);
+  if (!_restoreSQL)  return toast('❌ Tidak ada file SQL', true);
+  if (!confirm('⚠️ Yakin ingin restore? Data yang ada akan ditimpa!')) return;
+
+  const btn = document.getElementById('restore-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader"></i> Sedang restore...';
+
+  try {
+    const d = await apiFetch('/api/backup/restore', {
+      method: 'POST',
+      body: JSON.stringify({ sql: _restoreSQL })
+    });
+    const resEl = document.getElementById('restore-result');
+    resEl.style.display = 'block';
+    const isOk = d.gagal === 0;
+    resEl.innerHTML = `
+      <div class="card" style="border-color:${isOk?'#86efac':'#fecaca'};background:${isOk?'#f0fdf4':'#fef2f2'}">
+        <div style="font-size:14px;font-weight:700;color:${isOk?'#15803d':'#b91c1c'};margin-bottom:8px">
+          ${isOk ? '✅' : '⚠️'} ${d.pesan}
+        </div>
+        <div style="display:flex;gap:12px;font-size:12px;margin-bottom:${d.errors?.length?'10px':'0'}">
+          <span style="color:#15803d">✅ ${d.sukses} berhasil</span>
+          ${d.gagal ? `<span style="color:#dc2626">❌ ${d.gagal} gagal</span>` : ''}
+        </div>
+        ${d.errors?.length ? `<div style="font-size:11px;color:#b91c1c;font-family:monospace;background:#fef2f2;padding:8px;border-radius:6px;max-height:120px;overflow-y:auto">
+          ${d.errors.map(e => `• ${e.stmt}<br><span style="opacity:.7">${e.error}</span>`).join('<br><br>')}
+        </div>` : ''}
+      </div>`;
+    if (isOk) toast('✅ Restore database berhasil!');
+    else      toast(`⚠️ Restore selesai dengan ${d.gagal} error`, true);
+  } catch(e) { toast('❌ ' + e.message, true); }
+  finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-database-import"></i> Restore Database';
+  }
+}
+// ══════════════════════════════════════════════════
+
 async function loadSetting() {
   try {
     const rows = await apiFetch('/api/setting');
