@@ -8256,7 +8256,12 @@ function bukaModalL2tpUser() {
   ['l2p-user','l2p-pass','l2p-ip'].forEach(function(id) {
     const el = document.getElementById(id); if (el) el.value = '';
   });
+  const hint = document.getElementById('l2p-ip-hint');
+  const list = document.getElementById('l2p-ip-list');
+  if (hint) hint.textContent = '';
+  if (list) list.innerHTML = '';
   openModal('m-add-l2tp-user');
+  saranIPL2tp(true);
 }
 
 async function apiVpnRefreshStatus(tab) {
