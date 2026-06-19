@@ -1859,55 +1859,170 @@ Selamat menikmati! 🌐</textarea>
 
       <!-- ══ SETTING ══ -->
       <div class="page" id="p-setting">
-        <div class="grid2">
-          <div class="card">
-            <div class="card-title">⚙️ Setting Umum</div>
-            <div class="fg"><label>Nama Aplikasi</label><input id="s-app_name" placeholder="SimBill"></div>
-            <div class="fg"><label>URL Aplikasi</label><input id="s-app_url" placeholder="https://billing.anda.id"></div>
-            <div class="fg-row">
-              <div class="fg"><label>Prefix Invoice</label><input id="s-invoice_prefix" placeholder="INV"></div>
-              <div class="fg"><label>PPN (%)</label><input id="s-pajak_persen" type="number" min="0" max="100" placeholder="0"></div>
-            </div>
-            <div class="fg-row">
-              <div class="fg"><label>Reminder H- (hari)</label><input id="s-reminder_h" type="number" min="0" placeholder="3"><small style="font-size:11px;color:var(--text3)">Kirim WA pengingat H-N sebelum jatuh tempo</small></div>
-              <div class="fg"><label>Auto-Suspend H+ (hari)</label><input id="s-suspend_h" type="number" min="0" placeholder="3"><small style="font-size:11px;color:var(--text3)">Suspend otomatis N hari setelah jatuh tempo</small></div>
-            </div>
-            <div class="fg"><label>No. WA Kontak Bantuan</label><input id="s-wa_number" placeholder="6282273309190"><small style="font-size:11px;color:var(--text3)">Tampil di halaman storefront voucher</small></div>
-            <div class="fg"><label>Alamat Usaha</label><input id="s-alamat" placeholder="Alamat lengkap usaha Anda"><small style="font-size:11px;color:var(--text3)">Tampil di halaman storefront voucher</small></div>
 
-            <!-- Upload Logo -->
-            <div class="fg">
-              <label>URL Logo <span class="td-text-sub" style="font-size:10px;font-weight:400">(opsional)</span></label>
-              <input id="s-app_logo" placeholder="/uploads/logo.png atau https://...">
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <h2 style="font-size:18px;font-weight:700;color:var(--text);margin:0">Pengaturan Sistem</h2>
+            <div class="td-text-sub" style="font-size:12px;margin-top:3px">Konfigurasi aplikasi, billing, dan integrasi</div>
+          </div>
+          <button class="btn primary" onclick="apiSimpanSetting()" style="gap:6px">
+            <i class="ti ti-device-floppy" style="font-size:14px" aria-hidden="true"></i> Simpan Pengaturan
+          </button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+
+          <!-- Kolom Kiri -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+
+            <!-- Identitas Aplikasi -->
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(37,99,235,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-building" style="font-size:17px;color:#2563eb" aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Identitas Aplikasi</div>
+                  <div class="td-text-sub" style="font-size:11px">Nama, URL, dan logo sistem</div>
+                </div>
+              </div>
+
+              <!-- Logo Upload Area -->
+              <div style="margin-bottom:16px">
+                <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:8px">Logo Aplikasi</label>
+                <div style="display:flex;align-items:center;gap:14px">
+                  <!-- Logo preview circle -->
+                  <div id="s-logo-circle" style="width:64px;height:64px;border-radius:14px;border:2px dashed var(--border);background:var(--bg3);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;cursor:pointer;transition:border-color .15s" onclick="document.getElementById('s-logo-file').click()" title="Klik untuk upload">
+                    <img id="s-logo-preview" src="" alt="" style="width:100%;height:100%;object-fit:contain;display:none">
+                    <i id="s-logo-icon" class="ti ti-photo-up" style="font-size:22px;color:var(--text3)" aria-hidden="true"></i>
+                  </div>
+                  <div style="flex:1;min-width:0">
+                    <input type="file" id="s-logo-file" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none" onchange="logoPreview(this)">
+                    <button class="btn sm" onclick="document.getElementById('s-logo-file').click()" style="margin-bottom:6px">
+                      <i class="ti ti-upload" style="font-size:12px" aria-hidden="true"></i> Pilih File
+                    </button>
+                    <button class="btn sm" id="s-logo-clear-btn" onclick="logoClear()" style="margin-bottom:6px;display:none">
+                      <i class="ti ti-trash" style="font-size:12px" aria-hidden="true"></i> Hapus
+                    </button>
+                    <div class="td-text-sub" style="font-size:11px">PNG, JPG, SVG, WebP. Maks 2MB.<br>Atau isi URL di bawah.</div>
+                  </div>
+                </div>
+                <div class="fg" style="margin-top:10px;margin-bottom:0">
+                  <label>URL Logo</label>
+                  <input id="s-app_logo" placeholder="/uploads/logo.png atau https://domain.com/logo.png">
+                </div>
+              </div>
+
+              <div class="fg"><label>Nama Aplikasi</label><input id="s-app_name" placeholder="SimBill"></div>
+              <div class="fg" style="margin-bottom:0"><label>URL Aplikasi</label><input id="s-app_url" placeholder="https://billing.anda.id"></div>
             </div>
-            <div class="fg">
-              <label>Upload Logo</label>
-              <input type="file" id="s-logo-file" accept="image/png,image/jpeg,image/svg+xml,image/webp"
-                style="padding:6px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;width:100%;cursor:pointer"
-                onchange="logoPreview(this)">
+
+            <!-- Kontak & Lokasi -->
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(22,163,74,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-map-pin" style="font-size:17px;color:#16a34a" aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Kontak & Lokasi</div>
+                  <div class="td-text-sub" style="font-size:11px">Tampil di storefront voucher</div>
+                </div>
+              </div>
+              <div class="fg"><label>No. WA Kontak Bantuan</label><input id="s-wa_number" placeholder="6282273309190"></div>
+              <div class="fg" style="margin-bottom:0"><label>Alamat Usaha</label><input id="s-alamat" placeholder="Jl. Contoh No. 1, Kota..."></div>
             </div>
-            <div class="fg" id="s-logo-preview-wrap" style="display:none">
-              <label>Preview</label>
-              <div style="padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg3);display:inline-flex;align-items:center;gap:10px">
-                <img id="s-logo-preview" src="" alt="preview" style="height:40px;max-width:160px;object-fit:contain;border-radius:4px">
-                <button class="btn sm danger" onclick="logoClear()">✕ Hapus</button>
+
+          </div>
+
+          <!-- Kolom Kanan -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+
+            <!-- Billing -->
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(186,117,23,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-receipt" style="font-size:17px;color:#BA7517" aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Konfigurasi Billing</div>
+                  <div class="td-text-sub" style="font-size:11px">Invoice, pajak, dan otomasi</div>
+                </div>
+              </div>
+              <div class="fg-row">
+                <div class="fg"><label>Prefix Invoice</label><input id="s-invoice_prefix" placeholder="INV"></div>
+                <div class="fg"><label>PPN (%)</label><input id="s-pajak_persen" type="number" min="0" max="100" placeholder="0"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0">
+                <div style="background:var(--bg3);border-radius:10px;padding:12px;border:1px solid var(--border)">
+                  <div style="font-size:11px;font-weight:600;color:#2563eb;margin-bottom:6px;display:flex;align-items:center;gap:5px">
+                    <i class="ti ti-bell" style="font-size:12px" aria-hidden="true"></i> Reminder
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <input id="s-reminder_h" type="number" min="0" placeholder="3" style="width:56px;padding:6px 8px;border:1px solid var(--border);border-radius:7px;background:var(--bg2);color:var(--text);font-size:14px;font-weight:600;text-align:center;font-family:inherit">
+                    <span class="td-text-sub" style="font-size:11px">hari sebelum<br>jatuh tempo</span>
+                  </div>
+                </div>
+                <div style="background:var(--bg3);border-radius:10px;padding:12px;border:1px solid var(--border)">
+                  <div style="font-size:11px;font-weight:600;color:#dc2626;margin-bottom:6px;display:flex;align-items:center;gap:5px">
+                    <i class="ti ti-clock-pause" style="font-size:12px" aria-hidden="true"></i> Auto-Suspend
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <input id="s-suspend_h" type="number" min="0" placeholder="3" style="width:56px;padding:6px 8px;border:1px solid var(--border);border-radius:7px;background:var(--bg2);color:var(--text);font-size:14px;font-weight:600;text-align:center;font-family:inherit">
+                    <span class="td-text-sub" style="font-size:11px">hari setelah<br>jatuh tempo</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <button class="btn primary" onclick="apiSimpanSetting()">💾 Simpan Setting</button>
-          </div>
-          <div class="card">
-            <div class="card-title">🖥️ Info Sistem</div>
-            <div class="stat-row"><span class="lbl">Versi App</span><span class="val" id="sys-ver">1.0.0</span></div>
-            <div class="stat-row"><span class="lbl">Node.js</span><span class="val" id="sys-node">—</span></div>
-            <div class="stat-row"><span class="lbl">Database</span><span class="val" id="sys-db">—</span></div>
-            <div class="stat-row"><span class="lbl">RADIUS</span><span class="val" id="sys-radius">—</span></div>
-            <div class="stat-row"><span class="lbl">Uptime Server</span><span class="val" id="sys-uptime">—</span></div>
-            <div style="margin-top:10px;display:flex;gap:8px">
-              <button class="btn sm" onclick="loadSysInfo()">🔄 Refresh Info</button>
-              <button class="btn sm danger" onclick="apiRestartRadius()">⚡ Restart RADIUS</button>
-              <button class="btn sm" onclick="apiSyncRadcheck()">🔁 Sync Radcheck</button>
+            <!-- Info Sistem -->
+            <div class="card">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="width:34px;height:34px;border-radius:9px;background:rgba(124,58,237,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <i class="ti ti-server-2" style="font-size:17px;color:#7c3aed" aria-hidden="true"></i>
+                  </div>
+                  <div>
+                    <div style="font-size:13px;font-weight:700;color:var(--text)">Info Sistem</div>
+                    <div class="td-text-sub" style="font-size:11px">Status server & database</div>
+                  </div>
+                </div>
+                <button class="btn sm" onclick="loadSysInfo()"><i class="ti ti-refresh" style="font-size:12px" aria-hidden="true"></i></button>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-radius:8px">
+                  <span style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px"><i class="ti ti-tag" style="font-size:12px" aria-hidden="true"></i> Versi App</span>
+                  <span id="sys-ver" style="font-size:12px;font-weight:600;color:var(--text)">—</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-radius:8px">
+                  <span style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px"><i class="ti ti-brand-nodejs" style="font-size:12px" aria-hidden="true"></i> Node.js</span>
+                  <span id="sys-node" style="font-size:12px;font-weight:600;color:var(--text)">—</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-radius:8px">
+                  <span style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px"><i class="ti ti-database" style="font-size:12px" aria-hidden="true"></i> Database</span>
+                  <span id="sys-db" style="font-size:12px;font-weight:600">—</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-radius:8px">
+                  <span style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px"><i class="ti ti-wifi" style="font-size:12px" aria-hidden="true"></i> RADIUS</span>
+                  <span id="sys-radius" style="font-size:12px;font-weight:600">—</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-radius:8px">
+                  <span style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px"><i class="ti ti-clock" style="font-size:12px" aria-hidden="true"></i> Uptime</span>
+                  <span id="sys-uptime" style="font-size:12px;font-weight:600;color:var(--text)">—</span>
+                </div>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <button class="btn danger" style="width:100%;justify-content:center" onclick="apiRestartRadius()">
+                  <i class="ti ti-bolt" style="font-size:13px" aria-hidden="true"></i> Restart RADIUS
+                </button>
+                <button class="btn" style="width:100%;justify-content:center" onclick="apiSyncRadcheck()">
+                  <i class="ti ti-refresh" style="font-size:13px" aria-hidden="true"></i> Sync Radcheck
+                </button>
+              </div>
             </div>
+
           </div>
         </div>
       </div>
@@ -7563,10 +7678,12 @@ async function loadSetting() {
     // Tampilkan preview logo jika ada
     const logoRow = rows.find(s => s.kunci === 'app_logo');
     if (logoRow && logoRow.nilai) {
-      const img  = document.getElementById('s-logo-preview');
-      const wrap = document.getElementById('s-logo-preview-wrap');
-      if (img)  img.src = logoRow.nilai;
-      if (wrap) wrap.style.display = '';
+      const img      = document.getElementById('s-logo-preview');
+      const icon     = document.getElementById('s-logo-icon');
+      const clearBtn = document.getElementById('s-logo-clear-btn');
+      if (img)  { img.src = logoRow.nilai; img.style.display = 'block'; }
+      if (icon)     icon.style.display = 'none';
+      if (clearBtn) clearBtn.style.display = '';
     }
   } catch(e) { console.warn('Setting API:', e.message); }
   loadSysInfo();
@@ -7578,25 +7695,29 @@ function logoPreview(input) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = function(e) {
-    const img  = document.getElementById('s-logo-preview');
-    const wrap = document.getElementById('s-logo-preview-wrap');
-    const urlEl = document.getElementById('s-app_logo');
-    if (img)  { img.src = e.target.result; }
-    if (wrap) wrap.style.display = '';
-    if (urlEl) urlEl.value = ''; // akan diupdate setelah simpan
+    const img      = document.getElementById('s-logo-preview');
+    const icon     = document.getElementById('s-logo-icon');
+    const clearBtn = document.getElementById('s-logo-clear-btn');
+    const urlEl    = document.getElementById('s-app_logo');
+    if (img)  { img.src = e.target.result; img.style.display = 'block'; }
+    if (icon) icon.style.display = 'none';
+    if (clearBtn) clearBtn.style.display = '';
+    if (urlEl) urlEl.value = '';
   };
   reader.readAsDataURL(file);
 }
 
 function logoClear() {
-  const input = document.getElementById('s-logo-file');
-  const img   = document.getElementById('s-logo-preview');
-  const wrap  = document.getElementById('s-logo-preview-wrap');
-  const urlEl = document.getElementById('s-app_logo');
-  if (input) input.value = '';
-  if (img)   img.src = '';
-  if (wrap)  wrap.style.display = 'none';
-  if (urlEl) urlEl.value = '';
+  const input    = document.getElementById('s-logo-file');
+  const img      = document.getElementById('s-logo-preview');
+  const icon     = document.getElementById('s-logo-icon');
+  const clearBtn = document.getElementById('s-logo-clear-btn');
+  const urlEl    = document.getElementById('s-app_logo');
+  if (input)    input.value = '';
+  if (img)    { img.src = ''; img.style.display = 'none'; }
+  if (icon)     icon.style.display = '';
+  if (clearBtn) clearBtn.style.display = 'none';
+  if (urlEl)    urlEl.value = '';
 }
 // ── END LOGO HELPERS ──────────────────────────────────────────
 
