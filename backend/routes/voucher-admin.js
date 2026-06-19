@@ -10,6 +10,9 @@ router.use(authMiddleware);
 // GET /api/voucher — daftar voucher
 router.get('/', async (req, res, next) => {
   try {
+    // Auto-migrate kolom batch_id jika belum ada
+    await query(`ALTER TABLE voucher ADD COLUMN IF NOT EXISTS batch_id VARCHAR(30) DEFAULT NULL`).catch(()=>{});
+
     const { status, paket_id, batch_id, halaman = 1, limit = 30 } = req.query;
     const offset = (parseInt(halaman)-1) * parseInt(limit);
 
@@ -28,8 +31,14 @@ router.get('/', async (req, res, next) => {
     // Jika filter batch_id, kembalikan array langsung (bukan paginasi)
     if (batch_id) return res.json(rows);
 
+    // Count langsung dari tabel voucher tanpa JOIN
+    const countWhere = ['1=1'];
+    const countParams = [];
+    if (status)   { countWhere.push('status=?');   countParams.push(status); }
+    if (paket_id) { countWhere.push('paket_id=?'); countParams.push(paket_id); }
+    if (batch_id) { countWhere.push('batch_id=?'); countParams.push(batch_id); }
     const [{ total }] = await query(
-      `SELECT COUNT(*) AS total FROM voucher v LEFT JOIN paket p ON v.paket_id = p.id WHERE ${where.join(' AND ')}`, params
+      `SELECT COUNT(*) AS total FROM voucher WHERE ${countWhere.join(' AND ')}`, countParams
     );
     res.json({ data: rows, total });
   } catch (e) { next(e); }

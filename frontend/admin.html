@@ -6959,10 +6959,16 @@ async function loadVoucher() {
       apiFetch('/api/voucher/statistik')
     ]);
     vcrTotal = list.total || 0;
-    renderTblVoucher(list.data||list);
+    const rows = list.data || (Array.isArray(list) ? list : []);
+    renderTblVoucher(rows);
     renderInfoHalamanVoucher();
     renderStatVoucher(stat);
-  } catch(e) { console.warn('Voucher API:', e.message); }
+  } catch(e) {
+    console.error('Voucher API error:', e.message);
+    toast('❌ Gagal load voucher: ' + e.message, true);
+    const t = document.getElementById('tbl-voucher');
+    if (t) t.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#dc2626;padding:16px">❌ ${e.message}</td></tr>`;
+  }
 }
 
 function renderInfoHalamanVoucher() {
