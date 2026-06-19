@@ -4157,6 +4157,99 @@ Selamat menikmati! 🌐</textarea>
   </div>
 </div>
 
+<!-- MODAL BUAT INVOICE -->
+<div class="overlay" id="m-add-invoice">
+  <div class="modal" style="max-width:500px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:9px;background:rgba(186,117,23,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-receipt" style="font-size:18px;color:#BA7517" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">Buat Invoice</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Tagihan manual untuk pelanggan</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-add-invoice')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+
+      <!-- Pilih Pelanggan -->
+      <div class="fg">
+        <label>Pelanggan</label>
+        <select id="fi-pel" style="width:100%" onchange="invoiceOnPelSelect()">
+          <option value="">— Pilih pelanggan —</option>
+        </select>
+      </div>
+
+      <!-- Info Pelanggan Card -->
+      <div id="fi-pel-card" style="display:none;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:9px">
+        <div id="fi-pel-avatar" style="width:36px;height:36px;border-radius:8px;background:#7F77DD;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">—</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span id="fi-pel-name" style="font-size:13px;font-weight:700;color:var(--text)"></span>
+            <span id="fi-pel-tipe" class="tag pppoe" style="font-size:9px;padding:1px 6px"></span>
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:1px"><span id="fi-pel-hp"></span></div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div class="td-text-sub" style="font-size:10px">Paket aktif</div>
+          <div id="fi-pel-paket" style="font-size:12px;font-weight:600;color:var(--text)"></div>
+          <div id="fi-pel-harga" style="font-size:11px;color:#16a34a;font-weight:600"></div>
+        </div>
+      </div>
+
+      <!-- Jumlah -->
+      <div class="fg">
+        <label>Jumlah Tagihan (Rp)</label>
+        <input id="fi-jml" type="number" placeholder="0" oninput="invoiceUpdatePreview()" style="font-size:15px;font-weight:600">
+        <div id="fi-jml-preview" style="font-size:12px;color:#16a34a;font-weight:600;margin-top:4px">—</div>
+      </div>
+
+      <!-- Jatuh Tempo -->
+      <div class="fg">
+        <label>Jatuh Tempo</label>
+        <input id="fi-tgl" type="date" style="width:100%">
+        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+          <button class="btn sm due-chip active" onclick="invoiceSetDue(7)" style="font-size:11px">7 hari</button>
+          <button class="btn sm due-chip" onclick="invoiceSetDue(14)" style="font-size:11px">14 hari</button>
+          <button class="btn sm due-chip" onclick="invoiceSetDue(30)" style="font-size:11px">30 hari</button>
+          <button class="btn sm due-chip" onclick="invoiceSetDueEOM()" style="font-size:11px">Akhir Bulan</button>
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:10px 14px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px">
+          <span>Sub Total</span><span id="fi-sum-sub">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:6px">
+          <span>Diskon</span><span>—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:var(--text);border-top:1px solid var(--border);padding-top:6px">
+          <span>Total</span><span id="fi-sum-total">—</span>
+        </div>
+      </div>
+
+      <!-- Kirim WA -->
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:9px 12px;background:rgba(22,163,74,.05);border:1px solid rgba(22,163,74,.2);border-radius:8px">
+        <input type="checkbox" id="fi-wa" checked style="width:15px;height:15px;accent-color:#16a34a;cursor:pointer">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">Kirim notifikasi WA</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Kirim link tagihan ke WhatsApp pelanggan</div>
+        </div>
+      </label>
+
+      <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
+        <button class="btn" onclick="closeModal('m-add-invoice')">Batal</button>
+        <button class="btn primary" onclick="apiBuatInvoice()" style="gap:6px">
+          <i class="ti ti-receipt" style="font-size:13px" aria-hidden="true"></i> Buat Invoice
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="m-mikrotik-script">
   <div class="modal" style="max-width:580px">
     <div class="modal-hdr"><h3 id="mks-title">📋 Script MikroTik</h3><button class="btn-x" onclick="closeModal('m-mikrotik-script')">✕</button></div>
@@ -7192,16 +7285,16 @@ function invoiceUpdatePreview() {
 
 function invoiceSetDue(days) {
   const d = new Date(); d.setDate(d.getDate() + days);
-  document.getElementById('fi-tgl').value = d.toISOString().split('T')[0];
+  const el = document.getElementById('fi-tgl');
+  if (el) el.value = d.toISOString().split('T')[0];
   document.querySelectorAll('.due-chip').forEach(c => c.classList.remove('active'));
-  event.target.classList.add('active');
 }
 
 function invoiceSetDueEOM() {
-  const d = new Date(); d.setMonth(d.getMonth()+1,0);
-  document.getElementById('fi-tgl').value = d.toISOString().split('T')[0];
+  const d = new Date(); d.setMonth(d.getMonth()+1, 0);
+  const el = document.getElementById('fi-tgl');
+  if (el) el.value = d.toISOString().split('T')[0];
   document.querySelectorAll('.due-chip').forEach(c => c.classList.remove('active'));
-  event.target.classList.add('active');
 }
 
 // ── INVOICE MODAL HELPERS END ─────────────────────────────────
