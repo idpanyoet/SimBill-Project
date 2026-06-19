@@ -256,6 +256,15 @@ app.use('/webhook', require('./routes/webhook'));
 
 // --- Serve file frontend statis (CSS, JS, gambar) ---
 // Dipasang SETELAH API routes agar tidak mencegat /voucher/paket dll
+// No-cache untuk file HTML agar perubahan langsung terlihat
+app.use((req, res, next) => {
+  if (req.path.endsWith('.html') || req.path === '/') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  next();
+});
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Health check
