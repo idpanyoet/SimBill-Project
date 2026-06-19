@@ -842,6 +842,34 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
               <button class="btn" style="margin-top:12px;width:100%;justify-content:center" onclick="window.open('/','_blank')">🔗 Buka Halaman Voucher Publik</button>
             </div>
           </div>
+
+          <!-- Riwayat Sesi Voucher -->
+          <div class="card">
+            <div class="card-title">
+              <span><i class="ti ti-history" style="color:#BA7517;margin-right:6px" aria-hidden="true"></i>Riwayat Sesi Pengguna Voucher</span>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input id="vcr-sesi-search" placeholder="Cari username..." oninput="vcrSesiFilter()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;width:180px">
+                <button class="btn sm" onclick="loadVcrSesi()"><i class="ti ti-refresh" aria-hidden="true"></i></button>
+              </div>
+            </div>
+            <div id="vcr-sesi-count" class="td-text-sub" style="font-size:12px;margin-bottom:10px">— sesi</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Mulai</th>
+                  <th>Selesai</th>
+                  <th>Durasi</th>
+                  <th>Masuk</th>
+                  <th>Keluar</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="tbl-vcr-sesi">
+                <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text3)">Memuat...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -5734,8 +5762,64 @@ async function loadBatchHistory() {
   }
 }
 
+// ── RIWAYAT SESI VOUCHER ─────────────────────────────────────
+let _vcrSesiRows = [];
+
+async function loadVcrSesi() {
+  const tbody = document.getElementById('tbl-vcr-sesi');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--text3)"><i class="ti ti-loader"></i> Memuat...</td></tr>';
+  try {
+    const q = document.getElementById('vcr-sesi-search')?.value || '';
+    const url = '/api/radius/sesi-voucher?limit=300' + (q ? '&q='+encodeURIComponent(q) : '');
+    _vcrSesiRows = await apiFetch(url);
+    renderVcrSesi(_vcrSesiRows);
+  } catch(e) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:16px;color:#dc2626">❌ ${e.message}</td></tr>`;
+  }
+}
+
+function vcrSesiFilter() {
+  const q = (document.getElementById('vcr-sesi-search')?.value || '').toLowerCase();
+  const filtered = q
+    ? _vcrSesiRows.filter(r => (r.username||'').toLowerCase().includes(q) || (r.ip||'').includes(q))
+    : _vcrSesiRows;
+  renderVcrSesi(filtered);
+}
+
+function renderVcrSesi(rows) {
+  const tbody = document.getElementById('tbl-vcr-sesi');
+  const count = document.getElementById('vcr-sesi-count');
+  if (count) count.textContent = `${rows.length} sesi`;
+  if (!tbody) return;
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text3)">Tidak ada riwayat sesi</td></tr>';
+    return;
+  }
+  const fmtDT = dt => dt ? new Date(dt).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+  tbody.innerHTML = rows.map(r => {
+    const aktif   = !r.selesai;
+    const durasi  = fmtDurasi(r.durasi_menit);
+    const mbIn    = fmtBytes(r.mb_in);
+    const mbOut   = fmtBytes(r.mb_out);
+    const status  = aktif
+      ? '<span class="tag aktif" style="font-size:10px">Online</span>'
+      : '<span class="tag" style="background:#f1f5f9;color:#64748b;font-size:10px">' + (r.sebab || 'Selesai') + '</span>';
+    return `<tr>
+      <td class="td-text-main" style="font-weight:600">${r.username}</td>
+      <td class="td-text-sub" style="font-size:11px">${fmtDT(r.mulai)}</td>
+      <td class="td-text-sub" style="font-size:11px">${aktif ? '<span style="color:#16a34a;font-size:11px">● Aktif</span>' : fmtDT(r.selesai)}</td>
+      <td class="td-text-bold" style="font-size:12px">${durasi}</td>
+      <td style="font-size:11px;color:#2563eb">${mbIn}</td>
+      <td style="font-size:11px;color:#64748b">${mbOut}</td>
+      <td>${status}</td>
+    </tr>`;
+  }).join('');
+}
+// ── END RIWAYAT SESI VOUCHER ─────────────────────────────────
+
 async function loadVoucher() {
   loadBatchHistory();
+  loadVcrSesi();
   try {
     const [list, stat] = await Promise.all([
       apiFetch(`/api/voucher?limit=${vcrLimit}&halaman=${vcrHalaman}`),

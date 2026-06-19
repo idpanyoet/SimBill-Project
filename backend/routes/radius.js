@@ -71,7 +71,39 @@ router.get('/sesi', async (req, res, next) => {
     } catch(e) { next(e); }
 });
 
-// ── POST /api/radius/sesi/bersihkan-stale ─────────────────────
+// ── GET /api/radius/sesi-voucher — riwayat sesi pengguna voucher ──
+router.get('/sesi-voucher', async (req, res, next) => {
+    try {
+        const { q, limit = 200 } = req.query;
+        let where = ['v.id IS NOT NULL']; // hanya username yang ada di tabel voucher
+        const params = [];
+        if (q) {
+            where.push('ra.username LIKE ?');
+            params.push(`%${q}%`);
+        }
+        const rows = await query(`
+            SELECT ra.acctsessionid AS id_sesi,
+                ra.username,
+                ra.framedipaddress AS ip,
+                ra.acctstarttime AS mulai,
+                ra.acctstoptime AS selesai,
+                TIMESTAMPDIFF(MINUTE, ra.acctstarttime, IFNULL(ra.acctstoptime, NOW())) AS durasi_menit,
+                ROUND(ra.acctinputoctets/1048576, 2) AS mb_in,
+                ROUND(ra.acctoutputoctets/1048576, 2) AS mb_out,
+                ra.acctterminatecause AS sebab,
+                v.paket_id, pk.nama AS nama_paket
+            FROM radacct ra
+            JOIN voucher v ON ra.username = v.username
+            JOIN paket pk ON v.paket_id = pk.id
+            WHERE ${where.join(' AND ')}
+            ORDER BY ra.acctstarttime DESC
+            LIMIT ?
+        `, [...params, parseInt(limit)]);
+        res.json(rows);
+    } catch(e) { next(e); }
+});
+
+
 router.post('/sesi/bersihkan-stale', async (req, res, next) => {
     try {
         // Hapus sesi yang tidak update lebih dari 30 menit (stale)
