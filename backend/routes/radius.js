@@ -4,6 +4,18 @@ const { query, queryOne } = require('../config/db');
 const { authMiddleware } = require('../middleware/auth');
 const radiusService = require('../services/radius');
 
+// Validasi nasname: hanya izinkan IPv4/IPv6/hostname yang wajar.
+// Mencegah command injection (nasname dipakai di ping & ditulis ke clients.conf).
+function validNasHost(v) {
+    if (typeof v !== 'string') return false;
+    v = v.trim();
+    if (!v || v.length > 255) return false;
+    const ipv4 = /^(\d{1,3}\.){3}\d{1,3}$/;
+    const ipv6 = /^[0-9a-fA-F:]+$/;
+    const host = /^[a-zA-Z0-9._-]+$/;
+    return ipv4.test(v) || ipv6.test(v) || host.test(v);
+}
+
 router.use(authMiddleware);
 
 router.get('/status', async (req, res, next) => {
@@ -135,10 +147,13 @@ router.get('/nas', async (req, res, next) => {
             FROM nas n ORDER BY n.id
         `);
 
-        // Cek status online via ping (1 packet, timeout 1 detik)
-        const { exec } = require('child_process');
+        // Cek status online via ping (1 packet, timeout 1 detik).
+        // execFile (bukan exec) — tidak lewat shell, jadi nasname tidak bisa
+        // dipakai untuk command injection meski lolos validasi.
+        const { execFile } = require('child_process');
         const pingPromises = rows.map(n => new Promise(resolve => {
-            exec(`ping -c 1 -W 1 ${n.nasname} 2>/dev/null`, (err) => {
+            if (!validNasHost(n.nasname)) return resolve({ ...n, online: false });
+            execFile('ping', ['-c', '1', '-W', '1', n.nasname], (err) => {
                 resolve({ ...n, online: !err });
             });
         }));
@@ -164,8 +179,10 @@ async function syncClientsConf() {
 
         // Tulis ulang dengan semua NAS dari DB
         const blocks = rows.map(n => {
-            const name = (n.shortname || n.nasname).replace(/[^a-zA-Z0-9_]/g, '_');
-            return `\nclient ${name} {\n    ipaddr = ${n.nasname}\n    secret = ${n.secret}\n    shortname = ${name}\n}`;
+            const name   = (n.shortname || n.nasname).replace(/[^a-zA-Z0-9_]/g, '_');
+            const ipaddr = String(n.nasname).replace(/[^a-zA-Z0-9.:_-]/g, '');     // hanya IP/host
+            const secret = String(n.secret).replace(/[\r\n{}"]/g, '');             // cegah break config
+            return `\nclient ${name} {\n    ipaddr = ${ipaddr}\n    secret = ${secret}\n    shortname = ${name}\n}`;
         }).join('\n');
 
         fs.writeFileSync(CLIENTS_CONF,
@@ -187,6 +204,10 @@ router.post('/nas', async (req, res, next) => {
         const { nasname, shortname, type, secret, description } = req.body;
         if (!nasname || !secret)
             return res.status(400).json({ error: 'nasname dan secret wajib diisi' });
+        if (!validNasHost(nasname))
+            return res.status(400).json({ error: 'nasname harus berupa IP atau hostname valid (tanpa spasi/karakter aneh)' });
+        if (/[\r\n]/.test(secret))
+            return res.status(400).json({ error: 'secret tidak boleh mengandung baris baru' });
 
         await query(
             `INSERT INTO nas (nasname, shortname, type, secret, description) VALUES (?,?,?,?,?)`,
@@ -206,6 +227,10 @@ router.put('/nas/:id', async (req, res, next) => {
         const { nasname, shortname, type, secret, description, community, ports } = req.body;
         if (!nasname || !secret)
             return res.status(400).json({ error: 'nasname dan secret wajib diisi' });
+        if (!validNasHost(nasname))
+            return res.status(400).json({ error: 'nasname harus berupa IP atau hostname valid (tanpa spasi/karakter aneh)' });
+        if (/[\r\n]/.test(secret))
+            return res.status(400).json({ error: 'secret tidak boleh mengandung baris baru' });
         await query(
             `UPDATE nas SET nasname=?, shortname=?, type=?, secret=?, description=?, community=?, ports=? WHERE id=?`,
             [nasname, shortname || null, type || 'other', secret, description || shortname || null,

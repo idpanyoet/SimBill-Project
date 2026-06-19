@@ -53,7 +53,8 @@ router.post('/upload-ktp', async (req, res, next) => {
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
         const base64  = data.replace(/^data:image\/\w+;base64,/, '');
         const safe    = (username || 'ktp').replace(/[^a-zA-Z0-9_-]/g, '_');
-        const filename = `ktp_${safe}_${Date.now()}.${ext}`;
+        const safeExt = /^(png|jpe?g|webp)$/i.test(ext) ? ext.toLowerCase() : 'jpg';
+        const filename = `ktp_${safe}_${Date.now()}.${safeExt}`;
         fs.writeFileSync(path.join(dir, filename), Buffer.from(base64, 'base64'));
         res.json({ url: `/uploads/ktp/${filename}` });
     } catch(e) { next(e); }

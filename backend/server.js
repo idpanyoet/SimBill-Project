@@ -2,6 +2,21 @@
 // BILLING RADIUS - SERVER UTAMA
 // ============================================================
 require('dotenv').config();
+
+// ── Guard keamanan: tolak boot jika JWT_SECRET lemah/kosong ──
+// Secret reseller & client diturunkan dari JWT_SECRET (+ '_reseller' / '_client'),
+// jadi kalau JWT_SECRET kosong, secret jadi string tebakable ("undefined_reseller")
+// → token bisa diforge. Wajib di-set & cukup panjang sebelum server jalan.
+(function pastikanSecretAman() {
+    const s = process.env.JWT_SECRET;
+    const placeholder = 'ganti_dengan_secret_key_yang_sangat_panjang_dan_acak';
+    if (!s || s.length < 32 || s === placeholder) {
+        console.error('❌ JWT_SECRET tidak aman. Set JWT_SECRET di .env dengan string acak minimal 32 karakter.');
+        console.error('   Contoh generate: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"');
+        process.exit(1);
+    }
+})();
+
 const express   = require('express');
 const cors      = require('cors');
 const helmet    = require('helmet');
@@ -170,8 +185,10 @@ setTimeout(async () => {
         const markerIdx = original.indexOf(MARKER);
         if (markerIdx !== -1) original = original.slice(0, markerIdx);
         const blocks = rows.map(n => {
-            const name = (n.shortname || n.nasname).replace(/[^a-zA-Z0-9_]/g, '_');
-            return `\nclient ${name} {\n    ipaddr = ${n.nasname}\n    secret = ${n.secret}\n    shortname = ${name}\n}`;
+            const name   = (n.shortname || n.nasname).replace(/[^a-zA-Z0-9_]/g, '_');
+            const ipaddr = String(n.nasname).replace(/[^a-zA-Z0-9.:_-]/g, '');
+            const secret = String(n.secret).replace(/[\r\n{}"]/g, '');
+            return `\nclient ${name} {\n    ipaddr = ${ipaddr}\n    secret = ${secret}\n    shortname = ${name}\n}`;
         }).join('\n');
         fs.writeFileSync(CLIENTS_CONF, original + MARKER + '\n' + blocks + '\n# === END NETBILL ===\n', { mode: 0o640 });
         console.log(`[startup] clients.conf synced ${rows.length} NAS`);
@@ -181,7 +198,11 @@ setTimeout(async () => {
 // --- Middleware keamanan ---
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
-app.use(express.json());
+// Simpan raw body (Buffer) agar verifikasi signature webhook (mis. Tripay HMAC)
+// dihitung atas byte asli yang dikirim gateway, bukan hasil re-stringify.
+app.use(express.json({
+    verify: (req, _res, buf) => { req.rawBody = buf; }
+}));
 app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting
@@ -298,9 +319,16 @@ app.use((err, req, res, next) => {
     console.error(err.stack || err.message);
 
     const isDbBindError = /Bind parameters must not contain undefined/.test(err.message || '');
-    const pesanUntukClient = isDbBindError
-        ? 'Terjadi kesalahan data: ada field yang tidak terisi dengan benar. Silakan cek kembali form dan coba lagi.'
-        : (err.message || 'Terjadi kesalahan pada server');
+    const isProd = process.env.NODE_ENV === 'production';
+    let pesanUntukClient;
+    if (isDbBindError) {
+        pesanUntukClient = 'Terjadi kesalahan data: ada field yang tidak terisi dengan benar. Silakan cek kembali form dan coba lagi.';
+    } else if (isProd) {
+        // Jangan bocorkan detail teknis (pesan SQL/stack) ke client di production.
+        pesanUntukClient = 'Terjadi kesalahan pada server. Silakan coba lagi atau hubungi admin.';
+    } else {
+        pesanUntukClient = err.message || 'Terjadi kesalahan pada server';
+    }
 
     res.status(err.status || 500).json({ error: pesanUntukClient });
 });

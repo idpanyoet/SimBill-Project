@@ -37,7 +37,12 @@ router.post('/xendit', async (req, res) => {
     try {
         const signature = req.headers['x-callback-token'];
         const cfg = await paymentService.getConfig();
-        if (cfg.webhookToken && signature !== cfg.webhookToken) {
+        // Fail-closed: kalau token webhook belum diset, TOLAK (jangan loloskan).
+        if (!cfg.webhookToken) {
+            console.warn('[WEBHOOK] Xendit webhook token belum dikonfigurasi — callback ditolak');
+            return res.status(401).json({ error: 'Webhook token belum dikonfigurasi' });
+        }
+        if (signature !== cfg.webhookToken) {
             console.warn('[WEBHOOK] Xendit callback token tidak valid');
             return res.status(401).json({ error: 'Token tidak valid' });
         }
@@ -89,6 +94,32 @@ router.post('/duitku', async (req, res) => {
 // ============================================================
 router.post('/tripay', async (req, res) => {
     try {
+        // Verifikasi signature: HMAC-SHA256 atas RAW body, key = private key Tripay.
+        // Tanpa ini, siapa pun bisa memalsukan callback "PAID" → invoice lunas / saldo
+        // reseller bertambah gratis.
+        const cfg = await paymentService.getConfig();
+        const privateKey = cfg.privateKey;
+        const sigHeader  = req.headers['x-callback-signature'];
+
+        if (!privateKey) {
+            console.warn('[WEBHOOK] Tripay private key belum dikonfigurasi — callback ditolak');
+            return res.status(401).json({ success: false, error: 'Private key belum dikonfigurasi' });
+        }
+        const raw = req.rawBody || Buffer.from(JSON.stringify(req.body));
+        const computed = require('crypto')
+            .createHmac('sha256', privateKey)
+            .update(raw)
+            .digest('hex');
+
+        // Bandingkan konstan-waktu untuk hindari timing attack
+        const crypto = require('crypto');
+        const a = Buffer.from(String(sigHeader || ''), 'utf8');
+        const b = Buffer.from(computed, 'utf8');
+        if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+            console.warn('[WEBHOOK] Tripay signature tidak valid');
+            return res.status(401).json({ success: false, error: 'Signature tidak valid' });
+        }
+
         const { merchant_ref, status, payment_method } = req.body;
         const sukses    = status === 'PAID';
         const cancelled = status === 'EXPIRED';

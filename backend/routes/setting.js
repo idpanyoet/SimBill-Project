@@ -64,8 +64,10 @@ router.post('/upload-logo', requireAdmin, async (req, res, next) => {
             .forEach(f => fs.unlinkSync(path.join(uploadDir, f)));
 
         // Simpan logo baru
-        const base64 = data.replace(/^data:image\/\w+;base64,/, '');
-        const filename = `logo_${Date.now()}.${ext}`;
+        // Whitelist ekstensi — cegah path traversal via ext (mis. "png/../../x")
+        const safeExt  = /^(png|jpe?g|webp|svg|gif)$/i.test(ext) ? ext.toLowerCase() : 'png';
+        const base64   = data.replace(/^data:image\/\w+;base64,/, '');
+        const filename = `logo_${Date.now()}.${safeExt}`;
         fs.writeFileSync(path.join(uploadDir, filename), Buffer.from(base64, 'base64'));
 
         const url = `/uploads/${filename}`;
