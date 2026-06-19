@@ -4148,6 +4148,107 @@ Selamat menikmati! 🌐</textarea>
 </div>
 
 <!-- MODAL BUAT INVOICE -->
+<!-- Modal Generate Voucher (dibangun ulang — sebelumnya hilang dari HTML) -->
+<div class="overlay" id="m-gen-voucher">
+  <div class="modal" style="max-width:560px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:9px;background:rgba(217,119,6,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-ticket" style="font-size:18px;color:#d97706" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">Generate Voucher</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Buat voucher hotspot massal per batch</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-gen-voucher')">✕</button>
+    </div>
+
+    <div style="padding:18px 20px;max-height:70vh;overflow-y:auto">
+      <!-- Paket -->
+      <div style="margin-bottom:14px">
+        <label class="fg-label">Paket Voucher</label>
+        <select id="fv-paket" onchange="gvUpdatePaket();gvUpdateSummary()" style="width:100%;padding:9px 11px;border:1px solid #e2e7ef;border-radius:8px;font-size:13px;font-family:inherit;background:#fff"></select>
+        <div id="gv-paket-card" style="display:none;align-items:center;gap:10px;margin-top:9px;padding:9px 11px;border-radius:8px;background:linear-gradient(135deg,#FAEEDA,#fff);border:1px solid #f0e0c0">
+          <div style="flex:1;min-width:0">
+            <div id="gv-paket-nama" style="font-size:13px;font-weight:700;color:var(--text)">—</div>
+            <div id="gv-paket-chips" style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Jumlah -->
+      <div style="margin-bottom:14px">
+        <label class="fg-label">Jumlah Voucher: <span id="gv-jml-lbl" style="color:#d97706;font-weight:700">50</span></label>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="range" id="fv-jml-range" min="1" max="500" value="50" oninput="gvSyncJml('range')" style="flex:1">
+          <input type="number" id="fv-jml" min="1" max="9999" value="50" oninput="gvSyncJml('input')" style="width:82px;padding:7px 9px;border:1px solid #e2e7ef;border-radius:8px;font-size:13px;font-family:inherit;text-align:center">
+        </div>
+      </div>
+
+      <!-- Mode kode -->
+      <div style="margin-bottom:14px">
+        <label class="fg-label">Mode Kode</label>
+        <input type="hidden" id="fv-mode" value="sama">
+        <div style="display:flex;gap:8px">
+          <div id="gv-mode-sama" onclick="gvSetMode('sama')" style="flex:1;cursor:pointer;border:1.5px solid #e2e7ef;border-radius:8px;padding:8px 10px;transition:all .15s">
+            <div class="gv-mode-title" style="font-size:12px;font-weight:700">User = Pass</div>
+            <div class="gv-mode-desc" style="font-size:10px;color:#94a3b8;margin-top:1px">Username & password sama</div>
+          </div>
+          <div id="gv-mode-beda" onclick="gvSetMode('beda')" style="flex:1;cursor:pointer;border:1.5px solid #e2e7ef;border-radius:8px;padding:8px 10px;transition:all .15s">
+            <div class="gv-mode-title" style="font-size:12px;font-weight:700">User + Pass</div>
+            <div class="gv-mode-desc" style="font-size:10px;color:#94a3b8;margin-top:1px">Password dibuat terpisah</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panjang & Prefix -->
+      <div style="display:flex;gap:10px;margin-bottom:14px">
+        <div style="flex:1">
+          <label class="fg-label">Panjang Kode</label>
+          <input type="number" id="fv-panjang" min="4" max="20" value="8" oninput="gvUpdatePreview()" style="width:100%;padding:9px 11px;border:1px solid #e2e7ef;border-radius:8px;font-size:13px;font-family:inherit">
+        </div>
+        <div style="flex:1">
+          <label class="fg-label">Prefix (opsional)</label>
+          <input type="text" id="fv-prefix" maxlength="10" placeholder="mis. WIFI" oninput="this.value=this.value.toUpperCase();gvUpdatePreview()" style="width:100%;padding:9px 11px;border:1px solid #e2e7ef;border-radius:8px;font-size:13px;font-family:inherit;text-transform:uppercase">
+        </div>
+      </div>
+
+      <!-- Jenis karakter -->
+      <div style="margin-bottom:14px">
+        <label class="fg-label">Jenis Karakter</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div class="gv-cs-chip" id="gv-cs-angka" onclick="gvSetCharset('angka')">0–9</div>
+          <div class="gv-cs-chip" id="gv-cs-angka_kecil" onclick="gvSetCharset('angka_kecil')">a–z 0–9</div>
+          <div class="gv-cs-chip" id="gv-cs-angka_besar" onclick="gvSetCharset('angka_besar')">A–Z 0–9</div>
+        </div>
+        <input type="hidden" id="fv-charset" value="angka_kecil">
+      </div>
+
+      <!-- Preview kode -->
+      <div style="margin-bottom:14px;padding:10px 12px;border-radius:8px;background:#fef3c7;border:1px solid #fde68a;display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <span style="font-size:11px;color:#92400e;font-weight:600">Contoh kode:</span>
+        <span id="gv-preview-kode" style="font-family:monospace;font-size:15px;font-weight:700;letter-spacing:1px;color:#b45309">—</span>
+      </div>
+
+      <!-- Ringkasan -->
+      <div style="padding:11px 13px;border-radius:8px;background:var(--bg2);border:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:12px;color:var(--text2)">Akan dibuat</span>
+          <span style="font-size:15px;font-weight:700;color:#d97706"><span id="gv-sum-jml">50</span> voucher</span>
+        </div>
+        <div id="gv-sum-paket" style="font-size:12px;font-weight:600;color:var(--text)">— pilih paket terlebih dahulu</div>
+        <div id="gv-sum-detail" style="font-size:11px;color:var(--text3);margin-top:2px">—</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border)">
+      <button class="btn" onclick="closeModal('m-gen-voucher')">Batal</button>
+      <button class="btn primary" onclick="apiGenerateVoucher()">⚡ Generate</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="m-add-invoice">
   <div class="modal" style="max-width:500px">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
