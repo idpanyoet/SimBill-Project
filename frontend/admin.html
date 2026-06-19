@@ -3209,13 +3209,13 @@ Selamat menikmati! 🌐</textarea>
         <div class="fg"><label>Email</label><input id="ep-email" type="email" placeholder="email@domain.com"></div>
       </div>
       <div class="fg"><label>Catatan Internal</label><input id="ep-notes" placeholder="Catatan internal (opsional)"></div>
-      <div id="ep2-vcr-wrap">
-        <label for="ep2-izin-voucher" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
-          <span class="vcr-toggle-track" id="ep2-vcr-track" style="flex-shrink:0"><span class="vcr-toggle-thumb"></span></span>
-          <input type="checkbox" id="ep2-izin-voucher" style="display:none" onchange="paketToggleVcrLabel('ep2')">
+      <div id="epvcr-wrap">
+        <label for="epvcr-izin-voucher" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
+          <span class="vcr-toggle-track" id="epvcr-track" style="flex-shrink:0"><span class="vcr-toggle-thumb"></span></span>
+          <input type="checkbox" id="epvcr-izin-voucher" style="display:none" onchange="paketToggleVcrLabel('epvcr')">
           <div>
             <div class="td-text-main" style="font-size:13px;font-weight:600">Izinkan e-Voucher Online</div>
-            <div id="ep2-vcr-lbl" class="td-text-sub" style="font-size:11px;margin-top:1px">Tidak diizinkan</div>
+            <div id="epvcr-lbl" class="td-text-sub" style="font-size:11px;margin-top:1px">Tidak diizinkan</div>
           </div>
         </label>
       </div>
@@ -6289,7 +6289,7 @@ function epSetTipe(tipe) {
     }
   });
   // Sembunyikan toggle e-Voucher untuk PPPoE
-  const vcrWrap = document.getElementById('ep2-vcr-wrap');
+  const vcrWrap = document.getElementById('epvcr-wrap');
   if (vcrWrap) vcrWrap.style.display = tipe === 'pppoe' ? 'none' : '';
   filterEditPaketByTipe();
 }
