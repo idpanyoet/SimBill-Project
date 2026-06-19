@@ -46,7 +46,30 @@ body{font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;background:#f4f6
 /* ── APP SHELL ── */
 #app{display:flex;height:100vh;overflow:hidden}
 
-/* ── SIDEBAR ── */
+/* ── SIDEBAR GROUP (collapsible) ── */
+.sb-group-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 18px 8px 12px;margin:1px 8px;cursor:pointer;border-radius:8px;
+  font-size:13px;color:rgba(255,255,255,.5);transition:all .12s;
+}
+.sb-group-hdr:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.85)}
+.sb-group-hdr.open{color:rgba(255,255,255,.85)}
+.sb-group-arrow{font-size:13px;transition:transform .2s;flex-shrink:0}
+.sb-group-hdr.open .sb-group-arrow{transform:rotate(180deg)}
+.sb-group-body{overflow:hidden;max-height:0;transition:max-height .25s ease}
+.sb-group-body.open{max-height:300px}
+.sb-sub-item{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 12px 7px 28px;cursor:pointer;border-radius:8px;margin:1px 8px;
+  font-size:13px;color:rgba(255,255,255,.4);transition:all .12s;
+}
+.sb-sub-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.8)}
+.sb-sub-item.active{color:var(--accent);font-weight:500}
+.sb-sub-dot{
+  width:6px;height:6px;border-radius:50%;
+  border:1.5px solid currentColor;flex-shrink:0;
+}
+.sb-sub-item.active .sb-sub-dot{background:var(--accent);border-color:var(--accent)}
 .sidebar{width:var(--sidebar);background:#0f172a;display:flex;flex-direction:column;flex-shrink:0;height:100vh;position:sticky;top:0;overflow-y:auto}
 .sb-logo{padding:16px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:10px}
 .sb-logo small{display:block;font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.06em;margin-top:1px}
@@ -446,10 +469,19 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-section">Sistem</div>
     <div class="sb-item" onclick="goto('radius',this)"><i class="ti ti-server icon" aria-hidden="true"></i> RADIUS / NAS</div>
 
-    <div class="sb-section">Laporan</div>
-    <div class="sb-item" onclick="goto('laporan',this)"><i class="ti ti-chart-bar icon" aria-hidden="true"></i> Ringkasan</div>
-    <div class="sb-item" onclick="goto('income-report',this)"><i class="ti ti-report-money icon" aria-hidden="true"></i> Period Income</div>
-    <div class="sb-item" onclick="goto('net-profit',this)"><i class="ti ti-coin icon" aria-hidden="true"></i> Net Profit</div>
+    <!-- Finance Report Group -->
+    <div class="sb-group-hdr" id="sb-finance-hdr" onclick="sbToggleGroup('finance')">
+      <div style="display:flex;align-items:center;gap:9px">
+        <i class="ti ti-report-analytics icon" aria-hidden="true"></i>
+        <span>Finance Report</span>
+      </div>
+      <i class="ti ti-chevron-down sb-group-arrow" id="sb-finance-arrow" aria-hidden="true"></i>
+    </div>
+    <div class="sb-group-body" id="sb-finance-body">
+      <div class="sb-sub-item" onclick="goto('laporan',this)"><span class="sb-sub-dot"></span> Ringkasan</div>
+      <div class="sb-sub-item" onclick="goto('income-report',this)"><span class="sb-sub-dot"></span> Period Income</div>
+      <div class="sb-sub-item" onclick="goto('net-profit',this)"><span class="sb-sub-dot"></span> Net Profit</div>
+    </div>
 
     <div class="sb-section">Lainnya</div>
     <div class="sb-item" onclick="goto('voucher-template',this)"><i class="ti ti-palette icon" aria-hidden="true"></i> Template Voucher</div>
@@ -3525,6 +3557,8 @@ function toggleDarkMode() {
   }
 })();
 
+// Restore sidebar group states
+document.addEventListener('DOMContentLoaded', function() { sbRestoreGroups(); });
 async function apiFetch(path, opts={}) {
   const res = await fetch(API + path, {
     ...opts,
@@ -3735,7 +3769,10 @@ const titles = {
   paket:'Paket Internet', invoice:'Invoice & Tagihan',
   voucher:'Voucher Online', whatsapp:'WhatsApp Gateway',
   payment:'Payment Gateway', radius:'RADIUS / NAS',
-  laporan:'Laporan', acs:'ACS TR-069',
+  laporan:'Laporan — Ringkasan', acs:'ACS TR-069',
+  'income-report':'Period Income Report',
+  'net-profit':'Net Profit',
+  'backup':'Backup & Restore',
   'voucher-template':'Template Voucher', setting:'Setting Sistem'
 };
 const loaders = {
@@ -3762,14 +3799,48 @@ function closeSidebar() {
   document.getElementById('sidebar-overlay').classList.remove('show');
 }
 
+function sbToggleGroup(name) {
+  const hdr  = document.getElementById('sb-' + name + '-hdr');
+  const body = document.getElementById('sb-' + name + '-body');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  hdr.classList.toggle('open', !isOpen);
+  // Simpan state ke localStorage
+  localStorage.setItem('sb_group_' + name, !isOpen ? '1' : '0');
+}
+
+function sbRestoreGroups() {
+  ['finance'].forEach(function(name) {
+    const saved = localStorage.getItem('sb_group_' + name);
+    // Default: open jika belum pernah diset
+    const shouldOpen = saved === null ? true : saved === '1';
+    const hdr  = document.getElementById('sb-' + name + '-hdr');
+    const body = document.getElementById('sb-' + name + '-body');
+    if (hdr && body && shouldOpen) {
+      body.classList.add('open');
+      hdr.classList.add('open');
+    }
+  });
+}
+
 function goto(id, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.sb-item').forEach(s => s.classList.remove('active'));
-  document.getElementById('p-'+id).classList.add('active');
-  el.classList.add('active');
+  document.querySelectorAll('.sb-item,.sb-sub-item').forEach(s => s.classList.remove('active'));
+  const page = document.getElementById('p-'+id);
+  if (page) page.classList.add('active');
+  if (el) el.classList.add('active');
+  // Jika sub-item, buka groupnya otomatis
+  if (el && el.classList.contains('sb-sub-item')) {
+    const body = el.closest('.sb-group-body');
+    const hdr  = body?.previousElementSibling;
+    if (body && !body.classList.contains('open')) {
+      body.classList.add('open');
+      if (hdr) hdr.classList.add('open');
+    }
+  }
   document.getElementById('page-title').textContent = titles[id]||id;
   if (loaders[id]) loaders[id]();
-  closeSidebar(); // tutup sidebar otomatis di mobile setelah pindah halaman
+  closeSidebar();
 }
 
 // ================================================================
