@@ -6963,20 +6963,21 @@ async function populateDropdowns() {
             `<option value="${p.id}">${p.nama} — ${fmt(p.harga)}</option>`
           ).join('');
     }
+
+    // Dropdown pelanggan di form buat invoice
+    try {
+      const pelList = await apiFetch('/api/pelanggan?limit=500&status=aktif');
+      const rows = pelList.data || pelList;
+      PELANGGAN_LIST_CACHE = rows;
+      const selInvPel = document.getElementById('fi-pel');
+      if (selInvPel) {
+        selInvPel.innerHTML = '<option value="">— Pilih pelanggan —</option>'
+          + rows.map(p => `<option value="${p.id}">${p.nama} (${p.username})</option>`).join('');
+      }
+    } catch(e) { console.warn('Dropdown pelanggan gagal:', e.message); }
+
     return paketList;
   } catch(e) { console.warn('Dropdown paket gagal:', e.message); return []; }
-
-  try {
-    const pelList = await apiFetch('/api/pelanggan?limit=200');
-    const rows = pelList.data || pelList;
-    // Dropdown pelanggan di form buat invoice
-    const selInvPel = document.getElementById('fi-pel');
-    if (selInvPel) {
-      PELANGGAN_LIST_CACHE = rows;
-      selInvPel.innerHTML = '<option value="">-- pilih pelanggan --</option>'
-        + rows.map(p => `<option value="${p.id}">${p.nama} (${p.username})</option>`).join('');
-    }
-  } catch(e) { console.warn('Dropdown pelanggan gagal:', e.message); }
 }
 
 async function apiHapusPaket(id, nama) {
