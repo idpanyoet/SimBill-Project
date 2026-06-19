@@ -248,6 +248,16 @@ body.dark [style*="background:#f0fdf4"]{background:rgba(22,163,74,.08)!important
 body.dark [style*="color:#166534"]{color:#4ade80!important}
 body.dark [style*="color:#15803d"]:not(.btn){color:#4ade80!important}
 body.dark #ts-jumlah{background:#0d1117!important;border-color:#30363d!important;color:#e6edf3!important}
+/* ── VCR TOGGLE ── */
+.vcr-toggle{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.vcr-toggle-track{display:inline-block;width:36px;height:20px;border-radius:99px;background:#e2e7ef;position:relative;transition:background .2s;flex-shrink:0;cursor:pointer}
+.vcr-toggle-thumb{display:block;width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+input[type=checkbox]:checked + .vcr-toggle-track,
+.vcr-toggle input:checked ~ .vcr-toggle-track,
+.vcr-toggle-track.on{background:#16a34a}
+.vcr-toggle-track.on .vcr-toggle-thumb{left:19px}
+body.dark .vcr-toggle-track{background:#30363d}
+body.dark .vcr-toggle-track.on{background:#16a34a}
 /* ── EDIT PAKET MODAL ── */
 body.dark #ep2-tipe-card-pppoe,body.dark #ep2-tipe-card-hotspot,body.dark #ep2-tipe-card-keduanya{background:#1c2128;border-color:#30363d}
 body.dark #ep2-harga-preview{color:#fbbf24!important}
@@ -669,6 +679,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
                 <th>Tipe</th>
                 <th>Pool</th>
                 <th>Pelanggan</th>
+                <th>e-Voucher</th>
                 <th>Aksi</th>
               </tr>
             </thead>
@@ -1636,10 +1647,14 @@ Selamat menikmati! 🌐</textarea>
         <input id="fp-deskripsi" placeholder="cth: Cocok untuk streaming & gaming">
       </div>
 
-      <div class="paket-info-box">
-        <i class="ti ti-info-circle" style="font-size:14px;margin-top:1px;flex-shrink:0" aria-hidden="true"></i>
-        <span>Paket akan muncul di storefront voucher jika tipe = <b>Hotspot</b> atau <b>Keduanya</b></span>
-      </div>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)" onclick="document.getElementById('fp-izin-voucher').click()">
+        <span class="vcr-toggle-track" id="fp-vcr-track" style="flex-shrink:0"><span class="vcr-toggle-thumb"></span></span>
+        <input type="checkbox" id="fp-izin-voucher" style="display:none" onchange="paketToggleVcrLabel('fp')">
+        <div>
+          <div class="td-text-main" style="font-size:13px;font-weight:600">Izinkan e-Voucher Online</div>
+          <div id="fp-vcr-lbl" class="td-text-sub" style="font-size:11px;margin-top:1px">Tidak diizinkan — paket tidak muncul di storefront</div>
+        </div>
+      </label>
 
       <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
         <button class="btn" onclick="closeModal('m-add-paket')">Batal</button>
@@ -1737,10 +1752,14 @@ Selamat menikmati! 🌐</textarea>
         <input id="ep2-deskripsi" placeholder="cth: Cocok untuk streaming & gaming">
       </div>
 
-      <div class="paket-info-box">
-        <i class="ti ti-info-circle" style="font-size:14px;margin-top:1px;flex-shrink:0" aria-hidden="true"></i>
-        <span>Paket akan muncul di storefront voucher jika tipe = <b>Hotspot</b> atau <b>Keduanya</b></span>
-      </div>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)" onclick="document.getElementById('ep2-izin-voucher').click()">
+        <span class="vcr-toggle-track" id="ep2-vcr-track" style="flex-shrink:0"><span class="vcr-toggle-thumb"></span></span>
+        <input type="checkbox" id="ep2-izin-voucher" style="display:none" onchange="paketToggleVcrLabel('ep2')">
+        <div>
+          <div class="td-text-main" style="font-size:13px;font-weight:600">Izinkan e-Voucher Online</div>
+          <div id="ep2-vcr-lbl" class="td-text-sub" style="font-size:11px;margin-top:1px">Tidak diizinkan — paket tidak muncul di storefront</div>
+        </div>
+      </label>
 
       <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
         <button class="btn" onclick="closeModal('m-edit-paket')">Batal</button>
@@ -4211,6 +4230,8 @@ function renderPaket(rows) {
     const tipeBadgeLabel = p.tipe === 'keduanya' ? 'Keduanya' : (p.tipe === 'pppoe' ? 'PPPoE' : 'Hotspot');
     const statusDot   = p.aktif ? 'dot-green' : 'dot-red';
     const namaEsc     = p.nama.replace(/'/g, "\\'");
+    const izinVcr     = p.izin_voucher ? 1 : 0;
+    const speedLabel  = p.rate_limit || `${p.kecepatan_dn} Mbps`;
     return `<tr>
       <td style="padding:10px 16px">
         <div style="display:flex;align-items:center;gap:8px">
@@ -4221,12 +4242,19 @@ function renderPaket(rows) {
           </div>
         </div>
       </td>
-      <td><span class="td-accent-bold">${p.kecepatan_dn} Mbps</span>${p.kecepatan_up && p.kecepatan_up !== p.kecepatan_dn ? `<span class="td-text-sub"> / ${p.kecepatan_up}↑</span>` : ''}</td>
+      <td><span class="td-accent-bold td-mono" style="font-size:11px">${speedLabel}</span></td>
       <td><span class="td-text">${masaLabel}</span></td>
       <td><span class="td-text-bold">${fmt(p.harga)}</span></td>
       <td><span class="tag ${tipeBadge}">${tipeBadgeLabel}</span></td>
       <td><span class="td-text-sub td-mono">${p.pool_name || '—'}</span></td>
       <td><span class="badge blue">${p.jumlah_pelanggan || 0}</span></td>
+      <td>
+        <label class="vcr-toggle" title="${izinVcr ? 'Izinkan e-voucher' : 'Tidak diizinkan'}">
+          <input type="checkbox" ${izinVcr ? 'checked' : ''} onchange="apiToggleIzinVoucher(${p.id},this.checked)" style="display:none">
+          <span class="vcr-toggle-track"><span class="vcr-toggle-thumb"></span></span>
+          <span class="td-text-sub" style="font-size:11px">${izinVcr ? 'Ya' : 'Tidak'}</span>
+        </label>
+      </td>
       <td style="white-space:nowrap">
         <button class="btn sm" onclick="bukaEditPaket(${p.id})"><i class="ti ti-edit" aria-hidden="true"></i> Edit</button>
         <button class="btn sm danger" onclick="apiHapusPaket(${p.id},'${namaEsc}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
@@ -4345,6 +4373,9 @@ function bukaEditPaket(id) {
   document.getElementById('ep2-deskripsi').value= p.deskripsi || '';
   document.getElementById('ep2-title').textContent = 'Edit: ' + p.nama;
   ep2SetTipe(p.tipe || 'pppoe');
+  // Set toggle izin_voucher
+  const chkVcr = document.getElementById('ep2-izin-voucher');
+  if (chkVcr) { chkVcr.checked = p.izin_voucher ? true : false; paketToggleVcrLabel('ep2'); }
   ep2UpdatePreview();
   ep2UpdateHarga();
   openModal('m-edit-paket');
@@ -4413,9 +4444,10 @@ async function apiUpdatePaketGrid() {
   const deskripsi  = document.getElementById('ep2-deskripsi')?.value.trim() || '';
   if (!nama || !rate_limit || !harga) return toast('❌ Nama, kecepatan, harga wajib diisi', true);
   const { kecepatan_up, kecepatan_dn } = _parseRateLimit(rate_limit);
+  const izin_voucher = document.getElementById('ep2-izin-voucher')?.checked ? 1 : 0;
   try {
     await apiFetch('/api/paket/'+id, {method:'PUT',
-      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, rate_limit, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi})
+      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, rate_limit, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi, izin_voucher})
     });
     toast('✅ Paket diperbarui');
     closeModal('m-edit-paket');
@@ -4440,7 +4472,41 @@ function bukaTambahPaket() {
   const prevHarga = document.getElementById('fp-harga-preview');
   if (prevSpeed) prevSpeed.innerHTML = '<i class="ti ti-arrow-right" style="font-size:10px"></i> —';
   if (prevHarga) prevHarga.textContent = '—';
+  const chk = document.getElementById('fp-izin-voucher');
+  if (chk) { chk.checked = false; paketToggleVcrLabel('fp'); }
   openModal('m-add-paket');
+}
+
+function paketToggleVcrLabel(prefix) {
+  const chk   = document.getElementById(prefix + '-izin-voucher');
+  const lbl   = document.getElementById(prefix + '-vcr-lbl');
+  const track = document.getElementById(prefix + '-vcr-track');
+  const on    = chk?.checked;
+  if (lbl)   lbl.textContent = on ? 'Diizinkan — paket muncul di storefront voucher' : 'Tidak diizinkan — paket tidak muncul di storefront';
+  if (track) { track.classList.toggle('on', on); }
+}
+
+async function apiToggleIzinVoucher(id, izin) {
+  try {
+    await apiFetch('/api/paket/' + id, {
+      method: 'PUT',
+      body: JSON.stringify({ izin_voucher: izin ? 1 : 0 })
+    });
+    // Update label di tabel tanpa reload penuh
+    const row = event.target.closest('tr');
+    if (row) {
+      const lbl = row.querySelector('.vcr-toggle span:last-child');
+      if (lbl) lbl.textContent = izin ? 'Ya' : 'Tidak';
+      const track = row.querySelector('.vcr-toggle-track');
+      if (track) track.classList.toggle('on', izin);
+    }
+    // Update di LAST_PAKET_LIST
+    if (LAST_PAKET_LIST) {
+      const p = LAST_PAKET_LIST.find(x => x.id === id);
+      if (p) p.izin_voucher = izin ? 1 : 0;
+    }
+    toast(izin ? '✅ e-Voucher diaktifkan' : '⛔ e-Voucher dinonaktifkan');
+  } catch(e) { toast('❌ ' + e.message, true); }
 }
 
 function pilihTipePaket(tipe) {
@@ -4486,22 +4552,12 @@ async function apiSimpanPaket() {
   const masa_aktif = parseInt(document.getElementById('fp-masa').value) || 30;
   const satuan_masa= document.getElementById('fp-satuan').value;
   const deskripsi  = document.getElementById('fp-deskripsi')?.value.trim() || '';
+  const izin_voucher = document.getElementById('fp-izin-voucher')?.checked ? 1 : 0;
   if (!nama || !rate_limit || !harga) return toast('❌ Nama, kecepatan, harga wajib diisi', true);
-  // Parse dn/up dari rate_limit — ambil bagian pertama "up/dn" atau "up/dn ..."
-  const parts = rate_limit.split(' ');
-  const mainRate = parts[0] || rate_limit;
-  const slash = mainRate.indexOf('/');
-  const parseK = v => {
-    if (!v) return 1;
-    const n = parseFloat(v);
-    if (v.toLowerCase().endsWith('k')) return Math.round(n / 1000) || 1;
-    return Math.round(n) || 1;
-  };
-  const kecepatan_up = slash > -1 ? parseK(mainRate.slice(0, slash).replace(/[Mm]$/,'')) : 1;
-  const kecepatan_dn = slash > -1 ? parseK(mainRate.slice(slash+1).replace(/[Mm]$/,'')) : 1;
+  const { kecepatan_up, kecepatan_dn } = _parseRateLimit(rate_limit);
   try {
     await apiFetch('/api/paket', {method:'POST',
-      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, rate_limit, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi})
+      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, rate_limit, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi, izin_voucher})
     });
     toast('✅ Paket ditambahkan');
     closeModal('m-add-paket');

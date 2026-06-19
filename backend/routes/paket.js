@@ -20,24 +20,23 @@ router.get('/', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
   try {
     const { nama, kecepatan_up, kecepatan_dn, harga, masa_aktif=30, satuan_masa='hari',
-            pool_name, tipe='keduanya', burst_limit, burst_time, deskripsi, rate_limit } = req.body;
+            pool_name, tipe='keduanya', burst_limit, burst_time, deskripsi, rate_limit, izin_voucher } = req.body;
 
     if (!nama || !kecepatan_up || !kecepatan_dn || !harga)
       return res.status(400).json({ error: 'nama, kecepatan_up, kecepatan_dn, harga wajib diisi' });
 
+    await query(`ALTER TABLE paket ADD COLUMN IF NOT EXISTS rate_limit VARCHAR(128) NULL`).catch(()=>{});
+    await query(`ALTER TABLE paket ADD COLUMN IF NOT EXISTS izin_voucher TINYINT(1) NOT NULL DEFAULT 0`).catch(()=>{});
+
     const result = await query(`
       INSERT INTO paket (nama, kecepatan_up, kecepatan_dn, harga, masa_aktif, satuan_masa,
-        pool_name, tipe, burst_limit, burst_time, deskripsi)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?)
+        pool_name, tipe, burst_limit, burst_time, deskripsi, rate_limit, izin_voucher)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
     `, [nama, kecepatan_up, kecepatan_dn, harga, masa_aktif || 30, satuan_masa || 'hari',
-        pool_name || null, tipe || 'keduanya', burst_limit || null, burst_time || null, deskripsi || null]);
+        pool_name || null, tipe || 'keduanya', burst_limit || null, burst_time || null,
+        deskripsi || null, rate_limit || null, izin_voucher ? 1 : 0]);
 
-    // Simpan rate_limit ke DB jika ada (auto-migration tambah kolom)
-    if (rate_limit) {
-      await query(`ALTER TABLE paket ADD COLUMN IF NOT EXISTS rate_limit VARCHAR(128) NULL`).catch(()=>{});
-      await query(`UPDATE paket SET rate_limit=? WHERE id=?`, [rate_limit, result.insertId]);
-    }
-
+    // Simpan rate_limit sudah masuk INSERT
     // Sync group RADIUS — gunakan rate_limit jika ada
     try {
       const radiusService = require('../services/radius');
@@ -58,13 +57,14 @@ router.put('/:id', async (req, res, next) => {
     if (!existing) return res.status(404).json({ error: 'Paket tidak ditemukan' });
 
     const { nama, kecepatan_up, kecepatan_dn, harga, masa_aktif, satuan_masa,
-            pool_name, tipe, burst_limit, burst_time, deskripsi, aktif, rate_limit } = req.body;
+            pool_name, tipe, burst_limit, burst_time, deskripsi, aktif, rate_limit, izin_voucher } = req.body;
 
     await query(`ALTER TABLE paket ADD COLUMN IF NOT EXISTS rate_limit VARCHAR(128) NULL`).catch(()=>{});
+    await query(`ALTER TABLE paket ADD COLUMN IF NOT EXISTS izin_voucher TINYINT(1) NOT NULL DEFAULT 0`).catch(()=>{});
 
     await query(`
       UPDATE paket SET nama=?,kecepatan_up=?,kecepatan_dn=?,harga=?,
-        masa_aktif=?,satuan_masa=?,pool_name=?,tipe=?,burst_limit=?,burst_time=?,deskripsi=?,aktif=?,rate_limit=?
+        masa_aktif=?,satuan_masa=?,pool_name=?,tipe=?,burst_limit=?,burst_time=?,deskripsi=?,aktif=?,rate_limit=?,izin_voucher=?
       WHERE id=?
     `, [
         nama ?? existing.nama,
@@ -80,6 +80,7 @@ router.put('/:id', async (req, res, next) => {
         deskripsi !== undefined ? (deskripsi || null) : existing.deskripsi,
         aktif !== undefined ? (aktif ? 1 : 0) : existing.aktif,
         rate_limit !== undefined ? (rate_limit || null) : (existing.rate_limit || null),
+        izin_voucher !== undefined ? (izin_voucher ? 1 : 0) : (existing.izin_voucher || 0),
         req.params.id
     ]);
 

@@ -41,7 +41,7 @@ router.get('/paket', async (req, res, next) => {
       rows = await query(`
         SELECT id, nama, kecepatan_dn, kecepatan_up, harga, masa_aktif, satuan_masa, deskripsi
         FROM paket
-        WHERE aktif = 1 AND tipe IN ('hotspot','keduanya')
+        WHERE aktif = 1 AND tipe IN ('hotspot','keduanya') AND COALESCE(izin_voucher,0) = 1
         ORDER BY harga ASC
       `);
     } catch(e) {
@@ -52,7 +52,7 @@ router.get('/paket', async (req, res, next) => {
         rows = await query(`
           SELECT id, nama, kecepatan_dn, kecepatan_up, harga, masa_aktif, 'hari' AS satuan_masa, deskripsi
           FROM paket
-          WHERE aktif = 1 AND tipe IN ('hotspot','keduanya')
+          WHERE aktif = 1 AND tipe IN ('hotspot','keduanya') AND COALESCE(izin_voucher,0) = 1
           ORDER BY harga ASC
         `);
       } else { throw e; }
