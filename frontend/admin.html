@@ -6701,21 +6701,22 @@ function pilihPaketCard(id, el) {
 function bukaEditPaket(id) {
   const p = LAST_PAKET_LIST?.find(x => x.id === id);
   if (!p) return toast('❌ Data paket tidak ditemukan, muat ulang halaman', true);
-  document.getElementById('ep2-id').value       = p.id;
-  document.getElementById('ep2-nama').value     = p.nama;
-  document.getElementById('ep2-speed').value    = p.rate_limit || `${p.kecepatan_up||p.kecepatan_dn}M/${p.kecepatan_dn}M`;
-  document.getElementById('ep2-harga').value    = p.harga;
-  document.getElementById('ep2-pool').value     = p.pool_name || '';
-  document.getElementById('ep2-masa').value     = p.masa_aktif || 30;
-  document.getElementById('ep2-satuan').value   = p.satuan_masa || 'hari';
-  document.getElementById('ep2-deskripsi').value= p.deskripsi || '';
-  document.getElementById('ep2-title').textContent = 'Edit: ' + p.nama;
+  document.getElementById('ep2-id').value        = p.id;
+  document.getElementById('ep2-nama').value      = p.nama;
+  document.getElementById('ep2-speed').value     = p.rate_limit || `${p.kecepatan_up||p.kecepatan_dn}M/${p.kecepatan_dn}M`;
+  document.getElementById('ep2-harga').value     = p.harga;
+  document.getElementById('ep2-pool').value      = p.pool_name || '';
+  document.getElementById('ep2-masa').value      = p.masa_aktif || 30;
+  document.getElementById('ep2-satuan').value    = p.satuan_masa || 'hari';
+  const descEl = document.getElementById('ep2-deskripsi');
+  if (descEl) descEl.value = p.deskripsi || '';
+  const titleEl = document.getElementById('ep2-title');
+  if (titleEl) titleEl.textContent = 'Edit: ' + p.nama;
   ep2SetTipe(p.tipe || 'pppoe');
-  // Toggle izin_voucher — sembunyikan untuk PPPoE
   const vcrWrap = document.getElementById('ep2-vcr-wrap');
   if (vcrWrap) vcrWrap.style.display = p.tipe === 'pppoe' ? 'none' : '';
   const chkVcr = document.getElementById('ep2-izin-voucher');
-  if (chkVcr) { chkVcr.checked = p.izin_voucher ? true : false; paketToggleVcrLabel('ep2'); }
+  if (chkVcr) { chkVcr.checked = !!p.izin_voucher; paketToggleVcrLabel('ep2'); }
   ep2UpdatePreview();
   ep2UpdateHarga();
   openModal('m-edit-paket');
@@ -6868,21 +6869,26 @@ async function apiToggleIzinVoucher(id, izin, el) {
       method: 'PUT',
       body: JSON.stringify({ izin_voucher: izin ? 1 : 0 })
     });
-    // Update label di tabel tanpa reload penuh
-    const row = el ? el.closest('tr') : null;
-    if (row) {
-      const lbl = row.querySelector('.vcr-toggle span:last-child');
-      if (lbl) lbl.textContent = izin ? 'Ya' : 'Tidak';
-      const track = row.querySelector('.vcr-toggle-track');
-      if (track) track.classList.toggle('on', !!izin);
+    // Update visual toggle track & thumb & label
+    const track = document.getElementById('vcr-track-' + id);
+    const lbl   = el ? el.closest('label')?.querySelector('span.td-text-sub') : null;
+    if (track) {
+      track.style.background = izin ? '#16a34a' : '';
+      const thumb = track.querySelector('.vcr-toggle-thumb');
+      if (thumb) thumb.style.left = izin ? '19px' : '3px';
     }
-    // Update di LAST_PAKET_LIST
+    if (lbl) lbl.textContent = izin ? 'Ya' : 'Tidak';
+    // Update di LAST_PAKET_LIST cache
     if (LAST_PAKET_LIST) {
       const p = LAST_PAKET_LIST.find(x => x.id === id);
       if (p) p.izin_voucher = izin ? 1 : 0;
     }
     toast(izin ? '✅ e-Voucher diaktifkan' : '⛔ e-Voucher dinonaktifkan');
-  } catch(e) { toast('❌ ' + e.message, true); }
+  } catch(e) {
+    // Rollback checkbox jika gagal
+    if (el) el.checked = !izin;
+    toast('❌ ' + e.message, true);
+  }
 }
 
 function pilihTipePaket(tipe) {
