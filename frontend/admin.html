@@ -4250,7 +4250,7 @@ function renderPaket(rows) {
       <td><span class="badge blue">${p.jumlah_pelanggan || 0}</span></td>
       <td>
         <label class="vcr-toggle" title="${izinVcr ? 'Izinkan e-voucher' : 'Tidak diizinkan'}">
-          <input type="checkbox" ${izinVcr ? 'checked' : ''} onchange="apiToggleIzinVoucher(${p.id},this.checked)" style="display:none">
+          <input type="checkbox" ${izinVcr ? 'checked' : ''} onchange="apiToggleIzinVoucher(${p.id},this.checked,this)" style="display:none">
           <span class="vcr-toggle-track"><span class="vcr-toggle-thumb"></span></span>
           <span class="td-text-sub" style="font-size:11px">${izinVcr ? 'Ya' : 'Tidak'}</span>
         </label>
@@ -4486,19 +4486,19 @@ function paketToggleVcrLabel(prefix) {
   if (track) { track.classList.toggle('on', on); }
 }
 
-async function apiToggleIzinVoucher(id, izin) {
+async function apiToggleIzinVoucher(id, izin, el) {
   try {
     await apiFetch('/api/paket/' + id, {
       method: 'PUT',
       body: JSON.stringify({ izin_voucher: izin ? 1 : 0 })
     });
     // Update label di tabel tanpa reload penuh
-    const row = event.target.closest('tr');
+    const row = el ? el.closest('tr') : null;
     if (row) {
       const lbl = row.querySelector('.vcr-toggle span:last-child');
       if (lbl) lbl.textContent = izin ? 'Ya' : 'Tidak';
       const track = row.querySelector('.vcr-toggle-track');
-      if (track) track.classList.toggle('on', izin);
+      if (track) track.classList.toggle('on', !!izin);
     }
     // Update di LAST_PAKET_LIST
     if (LAST_PAKET_LIST) {
