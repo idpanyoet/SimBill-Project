@@ -389,6 +389,9 @@ body.dark{
 body.dark .main{background:#0d1117}
 body.dark .topbar{background:#161b22;border-color:#30363d}
 body.dark .topbar h1{color:#e6edf3}
+body.dark #topbar-search{background:#0d1117!important;border-color:#30363d!important;color:#e6edf3!important}
+body.dark #topbar-search-dropdown,body.dark #topbar-profil-menu{background:#161b22!important;border-color:#30363d!important}
+body.dark #topbar-notif-btn,body.dark #topbar-dark-btn,body.dark #topbar-lang-btn{background:#0d1117!important;border-color:#30363d!important}
 body.dark .card{background:#161b22;border-color:#30363d;color:#e6edf3}
 body.dark .card-title{color:#e6edf3}
 body.dark td{color:#c9d1d9;border-color:#21262d}
@@ -526,13 +529,53 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
         <h1 id="page-title">Dashboard</h1>
       </div>
       <div class="topbar-right">
-        <span class="badge green" id="badge-radius">● RADIUS Online</span>
-        <span class="badge blue" id="badge-wa">💬 WA Aktif</span>
-        <button class="btn sm" onclick="cekStatusSistem()">🔄 Sync</button>
-        <div class="dark-toggle" onclick="toggleDarkMode()" title="Mode siang/malam">
-          <span class="toggle-ico">☀️</span>
-          <div class="toggle-track"><div class="toggle-thumb"></div></div>
-          <span class="toggle-ico">🌙</span>
+        <!-- Search Invoice -->
+        <div style="position:relative">
+          <i class="ti ti-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:#94a3b8" aria-hidden="true"></i>
+          <input id="topbar-search" placeholder="Cari invoice belum dibayar"
+            oninput="topbarSearchInvoice(this.value)"
+            onfocus="topbarSearchShow()"
+            onblur="setTimeout(topbarSearchHide,200)"
+            style="width:240px;padding:8px 12px 8px 36px;border:1px solid #e2e7ef;border-radius:20px;background:#f8fafc;color:#0f172a;font-size:13px;font-family:inherit;transition:all .2s;outline:none"
+            onfocusin="this.style.width='300px';this.style.borderColor='#2563eb';this.style.background='#fff'"
+            onfocusout="this.style.width='240px';this.style.borderColor='#e2e7ef';this.style.background='#f8fafc'">
+          <!-- Dropdown hasil -->
+          <div id="topbar-search-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid #e2e7ef;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:200;max-height:320px;overflow-y:auto;min-width:320px"></div>
+        </div>
+
+        <!-- Notifikasi -->
+        <button id="topbar-notif-btn" onclick="topbarToggleNotif()" title="Notifikasi" style="width:36px;height:36px;border-radius:10px;border:1px solid #e2e7ef;background:#f8fafc;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;transition:all .15s" onmouseover="this.style.background='#eff6ff';this.style.borderColor='#2563eb'" onmouseout="this.style.background='#f8fafc';this.style.borderColor='#e2e7ef'">
+          <i class="ti ti-bell" style="font-size:16px;color:#2563eb" aria-hidden="true"></i>
+          <span id="topbar-notif-dot" style="display:none;position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:#dc2626;border:1.5px solid #fff"></span>
+        </button>
+
+        <!-- Dark mode toggle -->
+        <button onclick="toggleDarkMode()" title="Mode siang/malam" style="width:36px;height:36px;border-radius:10px;border:1px solid #e2e7ef;background:#f8fafc;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s" onmouseover="this.style.background='#fffbeb';this.style.borderColor='#d97706'" onmouseout="this.style.background='#f8fafc';this.style.borderColor='#e2e7ef'">
+          <i id="topbar-dark-ico" class="ti ti-sun" style="font-size:16px;color:#d97706" aria-hidden="true"></i>
+        </button>
+
+        <!-- Translate / Bahasa (cosmetic) -->
+        <button title="Bahasa" style="width:36px;height:36px;border-radius:10px;border:1px solid #e2e7ef;background:#f8fafc;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s" onmouseover="this.style.background='#f0fdf4';this.style.borderColor='#16a34a'" onmouseout="this.style.background='#f8fafc';this.style.borderColor='#e2e7ef'">
+          <i class="ti ti-language" style="font-size:16px;color:#16a34a" aria-hidden="true"></i>
+        </button>
+
+        <!-- Avatar / Profil -->
+        <div id="topbar-avatar" onclick="topbarToggleProfil()" title="Profil" style="width:36px;height:36px;border-radius:10px;background:#2563eb;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;user-select:none;transition:all .15s;position:relative" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+          RF
+          <!-- Profil dropdown -->
+          <div id="topbar-profil-menu" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:#fff;border:1px solid #e2e7ef;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:200;min-width:180px;overflow:hidden">
+            <div style="padding:12px 14px;border-bottom:1px solid #e2e7ef">
+              <div id="topbar-profil-nama" style="font-size:13px;font-weight:600;color:#0f172a">Admin</div>
+              <div id="topbar-profil-role" style="font-size:11px;color:#94a3b8;margin-top:2px">Super Admin</div>
+            </div>
+            <button onclick="goto('setting',null)" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;background:none;border:none;color:#0f172a;cursor:pointer;font-size:13px;font-family:inherit" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='none'">
+              <i class="ti ti-settings" style="font-size:14px;color:#64748b" aria-hidden="true"></i> Setting
+            </button>
+            <div style="height:1px;background:#e2e7ef"></div>
+            <button onclick="doLogout()" style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;background:none;border:none;color:#dc2626;cursor:pointer;font-size:13px;font-family:inherit" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='none'">
+              <i class="ti ti-logout" style="font-size:14px" aria-hidden="true"></i> Keluar
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -3499,12 +3542,101 @@ async function acsGantiWifi() {
 function toggleDarkMode() {
   const isDark = document.body.classList.toggle('dark');
   localStorage.setItem('adminDarkMode', isDark ? '1' : '0');
+  const ico = document.getElementById('topbar-dark-ico');
+  if (ico) { ico.className = isDark ? 'ti ti-moon' : 'ti ti-sun'; ico.style.color = isDark ? '#94a3b8' : '#d97706'; }
 }
 (function applyDarkMode() {
   if (localStorage.getItem('adminDarkMode') === '1') {
     document.body.classList.add('dark');
+    setTimeout(function() {
+      const ico = document.getElementById('topbar-dark-ico');
+      if (ico) { ico.className = 'ti ti-moon'; ico.style.color = '#94a3b8'; }
+    }, 0);
   }
 })();
+
+// ── TOPBAR SEARCH INVOICE ─────────────────────────────────────
+let _tsTimer = null;
+function topbarSearchInvoice(q) {
+  clearTimeout(_tsTimer);
+  const dd = document.getElementById('topbar-search-dropdown');
+  if (!q || q.length < 2) { if (dd) dd.style.display = 'none'; return; }
+  _tsTimer = setTimeout(async function() {
+    try {
+      const rows = await apiFetch(`/api/invoice?status=unpaid&q=${encodeURIComponent(q)}&limit=8`);
+      const list = Array.isArray(rows) ? rows : (rows.rows || rows.data || []);
+      if (!dd) return;
+      if (!list.length) {
+        dd.innerHTML = '<div style="padding:14px 16px;font-size:13px;color:#94a3b8;text-align:center">Tidak ada hasil</div>';
+      } else {
+        dd.innerHTML = list.map(inv => `
+          <div onclick="goto('invoice',null);setTimeout(()=>document.getElementById('topbar-search').value='',100)" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f1f5f9;transition:background .12s" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:13px;font-weight:600;color:#0f172a">${inv.no_invoice||inv.nomor||'—'}</span>
+              <span style="font-size:12px;font-weight:600;color:#dc2626">${fmt ? fmt(inv.jumlah||0) : 'Rp'+parseInt(inv.jumlah||0).toLocaleString('id-ID')}</span>
+            </div>
+            <div style="font-size:11px;color:#64748b;margin-top:2px">${inv.nama_pelanggan||inv.nama||'—'} · ${inv.jatuh_tempo||inv.tgl_jatuh_tempo||'—'}</div>
+          </div>`).join('');
+      }
+      dd.style.display = 'block';
+    } catch(e) { if (dd) dd.style.display = 'none'; }
+  }, 300);
+}
+function topbarSearchShow() {
+  const q = document.getElementById('topbar-search')?.value || '';
+  if (q.length >= 2) topbarSearchInvoice(q);
+}
+function topbarSearchHide() {
+  const dd = document.getElementById('topbar-search-dropdown');
+  if (dd) dd.style.display = 'none';
+}
+
+// ── TOPBAR NOTIF ──────────────────────────────────────────────
+function topbarToggleNotif() {
+  // Sementara navigasi ke halaman invoice belum dibayar
+  goto('invoice', null);
+}
+
+// ── TOPBAR PROFIL ─────────────────────────────────────────────
+function topbarToggleProfil() {
+  const menu = document.getElementById('topbar-profil-menu');
+  if (!menu) return;
+  const isOpen = menu.style.display !== 'none';
+  menu.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    setTimeout(function() {
+      document.addEventListener('click', function close(e) {
+        const avatar = document.getElementById('topbar-avatar');
+        if (avatar && !avatar.contains(e.target)) { menu.style.display='none'; document.removeEventListener('click',close); }
+      });
+    }, 10);
+  }
+}
+
+function topbarUpdateProfil(nama, role) {
+  const avatar = document.getElementById('topbar-avatar');
+  const namaEl = document.getElementById('topbar-profil-nama');
+  const roleEl = document.getElementById('topbar-profil-role');
+  if (avatar && nama) {
+    const inisial = nama.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    // Update hanya text node (bukan dropdown)
+    const textNode = avatar.childNodes[0];
+    if (textNode && textNode.nodeType === 3) textNode.textContent = inisial;
+  }
+  if (namaEl && nama) namaEl.textContent = nama;
+  if (roleEl && role) roleEl.textContent = role === 'superadmin' ? 'Super Admin' : role === 'admin' ? 'Admin' : 'Operator';
+}
+
+// Cek notif unpaid invoice count
+async function topbarCekNotif() {
+  try {
+    const d = await apiFetch('/api/invoice?status=unpaid&limit=1');
+    const n = d.total || (Array.isArray(d) ? d.length : 0);
+    const dot = document.getElementById('topbar-notif-dot');
+    if (dot) dot.style.display = n > 0 ? '' : 'none';
+  } catch(e) {}
+}
+// ── END TOPBAR ────────────────────────────────────────────────
 
 // Restore sidebar group states
 document.addEventListener('DOMContentLoaded', function() { sbRestoreGroups(); });
@@ -3699,6 +3831,8 @@ async function doLogin() {
     });
     TOKEN = data.token; ADMIN = data.admin;
     localStorage.setItem('nb_token', TOKEN);
+    topbarUpdateProfil(data.admin?.nama, data.admin?.role);
+    topbarCekNotif();
     localStorage.setItem('nb_admin', JSON.stringify(ADMIN));
     tampilApp();
   } catch(e) {
@@ -3718,6 +3852,8 @@ function tampilApp() {
   document.getElementById('sb-nama').textContent = ADMIN.nama||'Admin';
   document.getElementById('sb-role').textContent = ADMIN.role||'';
   document.getElementById('sb-av').textContent   = (ADMIN.nama||'A').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  topbarUpdateProfil(ADMIN.nama, ADMIN.role);
+  topbarCekNotif();
   loadDashboard();
   populateDropdowns();
 }
