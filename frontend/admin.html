@@ -2436,6 +2436,23 @@ Selamat menikmati! 🌐</textarea>
         <span>Reseller langsung aktif dan bisa login di portal <b>/reseller</b></span>
       </div>
 
+      <!-- Izin Paket -->
+      <div>
+        <label class="fg-label">
+          <i class="ti ti-package" style="font-size:12px;color:#7c3aed" aria-hidden="true"></i>
+          Paket yang Diizinkan
+          <span style="background:#f3e8ff;color:#7c3aed;font-size:9px;font-weight:600;padding:1px 7px;border-radius:99px;margin-left:4px">Opsional</span>
+        </label>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:8px">Kosongkan untuk izinkan semua paket.</div>
+        <div id="nr-paket-list" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px 10px">
+          <div class="td-text-sub" style="font-size:12px;text-align:center;padding:8px">Memuat paket...</div>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;cursor:pointer">
+          <input type="checkbox" id="nr-semua-paket" checked onchange="nrToggleSemua(this)" style="accent-color:#7c3aed">
+          <span class="td-text-main">Izinkan semua paket</span>
+        </label>
+      </div>
+
       <div class="modal-foot" style="padding:0;border:none;margin-top:2px">
         <button class="btn" onclick="closeModal('m-add-reseller')">Batal</button>
         <button class="btn primary" style="background:#7c3aed;box-shadow:0 2px 6px rgba(124,58,237,.3)" onclick="apiTambahReseller()">
@@ -2518,6 +2535,23 @@ Selamat menikmati! 🌐</textarea>
           </div>
         </div>
         <input type="hidden" id="er-status" value="aktif">
+      </div>
+
+      <!-- Izin Paket -->
+      <div>
+        <label class="fg-label">
+          <i class="ti ti-package" style="font-size:12px;color:#7c3aed" aria-hidden="true"></i>
+          Paket yang Diizinkan
+          <span style="background:#f3e8ff;color:#7c3aed;font-size:9px;font-weight:600;padding:1px 7px;border-radius:99px;margin-left:4px">Opsional</span>
+        </label>
+        <div style="font-size:11px;color:var(--text2);margin-bottom:8px">Kosongkan untuk izinkan semua paket.</div>
+        <div id="er-paket-list" style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px 10px">
+          <div class="td-text-sub" style="font-size:12px;text-align:center;padding:6px">Memuat paket...</div>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;cursor:pointer">
+          <input type="checkbox" id="er-semua-paket" onchange="erToggleSemua(this)" style="accent-color:#7c3aed">
+          <span class="td-text-main">Izinkan semua paket</span>
+        </label>
       </div>
 
       <!-- Koreksi Saldo -->
@@ -3308,6 +3342,9 @@ function openModal(id) {
     if (range) range.value = 10;
     if (input) input.value = 10;
     if (lbl)   lbl.textContent = '10%';
+    // Render daftar paket
+    if (LAST_PAKET_LIST) rsRenderPaketList('nr-paket-list', [], 'nr-semua-paket');
+    else apiFetch('/api/paket').then(function(list){ LAST_PAKET_LIST=list; rsRenderPaketList('nr-paket-list',[],'nr-semua-paket'); }).catch(()=>{});
   }
   if (id === 'm-gen-voucher') {    const range = document.getElementById('fv-jml-range');
     const input = document.getElementById('fv-jml');
@@ -7892,12 +7929,21 @@ function bukaEditReseller(id, nama, komisi, level, status) {
   document.getElementById('er-title').textContent   = 'Edit: ' + nama;
   erSetLevel(level || 'gold');
   erSetStatus(status || 'aktif');
-  // set komisi
   const k = parseFloat(komisi) || 0;
   document.getElementById('er-komisi').value       = k;
   document.getElementById('er-komisi-range').value = k;
   document.getElementById('er-komisi-lbl').textContent = k + '%';
   openModal('m-edit-reseller');
+
+  // Load izin paket reseller ini
+  const box = document.getElementById('er-paket-list');
+  if (box) box.innerHTML = '<div class="td-text-sub" style="font-size:12px;text-align:center;padding:6px">Memuat paket...</div>';
+  apiFetch('/api/reseller/admin/' + id + '/izin-paket').then(function(izinIds) {
+    if (!LAST_PAKET_LIST) return apiFetch('/api/paket').then(function(list){ LAST_PAKET_LIST=list; rsRenderPaketList('er-paket-list', izinIds, 'er-semua-paket'); });
+    rsRenderPaketList('er-paket-list', izinIds, 'er-semua-paket');
+  }).catch(function() {
+    if (LAST_PAKET_LIST) rsRenderPaketList('er-paket-list', [], 'er-semua-paket');
+  });
 }
 
 function erSetLevel(level) {
@@ -7980,11 +8026,55 @@ async function apiUpdateReseller() {
         keterangan_koreksi: ket
       })
     });
+    // Simpan izin paket
+    const paket_ids = rsGetSelectedPaket('er-paket-list');
+    await apiFetch('/api/reseller/admin/'+id+'/izin-paket', {
+      method:'PUT', body: JSON.stringify({ paket_ids })
+    });
     toast('✅ Reseller diperbarui');
     closeModal('m-edit-reseller');
     loadReseller();
   } catch(e) { toast('❌ '+e.message, true); }
 }
+
+// ── RESELLER IZIN PAKET ──────────────────────────────────────
+function rsRenderPaketList(containerId, checkedIds = [], semapaChkId) {
+  const box = document.getElementById(containerId);
+  if (!box || !LAST_PAKET_LIST) return;
+  const semuaChk = document.getElementById(semapaChkId);
+  const semua = !checkedIds || checkedIds.length === 0;
+  if (semuaChk) semuaChk.checked = semua;
+
+  box.innerHTML = LAST_PAKET_LIST.map(p => {
+    const checked = semua || checkedIds.includes(p.id) || checkedIds.includes(String(p.id));
+    const tipe    = p.tipe === 'pppoe' ? '📡 PPPoE' : p.tipe === 'hotspot' ? '📶 Hotspot' : '🔀 Keduanya';
+    const speed   = p.rate_limit || `${p.kecepatan_dn} Mbps`;
+    return `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 2px;border-radius:6px" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background=''">
+      <input type="checkbox" class="rs-paket-chk" value="${p.id}" ${checked?'checked':''} style="width:14px;height:14px;accent-color:#7c3aed;cursor:pointer;flex-shrink:0">
+      <div style="flex:1;min-width:0">
+        <div class="td-text-main" style="font-size:12px;font-weight:600">${p.nama}</div>
+        <div class="td-text-sub" style="font-size:10px">${tipe} · ${speed} · ${fmt(p.harga)}</div>
+      </div>
+    </label>`;
+  }).join('');
+}
+
+function nrToggleSemua(chk) {
+  document.querySelectorAll('#nr-paket-list .rs-paket-chk').forEach(c => c.checked = chk.checked);
+}
+
+function erToggleSemua(chk) {
+  document.querySelectorAll('#er-paket-list .rs-paket-chk').forEach(c => c.checked = chk.checked);
+}
+
+function rsGetSelectedPaket(containerId) {
+  const chks = document.querySelectorAll(`#${containerId} .rs-paket-chk:checked`);
+  const all  = document.querySelectorAll(`#${containerId} .rs-paket-chk`);
+  // Jika semua dicentang = izinkan semua = kirim array kosong
+  if (chks.length === all.length) return [];
+  return [...chks].map(c => parseInt(c.value));
+}
+// ── END RESELLER IZIN PAKET ──────────────────────────────────
 
 async function apiTambahReseller() {
   const nama   = document.getElementById('nr-nama').value.trim();
@@ -8012,6 +8102,11 @@ async function apiTambahReseller() {
       await apiFetch('/api/reseller/admin/approve/'+baru.id, {method:'POST'});
       await apiFetch('/api/reseller/admin/'+baru.id, {
         method:'PUT', body: JSON.stringify({komisi_persen:parseFloat(komisi||0), level})
+      });
+      // Simpan izin paket
+      const paket_ids = rsGetSelectedPaket('nr-paket-list');
+      await apiFetch('/api/reseller/admin/'+baru.id+'/izin-paket', {
+        method:'PUT', body: JSON.stringify({ paket_ids })
       });
     }
     toast('✅ Reseller '+nama+' berhasil ditambahkan');

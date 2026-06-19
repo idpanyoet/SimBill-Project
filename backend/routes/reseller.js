@@ -592,4 +592,48 @@ router.delete('/admin/topup/:order_id', authMiddleware, async (req, res, next) =
     } catch (e) { next(e); }
 });
 
+// ── GET /api/reseller/admin/:id/izin-paket ───────────────────
+router.get('/admin/:id/izin-paket', authMiddleware, async (req, res, next) => {
+    try {
+        // Auto-create tabel jika belum ada
+        await query(`CREATE TABLE IF NOT EXISTS reseller_izin_paket (
+            id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            reseller_id INT UNSIGNED NOT NULL,
+            paket_id    INT UNSIGNED NOT NULL,
+            UNIQUE KEY (reseller_id, paket_id),
+            FOREIGN KEY (reseller_id) REFERENCES reseller(id) ON DELETE CASCADE,
+            FOREIGN KEY (paket_id)    REFERENCES paket(id)    ON DELETE CASCADE
+        ) ENGINE=InnoDB`).catch(()=>{});
+
+        const rows = await query(
+            `SELECT paket_id FROM reseller_izin_paket WHERE reseller_id = ?`, [req.params.id]
+        );
+        res.json(rows.map(r => r.paket_id));
+    } catch(e) { next(e); }
+});
+
+// ── PUT /api/reseller/admin/:id/izin-paket ───────────────────
+router.put('/admin/:id/izin-paket', authMiddleware, async (req, res, next) => {
+    try {
+        await query(`CREATE TABLE IF NOT EXISTS reseller_izin_paket (
+            id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            reseller_id INT UNSIGNED NOT NULL,
+            paket_id    INT UNSIGNED NOT NULL,
+            UNIQUE KEY (reseller_id, paket_id),
+            FOREIGN KEY (reseller_id) REFERENCES reseller(id) ON DELETE CASCADE,
+            FOREIGN KEY (paket_id)    REFERENCES paket(id)    ON DELETE CASCADE
+        ) ENGINE=InnoDB`).catch(()=>{});
+
+        const { paket_ids = [] } = req.body;
+        const rid = parseInt(req.params.id);
+        // Hapus semua izin lama lalu insert baru
+        await query(`DELETE FROM reseller_izin_paket WHERE reseller_id = ?`, [rid]);
+        if (paket_ids.length) {
+            const vals = paket_ids.map(pid => [rid, parseInt(pid)]);
+            await query(`INSERT INTO reseller_izin_paket (reseller_id, paket_id) VALUES ?`, [vals]);
+        }
+        res.json({ pesan: `${paket_ids.length} paket diizinkan` });
+    } catch(e) { next(e); }
+});
+
 module.exports = { router, prosesTopupWebhook };
