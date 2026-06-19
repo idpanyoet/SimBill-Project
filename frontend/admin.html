@@ -1271,21 +1271,59 @@ Selamat menikmati! 🌐</textarea>
 
       <!-- ══ LOG ADMIN ══ -->
       <div class="page" id="p-log">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
           <div>
-            <h2 style="font-size:18px;font-weight:700;color:#2563eb">Log Admin</h2>
-            <div class="td-text-sub" style="font-size:12px;margin-top:4px">Jejak audit untuk aksi admin dan perubahan penting.</div>
+            <h2 style="font-size:18px;font-weight:700;color:var(--text);margin:0">Log Admin</h2>
+            <div class="td-text-sub" style="font-size:12px;margin-top:3px">Jejak audit aksi admin dan perubahan sistem</div>
           </div>
           <div style="display:flex;gap:8px">
-            <button class="btn" onclick="logReset()"><i class="ti ti-refresh" aria-hidden="true"></i> Reset</button>
-            <button class="btn danger" onclick="logBersihkan()"><i class="ti ti-trash" aria-hidden="true"></i> Bersihkan Lama</button>
+            <button class="btn" onclick="logReset()" style="gap:6px">
+              <i class="ti ti-refresh" style="font-size:13px" aria-hidden="true"></i> Reset
+            </button>
+            <button class="btn danger" onclick="logBersihkan()" style="gap:6px">
+              <i class="ti ti-trash" style="font-size:13px" aria-hidden="true"></i> Bersihkan Lama
+            </button>
+          </div>
+        </div>
+
+        <!-- Stat cards per kategori -->
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:16px">
+          <div onclick="logFilterKategori('Auth')" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:border-color .15s" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='var(--border)'">
+            <div id="log-stat-Auth" style="font-size:18px;font-weight:700;color:#2563eb">—</div>
+            <div style="font-size:10px;color:#2563eb;font-weight:600;margin-top:2px">Auth</div>
+          </div>
+          <div onclick="logFilterKategori('Billing')" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:border-color .15s" onmouseover="this.style.borderColor='#16a34a'" onmouseout="this.style.borderColor='var(--border)'">
+            <div id="log-stat-Billing" style="font-size:18px;font-weight:700;color:#16a34a">—</div>
+            <div style="font-size:10px;color:#16a34a;font-weight:600;margin-top:2px">Billing</div>
+          </div>
+          <div onclick="logFilterKategori('Pelanggan')" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:border-color .15s" onmouseover="this.style.borderColor='#d97706'" onmouseout="this.style.borderColor='var(--border)'">
+            <div id="log-stat-Pelanggan" style="font-size:18px;font-weight:700;color:#d97706">—</div>
+            <div style="font-size:10px;color:#d97706;font-weight:600;margin-top:2px">Pelanggan</div>
+          </div>
+          <div onclick="logFilterKategori('Hotspot')" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:border-color .15s" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="this.style.borderColor='var(--border)'">
+            <div id="log-stat-Hotspot" style="font-size:18px;font-weight:700;color:#7c3aed">—</div>
+            <div style="font-size:10px;color:#7c3aed;font-weight:600;margin-top:2px">Hotspot</div>
+          </div>
+          <div onclick="logFilterKategori('Pppoe')" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:border-color .15s" onmouseover="this.style.borderColor='#0891b2'" onmouseout="this.style.borderColor='var(--border)'">
+            <div id="log-stat-Pppoe" style="font-size:18px;font-weight:700;color:#0891b2">—</div>
+            <div style="font-size:10px;color:#0891b2;font-weight:600;margin-top:2px">PPPoE</div>
+          </div>
+          <div onclick="logFilterKategori('Reseller')" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:border-color .15s" onmouseover="this.style.borderColor='#dc2626'" onmouseout="this.style.borderColor='var(--border)'">
+            <div id="log-stat-Reseller" style="font-size:18px;font-weight:700;color:#dc2626">—</div>
+            <div style="font-size:10px;color:#dc2626;font-weight:600;margin-top:2px">Reseller</div>
+          </div>
+          <div onclick="logFilterKategori('System')" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:border-color .15s" onmouseover="this.style.borderColor='#64748b'" onmouseout="this.style.borderColor='var(--border)'">
+            <div id="log-stat-System" style="font-size:18px;font-weight:700;color:#64748b">—</div>
+            <div style="font-size:10px;color:#64748b;font-weight:600;margin-top:2px">System</div>
           </div>
         </div>
 
         <div class="card">
           <!-- Filter bar -->
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
-            <select id="log-filter-kategori" onchange="loadLog()" style="padding:7px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
+            <select id="log-filter-kategori" onchange="loadLog()" style="padding:8px 12px;border:1px solid var(--border);border-radius:9px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
               <option value="semua">Semua kategori</option>
               <option value="Auth">Auth</option>
               <option value="Billing">Billing</option>
@@ -1295,46 +1333,48 @@ Selamat menikmati! 🌐</textarea>
               <option value="Reseller">Reseller</option>
               <option value="System">System</option>
             </select>
-            <input type="date" id="log-filter-tanggal" onchange="loadLog()" style="padding:7px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+            <input type="date" id="log-filter-tanggal" onchange="loadLog()" style="padding:8px 12px;border:1px solid var(--border);border-radius:9px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
             <div style="position:relative;flex:1;min-width:200px">
               <i class="ti ti-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px" aria-hidden="true"></i>
-              <input id="log-search" placeholder="Cari pelaku..." oninput="loadLog()" style="width:100%;padding:7px 12px 7px 32px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+              <input id="log-search" placeholder="Cari pelaku, aksi, atau target..." oninput="loadLog()" style="width:100%;padding:8px 12px 8px 34px;border:1px solid var(--border);border-radius:9px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
             </div>
-            <button class="btn sm" onclick="logReset()">Reset</button>
             <span id="log-count" class="td-text-sub" style="font-size:12px;white-space:nowrap">— log</span>
           </div>
 
           <!-- Tabel -->
           <div style="overflow-x:auto">
-            <table style="min-width:900px">
+            <table style="min-width:860px">
               <thead>
                 <tr>
                   <th style="width:130px">WAKTU</th>
-                  <th style="width:90px">KATEGORI</th>
-                  <th style="width:90px">PELAKU</th>
-                  <th style="width:180px">AKSI</th>
-                  <th style="width:100px">IP</th>
+                  <th style="width:100px">KATEGORI</th>
+                  <th style="width:110px">PELAKU</th>
+                  <th style="width:190px">AKSI</th>
+                  <th style="width:110px">IP</th>
                   <th>TARGET</th>
                   <th>DETAIL</th>
                 </tr>
               </thead>
               <tbody id="tbl-log">
-                <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3)">Memuat log...</td></tr>
+                <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Memuat log...</td></tr>
               </tbody>
             </table>
           </div>
 
           <!-- Pagination -->
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
             <div id="log-page-info" class="td-text-sub" style="font-size:12px"></div>
-            <div style="display:flex;gap:6px">
-              <button id="log-btn-prev" class="btn sm" onclick="logChangePage(-1)">‹ Sebelumnya</button>
-              <button id="log-btn-next" class="btn sm" onclick="logChangePage(1)">Berikutnya ›</button>
+            <div style="display:flex;gap:6px;align-items:center">
+              <button id="log-btn-prev" class="btn sm" onclick="logChangePage(-1)" style="gap:4px">
+                <i class="ti ti-chevron-left" style="font-size:12px" aria-hidden="true"></i> Sebelumnya
+              </button>
+              <button id="log-btn-next" class="btn sm" onclick="logChangePage(1)" style="gap:4px">
+                Berikutnya <i class="ti ti-chevron-right" style="font-size:12px" aria-hidden="true"></i>
+              </button>
             </div>
           </div>
         </div>
       </div>
-
       <!-- ══ SESI AKTIF ══ -->
       <div class="page" id="p-sesi">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">
@@ -7308,6 +7348,13 @@ async function apiHapusPg(id, nama) {
 let _logPage   = 0;
 const _logLimit = 100;
 
+function logFilterKategori(kat) {
+  const sel = document.getElementById('log-filter-kategori');
+  if (sel) sel.value = kat;
+  _logPage = 0;
+  loadLog();
+}
+
 async function loadLog() {
   const tbody = document.getElementById('tbl-log');
   if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--text3)"><i class="ti ti-loader"></i> Memuat...</td></tr>';
@@ -7324,11 +7371,26 @@ async function loadLog() {
     const rows  = d.rows  || [];
     const total = d.total || 0;
 
-    document.getElementById('log-count').textContent      = total.toLocaleString('id-ID') + ' log';
-    document.getElementById('log-page-info').textContent  =
+    document.getElementById('log-count').textContent     = total.toLocaleString('id-ID') + ' log';
+    document.getElementById('log-page-info').textContent =
       `Halaman ${_logPage + 1} · ${_logPage * _logLimit + 1}–${Math.min((_logPage+1)*_logLimit, total)} dari ${total}`;
     document.getElementById('log-btn-prev').disabled = _logPage === 0;
     document.getElementById('log-btn-next').disabled = (_logPage+1)*_logLimit >= total;
+
+    // Update stat cards — ambil dari semua data tanpa filter kategori
+    const katList = ['Auth','Billing','Pelanggan','Hotspot','Pppoe','Reseller','System'];
+    katList.forEach(async function(kat) {
+      try {
+        const p2 = new URLSearchParams({ limit: 1, offset: 0, kategori: kat });
+        const q  = document.getElementById('log-search')?.value || '';
+        const tgl= document.getElementById('log-filter-tanggal')?.value || '';
+        if (q)   p2.append('q', q);
+        if (tgl) p2.append('tanggal', tgl);
+        const d2 = await apiFetch('/api/log?' + p2.toString());
+        const el = document.getElementById('log-stat-' + kat);
+        if (el) el.textContent = (d2.total||0).toLocaleString('id-ID');
+      } catch(e) {}
+    });
 
     if (!tbody) return;
     if (!rows.length) {
