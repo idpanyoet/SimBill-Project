@@ -841,34 +841,34 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
               <div class="stat-row"><span class="lbl" style="font-weight:600">Total Pendapatan</span><span class="val" id="vcr-total-pendapatan" style="color:var(--green)">—</span></div>
               <button class="btn" style="margin-top:12px;width:100%;justify-content:center" onclick="window.open('/','_blank')">🔗 Buka Halaman Voucher Publik</button>
             </div>
-          </div>
 
-          <!-- Riwayat Sesi Voucher -->
-          <div class="card">
-            <div class="card-title">
-              <span><i class="ti ti-history" style="color:#BA7517;margin-right:6px" aria-hidden="true"></i>Riwayat Sesi Pengguna Voucher</span>
-              <div style="display:flex;gap:8px;align-items:center">
-                <input id="vcr-sesi-search" placeholder="Cari username..." oninput="vcrSesiFilter()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;width:180px">
-                <button class="btn sm" onclick="loadVcrSesi()"><i class="ti ti-refresh" aria-hidden="true"></i></button>
+            <!-- Riwayat Sesi Voucher -->
+            <div class="card">
+              <div class="card-title">
+                <span><i class="ti ti-history" style="color:#BA7517;margin-right:6px" aria-hidden="true"></i>Riwayat Sesi Pengguna Voucher</span>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <input id="vcr-sesi-search" placeholder="Cari username..." oninput="vcrSesiFilter()" style="padding:5px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;width:180px">
+                  <button class="btn sm" onclick="loadVcrSesi()"><i class="ti ti-refresh" aria-hidden="true"></i></button>
+                </div>
               </div>
+              <div id="vcr-sesi-count" class="td-text-sub" style="font-size:12px;margin-bottom:10px">— sesi</div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th>Mulai</th>
+                    <th>Selesai</th>
+                    <th>Durasi</th>
+                    <th>Masuk</th>
+                    <th>Keluar</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="tbl-vcr-sesi">
+                  <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text3)">Memuat...</td></tr>
+                </tbody>
+              </table>
             </div>
-            <div id="vcr-sesi-count" class="td-text-sub" style="font-size:12px;margin-bottom:10px">— sesi</div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Username</th>
-                  <th>Mulai</th>
-                  <th>Selesai</th>
-                  <th>Durasi</th>
-                  <th>Masuk</th>
-                  <th>Keluar</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody id="tbl-vcr-sesi">
-                <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text3)">Memuat...</td></tr>
-              </tbody>
-            </table>
           </div>
         </div>
       </div>
