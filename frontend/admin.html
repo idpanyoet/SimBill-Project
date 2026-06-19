@@ -1875,44 +1875,56 @@ Selamat menikmati! 🌐</textarea>
 
 <!-- ══ MODALS ══ -->
 <div class="overlay" id="m-add-pelanggan">
-  <div class="modal" style="max-width:540px">
-    <div class="modal-hdr" style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
+  <div class="modal" style="max-width:520px">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
       <div style="display:flex;align-items:center;gap:10px">
         <div style="width:36px;height:36px;border-radius:9px;background:rgba(186,117,23,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
           <i class="ti ti-user-plus" style="font-size:18px;color:#BA7517" aria-hidden="true"></i>
         </div>
         <div>
-          <div style="font-size:15px;font-weight:500;color:var(--text)">Tambah Pelanggan</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:1px">Isi data lengkap untuk aktivasi akun</div>
+          <div style="font-size:15px;font-weight:600;color:var(--text)">Tambah Pelanggan</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:1px">Isi data untuk aktivasi akun</div>
         </div>
       </div>
       <button class="btn-x" onclick="closeModal('m-add-pelanggan')">✕</button>
     </div>
 
-    <!-- Pilih Tipe Koneksi -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:14px 20px;border-bottom:1px solid var(--border)">
-      <div id="f-tipe-card-pppoe" onclick="pilihTipePelanggan('pppoe')" style="border:2px solid #BA7517;border-radius:9px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;background:rgba(186,117,23,.06);transition:all .15s">
-        <div style="width:32px;height:32px;border-radius:7px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ti-router" style="font-size:16px;color:#185FA5" aria-hidden="true"></i>
-        </div>
-        <div>
-          <div class="td-text-main" style="font-size:13px;font-weight:500">PPPoE</div>
-          <div class="td-text-sub" style="font-size:10px;margin-top:1px">Koneksi kabel fiber</div>
-        </div>
-      </div>
-      <div id="f-tipe-card-hotspot" onclick="pilihTipePelanggan('hotspot')" style="border:2px solid var(--border);border-radius:9px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .15s">
-        <div style="width:32px;height:32px;border-radius:7px;background:#E1F5EE;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ti-wifi" style="font-size:16px;color:#0F6E56" aria-hidden="true"></i>
-        </div>
-        <div>
-          <div class="td-text-main" style="font-size:13px;font-weight:500">Hotspot</div>
-          <div class="td-text-sub" style="font-size:10px;margin-top:1px">Koneksi WiFi / voucher</div>
-        </div>
-      </div>
-      <input type="hidden" id="f-tipe" value="pppoe">
+    <!-- Tab nav -->
+    <div style="display:flex;border-bottom:2px solid var(--border)">
+      <button id="ap-tab-btn-1" onclick="apSwitchTab(1)" style="flex:1;padding:10px;font-size:12px;font-weight:600;border:none;background:none;border-bottom:2px solid #BA7517;margin-bottom:-2px;color:#BA7517;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+        <i class="ti ti-user" style="font-size:14px" aria-hidden="true"></i> Data Utama
+      </button>
+      <button id="ap-tab-btn-2" onclick="apSwitchTab(2)" style="flex:1;padding:10px;font-size:12px;font-weight:600;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+        <i class="ti ti-map-pin" style="font-size:14px" aria-hidden="true"></i> Lokasi & Jaringan
+      </button>
     </div>
 
-    <div class="modal-body" style="padding:14px 20px;display:flex;flex-direction:column;gap:12px">
+    <!-- Tab 1: Data Utama -->
+    <div id="ap-tab-1" style="padding:14px 20px;display:flex;flex-direction:column;gap:12px">
+      <!-- Tipe Koneksi -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div id="f-tipe-card-pppoe" onclick="pilihTipePelanggan('pppoe')" style="border:2px solid #BA7517;border-radius:9px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;background:rgba(186,117,23,.06);transition:all .15s">
+          <div style="width:32px;height:32px;border-radius:7px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="ti ti-router" style="font-size:16px;color:#185FA5" aria-hidden="true"></i>
+          </div>
+          <div>
+            <div class="td-text-main" style="font-size:13px;font-weight:600">PPPoE</div>
+            <div class="td-text-sub" style="font-size:10px;margin-top:1px">Kabel / Fiber</div>
+          </div>
+        </div>
+        <div id="f-tipe-card-hotspot" onclick="pilihTipePelanggan('hotspot')" style="border:2px solid var(--border);border-radius:9px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .15s">
+          <div style="width:32px;height:32px;border-radius:7px;background:#E1F5EE;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="ti ti-wifi" style="font-size:16px;color:#0F6E56" aria-hidden="true"></i>
+          </div>
+          <div>
+            <div class="td-text-main" style="font-size:13px;font-weight:600">Hotspot</div>
+            <div class="td-text-sub" style="font-size:10px;margin-top:1px">WiFi</div>
+          </div>
+        </div>
+        <input type="hidden" id="f-tipe" value="pppoe">
+      </div>
+
       <div class="fg-row">
         <div class="fg"><label>Nama Lengkap</label><input id="f-nama" placeholder="Nama pelanggan"></div>
         <div class="fg"><label>No. WhatsApp</label><input id="f-nohp" placeholder="628xxxxxxxx"></div>
@@ -1922,7 +1934,6 @@ Selamat menikmati! 🌐</textarea>
         <div class="fg"><label>Password</label><input id="f-password" type="password" placeholder="••••••••"></div>
       </div>
 
-      <!-- Pilih Paket sebagai card grid -->
       <div class="fg">
         <label>Pilih Paket</label>
         <div id="f-paket-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:2px"></div>
@@ -1931,32 +1942,39 @@ Selamat menikmati! 🌐</textarea>
 
       <div class="fg"><label>Alamat</label><input id="f-alamat" placeholder="Alamat lengkap (opsional)"></div>
 
-      <!-- Koordinat & Peta -->
-      <div class="nas-snmp-box">
-        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;display:flex;align-items:center;gap:6px">
-          <i class="ti ti-map-pin" style="font-size:13px;color:#BA7517" aria-hidden="true"></i>
-          Lokasi & Jaringan
-          <span style="background:#f3e8ff;color:#7c3aed;font-size:9px;font-weight:600;padding:1px 7px;border-radius:99px">Opsional</span>
-        </div>
-        <div style="font-size:11px;color:#64748b;margin-bottom:8px">Klik pada peta untuk mengisi latitude dan longitude secara otomatis.</div>
-        <div id="f-map" style="height:220px;border-radius:8px;border:1px solid var(--border);margin-bottom:10px;z-index:1"></div>
-        <div class="fg-row">
-          <div class="fg"><label>Latitude</label><input id="f-latitude" type="number" step="any" placeholder="cth: 1.1234567" oninput="petaMovePin('add')"></div>
-          <div class="fg"><label>Longitude</label><input id="f-longitude" type="number" step="any" placeholder="cth: 104.0123456" oninput="petaMovePin('add')"></div>
-        </div>
-        <div class="fg-row">
-          <div class="fg"><label>ODC (Opsional)</label><input id="f-odc" placeholder="cth: ODC-A01"></div>
-          <div class="fg"><label>ODP (Opsional)</label><input id="f-odp" placeholder="cth: ODP-A01-01"></div>
-        </div>
-      </div>
-
       <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)">
         <input type="checkbox" id="f-kirim-wa" checked style="width:15px;height:15px;accent-color:#BA7517;cursor:pointer">
-        <label for="f-kirim-wa">Buat invoice & kirim notifikasi WA otomatis setelah simpan</label>
+        <label for="f-kirim-wa">Kirim notifikasi WA setelah simpan</label>
       </div>
-      <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
+
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
         <button class="btn" onclick="closeModal('m-add-pelanggan')">Batal</button>
-        <button class="btn primary" onclick="apiSimpanPelanggan()">Simpan & Aktifkan</button>
+        <button class="btn primary" onclick="apSwitchTab(2)">
+          Berikutnya <i class="ti ti-arrow-right" style="font-size:13px" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tab 2: Lokasi & Jaringan -->
+    <div id="ap-tab-2" style="display:none;padding:14px 20px;display:none;flex-direction:column;gap:12px">
+      <div style="font-size:12px;color:var(--text2)">Klik pada peta untuk mengisi koordinat secara otomatis. Semua field opsional.</div>
+      <div id="f-map" style="height:260px;border-radius:8px;border:1px solid var(--border);z-index:1"></div>
+      <div class="fg-row">
+        <div class="fg"><label>Latitude</label><input id="f-latitude" type="number" step="any" placeholder="cth: 1.1234567" oninput="petaMovePin('add')"></div>
+        <div class="fg"><label>Longitude</label><input id="f-longitude" type="number" step="any" placeholder="cth: 104.0123456" oninput="petaMovePin('add')"></div>
+      </div>
+      <div class="fg-row">
+        <div class="fg"><label>ODC</label><input id="f-odc" placeholder="cth: ODC-A01"></div>
+        <div class="fg"><label>ODP</label><input id="f-odp" placeholder="cth: ODP-A01-01"></div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
+        <button class="btn" onclick="apSwitchTab(1)">
+          <i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> Kembali
+        </button>
+        <button class="btn primary" onclick="apiSimpanPelanggan()">
+          <i class="ti ti-check" style="font-size:13px" aria-hidden="true"></i> Simpan & Aktifkan
+        </button>
       </div>
     </div>
   </div>
@@ -1965,10 +1983,10 @@ Selamat menikmati! 🌐</textarea>
 <div class="overlay" id="m-edit-pelanggan">
   <div class="modal" style="max-width:520px">
     <!-- Header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
       <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:38px;height:38px;border-radius:10px;background:#FAEEDA;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ti-user-edit" style="font-size:20px;color:#BA7517" aria-hidden="true"></i>
+        <div style="width:36px;height:36px;border-radius:9px;background:#FAEEDA;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-user-edit" style="font-size:18px;color:#BA7517" aria-hidden="true"></i>
         </div>
         <div>
           <div id="ep-title" class="td-text-main" style="font-size:15px;font-weight:700">Edit Pelanggan</div>
@@ -1978,12 +1996,21 @@ Selamat menikmati! 🌐</textarea>
       <button class="btn-x" onclick="closeModal('m-edit-pelanggan')">✕</button>
     </div>
 
-    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
-      <input type="hidden" id="ep-id">
+    <!-- Tab nav -->
+    <div style="display:flex;border-bottom:2px solid var(--border)">
+      <button id="ep-tab-btn-1" onclick="epSwitchTab(1)" style="flex:1;padding:10px;font-size:12px;font-weight:600;border:none;background:none;border-bottom:2px solid #BA7517;margin-bottom:-2px;color:#BA7517;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+        <i class="ti ti-user" style="font-size:14px" aria-hidden="true"></i> Data Utama
+      </button>
+      <button id="ep-tab-btn-2" onclick="epSwitchTab(2)" style="flex:1;padding:10px;font-size:12px;font-weight:600;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+        <i class="ti ti-map-pin" style="font-size:14px" aria-hidden="true"></i> Lokasi & Jaringan
+      </button>
+    </div>
 
-      <!-- Info card pelanggan -->
+    <!-- Tab 1: Data Utama -->
+    <div id="ep-tab-1" style="padding:14px 20px;display:flex;flex-direction:column;gap:12px">
+      <input type="hidden" id="ep-id">
       <div id="ep-info-card" class="ep-info-card" style="display:flex;align-items:center;gap:12px;border-radius:10px;padding:11px 14px">
-        <div id="ep-avatar" style="width:40px;height:40px;border-radius:10px;background:#7F77DD;color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">—</div>
+        <div id="ep-avatar" style="width:38px;height:38px;border-radius:9px;background:#7F77DD;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">—</div>
         <div style="flex:1;min-width:0">
           <div id="ep-info-nama" class="td-text-main" style="font-size:13px;font-weight:700"></div>
           <div style="font-size:11px;margin-top:2px;display:flex;gap:6px;align-items:center">
@@ -1996,14 +2023,10 @@ Selamat menikmati! 🌐</textarea>
           <div id="ep-info-paket" class="td-text-main" style="font-size:11px;font-weight:600"></div>
         </div>
       </div>
-
-      <!-- Nama & HP -->
       <div class="fg-row">
         <div class="fg"><label>Nama Lengkap</label><input id="ep-nama" placeholder="Nama"></div>
         <div class="fg"><label>No. WhatsApp</label><input id="ep-nohp" placeholder="628xxxxxxxx"></div>
       </div>
-
-      <!-- Status -->
       <div>
         <label class="fg-label">Status Akun</label>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:4px">
@@ -2022,41 +2045,28 @@ Selamat menikmati! 🌐</textarea>
         </div>
         <input type="hidden" id="ep-status" value="aktif">
       </div>
-
-      <!-- Tipe Koneksi -->
       <div>
         <label class="fg-label">Tipe Koneksi</label>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
           <div id="ep-tipe-card-pppoe" onclick="epSetTipe('pppoe')" style="border:2px solid #378ADD;background:#E6F1FB;border-radius:9px;padding:9px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s">
             <i class="ti ti-router" style="font-size:17px;color:#378ADD" aria-hidden="true"></i>
-            <div>
-              <div class="ep-tipe-lbl" style="font-size:12px;font-weight:600;color:#0369a1">PPPoE</div>
-              <div class="td-text-sub" style="font-size:10px">Kabel / Fiber</div>
-            </div>
+            <div><div class="ep-tipe-lbl" style="font-size:12px;font-weight:600;color:#0369a1">PPPoE</div><div class="td-text-sub" style="font-size:10px">Kabel / Fiber</div></div>
           </div>
           <div id="ep-tipe-card-hotspot" onclick="epSetTipe('hotspot')" style="border:2px solid #e2e7ef;border-radius:9px;padding:9px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s">
             <i class="ti ti-wifi" style="font-size:17px;color:#1D9E75" aria-hidden="true"></i>
-            <div>
-              <div class="ep-tipe-lbl td-text-main" style="font-size:12px;font-weight:600">Hotspot</div>
-              <div class="td-text-sub" style="font-size:10px">WiFi</div>
-            </div>
+            <div><div class="ep-tipe-lbl td-text-main" style="font-size:12px;font-weight:600">Hotspot</div><div class="td-text-sub" style="font-size:10px">WiFi</div></div>
           </div>
         </div>
         <input type="hidden" id="ep-tipe" value="pppoe">
       </div>
-
-      <!-- Paket -->
       <div>
         <label class="fg-label">Pilih Paket</label>
         <div id="ep-paket-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px"></div>
         <input type="hidden" id="ep-paket">
       </div>
-
-      <!-- Kredensial RADIUS -->
       <div class="nas-snmp-box">
         <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px;display:flex;align-items:center;gap:6px">
-          <i class="ti ti-lock" style="font-size:13px" aria-hidden="true"></i>
-          Kredensial RADIUS
+          <i class="ti ti-lock" style="font-size:13px" aria-hidden="true"></i> Kredensial RADIUS
         </div>
         <div class="fg-row">
           <div class="fg"><label>Username</label><input id="ep-username" placeholder="username"></div>
@@ -2069,842 +2079,43 @@ Selamat menikmati! 🌐</textarea>
           </div>
         </div>
       </div>
-
-      <!-- Alamat, Email, Catatan -->
       <div class="fg-row">
         <div class="fg"><label>Alamat</label><input id="ep-alamat" placeholder="Alamat lengkap"></div>
         <div class="fg"><label>Email</label><input id="ep-email" type="email" placeholder="email@domain.com"></div>
       </div>
       <div class="fg"><label>Catatan Internal</label><input id="ep-notes" placeholder="Catatan internal (opsional)"></div>
-
-      <!-- Koordinat & Peta -->
-      <div class="nas-snmp-box">
-        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:6px">
-          <i class="ti ti-map-pin" style="font-size:13px;color:#BA7517" aria-hidden="true"></i>
-          Lokasi & Jaringan
-          <span style="background:#f3e8ff;color:#7c3aed;font-size:9px;font-weight:600;padding:1px 7px;border-radius:99px">Opsional</span>
-        </div>
-        <div style="font-size:11px;color:#64748b;margin-bottom:8px">Klik pada peta untuk memperbarui koordinat.</div>
-        <div id="ep-map" style="height:200px;border-radius:8px;border:1px solid var(--border);margin-bottom:10px;z-index:1"></div>
-        <div class="fg-row">
-          <div class="fg"><label>Latitude</label><input id="ep-latitude" type="number" step="any" placeholder="cth: 1.1234567" oninput="petaMovePin('edit')"></div>
-          <div class="fg"><label>Longitude</label><input id="ep-longitude" type="number" step="any" placeholder="cth: 104.0123456" oninput="petaMovePin('edit')"></div>
-        </div>
-        <div class="fg-row">
-          <div class="fg"><label>ODC</label><input id="ep-odc" placeholder="cth: ODC-A01"></div>
-          <div class="fg"><label>ODP</label><input id="ep-odp" placeholder="cth: ODP-A01-01"></div>
-        </div>
-      </div>
-
-      <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
-        <button class="btn" onclick="closeModal('m-edit-pelanggan')">Batal</button>
-        <button class="btn primary" onclick="apiUpdatePelanggan()">
-          <i class="ti ti-device-floppy" style="font-size:14px" aria-hidden="true"></i> Simpan Perubahan
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="overlay" id="m-add-paket">
-  <div class="modal" style="max-width:520px">
-    <div class="modal-hdr" style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:38px;height:38px;border-radius:10px;background:#FAEEDA;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ti-package" style="font-size:20px;color:#BA7517" aria-hidden="true"></i>
-        </div>
-        <div>
-          <div class="td-text-main" style="font-size:15px;font-weight:700">Tambah Paket Internet</div>
-          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Buat paket baru untuk pelanggan</div>
-        </div>
-      </div>
-      <button class="btn-x" onclick="closeModal('m-add-paket')">✕</button>
-    </div>
-
-    <!-- Tipe Koneksi -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px 20px;border-bottom:1px solid #f1f5f9">
-      <div id="fp-tipe-card-pppoe" onclick="pilihTipePaket('pppoe')" style="border:2px solid #378ADD;border-radius:10px;padding:10px;cursor:pointer;text-align:center;background:#E6F1FB;transition:all .15s">
-        <i class="ti ti-router" style="font-size:20px;color:#378ADD;display:block;margin-bottom:5px" aria-hidden="true"></i>
-        <div class="td-text-main" style="font-size:11px;font-weight:600">PPPoE</div>
-        <div class="td-text-sub" style="font-size:9px;margin-top:2px">Kabel / Fiber</div>
-      </div>
-      <div id="fp-tipe-card-hotspot" onclick="pilihTipePaket('hotspot')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px;cursor:pointer;text-align:center;transition:all .15s">
-        <i class="ti ti-wifi" style="font-size:20px;color:#1D9E75;display:block;margin-bottom:5px" aria-hidden="true"></i>
-        <div class="td-text-main" style="font-size:11px;font-weight:600">Hotspot</div>
-        <div class="td-text-sub" style="font-size:9px;margin-top:2px">WiFi / Voucher</div>
-      </div>
-      <div id="fp-tipe-card-keduanya" onclick="pilihTipePaket('keduanya')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px;cursor:pointer;text-align:center;transition:all .15s">
-        <i class="ti ti-arrows-exchange" style="font-size:20px;color:#7F77DD;display:block;margin-bottom:5px" aria-hidden="true"></i>
-        <div class="td-text-main" style="font-size:11px;font-weight:600">Keduanya</div>
-        <div class="td-text-sub" style="font-size:9px;margin-top:2px">PPPoE & Hotspot</div>
-      </div>
-      <input type="hidden" id="fp-tipe" value="pppoe">
-    </div>
-
-    <div class="modal-body" style="padding:14px 20px;display:flex;flex-direction:column;gap:12px">
-      <div class="fg">
-        <label>Nama Paket</label>
-        <input id="fp-nama" placeholder="cth: Paket Fiber 100Mbps">
-      </div>
-
-      <div class="fg">
-          <label>Batas Kecepatan <span class="td-text-sub" style="font-weight:400;font-size:10px">(Format MikroTik Rate-Limit)</span></label>
-          <input id="fp-speed" type="text" placeholder="cth: 10M/10M atau 2M/2M 3M/3M 1500k/1500k 32/32 8 2M/2M" oninput="updateSpeedPreview()">
-          <div style="margin-top:5px;display:flex;align-items:center;gap:5px">
-            <span id="fp-speed-preview" class="speed-chip-dn">
-              <i class="ti ti-arrow-right" style="font-size:10px" aria-hidden="true"></i> —
-            </span>
-          </div>
-          <div class="td-text-sub" style="font-size:10px;margin-top:4px">Format: <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">upload/download</code> atau burst lengkap</div>
-        </div>
-        <input type="hidden" id="fp-speed-up">
-
-      <div class="fg-row">
-        <div class="fg">
-          <label>Harga (Rp)</label>
-          <input id="fp-harga" type="number" placeholder="500000" oninput="updateHargaPreview()">
-          <div id="fp-harga-preview" class="harga-preview-text">—</div>
-          <div class="td-text-sub" style="font-size:10px">per periode masa aktif</div>
-        </div>
-        <div class="fg">
-          <label>Pool RADIUS</label>
-          <input id="fp-pool" placeholder="pool-100mbps">
-        </div>
-      </div>
-
-      <div class="fg-row">
-        <div class="fg">
-          <label>Masa Berlaku</label>
-          <input id="fp-masa" type="number" min="1" value="30" placeholder="30">
-        </div>
-        <div class="fg">
-          <label>Satuan</label>
-          <select id="fp-satuan">
-            <option value="jam">Jam</option>
-            <option value="hari" selected>Hari</option>
-            <option value="bulan">Bulan</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="fg">
-        <label>Deskripsi (opsional)</label>
-        <input id="fp-deskripsi" placeholder="cth: Cocok untuk streaming & gaming">
-      </div>
-
-      <label for="fp-izin-voucher" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
-        <span class="vcr-toggle-track" id="fp-vcr-track" style="flex-shrink:0"><span class="vcr-toggle-thumb"></span></span>
-        <input type="checkbox" id="fp-izin-voucher" style="display:none" onchange="paketToggleVcrLabel('fp')">
-        <div>
-          <div class="td-text-main" style="font-size:13px;font-weight:600">Izinkan e-Voucher</div>
-          <div id="fp-vcr-lbl" class="td-text-sub" style="font-size:11px;margin-top:1px">Tidak diizinkan — paket tidak muncul di storefront</div>
-        </div>
-      </label>
-
-      <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
-        <button class="btn" onclick="closeModal('m-add-paket')">Batal</button>
-        <button class="btn primary" onclick="apiSimpanPaket()">Simpan Paket</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="overlay" id="m-edit-paket">
-  <div class="modal" style="max-width:520px">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:38px;height:38px;border-radius:10px;background:#fef3c7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ti-package" style="font-size:20px;color:#d97706" aria-hidden="true"></i>
-        </div>
-        <div>
-          <div id="ep2-title" class="td-text-main" style="font-size:15px;font-weight:700">Edit Paket</div>
-          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Ubah konfigurasi paket internet</div>
-        </div>
-      </div>
-      <button class="btn-x" onclick="closeModal('m-edit-paket')">✕</button>
-    </div>
-
-    <!-- Tipe Koneksi -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px 20px;border-bottom:1px solid #f1f5f9">
-      <div id="ep2-tipe-card-pppoe" onclick="ep2SetTipe('pppoe')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all .15s">
-        <i class="ti ti-router" style="font-size:20px;color:#378ADD;display:block;margin-bottom:4px" aria-hidden="true"></i>
-        <div class="td-text-main" style="font-size:11px;font-weight:600">PPPoE</div>
-        <div class="td-text-sub" style="font-size:9px;margin-top:2px">Kabel / Fiber</div>
-      </div>
-      <div id="ep2-tipe-card-hotspot" onclick="ep2SetTipe('hotspot')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all .15s">
-        <i class="ti ti-wifi" style="font-size:20px;color:#1D9E75;display:block;margin-bottom:4px" aria-hidden="true"></i>
-        <div class="td-text-main" style="font-size:11px;font-weight:600">Hotspot</div>
-        <div class="td-text-sub" style="font-size:9px;margin-top:2px">WiFi / Voucher</div>
-      </div>
-      <div id="ep2-tipe-card-keduanya" onclick="ep2SetTipe('keduanya')" style="border:2px solid #e2e7ef;border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:all .15s">
-        <i class="ti ti-arrows-exchange" style="font-size:20px;color:#7F77DD;display:block;margin-bottom:4px" aria-hidden="true"></i>
-        <div class="td-text-main" style="font-size:11px;font-weight:600">Keduanya</div>
-        <div class="td-text-sub" style="font-size:9px;margin-top:2px">PPPoE & Hotspot</div>
-      </div>
-      <input type="hidden" id="ep2-tipe" value="pppoe">
-    </div>
-
-    <div class="modal-body" style="padding:14px 20px;display:flex;flex-direction:column;gap:12px">
-      <input type="hidden" id="ep2-id">
-
-      <div class="fg">
-        <label>Nama Paket</label>
-        <input id="ep2-nama" placeholder="cth: Paket Fiber 100Mbps">
-      </div>
-
-      <div class="fg">
-          <label>Batas Kecepatan <span class="td-text-sub" style="font-weight:400;font-size:10px">(Format MikroTik Rate-Limit)</span></label>
-          <input id="ep2-speed" type="text" placeholder="cth: 10M/10M atau 2M/2M 3M/3M 1500k/1500k 32/32 8 2M/2M" oninput="ep2UpdatePreview()">
-          <div style="margin-top:5px">
-            <span id="ep2-speed-preview" class="speed-chip-dn">
-              <i class="ti ti-arrow-right" style="font-size:10px" aria-hidden="true"></i> —
-            </span>
-          </div>
-          <div class="td-text-sub" style="font-size:10px;margin-top:4px">Format: <code style="background:var(--bg3);padding:1px 5px;border-radius:4px">upload/download</code> atau burst lengkap</div>
-        </div>
-        <input type="hidden" id="ep2-speed-up">
-
-      <div class="fg-row">
-        <div class="fg">
-          <label>Harga (Rp)</label>
-          <input id="ep2-harga" type="number" placeholder="500000" oninput="ep2UpdateHarga()">
-          <div id="ep2-harga-preview" class="harga-preview-text">—</div>
-          <div class="td-text-sub" style="font-size:10px">per periode masa aktif</div>
-        </div>
-        <div class="fg">
-          <label>Pool RADIUS</label>
-          <input id="ep2-pool" placeholder="pool-100mbps">
-        </div>
-      </div>
-
-      <div class="fg-row">
-        <div class="fg">
-          <label>Masa Berlaku</label>
-          <input id="ep2-masa" type="number" min="1" value="30" placeholder="30">
-        </div>
-        <div class="fg">
-          <label>Satuan</label>
-          <select id="ep2-satuan">
-            <option value="jam">Jam</option>
-            <option value="hari" selected>Hari</option>
-            <option value="bulan">Bulan</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="fg">
-        <label>Deskripsi (opsional)</label>
-        <input id="ep2-deskripsi" placeholder="cth: Cocok untuk streaming & gaming">
-      </div>
-
       <div id="ep2-vcr-wrap">
-      <label for="ep2-izin-voucher" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
-        <span class="vcr-toggle-track" id="ep2-vcr-track" style="flex-shrink:0"><span class="vcr-toggle-thumb"></span></span>
-        <input type="checkbox" id="ep2-izin-voucher" style="display:none" onchange="paketToggleVcrLabel('ep2')">
-        <div>
-          <div class="td-text-main" style="font-size:13px;font-weight:600">Izinkan e-Voucher</div>
-          <div id="ep2-vcr-lbl" class="td-text-sub" style="font-size:11px;margin-top:1px">Tidak diizinkan — paket tidak muncul di storefront</div>
-        </div>
-      </label>
-      </div>
-
-      <div class="modal-foot" style="padding:0;border:none;margin-top:4px">
-        <button class="btn" onclick="closeModal('m-edit-paket')">Batal</button>
-        <button class="btn primary" style="background:#d97706;box-shadow:0 2px 6px rgba(217,119,6,.3)" onclick="apiUpdatePaketGrid()">
-          <i class="ti ti-device-floppy" style="font-size:14px" aria-hidden="true"></i> Simpan Perubahan
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="overlay" id="m-add-invoice">
-  <div class="modal" style="max-width:480px">
-    <!-- Header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:38px;height:38px;border-radius:10px;background:#dcfce7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ti-receipt" style="font-size:20px;color:#15803d" aria-hidden="true"></i>
-        </div>
-        <div>
-          <div class="td-text-main" style="font-size:15px;font-weight:700">Buat Invoice</div>
-          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Tagihan manual untuk pelanggan</div>
-        </div>
-      </div>
-      <button class="btn-x" onclick="closeModal('m-add-invoice')">✕</button>
-    </div>
-
-    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
-
-      <!-- Pelanggan -->
-      <div>
-        <label class="fg-label">Pelanggan</label>
-        <select id="fi-pel" onchange="invoiceOnPelangganChange()" style="width:100%;padding:9px 12px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#0f172a;font-size:13px;font-family:inherit">
-          <option value="">-- pilih pelanggan --</option>
-        </select>
-        <!-- Preview card pelanggan -->
-        <div id="fi-pel-card" style="display:none;margin-top:8px;background:#f8fafc;border:1px solid #e2e7ef;border-radius:10px;padding:11px 14px;display:none;align-items:center;gap:12px">
-          <div id="fi-pel-avatar" style="width:36px;height:36px;border-radius:9px;background:#1D9E75;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">—</div>
-          <div style="flex:1;min-width:0">
-            <div id="fi-pel-name" class="td-text-main" style="font-size:13px;font-weight:600"></div>
-            <div style="font-size:11px;margin-top:2px;display:flex;gap:6px;align-items:center">
-              <span id="fi-pel-hp" class="td-text-sub"></span>
-              <span id="fi-pel-tipe" class="tag pppoe" style="font-size:9px;padding:1px 6px"></span>
-            </div>
-          </div>
-          <div style="text-align:right;flex-shrink:0">
-            <div class="td-text-sub" style="font-size:10px">Paket aktif</div>
-            <div id="fi-pel-paket" class="td-text-main" style="font-size:11px;font-weight:600"></div>
-            <div id="fi-pel-harga" style="font-size:12px;font-weight:700;color:#15803d"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Jumlah -->
-      <div>
-        <label class="fg-label">Jumlah Tagihan</label>
-        <div style="position:relative">
-          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:600;color:#64748b;pointer-events:none">Rp</span>
-          <input id="fi-jml" type="number" placeholder="0" oninput="invoiceUpdatePreview()" style="width:100%;padding:9px 12px 9px 36px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#0f172a;font-size:13px;font-family:inherit">
-        </div>
-        <div id="fi-jml-preview" style="font-size:20px;font-weight:700;color:#15803d;margin-top:5px">—</div>
-        <div class="td-text-sub" style="font-size:11px">Nominal yang akan ditagihkan</div>
-      </div>
-
-      <!-- Jatuh Tempo -->
-      <div>
-        <label class="fg-label">Jatuh Tempo</label>
-        <input id="fi-tgl" type="date" style="width:100%;padding:9px 12px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#0f172a;font-size:13px;font-family:inherit">
-        <div style="display:flex;gap:6px;margin-top:7px;flex-wrap:wrap">
-          <button type="button" onclick="invoiceSetDue(7)"  class="due-chip">7 hari</button>
-          <button type="button" onclick="invoiceSetDue(14)" class="due-chip">14 hari</button>
-          <button type="button" onclick="invoiceSetDue(30)" class="due-chip">30 hari</button>
-          <button type="button" onclick="invoiceSetDueEOM()" class="due-chip">Akhir bulan</button>
-        </div>
-      </div>
-
-      <!-- Summary -->
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 14px">
-        <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:#166534"><span>Subtotal</span><span id="fi-sum-sub">—</span></div>
-        <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:#166534"><span>PPN (0%)</span><span>Rp 0</span></div>
-        <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;color:#15803d;border-top:1px solid #bbf7d0;margin-top:6px;padding-top:8px"><span>Total Tagihan</span><span id="fi-sum-total">—</span></div>
-      </div>
-
-      <!-- Opsi -->
-      <div style="display:flex;align-items:center;gap:8px;font-size:12px">
-        <input id="fi-wa" type="checkbox" checked style="width:15px;height:15px;accent-color:#15803d;cursor:pointer;flex-shrink:0">
-        <label for="fi-wa" class="td-text-sub" style="cursor:pointer"><i class="ti ti-brand-whatsapp" style="color:#25D366;font-size:14px;vertical-align:-2px" aria-hidden="true"></i> Kirim link pembayaran via WhatsApp</label>
-      </div>
-
-      <div class="modal-foot" style="padding:0;border:none;margin-top:2px">
-        <button class="btn" onclick="closeModal('m-add-invoice')">Batal</button>
-        <button class="btn primary" style="background:#15803d;box-shadow:0 2px 6px rgba(22,163,74,.25)" onclick="apiBuatInvoice()">
-          <i class="ti ti-receipt" style="font-size:14px" aria-hidden="true"></i> Buat Invoice
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="overlay" id="m-add-nas">
-  <div class="modal" style="max-width:480px">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:38px;height:38px;border-radius:10px;background:#e0f2fe;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ti-server" style="font-size:20px;color:#0ea5e9" aria-hidden="true"></i>
-        </div>
-        <div>
-          <div class="td-text-main" style="font-size:15px;font-weight:700">Tambah NAS</div>
-          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Network Access Server / MikroTik</div>
-        </div>
-      </div>
-      <button class="btn-x" onclick="closeModal('m-add-nas')">✕</button>
-    </div>
-    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
-
-      <div class="fg-row">
-        <div class="fg"><label>Nama NAS</label><input id="fn-nama" placeholder="MikroTik-Selatan"></div>
-        <div class="fg"><label>IP Address</label><input id="fn-ip" placeholder="192.168.88.1"></div>
-      </div>
-
-      <div class="fg">
-        <label>RADIUS Secret</label>
-        <div style="position:relative">
-          <input id="fn-secret" type="password" placeholder="radius-secret" style="padding-right:36px">
-          <button type="button" onclick="togglePwVis('fn-secret',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0;line-height:1">👁</button>
-        </div>
-      </div>
-
-      <div>
-        <label class="fg-label">Tipe Koneksi</label>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:2px">
-          <div id="fn-tipe-card-pppoe" onclick="nasSetTipe('fn','pppoe')" style="border:2px solid #0ea5e9;background:#e0f2fe;border-radius:10px;padding:9px 8px;cursor:pointer;text-align:center;transition:all .15s">
-            <i class="ti ti-router" style="font-size:20px;color:#0ea5e9;display:block;margin-bottom:4px" aria-hidden="true"></i>
-            <div class="nas-tipe-lbl" style="font-size:11px;font-weight:700;color:#0369a1">PPPoE</div>
-            <div class="td-text-sub" style="font-size:9px;margin-top:2px">Kabel / Fiber</div>
-          </div>
-          <div id="fn-tipe-card-hotspot" onclick="nasSetTipe('fn','hotspot')" style="border:2px solid #e2e7ef;border-radius:10px;padding:9px 8px;cursor:pointer;text-align:center;transition:all .15s">
-            <i class="ti ti-wifi" style="font-size:20px;color:#8b5cf6;display:block;margin-bottom:4px" aria-hidden="true"></i>
-            <div class="nas-tipe-lbl td-text-main" style="font-size:11px;font-weight:700">Hotspot</div>
-            <div class="td-text-sub" style="font-size:9px;margin-top:2px">WiFi</div>
-          </div>
-          <div id="fn-tipe-card-keduanya" onclick="nasSetTipe('fn','keduanya')" style="border:2px solid #e2e7ef;border-radius:10px;padding:9px 8px;cursor:pointer;text-align:center;transition:all .15s">
-            <i class="ti ti-network" style="font-size:20px;color:#059669;display:block;margin-bottom:4px" aria-hidden="true"></i>
-            <div class="nas-tipe-lbl td-text-main" style="font-size:11px;font-weight:700">Keduanya</div>
-            <div class="td-text-sub" style="font-size:9px;margin-top:2px">PPPoE & Hotspot</div>
-          </div>
-        </div>
-        <input type="hidden" id="fn-tipe" value="pppoe">
-      </div>
-
-      <div class="nas-snmp-box">
-        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;display:flex;align-items:center;gap:6px">
-          <i class="ti ti-chart-line" style="font-size:13px" aria-hidden="true"></i>
-          Konfigurasi SNMP
-          <span style="background:#e0f2fe;color:#0369a1;font-size:9px;font-weight:600;padding:1px 7px;border-radius:99px">Opsional</span>
-        </div>
-        <div class="fg-row">
-          <div class="fg"><label>Community</label><input id="fn-community" placeholder="public" value="public"></div>
-          <div class="fg"><label>Interface ID</label><input id="fn-ports" type="number" placeholder="95"></div>
-        </div>
-      </div>
-
-      <div class="nas-info-box">
-        <i class="ti ti-info-circle" style="font-size:14px;margin-top:1px;flex-shrink:0" aria-hidden="true"></i>
-        <span>NAS akan otomatis ditambahkan ke <b>clients.conf</b> FreeRADIUS dan diaktifkan</span>
-      </div>
-
-      <div class="modal-foot" style="padding:0;border:none;margin-top:2px">
-        <button class="btn" onclick="closeModal('m-add-nas')">Batal</button>
-        <button class="btn primary" style="background:#0ea5e9;box-shadow:0 2px 6px rgba(14,165,233,.3)" onclick="apiTambahNAS()">
-          <i class="ti ti-device-floppy" style="font-size:14px" aria-hidden="true"></i> Simpan NAS
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="overlay" id="m-edit-nas">
-  <div class="modal" style="max-width:480px">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:38px;height:38px;border-radius:10px;background:#fef3c7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ti-server" style="font-size:20px;color:#d97706" aria-hidden="true"></i>
-        </div>
-        <div>
-          <div class="td-text-main" style="font-size:15px;font-weight:700">Edit NAS</div>
-          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Ubah konfigurasi Network Access Server</div>
-        </div>
-      </div>
-      <button class="btn-x" onclick="closeModal('m-edit-nas')">✕</button>
-    </div>
-    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
-      <input type="hidden" id="en-id">
-
-      <div class="fg-row">
-        <div class="fg"><label>Nama NAS</label><input id="en-nama" placeholder="MikroTik-Selatan"></div>
-        <div class="fg"><label>IP Address</label><input id="en-ip" placeholder="192.168.88.1"></div>
-      </div>
-
-      <div class="fg">
-        <label>RADIUS Secret</label>
-        <div style="position:relative">
-          <input id="en-secret" type="password" placeholder="radius-secret" style="padding-right:36px">
-          <button type="button" onclick="togglePwVis('en-secret',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0;line-height:1">👁</button>
-        </div>
-      </div>
-
-      <div>
-        <label class="fg-label">Tipe Koneksi</label>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:2px">
-          <div id="en-tipe-card-pppoe" onclick="nasSetTipe('en','pppoe')" style="border:2px solid #0ea5e9;background:#e0f2fe;border-radius:10px;padding:9px 8px;cursor:pointer;text-align:center;transition:all .15s">
-            <i class="ti ti-router" style="font-size:20px;color:#0ea5e9;display:block;margin-bottom:4px" aria-hidden="true"></i>
-            <div class="nas-tipe-lbl" style="font-size:11px;font-weight:700;color:#0369a1">PPPoE</div>
-            <div class="td-text-sub" style="font-size:9px;margin-top:2px">Kabel / Fiber</div>
-          </div>
-          <div id="en-tipe-card-hotspot" onclick="nasSetTipe('en','hotspot')" style="border:2px solid #e2e7ef;border-radius:10px;padding:9px 8px;cursor:pointer;text-align:center;transition:all .15s">
-            <i class="ti ti-wifi" style="font-size:20px;color:#8b5cf6;display:block;margin-bottom:4px" aria-hidden="true"></i>
-            <div class="nas-tipe-lbl td-text-main" style="font-size:11px;font-weight:700">Hotspot</div>
-            <div class="td-text-sub" style="font-size:9px;margin-top:2px">WiFi</div>
-          </div>
-          <div id="en-tipe-card-keduanya" onclick="nasSetTipe('en','keduanya')" style="border:2px solid #e2e7ef;border-radius:10px;padding:9px 8px;cursor:pointer;text-align:center;transition:all .15s">
-            <i class="ti ti-network" style="font-size:20px;color:#059669;display:block;margin-bottom:4px" aria-hidden="true"></i>
-            <div class="nas-tipe-lbl td-text-main" style="font-size:11px;font-weight:700">Keduanya</div>
-            <div class="td-text-sub" style="font-size:9px;margin-top:2px">PPPoE & Hotspot</div>
-          </div>
-        </div>
-        <input type="hidden" id="en-tipe" value="pppoe">
-      </div>
-
-      <div class="nas-snmp-box">
-        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;display:flex;align-items:center;gap:6px">
-          <i class="ti ti-chart-line" style="font-size:13px" aria-hidden="true"></i>
-          Konfigurasi SNMP
-          <span style="background:#e0f2fe;color:#0369a1;font-size:9px;font-weight:600;padding:1px 7px;border-radius:99px">Opsional</span>
-        </div>
-        <div class="fg-row">
-          <div class="fg"><label>Community</label><input id="en-community" placeholder="public"></div>
-          <div class="fg"><label>Interface ID</label><input id="en-ports" type="number" placeholder="95"></div>
-        </div>
-      </div>
-
-      <div class="modal-foot" style="padding:0;border:none;margin-top:2px">
-        <button class="btn" onclick="closeModal('m-edit-nas')">Batal</button>
-        <button class="btn primary" style="background:#d97706;box-shadow:0 2px 6px rgba(217,119,6,.3)" onclick="apiEditNAS()">
-          <i class="ti ti-device-floppy" style="font-size:14px" aria-hidden="true"></i> Simpan Perubahan
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ══ ACS: Detail Device ══ -->
-<div class="overlay" id="m-acs-detail">
-  <div class="modal" style="max-width:560px">
-    <div class="modal-hdr"><h3 id="acs-detail-title">📡 Detail Device</h3><button class="btn-x" onclick="closeModal('m-acs-detail')">✕</button></div>
-    <div class="modal-body">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px" id="acs-detail-info"></div>
-      <div class="fg"><label>Link ke Pelanggan</label>
-        <select id="acs-pel-select" style="width:100%">
-          <option value="">— Tidak ditautkan —</option>
-        </select>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-        <button class="btn sm primary" onclick="acsLinkPelanggan()">💾 Simpan Link</button>
-        <button class="btn sm" onclick="acsRefresh()">🔄 Ambil Status</button>
-        <button class="btn sm" onclick="acsReboot()">🔁 Reboot Router</button>
-        <button class="btn sm primary" onclick="bukaModalWifi()" style="background:#1D9E75;border-color:#1D9E75">📶 Ganti Password WiFi</button>
-        <button class="btn sm danger" onclick="acsHapus()">🗑️ Hapus</button>
-      </div>
-      <!-- Status params -->
-      <div class="card-title" style="font-size:12px;margin-bottom:8px">Status Terakhir</div>
-      <div id="acs-param-list" style="font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:4px"></div>
-      <!-- Task log device ini -->
-      <div class="card-title" style="font-size:12px;margin:12px 0 8px">Task Log</div>
-      <div id="acs-task-mini" style="font-size:12px"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ══ ACS: Ganti WiFi ══ -->
-<div class="overlay" id="m-acs-wifi">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-hdr"><h3>📶 Ganti Password WiFi</h3><button class="btn-x" onclick="closeModal('m-acs-wifi')">✕</button></div>
-    <div class="modal-body">
-      <div class="fg"><label>SSID (Nama WiFi) — kosongkan jika tidak diganti</label><input id="acs-wifi-ssid" placeholder="Nama WiFi baru..."></div>
-      <div class="fg"><label>Password WiFi Baru <span style="color:var(--red)">*</span></label>
-        <div style="position:relative">
-          <input id="acs-wifi-pw" type="password" placeholder="Minimal 8 karakter" style="padding-right:34px;width:100%;box-sizing:border-box">
-          <button type="button" onclick="togglePwVis('acs-wifi-pw',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding:0;line-height:1">👁</button>
-        </div>
-      </div>
-      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:12px;color:var(--text2);margin-bottom:14px">
-        ⚠️ Perubahan akan aktif saat router polling ke ACS berikutnya (maks 5 menit). Router akan restart WiFi sebentar.
-      </div>
-      <div class="modal-foot">
-        <button class="btn" onclick="closeModal('m-acs-wifi')">Batal</button>
-        <button class="btn primary" onclick="acsGantiWifi()">📤 Kirim Perintah</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="overlay" id="m-add-wg-peer">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-hdr"><h3>🔐 Tambah Peer WireGuard</h3><button class="btn-x" onclick="closeModal('m-add-wg-peer')">✕</button></div>
-    <div class="modal-body">
-      <div class="fg-row">
-        <div class="fg"><label>Nama Peer</label><input id="wgp-nama" placeholder="MikroTik-Utara"></div>
-        <div class="fg"><label>IP Tunnel</label>
-          <div style="display:flex;gap:6px">
-            <input id="wgp-ip" placeholder="10.10.28.x/32" list="wgp-ip-list" autocomplete="off" style="flex:1">
-            <button type="button" class="btn sm" onclick="saranIPWg(false)">💡 Saran IP</button>
-          </div>
-          <datalist id="wgp-ip-list"></datalist>
-          <small id="wgp-ip-hint" style="font-size:11px;color:var(--text3);margin-top:3px;display:block"></small>
-        </div>
-      </div>
-      <div class="fg"><label>Public Key Peer</label>
-        <div style="display:flex;gap:6px">
-          <input id="wgp-pubkey" placeholder="Base64 public key peer (dikosongkan = generate otomatis)" style="flex:1">
-          <button class="btn sm" onclick="wgGenerateKeys()">⚡ Generate</button>
-        </div>
-      </div>
-      <div id="wgp-generated" style="display:none">
-        <div class="fg"><label>Private Key (simpan di perangkat peer)</label>
-          <div style="position:relative">
-            <input id="wgp-privkey" type="password" readonly style="padding-right:34px;width:100%;box-sizing:border-box;font-family:monospace;font-size:11px">
-            <button type="button" onclick="togglePwVis('wgp-privkey',this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:15px;padding:0">👁</button>
-          </div>
-          <small style="color:var(--amber);font-size:11px">⚠️ Salin dan simpan private key ini sekarang — tidak akan ditampilkan lagi</small>
-        </div>
-      </div>
-      <div class="fg"><label>Allowed IPs</label><input id="wgp-allowed" value="0.0.0.0/0, ::/0"></div>
-      <div class="fg"><label>Catatan</label><input id="wgp-catatan" placeholder="Keterangan opsional"></div>
-      <div class="modal-foot">
-        <button class="btn" onclick="closeModal('m-add-wg-peer')">Batal</button>
-        <button class="btn primary" onclick="apiTambahWgPeer()">💾 Tambah Peer</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="overlay" id="m-add-l2tp-user">
-  <div class="modal" style="max-width:460px">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:38px;height:38px;border-radius:10px;background:#ede9fe;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ti-lock" style="font-size:20px;color:#6366f1" aria-hidden="true"></i>
-        </div>
-        <div>
-          <div class="td-text-main" style="font-size:15px;font-weight:700">Tambah User L2TP</div>
-          <div class="td-text-sub" style="font-size:11px;margin-top:1px">VPN L2TP/IPSec tunnel user</div>
-        </div>
-      </div>
-      <button class="btn-x" onclick="closeModal('m-add-l2tp-user')">✕</button>
-    </div>
-
-    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
-
-      <!-- Username & Password -->
-      <div class="fg-row">
-        <div class="fg">
-          <label>Username</label>
-          <input id="l2p-user" placeholder="vpnuser">
-        </div>
-        <div class="fg">
-          <label>Password</label>
-          <div style="position:relative">
-            <input id="l2p-pass" type="password" placeholder="••••••••" style="padding-right:36px">
-            <button type="button" onclick="togglePwVis('l2p-pass',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:15px;padding:0;line-height:1">👁</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- IP Statis -->
-      <div class="l2tp-ip-box">
-        <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:6px">
-          <i class="ti ti-network" style="font-size:13px" aria-hidden="true"></i>
-          IP Address Statis
-          <span style="background:#ede9fe;color:#6d28d9;font-size:9px;font-weight:600;padding:1px 7px;border-radius:99px">Opsional</span>
-        </div>
-        <div style="display:flex;gap:6px;align-items:stretch">
-          <input id="l2p-ip" placeholder="10.10.29.x" list="l2p-ip-list" autocomplete="off" style="flex:1">
-          <button type="button" onclick="saranIPL2tp(false)" class="btn-saran-ip">
-            <i class="ti ti-bulb" style="font-size:13px" aria-hidden="true"></i> Saran IP
-          </button>
-        </div>
-        <datalist id="l2p-ip-list"></datalist>
-        <div style="display:flex;gap:8px;margin-top:7px;flex-wrap:wrap">
-          <span class="l2tp-subnet-chip">Subnet: 10.10.29.0/24</span>
-          <span class="l2tp-subnet-chip">Gateway: 10.10.29.1</span>
-        </div>
-        <div id="l2p-ip-hint" class="td-text-sub" style="font-size:11px;margin-top:5px;min-height:16px">Kosongkan untuk IP otomatis dari pool DHCP</div>
-      </div>
-
-      <!-- Info -->
-      <div class="l2tp-info-box">
-        <i class="ti ti-shield-check" style="font-size:14px;margin-top:1px;flex-shrink:0" aria-hidden="true"></i>
-        <span>User langsung aktif dan dapat terkoneksi via <b>L2TP/IPSec</b> dengan pre-shared key yang sudah dikonfigurasi</span>
-      </div>
-
-      <div class="modal-foot" style="padding:0;border:none;margin-top:2px">
-        <button class="btn" onclick="closeModal('m-add-l2tp-user')">Batal</button>
-        <button class="btn primary" style="background:#6366f1;box-shadow:0 2px 6px rgba(99,102,241,.3)" onclick="apiTambahL2tpUser()">
-          <i class="ti ti-user-plus" style="font-size:14px" aria-hidden="true"></i> Tambah User
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<div class="overlay" id="m-gen-voucher">
-  <div class="modal" style="max-width:500px">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:38px;height:38px;border-radius:10px;background:#fef3c7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ti-bolt" style="font-size:20px;color:#d97706" aria-hidden="true"></i>
-        </div>
-        <div>
-          <div class="td-text-main" style="font-size:15px;font-weight:700">Generate Voucher</div>
-          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Buat kode voucher dalam jumlah banyak</div>
-        </div>
-      </div>
-      <button class="btn-x" onclick="closeModal('m-gen-voucher')">✕</button>
-    </div>
-
-    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
-
-      <!-- Paket -->
-      <div>
-        <label class="fg-label">Paket Voucher</label>
-        <select id="fv-paket" onchange="gvUpdatePaket()" style="width:100%;padding:9px 12px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#0f172a;font-size:13px;font-family:inherit">
-          <option value="">-- pilih paket --</option>
-        </select>
-        <div id="gv-paket-card" style="display:none;margin-top:8px;background:linear-gradient(135deg,#FAEEDA,#f5e0b5);border-radius:10px;padding:11px 14px;align-items:center;gap:12px">
-          <div style="width:36px;height:36px;border-radius:8px;background:#BA7517;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">
-            <i class="ti ti-wifi" aria-hidden="true"></i>
-          </div>
+        <label for="ep2-izin-voucher" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
+          <span class="vcr-toggle-track" id="ep2-vcr-track" style="flex-shrink:0"><span class="vcr-toggle-thumb"></span></span>
+          <input type="checkbox" id="ep2-izin-voucher" style="display:none" onchange="paketToggleVcrLabel('ep2')">
           <div>
-            <div id="gv-paket-nama" style="font-size:13px;font-weight:600;color:#633806"></div>
-            <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap" id="gv-paket-chips"></div>
+            <div class="td-text-main" style="font-size:13px;font-weight:600">Izinkan e-Voucher Online</div>
+            <div id="ep2-vcr-lbl" class="td-text-sub" style="font-size:11px;margin-top:1px">Tidak diizinkan</div>
           </div>
-        </div>
+        </label>
       </div>
-
-      <!-- Jumlah -->
-      <div>
-        <label class="fg-label">Jumlah Voucher — <span id="gv-jml-lbl" style="color:#d97706;font-weight:700">50</span></label>
-        <div style="display:flex;align-items:center;gap:10px">
-          <input type="range" id="fv-jml-range" min="1" max="9999" value="50" oninput="gvSyncJml('range')" style="flex:1;height:5px;cursor:pointer;accent-color:#d97706">
-          <input type="number" id="fv-jml" min="1" value="50" oninput="gvSyncJml('input')" style="width:70px;padding:7px 10px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#d97706;font-size:15px;font-weight:700;text-align:center;font-family:inherit">
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:10px;margin-top:3px">
-          <span class="td-text-sub">1</span><span class="td-text-sub">Tak terbatas</span>
-        </div>
-      </div>
-
-      <!-- Mode -->
-      <div>
-        <label class="fg-label">Mode Kode</label>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div id="gv-mode-sama" onclick="gvSetMode('sama')" style="border:2px solid #d97706;background:#FAEEDA;border-radius:9px;padding:10px 12px;cursor:pointer;transition:all .15s">
-            <div style="font-size:18px;margin-bottom:4px">🔑</div>
-            <div class="gv-mode-title" style="font-size:12px;font-weight:600;color:#854F0B">Username = Password</div>
-            <div class="gv-mode-desc" style="font-size:10px;color:#BA7517;margin-top:3px">1 kode untuk login & password</div>
-          </div>
-          <div id="gv-mode-beda" onclick="gvSetMode('beda')" style="border:2px solid #e2e7ef;border-radius:9px;padding:10px 12px;cursor:pointer;transition:all .15s">
-            <div style="font-size:18px;margin-bottom:4px">🗝️</div>
-            <div class="gv-mode-title td-text-main" style="font-size:12px;font-weight:600">Username + Password</div>
-            <div class="gv-mode-desc td-text-sub" style="font-size:10px;margin-top:3px">Kode terpisah user & pass</div>
-          </div>
-        </div>
-        <input type="hidden" id="fv-mode" value="sama">
-      </div>
-
-      <!-- Format -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div>
-          <label class="fg-label">Panjang Kode</label>
-          <input type="number" id="fv-panjang" value="8" min="4" max="20" oninput="gvUpdatePreview()" style="width:100%;padding:9px 12px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#0f172a;font-size:13px;font-family:inherit">
-        </div>
-        <div>
-          <label class="fg-label">Prefix <span style="font-weight:400" class="td-text-sub">(opsional)</span></label>
-          <input type="text" id="fv-prefix" placeholder="cth: WIFI" oninput="gvUpdatePreview()" style="width:100%;padding:9px 12px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#0f172a;font-size:13px;font-family:inherit">
-        </div>
-      </div>
-
-      <!-- Charset -->
-      <div>
-        <label class="fg-label">Set Karakter</label>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button type="button" onclick="gvSetCharset('angka')" id="gv-cs-angka" class="gv-cs-chip">0–9</button>
-          <button type="button" onclick="gvSetCharset('angka_kecil')" id="gv-cs-angka_kecil" class="gv-cs-chip gv-cs-active">a–z 0–9</button>
-          <button type="button" onclick="gvSetCharset('angka_besar')" id="gv-cs-angka_besar" class="gv-cs-chip">A–Z 0–9</button>
-        </div>
-        <div style="margin-top:7px;font-size:11px" class="td-text-sub">Preview: <span id="gv-preview-kode" style="font-family:monospace;font-weight:700;color:#d97706">k7m2x9qp</span></div>
-        <input type="hidden" id="fv-charset" value="angka_kecil">
-      </div>
-
-      <!-- Summary -->
-      <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:14px">
-        <div style="text-align:center;flex-shrink:0">
-          <div id="gv-sum-jml" style="font-size:28px;font-weight:700;color:#b45309;line-height:1">50</div>
-          <div style="font-size:10px;color:#b45309;margin-top:1px">voucher</div>
-        </div>
-        <div style="flex:1;min-width:0">
-          <div id="gv-sum-paket" style="font-size:12px;color:#92400e;font-weight:500">— pilih paket terlebih dahulu</div>
-          <div id="gv-sum-detail" style="font-size:11px;color:#b45309;margin-top:3px;font-weight:500"></div>
-        </div>
-      </div>
-
-      <div class="modal-foot" style="padding:0;border:none;margin-top:2px">
-        <button class="btn" onclick="closeModal('m-gen-voucher')">Batal</button>
-        <button class="btn primary" style="background:#d97706;box-shadow:0 2px 6px rgba(217,119,6,.3)" onclick="apiGenerateVoucher()">
-          <i class="ti ti-bolt" style="font-size:14px" aria-hidden="true"></i> Generate Voucher
-        </button>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
+        <button class="btn" onclick="closeModal('m-edit-pelanggan')">Batal</button>
+        <button class="btn" onclick="epSwitchTab(2)">Lokasi <i class="ti ti-arrow-right" style="font-size:13px" aria-hidden="true"></i></button>
+        <button class="btn primary" onclick="apiUpdatePelanggan()"><i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan</button>
       </div>
     </div>
-  </div>
-</div>
 
-<div class="overlay" id="m-kirim-voucher">
-  <div class="modal">
-    <div class="modal-hdr"><h3>💬 Kirim Voucher via WA</h3><button class="btn-x" onclick="closeModal('m-kirim-voucher')">✕</button></div>
-    <div class="modal-body">
-      <div class="vcr-kode" id="kode-display">ABCD-1234-EFGH</div>
-      <div class="fg"><label>No. WhatsApp Tujuan</label><input id="vcr-nohp" placeholder="628xxx"><input type="hidden" id="vcr-kode-val"></div>
-      <div class="fg"><label>Nama Penerima</label><input id="vcr-nama" placeholder="Nama pelanggan"></div>
-      <div class="modal-foot"><button class="btn" onclick="closeModal('m-kirim-voucher')">Batal</button><button class="btn primary" onclick="apiKirimVoucherWA()">Kirim Sekarang</button></div>
-    </div>
-  </div>
-</div>
-
-
-<!-- MODAL IMPORT CSV PELANGGAN -->
-<div class="overlay" id="m-import-csv">
-  <div class="modal" style="max-width:520px">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:38px;height:38px;border-radius:10px;background:#e0f2fe;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ti-upload" style="font-size:20px;color:#0ea5e9" aria-hidden="true"></i>
-        </div>
-        <div>
-          <div class="td-text-main" style="font-size:15px;font-weight:700">Import Pelanggan CSV</div>
-          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Upload file CSV untuk import massal</div>
-        </div>
+    <!-- Tab 2: Lokasi & Jaringan -->
+    <div id="ep-tab-2" style="display:none;padding:14px 20px;flex-direction:column;gap:12px">
+      <div style="font-size:12px;color:var(--text2)">Klik pada peta untuk memperbarui koordinat.</div>
+      <div id="ep-map" style="height:260px;border-radius:8px;border:1px solid var(--border);z-index:1"></div>
+      <div class="fg-row">
+        <div class="fg"><label>Latitude</label><input id="ep-latitude" type="number" step="any" placeholder="cth: 1.1234567" oninput="petaMovePin('edit')"></div>
+        <div class="fg"><label>Longitude</label><input id="ep-longitude" type="number" step="any" placeholder="cth: 104.0123456" oninput="petaMovePin('edit')"></div>
       </div>
-      <button class="btn-x" onclick="closeModal('m-import-csv')">✕</button>
-    </div>
-    <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
-
-      <!-- Info format -->
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:12px;color:#166534">
-        <div style="font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px">
-          <i class="ti ti-info-circle" style="font-size:14px" aria-hidden="true"></i> Format kolom CSV (header wajib ada):
-        </div>
-        <div style="font-family:monospace;font-size:11px;background:#dcfce7;padding:6px 10px;border-radius:6px;line-height:1.8">
-          nama, username, password, no_hp, tipe_koneksi, paket_id<br>
-          <span style="opacity:.7">email, alamat, notes (opsional)</span>
-        </div>
-        <div style="margin-top:6px;font-size:11px;opacity:.8">
-          • tipe_koneksi: <b>pppoe</b> atau <b>hotspot</b><br>
-          • paket_id: nomor ID paket (lihat di halaman Paket Internet)<br>
-          • Password akan di-hash otomatis
-        </div>
+      <div class="fg-row">
+        <div class="fg"><label>ODC</label><input id="ep-odc" placeholder="cth: ODC-A01"></div>
+        <div class="fg"><label>ODP</label><input id="ep-odp" placeholder="cth: ODP-A01-01"></div>
       </div>
-
-      <!-- Upload area -->
-      <div id="csv-drop-area" style="border:2px dashed #e2e7ef;border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:all .15s" onclick="document.getElementById('csv-file-input').click()" ondragover="csvDragOver(event)" ondragleave="csvDragLeave(event)" ondrop="csvDrop(event)">
-        <i class="ti ti-file-text" style="font-size:36px;color:#94a3b8;display:block;margin-bottom:8px" aria-hidden="true"></i>
-        <div class="td-text-main" style="font-size:13px;font-weight:500">Klik atau drag & drop file CSV</div>
-        <div class="td-text-sub" style="font-size:11px;margin-top:3px">Format: .csv, maks. 5MB</div>
-        <input type="file" id="csv-file-input" accept=".csv" style="display:none" onchange="csvFileSelected(this)">
-      </div>
-
-      <!-- Preview -->
-      <div id="csv-preview" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div class="td-text-main" style="font-size:13px;font-weight:600">Preview data (<span id="csv-row-count">0</span> baris)</div>
-          <button class="btn sm danger" onclick="csvReset()"><i class="ti ti-x" aria-hidden="true"></i> Batal</button>
-        </div>
-        <div style="max-height:200px;overflow:auto;border:1px solid #e2e7ef;border-radius:8px">
-          <table style="width:100%;font-size:11px">
-            <thead id="csv-thead" style="position:sticky;top:0;background:#f8fafc"></thead>
-            <tbody id="csv-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Error/result -->
-      <div id="csv-result" style="display:none"></div>
-
-      <div class="modal-foot" style="padding:0;border:none;margin-top:2px">
-        <button class="btn" onclick="closeModal('m-import-csv')">Tutup</button>
-        <button id="csv-btn-import" class="btn primary" style="background:#0ea5e9;box-shadow:0 2px 6px rgba(14,165,233,.3);display:none" onclick="apiImportCSV()">
-          <i class="ti ti-upload" style="font-size:14px" aria-hidden="true"></i> Import Sekarang
-        </button>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
+        <button class="btn" onclick="epSwitchTab(1)"><i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> Kembali</button>
+        <button class="btn primary" onclick="apiUpdatePelanggan()"><i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan Perubahan</button>
       </div>
     </div>
   </div>
@@ -3829,7 +3040,7 @@ function openModal(id) {
     ['f-latitude','f-longitude','f-odc','f-odp'].forEach(function(k) {
       const el = document.getElementById(k); if (el) el.value = '';
     });
-    initMiniMap('add');
+    apSwitchTab(1); // selalu mulai dari tab 1
   }
   if (id === 'm-add-invoice') {
     // Reset form
@@ -4527,6 +3738,40 @@ async function apiImportCSV() {
 }
 // ── END EXPORT / IMPORT CSV ───────────────────────────────────
 
+// ── TAB SWITCHING MODAL PELANGGAN ────────────────────────────
+function apSwitchTab(n) {
+  [1,2].forEach(function(i) {
+    const tab = document.getElementById('ap-tab-' + i);
+    const btn = document.getElementById('ap-tab-btn-' + i);
+    if (!tab || !btn) return;
+    const active = i === n;
+    tab.style.display = active ? 'flex' : 'none';
+    btn.style.borderBottomColor = active ? '#BA7517' : 'transparent';
+    btn.style.color = active ? '#BA7517' : 'var(--text2)';
+  });
+  if (n === 2) initMiniMap('add');
+}
+
+function epSwitchTab(n) {
+  [1,2].forEach(function(i) {
+    const tab = document.getElementById('ep-tab-' + i);
+    const btn = document.getElementById('ep-tab-btn-' + i);
+    if (!tab || !btn) return;
+    const active = i === n;
+    tab.style.display = active ? 'flex' : 'none';
+    btn.style.borderBottomColor = active ? '#BA7517' : 'transparent';
+    btn.style.color = active ? '#BA7517' : 'var(--text2)';
+  });
+  if (n === 2) {
+    initMiniMap('edit');
+    // Set pin ke koordinat yang sudah ada
+    const lat = parseFloat(document.getElementById('ep-latitude')?.value);
+    const lng = parseFloat(document.getElementById('ep-longitude')?.value);
+    if (lat && lng) setTimeout(function() { setMapPin('edit', lat, lng); }, 200);
+  }
+}
+// ── END TAB SWITCHING ─────────────────────────────────────────
+
 // ── MINI MAP MODAL PELANGGAN ─────────────────────────────────
 let _fMap = null, _fMarker = null;
 let _epMap = null, _epMarker = null;
@@ -4746,8 +3991,8 @@ async function bukaModalEdit(id) {
     epRenderPaketGrid(p.paket_id);
 
     document.getElementById('ep-title').textContent = 'Edit: ' + p.nama;
+    epSwitchTab(1); // selalu mulai dari tab 1
     openModal('m-edit-pelanggan');
-    initMiniMap('edit');
   } catch(e) {
     toast('❌ Gagal memuat data: ' + e.message, true);
   }
