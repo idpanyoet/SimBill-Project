@@ -7326,20 +7326,21 @@ function sesiFilter() {
 }
 
 function fmtDurasi(menit) {
-  if (!menit && menit !== 0) return '—';
-  const m = parseInt(menit);
+  const m = parseInt(menit) || 0;
+  if (m <= 0)  return '—';
   if (m < 60)  return `${m}m`;
   const j = Math.floor(m / 60), rm = m % 60;
-  if (j < 24) return `${j}j ${rm}m`;
+  if (j < 24)  return `${j}j ${rm}m`;
   const hr = Math.floor(j / 24), rj = j % 24;
   return `${hr}h ${rj}j`;
 }
 
 function fmtBytes(mb) {
-  if (!mb || mb == 0) return '0 B';
-  if (mb < 1)    return `${(mb*1024).toFixed(0)} KB`;
-  if (mb < 1024) return `${mb.toFixed(1)} MB`;
-  return `${(mb/1024).toFixed(1)} GB`;
+  const n = parseFloat(mb) || 0;
+  if (n <= 0)   return '0 B';
+  if (n < 1)    return `${(n*1024).toFixed(0)} KB`;
+  if (n < 1024) return `${n.toFixed(1)} MB`;
+  return `${(n/1024).toFixed(1)} GB`;
 }
 
 function fmtDT(dt) {
