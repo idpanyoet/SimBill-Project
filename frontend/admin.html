@@ -2394,8 +2394,8 @@ Selamat menikmati! 🌐</textarea>
           <i class="ti ti-user-plus" style="font-size:18px;color:#BA7517" aria-hidden="true"></i>
         </div>
         <div>
-          <div style="font-size:15px;font-weight:600;color:var(--text)">Tambah Pelanggan</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:1px">Isi data untuk aktivasi akun</div>
+          <div style="font-size:15px;font-weight:600;color:var(--text)"><span data-i18n="Tambah Pelanggan">Tambah Pelanggan</span></div>
+          <div style="font-size:11px;color:var(--text3);margin-top:1px" data-i18n="Isi data untuk aktivasi akun">Isi data untuk aktivasi akun</div>
         </div>
       </div>
       <button class="btn-x" onclick="closeModal('m-add-pelanggan')">✕</button>
@@ -2404,10 +2404,10 @@ Selamat menikmati! 🌐</textarea>
     <!-- Tab nav -->
     <div style="display:flex;border-bottom:2px solid var(--border)">
       <button id="ap-tab-btn-1" onclick="apSwitchTab(1)" style="flex:1;padding:10px;font-size:12px;font-weight:600;border:none;background:none;border-bottom:2px solid #BA7517;margin-bottom:-2px;color:#BA7517;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
-        <i class="ti ti-user" style="font-size:14px" aria-hidden="true"></i> Data Utama
+        <i class="ti ti-user" style="font-size:14px" aria-hidden="true"></i> <span data-i18n="Data Utama">Data Utama</span>
       </button>
       <button id="ap-tab-btn-2" onclick="apSwitchTab(2)" style="flex:1;padding:10px;font-size:12px;font-weight:600;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
-        <i class="ti ti-map-pin" style="font-size:14px" aria-hidden="true"></i> Lokasi & Jaringan
+        <i class="ti ti-map-pin" style="font-size:14px" aria-hidden="true"></i> <span data-i18n="Lokasi & Jaringan">Lokasi & Jaringan</span>
       </button>
     </div>
 
@@ -2421,7 +2421,7 @@ Selamat menikmati! 🌐</textarea>
           </div>
           <div>
             <div class="td-text-main" style="font-size:13px;font-weight:600">PPPoE</div>
-            <div class="td-text-sub" style="font-size:10px;margin-top:1px">Kabel / Fiber</div>
+            <div class="td-text-sub" style="font-size:10px;margin-top:1px" data-i18n="Kabel / Fiber">Kabel / Fiber</div>
           </div>
         </div>
         <div id="f-tipe-card-hotspot" onclick="pilihTipePelanggan('hotspot')" style="border:2px solid var(--border);border-radius:9px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .15s">
@@ -2430,60 +2430,60 @@ Selamat menikmati! 🌐</textarea>
           </div>
           <div>
             <div class="td-text-main" style="font-size:13px;font-weight:600">Hotspot</div>
-            <div class="td-text-sub" style="font-size:10px;margin-top:1px">WiFi</div>
+            <div class="td-text-sub" style="font-size:10px;margin-top:1px" data-i18n="WiFi">WiFi</div>
           </div>
         </div>
         <input type="hidden" id="f-tipe" value="pppoe">
       </div>
 
       <div class="fg-row">
-        <div class="fg"><label>Nama Lengkap</label><input id="f-nama" placeholder="Nama pelanggan"></div>
-        <div class="fg"><label>No. WhatsApp</label><input id="f-nohp" placeholder="628xxxxxxxx"></div>
+        <div class="fg"><label data-i18n="Nama Lengkap">Nama Lengkap</label><input id="f-nama" placeholder="Nama pelanggan"></div>
+        <div class="fg"><label data-i18n="No. WhatsApp">No. WhatsApp</label><input id="f-nohp" placeholder="628xxxxxxxx"></div>
       </div>
       <div class="fg-row">
-        <div class="fg"><label>Username RADIUS</label><input id="f-username" placeholder="user.nama"></div>
-        <div class="fg"><label>Password</label><input id="f-password" type="password" placeholder="••••••••"></div>
+        <div class="fg"><label data-i18n="Username RADIUS">Username RADIUS</label><input id="f-username" placeholder="user.nama"></div>
+        <div class="fg"><label data-i18n="Password">Password</label><input id="f-password" type="password" placeholder="••••••••"></div>
       </div>
 
       <div class="fg">
-        <label>Pilih Paket</label>
+        <label data-i18n="Pilih Paket">Pilih Paket</label>
         <select id="f-paket" style="width:100%"><option value="">-- pilih paket --</option></select>
       </div>
 
-      <div class="fg"><label>Alamat</label><input id="f-alamat" placeholder="Alamat lengkap (opsional)"></div>
+      <div class="fg"><label data-i18n="Alamat">Alamat</label><input id="f-alamat" placeholder="Alamat lengkap (opsional)"></div>
 
       <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)">
         <input type="checkbox" id="f-kirim-wa" checked style="width:15px;height:15px;accent-color:#BA7517;cursor:pointer">
-        <label for="f-kirim-wa">Kirim notifikasi WA setelah simpan</label>
+        <label for="f-kirim-wa" data-i18n="Kirim notifikasi WA setelah simpan">Kirim notifikasi WA setelah simpan</label>
       </div>
 
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
         <button class="btn" onclick="closeModal('m-add-pelanggan')">Batal</button>
         <button class="btn primary" onclick="apSwitchTab(2)">
-          Berikutnya <i class="ti ti-arrow-right" style="font-size:13px" aria-hidden="true"></i>
+          <span data-i18n="Berikutnya">Berikutnya</span> <i class="ti ti-arrow-right" style="font-size:13px" aria-hidden="true"></i>
         </button>
       </div>
     </div>
 
     <!-- Tab 2: Lokasi & Jaringan -->
     <div id="ap-tab-2" style="display:none;padding:14px 20px;display:none;flex-direction:column;gap:12px">
-      <div style="font-size:12px;color:var(--text2)">Klik pada peta untuk mengisi koordinat secara otomatis. Semua field opsional.</div>
+      <div style="font-size:12px;color:var(--text2)" data-i18n="Klik pada peta untuk mengisi koordinat secara otomatis.">Klik pada peta untuk mengisi koordinat secara otomatis. Semua field opsional.</div>
       <div id="f-map" style="height:260px;border-radius:8px;border:1px solid var(--border);z-index:1"></div>
       <div class="fg-row">
-        <div class="fg"><label>Latitude</label><input id="f-latitude" type="number" step="any" placeholder="cth: 1.1234567" oninput="petaMovePin('add')"></div>
-        <div class="fg"><label>Longitude</label><input id="f-longitude" type="number" step="any" placeholder="cth: 104.0123456" oninput="petaMovePin('add')"></div>
+        <div class="fg"><label data-i18n="Latitude">Latitude</label><input id="f-latitude" type="number" step="any" placeholder="cth: 1.1234567" oninput="petaMovePin('add')"></div>
+        <div class="fg"><label data-i18n="Longitude">Longitude</label><input id="f-longitude" type="number" step="any" placeholder="cth: 104.0123456" oninput="petaMovePin('add')"></div>
       </div>
       <div class="fg-row">
-        <div class="fg"><label>ODC</label><input id="f-odc" placeholder="cth: ODC-A01"></div>
-        <div class="fg"><label>ODP</label><input id="f-odp" placeholder="cth: ODP-A01-01"></div>
+        <div class="fg"><label data-i18n="ODC">ODC</label><input id="f-odc" placeholder="cth: ODC-A01"></div>
+        <div class="fg"><label data-i18n="ODP">ODP</label><input id="f-odp" placeholder="cth: ODP-A01-01"></div>
       </div>
 
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
         <button class="btn" onclick="apSwitchTab(1)">
-          <i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> Kembali
+          <i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> <span data-i18n="Kembali">Kembali</span>
         </button>
         <button class="btn primary" onclick="apiSimpanPelanggan()">
-          <i class="ti ti-check" style="font-size:13px" aria-hidden="true"></i> Simpan & Aktifkan
+          <i class="ti ti-check" style="font-size:13px" aria-hidden="true"></i> <span data-i18n="Simpan & Aktifkan">Simpan & Aktifkan</span>
         </button>
       </div>
     </div>
@@ -3788,6 +3788,11 @@ const I18N = {
     'Simpan Perubahan':'Save Changes',
     'Klik pada peta untuk memperbarui koordinat.':'Click the map to update coordinates.',
     'Klik pada peta untuk mengisi koordinat secara otomatis.':'Click the map to auto-fill coordinates.',
+    'Isi data untuk aktivasi akun':'Fill in data to activate account',
+    'Kabel / Fiber':'Cable / Fiber',
+    'WiFi':'WiFi',
+    'Berikutnya':'Next',
+    'Kembali':'Back',
     'Izinkan semua paket':'Allow all plans',
     'Paket yang Diizinkan':'Allowed Plans',
     'Kosongkan untuk izinkan semua paket.':'Leave empty to allow all plans.',
@@ -4114,6 +4119,33 @@ function openModal(id) {
       const el = document.getElementById(k); if (el) el.value = '';
     });
     apSwitchTab(1); // selalu mulai dari tab 1
+  }
+  // Terapkan bahasa ke modal
+  if (_lang !== 'ID') {
+    const modal = document.getElementById(id);
+    if (modal) {
+      modal.querySelectorAll('[data-i18n]').forEach(function(el) {
+        el.textContent = t(el.getAttribute('data-i18n'));
+      });
+      modal.querySelectorAll('label').forEach(function(el) {
+        const tn = el.childNodes[0];
+        if (!tn || tn.nodeType !== 3) return;
+        const raw = tn._orig || tn.textContent.trim();
+        if (!raw || raw.length < 2) return;
+        tn._orig = raw;
+        tn.textContent = t(raw);
+      });
+      modal.querySelectorAll('button').forEach(function(el) {
+        el.childNodes.forEach(function(n) {
+          if (n.nodeType !== 3) return;
+          const raw = n._orig || n.textContent.trim();
+          if (!raw || raw.length < 2) return;
+          n._orig = raw;
+          const trans = t(raw);
+          if (trans !== raw) n.textContent = ' ' + trans + ' ';
+        });
+      });
+    }
   }
   if (id === 'm-add-invoice') {
     // Reset form
