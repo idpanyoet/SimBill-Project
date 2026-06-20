@@ -142,21 +142,23 @@ router.get('/saldo', resellerAuth, async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
-// POST /reseller/topup — buat request topup saldo
+// POST /reseller/topup — buat request topup saldo via payment gateway
 router.post('/topup', resellerAuth, async (req, res, next) => {
     try {
-        const { jumlah, metode = 'qris' } = req.body;
+        const { jumlah, gateway } = req.body;
         if (!jumlah || jumlah < 10000)
             return res.status(400).json({ error: 'Minimum topup Rp 10.000' });
         if (jumlah > 50000000)
             return res.status(400).json({ error: 'Maksimum topup Rp 50.000.000' });
 
+        const provider = ['tripay', 'midtrans'].includes(gateway) ? gateway : undefined;
         const r        = await queryOne('SELECT * FROM reseller WHERE id=?', [req.reseller.id]);
         const order_id = `TOP-${req.reseller.id}-${Date.now()}`;
 
         const pg = await paymentService.buatTransaksi({
             order_id,
             gross_amount: jumlah,
+            provider,
             pelanggan: {
                 nama:      r.nama,
                 no_hp:     r.no_hp,
@@ -167,18 +169,22 @@ router.post('/topup', resellerAuth, async (req, res, next) => {
             }
         });
 
+        if (!pg?.payment_url) {
+            return res.status(400).json({
+                error: `Gagal membuat link pembayaran${provider ? ' via ' + provider : ''}. Pastikan gateway sudah dikonfigurasi admin di Setting > Payment Gateway.`
+            });
+        }
+
         await query(`
-            INSERT INTO reseller_topup (reseller_id, order_id, jumlah, payment_url, status)
-            VALUES (?,?,?,?,'pending')
-        `, [req.reseller.id, order_id, jumlah, pg?.payment_url || null]);
+            INSERT INTO reseller_topup (reseller_id, order_id, jumlah, payment_url, payment_method, status)
+            VALUES (?,?,?,?,?,'pending')
+        `, [req.reseller.id, order_id, jumlah, pg.payment_url, provider || 'auto']);
 
         res.json({
             order_id,
             jumlah,
-            payment_url: pg?.payment_url || null,
-            pesan: pg?.payment_url
-                ? 'Silakan selesaikan pembayaran'
-                : 'Request topup diterima, hubungi admin untuk konfirmasi'
+            payment_url: pg.payment_url,
+            pesan: 'Silakan selesaikan pembayaran'
         });
     } catch (e) { next(e); }
 });

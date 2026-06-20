@@ -13,9 +13,9 @@ let _cache = null;
 let _cacheAt = 0;
 const CACHE_MS = 10_000;
 
-async function getConfig() {
+async function getConfig(providerOverride) {
     const now = Date.now();
-    if (_cache && (now - _cacheAt) < CACHE_MS) return _cache;
+    if (!providerOverride && _cache && (now - _cacheAt) < CACHE_MS) return _cache;
 
     const rows = await query(
         `SELECT kunci, nilai FROM setting WHERE kunci IN
@@ -31,7 +31,7 @@ async function getConfig() {
     const map = {};
     rows.forEach(r => map[r.kunci] = r.nilai);
 
-    const provider = map.pg_provider || 'midtrans';
+    const provider = providerOverride || map.pg_provider || 'midtrans';
 
     const merchantCode = provider === 'duitku'
         ? (map.pg_merchant_code_duitku   || map.pg_merchant_code || '')
@@ -43,7 +43,7 @@ async function getConfig() {
         ? (map.pg_merchant_code_xendit   || map.pg_merchant_code || '')
         : (map.pg_merchant_code || '');
 
-    _cache = {
+    const cfg = {
         provider,
         sandbox:       map.pg_sandbox !== '0',
         serverKey:     map.pg_server_key_midtrans  || map.pg_server_key    || '',
@@ -59,8 +59,8 @@ async function getConfig() {
         privateKey:    map.pg_private_key_tripay   || map.pg_private_key   || '',
         appUrl:        map.app_url || process.env.APP_URL || 'http://localhost:3000'
     };
-    _cacheAt = now;
-    return _cache;
+    if (!providerOverride) { _cache = cfg; _cacheAt = now; }
+    return cfg;
 }
 
 function invalidateCache() {
@@ -70,8 +70,8 @@ function invalidateCache() {
 // ============================================================
 // BUAT TRANSAKSI BARU
 // ============================================================
-async function buatTransaksi({ order_id, gross_amount, pelanggan, metode }) {
-    const cfg = await getConfig();
+async function buatTransaksi({ order_id, gross_amount, pelanggan, metode, provider }) {
+    const cfg = await getConfig(provider);
     try {
         if (!cfg.serverKey && !cfg.secretKey && !cfg.apiKey) {
             console.warn('[PAYMENT] Kredensial payment gateway belum diisi di Setting > Payment Gateway.');
