@@ -100,6 +100,7 @@ router.get('/check', async (req, res) => {
         }
 
         const latest = rel.tag_name || rel.name || null;
+        const adaZipAsset = (rel.assets || []).some(a => /\.zip$/i.test(a.name || ''));
         res.json({
             current,
             latest,
@@ -108,6 +109,7 @@ router.get('/check', async (req, res) => {
             catatan: (rel.body || '').slice(0, 4000),   // changelog
             url: rel.html_url || null,
             tanggal: rel.published_at || null,
+            sumber: adaZipAsset ? 'zip-asset' : 'source-code',
         });
     } catch (e) {
         res.status(500).json({ error: 'Gagal cek update: ' + e.message });
@@ -159,20 +161,46 @@ router.post('/apply', requireAdmin, async (req, res) => {
         }
         const rel = relResp.data;
         const newTag = rel.tag_name || rel.name || tag || 'unknown';
-        const tarball = rel.tarball_url;
-        if (!tarball) throw new Error('Rilis tidak punya tarball_url.');
 
-        // 1) Unduh tarball (token diperlukan untuk repo privat)
-        const dl = await axios.get(tarball, {
-            headers: ghHeaders(cfg.token), responseType: 'arraybuffer',
-            timeout: 120000, maxRedirects: 5,
-        });
-        fs.writeFileSync(tarFile, Buffer.from(dl.data));
-
-        // 2) Ekstrak
+        // Pilih sumber: ZIP asset rilis (jika dilampirkan) > source tarball commit.
+        // Asset zip = artefak yang KAMU upload ke rilis (mis. dari deploy.sh) →
+        // persis itu yang terpasang. Tanpa asset, pakai source code di tag commit.
+        const asset = (rel.assets || []).find(a => /\.zip$/i.test(a.name || ''));
         const exDir = path.join(tmpDir, 'extract');
         fs.mkdirSync(exDir, { recursive: true });
-        execSync(`tar xzf "${tarFile}" -C "${exDir}"`, { stdio: 'pipe' });
+
+        if (asset) {
+            if (!adaPerintah('unzip'))
+                throw new Error("Perlu 'unzip' untuk asset zip. Jalankan: apt-get install -y unzip");
+            // GitHub asset API → 302 ke S3 ber-signature. Authorization JANGAN
+            // diteruskan ke S3 (akan ditolak). Ikuti redirect manual tanpa auth.
+            const r1 = await axios.get(asset.url, {
+                headers: { ...ghHeaders(cfg.token), Accept: 'application/octet-stream' },
+                responseType: 'arraybuffer', timeout: 180000, maxRedirects: 0,
+                validateStatus: s => s === 200 || s === 302,
+            });
+            let zipBuf;
+            if (r1.status === 302 && r1.headers.location) {
+                const r2 = await axios.get(r1.headers.location, {
+                    responseType: 'arraybuffer', timeout: 180000, maxRedirects: 5,
+                });
+                zipBuf = Buffer.from(r2.data);
+            } else {
+                zipBuf = Buffer.from(r1.data);
+            }
+            const zipFile = path.join(tmpDir, 'release.zip');
+            fs.writeFileSync(zipFile, zipBuf);
+            execSync(`unzip -q -o "${zipFile}" -d "${exDir}"`, { stdio: 'pipe' });
+        } else {
+            const tarball = rel.tarball_url;
+            if (!tarball) throw new Error('Rilis tanpa asset zip & tanpa tarball_url.');
+            const dl = await axios.get(tarball, {
+                headers: ghHeaders(cfg.token), responseType: 'arraybuffer',
+                timeout: 180000, maxRedirects: 5,
+            });
+            fs.writeFileSync(tarFile, Buffer.from(dl.data));
+            execSync(`tar xzf "${tarFile}" -C "${exDir}"`, { stdio: 'pipe' });
+        }
 
         // 3) Cari root kode di dalam arsip (folder berisi backend/server.js)
         let srcRoot = execSync(
