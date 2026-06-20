@@ -485,6 +485,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-item" onclick="goto('invoice',this)"><i class="ti ti-receipt icon" aria-hidden="true"></i> Invoice</div>
     <div class="sb-item" onclick="goto('voucher',this)"><i class="ti ti-ticket icon" aria-hidden="true"></i> Voucher</div>
     <div class="sb-item" onclick="goto('reseller',this)"><i class="ti ti-building-store icon" aria-hidden="true"></i> Reseller</div>
+    <div class="sb-item" onclick="goto('tiket',this)"><i class="ti ti-headset icon" aria-hidden="true"></i> Tiket <span id="sb-tiket-badge" style="display:none;background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:6px">0</span></div>
 
     <div class="sb-section">Gateway</div>
     <div class="sb-item" onclick="goto('whatsapp',this)"><i class="ti ti-brand-whatsapp icon" aria-hidden="true"></i> WhatsApp</div>
@@ -1936,6 +1937,50 @@ Selamat menikmati! 🌐</textarea>
       </div>
 
       <!-- ══ LOG ADMIN ══ -->
+      <div class="page" id="p-tiket">
+        <div style="margin-bottom:16px">
+          <h2 style="margin:0;font-size:20px">Tiket Laporan</h2>
+          <div style="font-size:13px;color:var(--text2);margin-top:2px">Laporan gangguan &amp; permintaan dari pelanggan</div>
+        </div>
+        <div class="metrics" style="grid-template-columns:repeat(4,1fr)">
+          <div class="metric blue"><div class="metric-ico"><i class="ti ti-headset"></i></div><div><div class="lbl">Total Tiket</div><div class="val" id="tk-st-total">0</div></div></div>
+          <div class="metric red"><div class="metric-ico"><i class="ti ti-folder-open"></i></div><div><div class="lbl">Open</div><div class="val" id="tk-st-open">0</div></div></div>
+          <div class="metric amber"><div class="metric-ico"><i class="ti ti-loader-2"></i></div><div><div class="lbl">Proses</div><div class="val" id="tk-st-proses">0</div></div></div>
+          <div class="metric green"><div class="metric-ico"><i class="ti ti-circle-check"></i></div><div><div class="lbl">Selesai</div><div class="val" id="tk-st-selesai">0</div></div></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap" id="tk-filter">
+            <button class="rl-chip active" data-s="" onclick="tkFilter('')">Semua</button>
+            <button class="rl-chip" data-s="open" onclick="tkFilter('open')">Open</button>
+            <button class="rl-chip" data-s="proses" onclick="tkFilter('proses')">Proses</button>
+            <button class="rl-chip" data-s="selesai" onclick="tkFilter('selesai')">Selesai</button>
+          </div>
+          <input id="tk-cari" oninput="tkRender()" placeholder="Cari judul / pelanggan…" style="margin-left:auto;padding:8px 12px;border:1px solid var(--border);border-radius:10px;font-family:inherit;background:var(--bg2);min-width:200px">
+        </div>
+        <div id="tk-list" style="display:grid;gap:10px"><div style="color:var(--text3);font-size:13px;padding:20px">Memuat…</div></div>
+      </div>
+
+      <div class="overlay" id="m-tiket-detail">
+        <div class="modal" style="max-width:560px;max-height:88vh;display:flex;flex-direction:column;padding:0">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:16px 20px;border-bottom:1px solid var(--border)">
+            <div style="min-width:0">
+              <div id="tk-d-judul" style="font-size:15px;font-weight:700">Tiket</div>
+              <div id="tk-d-meta" style="font-size:12px;color:var(--text3);margin-top:2px"></div>
+            </div>
+            <button class="btn-x" onclick="closeModal('m-tiket-detail')">✕</button>
+          </div>
+          <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="font-size:12px;color:var(--text2)">Status:</span>
+            <div id="tk-status-btns" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+          </div>
+          <div id="tk-thread" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:180px;max-height:46vh"></div>
+          <div style="padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end">
+            <textarea id="tk-balas" rows="2" placeholder="Tulis balasan…" style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:13px;resize:vertical;background:var(--bg2)"></textarea>
+            <button class="btn primary" id="tk-btn-balas" onclick="tkKirimBalasan()" style="background:linear-gradient(135deg,#7C3AED,#2563EB);border:none"><i class="ti ti-send"></i></button>
+          </div>
+        </div>
+      </div>
+
       <div class="page" id="p-log">
 
         <!-- Header -->
@@ -5834,6 +5879,7 @@ function tampilApp() {
   document.getElementById('app').classList.add('visible');
   topbarUpdateProfil(ADMIN.nama, ADMIN.role);
   topbarCekNotif();
+  if (typeof tkRefreshBadge === 'function') tkRefreshBadge();
   loadDashboard();
   populateDropdowns();
 }
@@ -6193,6 +6239,86 @@ async function rpHapus(id, username) {
 }
 
 // ── NAVIGASI ──
+// ── TIKET (admin) ──
+let TK_LIST = [], TK_STATUS = '', TK_AKTIF = null;
+const TK_KAT = { umum:['Umum','#64748b'], gangguan:['Gangguan','#dc2626'], billing:['Billing','#7c3aed'], lainnya:['Lainnya','#0891b2'] };
+const TK_ST  = { open:['Open','#dc2626'], proses:['Proses','#d97706'], selesai:['Selesai','#16a34a'] };
+function tkBadge(n){ const b=document.getElementById('sb-tiket-badge'); if(!b) return; if(n>0){ b.textContent=n; b.style.display=''; } else b.style.display='none'; }
+async function tkRefreshBadge(){ try{ const s=await apiFetch('/api/tiket/stats'); tkBadge(s.open); }catch(e){} }
+async function loadTiket(){
+  const el=document.getElementById('tk-list');
+  try{
+    const [list, stats] = await Promise.all([
+      apiFetch('/api/tiket' + (TK_STATUS?('?status='+TK_STATUS):'')),
+      apiFetch('/api/tiket/stats')
+    ]);
+    TK_LIST=list;
+    const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+    set('tk-st-total',stats.total); set('tk-st-open',stats.open); set('tk-st-proses',stats.proses); set('tk-st-selesai',stats.selesai);
+    tkBadge(stats.open);
+    tkRender();
+  }catch(e){ if(el) el.innerHTML=`<div style="color:#dc2626;padding:16px">${e.message}</div>`; }
+}
+function tkFilter(s){ TK_STATUS=s; document.querySelectorAll('#tk-filter .rl-chip').forEach(c=>c.classList.toggle('active',c.dataset.s===s)); loadTiket(); }
+function tkRender(){
+  const el=document.getElementById('tk-list'); if(!el) return;
+  const q=(document.getElementById('tk-cari')?.value||'').toLowerCase();
+  const list=TK_LIST.filter(t=>!q||(t.judul||'').toLowerCase().includes(q)||(t.nama_pelanggan||'').toLowerCase().includes(q)||(t.username||'').toLowerCase().includes(q));
+  if(!list.length){ el.innerHTML='<div style="text-align:center;color:var(--text3);padding:30px;border:1px dashed var(--border);border-radius:12px">Tidak ada tiket</div>'; return; }
+  el.innerHTML=list.map(t=>{
+    const k=TK_KAT[t.kategori]||['?','#64748b']; const s=TK_ST[t.status]||['?','#64748b'];
+    return `<div onclick="tkBuka(${t.id})" style="border:1px solid var(--border);border-left:4px solid ${s[1]};border-radius:12px;padding:12px 14px;background:var(--bg2);cursor:pointer;display:flex;gap:12px;align-items:center">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-weight:700;font-size:14px">${(t.judul||'').replace(/</g,'&lt;')}</span>
+          <span style="font-size:10px;font-weight:700;color:${k[1]};background:${k[1]}1f;padding:1px 8px;border-radius:10px">${k[0]}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text3);margin-top:3px">${t.nama_pelanggan||'—'} · @${t.username||'-'} · ${fmtDate?fmtDate(t.created_at):''}${t.jumlah_reply>0?` · 💬 ${t.jumlah_reply}`:''}</div>
+      </div>
+      <span style="font-size:11px;font-weight:700;color:${s[1]};background:${s[1]}1f;padding:3px 10px;border-radius:20px;white-space:nowrap">${s[0]}</span>
+    </div>`;
+  }).join('');
+}
+async function tkBuka(id){
+  try{
+    const t=await apiFetch('/api/tiket/'+id); TK_AKTIF=t;
+    document.getElementById('tk-d-judul').textContent=t.judul;
+    document.getElementById('tk-d-meta').textContent=`${t.nama_pelanggan||'—'} · @${t.username||'-'}${t.no_hp?' · '+t.no_hp:''} · ${(TK_KAT[t.kategori]||['?'])[0]}`;
+    const items=[{dari:'pelanggan',pesan:t.pesan,created_at:t.created_at},...(t.reply||[])];
+    document.getElementById('tk-thread').innerHTML=items.map(m=>{
+      const admin=m.dari==='admin';
+      return `<div style="display:flex;justify-content:${admin?'flex-end':'flex-start'}"><div style="max-width:80%;background:${admin?'linear-gradient(135deg,#7C3AED,#2563EB)':'var(--bg3)'};color:${admin?'#fff':'var(--text)'};padding:9px 12px;border-radius:12px;font-size:13px;word-break:break-word"><div style="font-size:10px;opacity:.75;margin-bottom:2px">${admin?'Admin':'Pelanggan'}</div>${(m.pesan||'').replace(/</g,'&lt;').replace(/\n/g,'<br>')}<div style="font-size:10px;opacity:.6;margin-top:4px">${fmtDate?fmtDate(m.created_at):''}</div></div></div>`;
+    }).join('');
+    tkStatusButtons(t.status);
+    document.getElementById('tk-balas').value='';
+    openModal('m-tiket-detail');
+    setTimeout(()=>{const th=document.getElementById('tk-thread');if(th)th.scrollTop=th.scrollHeight;},60);
+  }catch(e){ toast('❌ '+e.message,true); }
+}
+function tkStatusButtons(cur){
+  const wrap=document.getElementById('tk-status-btns'); if(!wrap) return;
+  const opts=[['open','Open','#dc2626'],['proses','Proses','#d97706'],['selesai','Selesai','#16a34a']];
+  wrap.innerHTML=opts.map(o=>`<button onclick="tkSetStatus('${o[0]}')" style="padding:5px 12px;border-radius:20px;border:1.5px solid ${o[2]};background:${cur===o[0]?o[2]:'transparent'};color:${cur===o[0]?'#fff':o[2]};font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">${o[1]}</button>`).join('');
+}
+async function tkSetStatus(s){
+  if(!TK_AKTIF) return;
+  try{ await apiFetch('/api/tiket/'+TK_AKTIF.id+'/status',{method:'PUT',body:JSON.stringify({status:s})}); TK_AKTIF.status=s; tkStatusButtons(s); toast('✅ Status: '+(TK_ST[s]||[s])[0]); loadTiket(); }
+  catch(e){ toast('❌ '+e.message,true); }
+}
+async function tkKirimBalasan(){
+  if(!TK_AKTIF) return;
+  const pesan=(document.getElementById('tk-balas').value||'').trim();
+  if(!pesan) return toast('❌ Tulis balasan dulu',true);
+  const btn=document.getElementById('tk-btn-balas'); btn.disabled=true;
+  try{
+    await apiFetch('/api/tiket/'+TK_AKTIF.id+'/reply',{method:'POST',body:JSON.stringify({pesan})});
+    toast('✅ Balasan terkirim');
+    await tkBuka(TK_AKTIF.id);
+    loadTiket();
+  }catch(e){ toast('❌ '+e.message,true); }
+  finally{ btn.disabled=false; }
+}
+
 const titles = {
   'r-dashboard':'Dashboard Reseller', 'r-voucher':'Beli Voucher',
   'r-pelanggan':'Pelanggan Saya', 'r-topup':'Saldo & Topup', 'r-laporan':'Laporan & Transaksi',
@@ -6205,6 +6331,7 @@ const titles = {
   'net-profit':'Net Profit',
   'log':'Log Admin',
   'pengguna':'Pengguna Admin',
+  'tiket':'Tiket Laporan',
   'sesi':'Sesi Aktif',
   'peta':'Peta Jaringan',
   'voucher-template':'Template Voucher', setting:'Setting Sistem'
@@ -6219,6 +6346,7 @@ const loaders = {
   sesi: loadSesi,
   log:  loadLog,
   pengguna: loadPengguna,
+  tiket: loadTiket,
   peta: loadPeta,
   acs: loadACS, 'voucher-template': loadVoucherTemplate,
   setting: loadSetting,
