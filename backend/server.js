@@ -261,10 +261,6 @@ app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/admin.html'));
 });
 
-// --- Halaman portal reseller ---
-app.get('/reseller', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/reseller.html'));
-});
 app.get('/client', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/client.html'));
 });
