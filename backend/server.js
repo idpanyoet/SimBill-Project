@@ -280,6 +280,7 @@ app.use('/api/backup',    require('./routes/backup'));
 app.use('/api/log',       require('./routes/log').router);
 app.use('/api/pengguna',  require('./routes/pengguna'));
 app.use('/api/tiket',     require('./routes/tiket'));
+app.use('/api/telegram',  require('./routes/telegram'));
 app.use('/api/client',    require('./routes/client'));
 app.use('/api/acs',            require('./routes/acs'));
 app.use('/api/voucher-template', require('./routes/voucher-template'));

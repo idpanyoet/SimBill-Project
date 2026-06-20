@@ -250,6 +250,15 @@ router.post('/', async (req, res, next) => {
             tgl_expired: tgl_expired
         }).catch(e => console.warn('[WA] kirimPelangganBaru gagal:', e.message));
 
+        // Notif Telegram ke teknisi — pelanggan baru
+        require('../services/telegram').notif('pelanggan_baru',
+            `👤 <b>Pelanggan Baru</b>\n\n` +
+            `Nama: ${nama}\nUsername: ${username}\n` +
+            `Paket: ${paket.nama}\nTipe: ${tipe_koneksi}\n` +
+            (no_hp ? `HP: ${no_hp}\n` : '') +
+            (alamat ? `Alamat: ${alamat}` : '')
+        ).catch(()=>{});
+
         const { tulisLog } = require('./log');
         tulisLog({ kategori:'Pelanggan', pelaku: req.admin?.nama || 'Admin',
             aksi:'PELANGGAN_TAMBAH', target: username,
@@ -352,6 +361,12 @@ router.post('/:id/suspend', async (req, res, next) => {
         // Kirim WA notifikasi suspend
         const waService = require('../services/whatsapp');
         await waService.kirimSuspend(p);
+
+        // Notif Telegram ke teknisi — suspend
+        require('../services/telegram').notif('suspend',
+            `🔌 <b>Pelanggan Disuspend</b>\n\nNama: ${p.nama}\nUsername: ${p.username}` +
+            (p.no_hp ? `\nHP: ${p.no_hp}` : '')
+        ).catch(()=>{});
 
         res.json({ pesan: `${p.nama} berhasil disuspend` });
         require('./log').tulisLog({ kategori:'Pelanggan', pelaku: req.admin?.nama||'Admin',

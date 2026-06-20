@@ -114,6 +114,14 @@ body.role-reseller .admin-only{display:none!important}
 .rv-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px -12px rgba(0,0,0,.4)}
 .dw-tab{flex:1;padding:7px 4px;border:none;background:transparent;border-radius:8px;font-size:11.5px;font-weight:600;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .12s;white-space:nowrap}
 .dw-tab.active{background:var(--card);color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.tg-switch{position:relative;display:inline-block;width:46px;height:25px;flex-shrink:0}
+.tg-switch input{opacity:0;width:0;height:0}
+.tg-switch span{position:absolute;inset:0;background:var(--border);border:1px solid var(--border2);border-radius:25px;cursor:pointer;transition:.2s}
+.tg-switch span::before{content:"";position:absolute;height:19px;width:19px;left:3px;top:2px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tg-switch input:checked+span{background:linear-gradient(135deg,#7C3AED,#2563EB);border-color:transparent}
+.tg-switch input:checked+span::before{transform:translateX(21px)}
+.tg-evt{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.tg-evt:last-child{border-bottom:none}
 .btn-logout{background:none;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:5px 8px;font-size:11px;color:rgba(255,255,255,.35);cursor:pointer;font-family:inherit;margin-top:6px;width:100%;transition:all .15s}
 .btn-logout:hover{border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.6)}
 
@@ -489,6 +497,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 
     <div class="sb-section">Gateway</div>
     <div class="sb-item" onclick="goto('whatsapp',this)"><i class="ti ti-brand-whatsapp icon" aria-hidden="true"></i> WhatsApp</div>
+    <div class="sb-item" onclick="goto('telegram',this)"><i class="ti ti-brand-telegram icon" aria-hidden="true"></i> Telegram</div>
     <div class="sb-item" onclick="goto('payment',this)"><i class="ti ti-credit-card icon" aria-hidden="true"></i> Payment</div>
 
     <div class="sb-section">Sistem</div>
@@ -1948,6 +1957,74 @@ Selamat menikmati! 🌐</textarea>
       </div>
 
       <!-- ══ LOG ADMIN ══ -->
+      <div class="page" id="p-telegram">
+        <div style="margin-bottom:16px">
+          <h2 style="margin:0;font-size:20px;display:flex;align-items:center;gap:8px"><i class="ti ti-brand-telegram" style="color:#229ED9"></i> Integrasi Telegram</h2>
+          <div style="font-size:13px;color:var(--text2);margin-top:2px">Kirim notifikasi otomatis ke teknisi via Telegram Bot</div>
+        </div>
+
+        <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <div>
+            <div style="font-weight:700">Aktifkan Notifikasi Telegram</div>
+            <div style="font-size:12px;color:var(--text3)">Saklar utama untuk semua notifikasi Telegram</div>
+          </div>
+          <label class="tg-switch"><input type="checkbox" id="tg-enabled"><span></span></label>
+        </div>
+
+        <div class="card">
+          <div style="font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:7px"><i class="ti ti-robot" style="color:#229ED9"></i> Konfigurasi Bot</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div>
+              <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:5px">Bot Token (dari @BotFather)</label>
+              <input id="tg-token" type="text" autocomplete="off" placeholder="Token API" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);font-family:inherit">
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:5px">Username Bot</label>
+              <input id="tg-username" type="text" placeholder="@namabot" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);font-family:inherit">
+            </div>
+            <div style="grid-column:1/-1">
+              <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:5px">API URL (opsional)</label>
+              <input id="tg-apiurl" type="text" placeholder="https://api.telegram.org" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);font-family:inherit">
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:7px"><i class="ti ti-message-circle" style="color:#229ED9"></i> Tujuan Chat</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Dapatkan Chat ID dari <b>@userinfobot</b> atau <b>@getidsbot</b>. ID grup biasanya diawali <code>-100…</code></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div>
+              <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:5px">ID Chat / Group Teknisi</label>
+              <input id="tg-teknisi" type="text" placeholder="-100123456789" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);font-family:inherit">
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:5px">ID Chat Owner / CS</label>
+              <input id="tg-owner" type="text" placeholder="123456789" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);font-family:inherit">
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:7px"><i class="ti ti-bell" style="color:#229ED9"></i> Event Notifikasi</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:6px">Pilih kejadian yang akan dikirim ke Telegram.</div>
+          <div class="tg-evt"><div style="font-size:20px">🎫</div><div style="flex:1"><div style="font-weight:600;font-size:13px">Tiket Gangguan Masuk</div><div style="font-size:11px;color:var(--text3)">Kirim ke Teknisi saat pelanggan buat tiket</div></div><label class="tg-switch"><input type="checkbox" id="tg-ev-tiket"><span></span></label></div>
+          <div class="tg-evt"><div style="font-size:20px">👤</div><div style="flex:1"><div style="font-weight:600;font-size:13px">Pelanggan Baru</div><div style="font-size:11px;color:var(--text3)">Kirim ke Teknisi saat pelanggan ditambahkan</div></div><label class="tg-switch"><input type="checkbox" id="tg-ev-pelanggan"><span></span></label></div>
+          <div class="tg-evt"><div style="font-size:20px">💰</div><div style="flex:1"><div style="font-weight:600;font-size:13px">Pembayaran Masuk</div><div style="font-size:11px;color:var(--text3)">Kirim ke Owner saat invoice lunas</div></div><label class="tg-switch"><input type="checkbox" id="tg-ev-pembayaran"><span></span></label></div>
+          <div class="tg-evt"><div style="font-size:20px">⏰</div><div style="flex:1"><div style="font-weight:600;font-size:13px">Pelanggan Akan Expired</div><div style="font-size:11px;color:var(--text3)">Kirim ke Teknisi (perlu penjadwalan)</div></div><label class="tg-switch"><input type="checkbox" id="tg-ev-expired"><span></span></label></div>
+          <div class="tg-evt"><div style="font-size:20px">🔌</div><div style="flex:1"><div style="font-weight:600;font-size:13px">Pelanggan Suspend / Isolir</div><div style="font-size:11px;color:var(--text3)">Kirim ke Teknisi saat pelanggan disuspend</div></div><label class="tg-switch"><input type="checkbox" id="tg-ev-suspend"><span></span></label></div>
+        </div>
+
+        <div class="card">
+          <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:5px">Keterangan (opsional)</label>
+          <textarea id="tg-keterangan" rows="2" placeholder="Catatan internal…" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);font-family:inherit;resize:vertical"></textarea>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button class="btn" onclick="testTelegram()"><i class="ti ti-send"></i> Kirim Test</button>
+          <button class="btn primary" id="tg-btn-simpan" onclick="simpanTelegram()"><i class="ti ti-device-floppy"></i> Simpan</button>
+        </div>
+      </div>
+
       <div class="page" id="p-tiket">
         <div style="margin-bottom:16px">
           <h2 style="margin:0;font-size:20px">Tiket Laporan</h2>
@@ -6302,6 +6379,54 @@ async function rpHapus(id, username) {
 }
 
 // ── NAVIGASI ──
+// ── TELEGRAM ──
+function tgBuildBody() {
+  const v = id => (document.getElementById(id).value || '').trim();
+  const ck = id => document.getElementById(id).checked ? '1' : '0';
+  const body = {
+    tg_enabled: ck('tg-enabled'),
+    tg_username_bot: v('tg-username'), tg_api_url: v('tg-apiurl'),
+    tg_chat_teknisi: v('tg-teknisi'), tg_chat_owner: v('tg-owner'),
+    tg_keterangan: v('tg-keterangan'),
+    tg_ev_tiket: ck('tg-ev-tiket'), tg_ev_pelanggan: ck('tg-ev-pelanggan'),
+    tg_ev_pembayaran: ck('tg-ev-pembayaran'), tg_ev_expired: ck('tg-ev-expired'),
+    tg_ev_suspend: ck('tg-ev-suspend')
+  };
+  const tk = v('tg-token'); if (tk) body.tg_bot_token = tk;
+  return body;
+}
+async function loadTelegram() {
+  try {
+    const c = await apiFetch('/api/telegram/config');
+    const set = (id, val) => { const e = document.getElementById(id); if (e) e.value = val || ''; };
+    const chk = (id, val) => { const e = document.getElementById(id); if (e) e.checked = val === '1'; };
+    chk('tg-enabled', c.tg_enabled);
+    document.getElementById('tg-token').value = '';
+    document.getElementById('tg-token').placeholder = c.tg_bot_token_set ? '•••••• tersimpan (kosongkan bila tak diubah)' : 'Token API dari @BotFather';
+    set('tg-username', c.tg_username_bot); set('tg-apiurl', c.tg_api_url);
+    set('tg-teknisi', c.tg_chat_teknisi); set('tg-owner', c.tg_chat_owner);
+    set('tg-keterangan', c.tg_keterangan);
+    chk('tg-ev-tiket', c.tg_ev_tiket); chk('tg-ev-pelanggan', c.tg_ev_pelanggan);
+    chk('tg-ev-pembayaran', c.tg_ev_pembayaran); chk('tg-ev-expired', c.tg_ev_expired); chk('tg-ev-suspend', c.tg_ev_suspend);
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+async function simpanTelegram() {
+  const btn = document.getElementById('tg-btn-simpan'); btn.disabled = true;
+  try {
+    await apiFetch('/api/telegram/config', { method:'PUT', body: JSON.stringify(tgBuildBody()) });
+    toast('✅ Konfigurasi Telegram disimpan');
+    loadTelegram();
+  } catch(e) { toast('❌ ' + e.message, true); }
+  finally { btn.disabled = false; }
+}
+async function testTelegram() {
+  try {
+    await apiFetch('/api/telegram/config', { method:'PUT', body: JSON.stringify(tgBuildBody()) });
+    const r = await apiFetch('/api/telegram/test', { method:'POST', body: JSON.stringify({}) });
+    toast('✅ ' + (r.pesan || 'Test terkirim'));
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+
 // ── TIKET (admin) ──
 let TK_LIST = [], TK_STATUS = '', TK_AKTIF = null;
 const TK_KAT = { umum:['Umum','#64748b'], gangguan:['Gangguan','#dc2626'], billing:['Billing','#7c3aed'], lainnya:['Lainnya','#0891b2'] };
@@ -6395,6 +6520,7 @@ const titles = {
   'log':'Log Admin',
   'pengguna':'Pengguna Admin',
   'tiket':'Tiket Laporan',
+  'telegram':'Integrasi Telegram',
   'sesi':'Sesi Aktif',
   'peta':'Peta Jaringan',
   'voucher-template':'Template Voucher', setting:'Setting Sistem'
@@ -6410,6 +6536,7 @@ const loaders = {
   log:  loadLog,
   pengguna: loadPengguna,
   tiket: loadTiket,
+  telegram: loadTelegram,
   peta: loadPeta,
   acs: loadACS, 'voucher-template': loadVoucherTemplate,
   setting: loadSetting,

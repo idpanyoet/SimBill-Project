@@ -345,6 +345,19 @@ router.post('/tiket', clientAuth, upload.single('foto'), async (req, res, next) 
             }
         } catch(notifErr) { console.warn('[tiket] Notif WA gagal:', notifErr.message); }
 
+        // Notif Telegram ke teknisi
+        try {
+            const pel = await queryOne('SELECT nama, username, no_hp FROM pelanggan WHERE id=?', [req.client.id]);
+            const katLabel = { umum:'Umum', gangguan:'Gangguan', billing:'Billing', lainnya:'Lainnya' }[kategori] || 'Umum';
+            const teks = `🎫 <b>Tiket Baru Masuk</b>\n\n` +
+                `👤 ${pel?.nama || '-'} (${pel?.username || '-'})\n` +
+                `📁 Kategori: <b>${katLabel}</b>\n` +
+                `📝 ${judul}\n\n` +
+                `${(pesan || '').slice(0, 300)}\n\n` +
+                (pel?.no_hp ? `📞 ${pel.no_hp}` : '');
+            await require('../services/telegram').notif('tiket', teks);
+        } catch(tgErr) { console.warn('[tiket] Notif TG gagal:', tgErr.message); }
+
         res.status(201).json({ id: result.insertId, pesan: 'Tiket berhasil dibuat' });
     } catch(e) { next(e); }
 });
