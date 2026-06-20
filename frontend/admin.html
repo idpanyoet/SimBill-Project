@@ -100,6 +100,8 @@ body.role-reseller .admin-only{display:none!important}
 .rs-stat .lbl{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px}
 .rs-stat .val{font-size:22px;font-weight:700;margin-top:6px;color:var(--text)}
 @media(max-width:760px){.rv-layout{grid-template-columns:1fr!important}}
+.rl-chip{padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:var(--bg2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .12s}
+.rl-chip.active{background:#BA7517;border-color:#BA7517;color:#fff}
 .btn-logout{background:none;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:5px 8px;font-size:11px;color:rgba(255,255,255,.35);cursor:pointer;font-family:inherit;margin-top:6px;width:100%;transition:all .15s}
 .btn-logout:hover{border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.6)}
 
@@ -695,8 +697,40 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
         <div class="card" style="padding:40px;text-align:center;color:var(--text3)"><i class="ti ti-tools" style="font-size:32px"></i><div style="margin-top:8px">Topup via payment gateway disiapkan di tahap berikutnya.</div></div>
       </div>
       <div class="page" id="p-r-laporan">
-        <h2 style="margin:0 0 6px;font-size:20px">Laporan &amp; Transaksi</h2>
-        <div class="card" style="padding:40px;text-align:center;color:var(--text3)"><i class="ti ti-tools" style="font-size:32px"></i><div style="margin-top:8px">Halaman ini disiapkan di tahap berikutnya.</div></div>
+        <div style="margin-bottom:16px">
+          <h2 style="margin:0;font-size:20px">Laporan &amp; Transaksi</h2>
+          <div style="font-size:13px;color:var(--text2);margin-top:2px">Riwayat pembelian &amp; perpanjangan Anda</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px">
+          <div class="rs-stat"><div class="lbl"><i class="ti ti-receipt"></i> Total Transaksi</div><div class="val" id="rl-st-jml">0</div></div>
+          <div class="rs-stat"><div class="lbl"><i class="ti ti-cash"></i> Total Pengeluaran</div><div class="val" id="rl-st-total">Rp 0</div></div>
+          <div class="rs-stat"><div class="lbl"><i class="ti ti-calendar-stats"></i> Bulan Ini</div><div class="val" id="rl-st-bulan">Rp 0</div></div>
+          <div class="rs-stat"><div class="lbl" style="color:#BA7517"><i class="ti ti-wallet"></i> Saldo</div><div class="val" id="rl-st-saldo" style="color:#BA7517">Rp 0</div></div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap" id="rl-filter">
+          <button class="rl-chip active" data-tipe="" onclick="rlFilter('')">Semua</button>
+          <button class="rl-chip" data-tipe="voucher" onclick="rlFilter('voucher')">Voucher</button>
+          <button class="rl-chip" data-tipe="pppoe" onclick="rlFilter('pppoe')">PPPoE</button>
+          <button class="rl-chip" data-tipe="hotspot" onclick="rlFilter('hotspot')">Hotspot</button>
+        </div>
+
+        <div class="card" style="padding:0">
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr style="text-align:left;font-size:12px;color:var(--text2)">
+                <th style="padding:11px 14px">Tanggal</th><th style="padding:11px 14px">Jenis</th>
+                <th style="padding:11px 14px">Paket</th><th style="padding:11px 14px;text-align:center">Qty</th>
+                <th style="padding:11px 14px;text-align:right">Harga</th><th style="padding:11px 14px;text-align:right">Total</th>
+              </tr></thead>
+              <tbody id="rl-tbl"><tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3)">Memuat…</td></tr></tbody>
+            </table>
+          </div>
+          <div id="rl-more-wrap" style="padding:12px;text-align:center;display:none">
+            <button class="btn sm" onclick="rlMore()" id="rl-more">Muat lebih banyak</button>
+          </div>
+        </div>
       </div>
 
       <div class="overlay" id="m-rp-tambah">
@@ -6004,6 +6038,53 @@ function rpRender() {
     </div>`;
   }).join('');
 }
+
+// ── RESELLER: LAPORAN & TRANSAKSI ──
+let RL_TIPE = '', RL_HAL = 1, RL_ROWS = [];
+async function loadResellerLaporan() {
+  try {
+    const d = await apiFetch('/api/reseller/laporan');
+    const set = (id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+    set('rl-st-jml', d.total_transaksi || 0);
+    set('rl-st-total', rsRp(d.total_pengeluaran));
+    set('rl-st-bulan', rsRp(d.bulan_ini));
+    set('rl-st-saldo', rsRp(d.saldo));
+  } catch (e) {}
+  rlReset();
+}
+function rlFilter(tipe) {
+  RL_TIPE = tipe;
+  document.querySelectorAll('.rl-chip').forEach(c => c.classList.toggle('active', c.dataset.tipe === tipe));
+  rlReset();
+}
+function rlReset() {
+  RL_HAL = 1; RL_ROWS = [];
+  document.getElementById('rl-tbl').innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3)">Memuat…</td></tr>';
+  rlLoad();
+}
+async function rlLoad() {
+  try {
+    const r = await apiFetch(`/api/reseller/transaksi?halaman=${RL_HAL}&limit=20${RL_TIPE?'&tipe='+RL_TIPE:''}`);
+    RL_ROWS = RL_ROWS.concat(r.data || []);
+    rlRender();
+    document.getElementById('rl-more-wrap').style.display = RL_ROWS.length < (r.total || 0) ? 'block' : 'none';
+  } catch (e) { document.getElementById('rl-tbl').innerHTML = `<tr><td colspan="6" style="padding:16px;text-align:center;color:#dc2626">${e.message}</td></tr>`; }
+}
+function rlMore() { RL_HAL++; rlLoad(); }
+function rlRender() {
+  const tb = document.getElementById('rl-tbl');
+  if (!RL_ROWS.length) { tb.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3)">Belum ada transaksi.</td></tr>'; return; }
+  const tipeBadge = (t)=>{ const m={voucher:['Voucher','#7c3aed'],pppoe:['PPPoE','#2563eb'],hotspot:['Hotspot','#0891b2']}[t]||[t,'#64748b']; return `<span style="font-size:11px;font-weight:700;color:${m[1]}">${m[0]}</span>`; };
+  tb.innerHTML = RL_ROWS.map(t => `
+    <tr style="border-top:1px solid var(--border)">
+      <td style="padding:10px 14px;font-size:13px">${fmtDate?fmtDate(t.created_at):String(t.created_at).slice(0,10)}</td>
+      <td style="padding:10px 14px">${tipeBadge(t.tipe)}</td>
+      <td style="padding:10px 14px;font-size:13px">${t.nama_paket||'—'}</td>
+      <td style="padding:10px 14px;font-size:13px;text-align:center">${t.jumlah_item}</td>
+      <td style="padding:10px 14px;font-size:13px;text-align:right">${rsRp(t.harga_reseller)}</td>
+      <td style="padding:10px 14px;font-size:13px;text-align:right;font-weight:600">${rsRp(t.total_bayar)}</td>
+    </tr>`).join('');
+}
 async function rpBukaTambah() {
   try {
     RP_PAKET = await apiFetch('/api/reseller/paket');
@@ -6085,7 +6166,7 @@ const titles = {
   'voucher-template':'Template Voucher', setting:'Setting Sistem'
 };
 const loaders = {
-  'r-dashboard': loadResellerDashboard, 'r-voucher': loadResellerVoucher, 'r-pelanggan': loadResellerPelanggan,
+  'r-dashboard': loadResellerDashboard, 'r-voucher': loadResellerVoucher, 'r-pelanggan': loadResellerPelanggan, 'r-laporan': loadResellerLaporan,
   dashboard: loadDashboard, pelanggan: loadPelanggan,
   paket: loadPaket, invoice: loadInvoice,
   voucher: loadVoucher, whatsapp: loadWALog,

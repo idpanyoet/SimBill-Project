@@ -503,6 +503,22 @@ router.delete('/pelanggan/:id', resellerAuth, async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// GET /reseller/laporan — ringkasan untuk halaman Laporan
+router.get('/laporan', resellerAuth, async (req, res, next) => {
+    try {
+        const id = req.reseller.id;
+        const [tot] = await query(
+            "SELECT COUNT(*) AS jml, COALESCE(SUM(total_bayar),0) AS total FROM reseller_transaksi WHERE reseller_id=? AND status='success'", [id]);
+        const [bulan] = await query(
+            `SELECT COALESCE(SUM(total_bayar),0) AS total FROM reseller_transaksi WHERE reseller_id=? AND status='success'
+               AND YEAR(created_at)=YEAR(CURDATE()) AND MONTH(created_at)=MONTH(CURDATE())`, [id]);
+        const perTipe = await query(
+            "SELECT tipe, COUNT(*) AS jml, COALESCE(SUM(total_bayar),0) AS total FROM reseller_transaksi WHERE reseller_id=? AND status='success' GROUP BY tipe", [id]);
+        const r = await queryOne('SELECT saldo FROM reseller WHERE id=?', [id]);
+        res.json({ total_transaksi: tot.jml, total_pengeluaran: tot.total, bulan_ini: bulan.total, saldo: r?.saldo || 0, per_tipe: perTipe });
+    } catch (e) { next(e); }
+});
+
 // ============================================================
 // RIWAYAT TRANSAKSI RESELLER
 // ============================================================
@@ -510,18 +526,21 @@ router.delete('/pelanggan/:id', resellerAuth, async (req, res, next) => {
 // GET /reseller/transaksi
 router.get('/transaksi', resellerAuth, async (req, res, next) => {
     try {
-        const { halaman = 1, limit = 20 } = req.query;
+        const { halaman = 1, limit = 20, tipe } = req.query;
         const offset = (parseInt(halaman) - 1) * parseInt(limit);
+        const cond = ['rt.reseller_id=?']; const params = [req.reseller.id];
+        if (tipe && ['voucher','pppoe','hotspot'].includes(tipe)) { cond.push('rt.tipe=?'); params.push(tipe); }
+        const whereStr = cond.join(' AND ');
         const rows = await query(`
             SELECT rt.*, p.nama AS nama_paket
             FROM reseller_transaksi rt
             JOIN paket p ON rt.paket_id = p.id
-            WHERE rt.reseller_id=?
+            WHERE ${whereStr}
             ORDER BY rt.created_at DESC LIMIT ? OFFSET ?
-        `, [req.reseller.id, parseInt(limit), offset]);
+        `, [...params, parseInt(limit), offset]);
         const [{ total }] = await query(
-            'SELECT COUNT(*) AS total FROM reseller_transaksi WHERE reseller_id=?',
-            [req.reseller.id]
+            `SELECT COUNT(*) AS total FROM reseller_transaksi rt WHERE ${whereStr}`,
+            params
         );
         res.json({ data: rows, total });
     } catch (e) { next(e); }
