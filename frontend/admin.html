@@ -960,19 +960,32 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 
 
         <div class="grid2">
+          <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+              <div style="width:40px;height:40px;border-radius:11px;background:rgba(16,185,129,.12);color:#10b981;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0"><i class="ti ti-server-2" aria-hidden="true"></i></div>
+              <div style="flex:1"><div style="font-size:15px;font-weight:700;color:var(--text)">Kesehatan NAS</div></div>
+              <select id="nas-chart-select" onchange="nasGantiSemua()" style="font-size:12px;padding:7px 10px;border-radius:9px;border:1px solid var(--border);background:var(--bg2);color:var(--text);max-width:170px">
+                <option value="">— Pilih NAS —</option>
+              </select>
+            </div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:3px">Informasi Perangkat</div>
+            <div id="kn-info" style="font-size:13.5px;font-weight:600;color:var(--text)">—</div>
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:12px">
+              <div>
+                <div style="font-size:12px;color:var(--text3);margin-bottom:2px">Uptime</div>
+                <div id="kn-uptime" style="font-size:21px;font-weight:800;color:var(--text)">—</div>
+              </div>
+              <select id="nas-if-select" onchange="nasChartGantiNAS()" style="font-size:11px;padding:6px 9px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);max-width:150px" title="Interface yang dimonitor">
+                <option value="95">Ether1-Metroe (95)</option>
+              </select>
+            </div>
+          </div>
           <div class="card">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
               <div style="width:40px;height:40px;border-radius:11px;background:rgba(16,185,129,.12);color:#10b981;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0"><i class="ti ti-chart-line" aria-hidden="true"></i></div>
               <div style="flex:1"><div style="font-size:15px;font-weight:700;color:var(--text)">Monitor Trafik</div></div>
               <span id="nas-live-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981"></span><span style="font-size:11px;color:#10b981;font-weight:600">Live</span>
-            </div>
-            <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-              <select id="nas-chart-select" style="flex:1;min-width:120px;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)" onchange="nasChartGantiNAS()">
-                <option value="">— Pilih NAS —</option>
-              </select>
-              <select id="nas-if-select" style="flex:1;min-width:120px;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)" onchange="nasChartGantiNAS()">
-                <option value="95">Ether1-Metroe (95)</option>
-              </select>
             </div>
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
               <div>
@@ -990,13 +1003,15 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
               <span style="font-size:12px;color:var(--text3)">Grafik Real-time</span>
               <span id="mt-peak" style="font-size:12px;color:var(--text2);font-weight:600">0.00 Mbps</span>
             </div>
-            <div style="width:100%;height:150px">
+            <div id="mt-chart-wrap" style="position:relative;width:100%;height:150px" onmousemove="mtTooltip(event)" onmouseleave="mtHideTip()">
               <svg id="traffic-svg" viewBox="0 0 520 160" preserveAspectRatio="none" style="width:100%;height:100%;display:block" role="img" aria-label="Grafik traffic download dan upload real-time"></svg>
+              <div id="mt-tip" style="display:none;position:absolute;pointer-events:none;background:rgba(17,24,39,.92);color:#fff;font-size:11px;padding:7px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.25);z-index:5;white-space:nowrap"></div>
             </div>
             <div style="display:flex;gap:16px;margin-top:10px;font-size:11px;color:var(--text3)">
               <span style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:50%;background:#10b981;display:inline-block"></span>Unduh</span>
               <span style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:50%;background:#ef4444;display:inline-block"></span>Unggah</span>
             </div>
+          </div>
           </div>
           <div class="card">
             <div class="card-title">Service Information</div>
@@ -12445,7 +12460,89 @@ function nasChartInit(nasList) {
     sel.value = nasList[0].nasname;
     nasChartMulai(nasList[0].nasname, nasList[0].id, '95');
     loadSNMPInterfaces(nasList[0].id);
+    loadKesehatanNAS(nasList[0].id);
   }
+}
+
+function nasGantiSemua() {
+  const sel = document.getElementById('nas-chart-select');
+  const ip  = sel.value;
+  const id  = sel.options[sel.selectedIndex]?.dataset?.id || '';
+  if (!ip) return;
+  _nasPrevBytes = {};
+  loadSNMPInterfaces(id);
+  const ifIdx = document.getElementById('nas-if-select')?.value || '95';
+  nasChartMulai(ip, id, ifIdx);
+  loadKesehatanNAS(id);
+}
+
+let _knTimer = null;
+async function loadKesehatanNAS(nasId) {
+  const info = document.getElementById('kn-info'); const up = document.getElementById('kn-uptime');
+  if (!info) return;
+  if (_knTimer) { clearInterval(_knTimer); _knTimer = null; }
+  const ambil = async () => {
+    try {
+      const h = await apiFetch('/api/radius/snmp-health?nas_id=' + (nasId || ''));
+      const bagian = [];
+      if (h.cpu !== null && h.cpu !== undefined) bagian.push(`CPU ${h.cpu}%`);
+      if (h.identity) bagian.push(h.identity);
+      if (h.versi) bagian.push('RouterOS ' + h.versi);
+      else if (h.descr) bagian.push(h.descr);
+      document.getElementById('kn-info').textContent = bagian.join(' · ') || '—';
+      document.getElementById('kn-uptime').textContent = h.uptime_text || '—';
+    } catch(e) {
+      document.getElementById('kn-info').textContent = 'SNMP tidak terhubung';
+      document.getElementById('kn-uptime').textContent = '—';
+    }
+  };
+  ambil();
+  _knTimer = setInterval(ambil, 15000); // refresh tiap 15 dtk
+}
+
+// Tooltip grafik trafik
+function mtCoord(i) {
+  const W = 520, H = 160, pad = 3, n = _nasDL.length || 1;
+  const max = Math.max(1, ..._nasDL, ..._nasUL) * 1.18;
+  const X = n <= 1 ? 0 : pad + (i / (n - 1)) * (W - 2 * pad);
+  const Ydl = H - pad - ((_nasDL[i] || 0) / max) * (H - 2 * pad);
+  const Yul = H - pad - ((_nasUL[i] || 0) / max) * (H - 2 * pad);
+  return { W, H, X, Ydl, Yul };
+}
+function mtTooltip(ev) {
+  const wrap = document.getElementById('mt-chart-wrap');
+  const svg = document.getElementById('traffic-svg');
+  const tip = document.getElementById('mt-tip');
+  if (!wrap || !svg || !tip || !_nasDL.length) return;
+  const rect = svg.getBoundingClientRect();
+  const frac = Math.max(0, Math.min(1, (ev.clientX - rect.left) / rect.width));
+  const n = _nasDL.length;
+  const i = Math.round(frac * (n - 1));
+  const dl = _nasDL[i] || 0, ul = _nasUL[i] || 0;
+  tip.innerHTML =
+    `<div style="font-weight:700;margin-bottom:3px">${i + 1}</div>` +
+    `<div style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;background:#10b981;border-radius:2px;display:inline-block"></span>Unduh: ${dl.toFixed(2)} Mbps</div>` +
+    `<div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span style="width:9px;height:9px;background:#ef4444;border-radius:2px;display:inline-block"></span>Unggah: ${ul.toFixed(2)} Mbps</div>`;
+  tip.style.display = 'block';
+  const wrapRect = wrap.getBoundingClientRect();
+  let left = ev.clientX - wrapRect.left + 14;
+  let top  = ev.clientY - wrapRect.top + 12;
+  if (left + tip.offsetWidth > wrapRect.width) left = ev.clientX - wrapRect.left - tip.offsetWidth - 14;
+  if (top + tip.offsetHeight > wrapRect.height) top = wrapRect.height - tip.offsetHeight - 2;
+  if (top < 0) top = 2;
+  tip.style.left = left + 'px'; tip.style.top = top + 'px';
+  // garis bantu + titik
+  const c = mtCoord(i);
+  let g = svg.querySelector('#mt-guide');
+  if (!g) { g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.id = 'mt-guide'; svg.appendChild(g); }
+  g.innerHTML =
+    `<line x1="${c.X.toFixed(1)}" y1="0" x2="${c.X.toFixed(1)}" y2="${c.H}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 3" opacity="0.55"/>` +
+    `<circle cx="${c.X.toFixed(1)}" cy="${c.Ydl.toFixed(1)}" r="4" fill="#10b981" stroke="#fff" stroke-width="1.5" vector-effect="non-scaling-stroke"/>` +
+    `<circle cx="${c.X.toFixed(1)}" cy="${c.Yul.toFixed(1)}" r="3.5" fill="#ef4444" stroke="#fff" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
+}
+function mtHideTip() {
+  const tip = document.getElementById('mt-tip'); if (tip) tip.style.display = 'none';
+  const g = document.querySelector('#traffic-svg #mt-guide'); if (g) g.remove();
 }
 
 function nasChartGantiNAS() {
@@ -12542,7 +12639,7 @@ function nasChartMulai(nasIp, nasId, ifIdx) {
   }
 
   poll();
-  _nasTimer = setInterval(poll, 5000);
+  _nasTimer = setInterval(poll, 3000);
 }
 </script>
 </body>

@@ -846,6 +846,57 @@ router.get('/snmp-traffic', async (req, res, next) => {
     } catch(e) { next(e); }
 });
 
+// ── GET /api/radius/snmp-health — CPU, versi, uptime, identity NAS ──
+router.get('/snmp-health', async (req, res, next) => {
+    try {
+        const nasId = req.query.nas_id;
+        let nas;
+        if (nasId) nas = await queryOne('SELECT * FROM nas WHERE id=?', [nasId]);
+        else nas = await queryOne('SELECT * FROM nas LIMIT 1');
+        if (!nas) return res.status(404).json({ error: 'NAS tidak ditemukan' });
+
+        const snmp = require('net-snmp');
+        const session = snmp.createSession(nas.nasname, nas.community || 'public', {
+            timeout: 5000, retries: 1, version: snmp.Version2c
+        });
+
+        const OID = {
+            cpu:      '1.3.6.1.2.1.25.3.3.1.2.1',    // hrProcessorLoad
+            uptimeHr: '1.3.6.1.2.1.25.1.1.0',        // hrSystemUptime (TimeTicks)
+            uptimeSys:'1.3.6.1.2.1.1.3.0',           // sysUpTime (fallback)
+            sysName:  '1.3.6.1.2.1.1.5.0',           // identity
+            sysDescr: '1.3.6.1.2.1.1.1.0',           // RouterOS ...
+            mtVer:    '1.3.6.1.4.1.14988.1.1.4.4.0', // MikroTik software version
+            mtVer2:   '1.3.6.1.4.1.14988.1.1.7.4.0'  // MikroTik (lic) version
+        };
+
+        session.get(Object.values(OID), function(error, varbinds) {
+            session.close();
+            if (error) return res.status(502).json({ error: 'SNMP gagal: ' + error.message });
+            const r = {};
+            varbinds.forEach(vb => { if (!snmp.isVarbindError(vb)) r[vb.oid] = (typeof vb.value === 'object') ? vb.value.toString() : vb.value; });
+
+            const ticks = parseInt(r[OID.uptimeHr] || r[OID.uptimeSys] || 0); // 1/100 detik
+            const detik = Math.floor(ticks / 100);
+            const d = Math.floor(detik / 86400);
+            const h = Math.floor((detik % 86400) / 3600);
+            const m = Math.floor((detik % 3600) / 60);
+
+            res.json({
+                nas_id:       nas.id,
+                nas_name:     nas.shortname,
+                host:         nas.nasname,
+                identity:     r[OID.sysName] || nas.shortname || nas.nasname,
+                cpu:          r[OID.cpu] !== undefined ? parseInt(r[OID.cpu]) : null,
+                versi:        (r[OID.mtVer] || r[OID.mtVer2] || '') + '',
+                descr:        (r[OID.sysDescr] || '') + '',
+                uptime_ticks: ticks,
+                uptime_text:  `${d}d ${h}h ${m}m`
+            });
+        });
+    } catch(e) { next(e); }
+});
+
 // ── GET /api/radius/snmp-interfaces — list semua interface ────
 router.get('/snmp-interfaces', async (req, res, next) => {
     try {
