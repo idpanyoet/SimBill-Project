@@ -188,7 +188,7 @@ router.post('/', async (req, res, next) => {
         const { nama, username, password, no_hp, email, alamat,
                 paket_id, tipe_koneksi, ip_tetap, notes,
                 latitude, longitude, odc, odp,
-                no_ktp, tgl_lahir, ktp_url } = req.body;
+                no_ktp, tgl_lahir, ktp_url, reseller_id } = req.body;
 
         if (!nama || !username || !password || !no_hp || !paket_id)
             return res.status(400).json({ error: 'nama, username, password, no_hp, paket_id wajib diisi' });
@@ -221,12 +221,12 @@ router.post('/', async (req, res, next) => {
         const result = await query(`
             INSERT INTO pelanggan (nama, username, password, no_hp, email, alamat,
                 paket_id, tipe_koneksi, tgl_aktif, tgl_expired, ip_tetap, notes,
-                latitude, longitude, odc, odp, no_ktp, tgl_lahir, ktp_url)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                latitude, longitude, odc, odp, no_ktp, tgl_lahir, ktp_url, reseller_id)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         `, [nama, username, hash, no_hp, email || null, alamat || null,
             paket_id, tipe_koneksi, tgl_aktif, tgl_expired, ip_tetap || null, notes || null,
             latitude || null, longitude || null, odc || null, odp || null,
-            no_ktp || null, tgl_lahir || null, ktp_url || null]);
+            no_ktp || null, tgl_lahir || null, ktp_url || null, reseller_id || null]);
 
         step = 'sync_radius';
         // Sync ke FreeRADIUS — jika gagal, hapus dulu baris pelanggan agar tidak ada data
@@ -317,7 +317,7 @@ router.put('/:id', async (req, res, next) => {
             UPDATE pelanggan SET nama=?, no_hp=?, email=?, alamat=?,
                 paket_id=?, tipe_koneksi=?, notes=?, username=?,
                 latitude=?, longitude=?, odc=?, odp=?,
-                no_ktp=?, tgl_lahir=?
+                no_ktp=?, tgl_lahir=?, reseller_id=?
                 ${req.body.ktp_url ? ', ktp_url=?' : ''}
             WHERE id = ?
         `, [nama, no_hp, email || null, alamat || null, paketIdBaru, tipeBaru,
@@ -325,6 +325,7 @@ router.put('/:id', async (req, res, next) => {
             req.body.latitude || null, req.body.longitude || null,
             req.body.odc || null, req.body.odp || null,
             req.body.no_ktp || null, req.body.tgl_lahir || null,
+            (req.body.reseller_id === '' || req.body.reseller_id == null) ? null : req.body.reseller_id,
             ...(req.body.ktp_url ? [req.body.ktp_url] : []),
             req.params.id]);
 

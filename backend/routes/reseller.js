@@ -309,6 +309,9 @@ router.post('/beli/voucher', resellerAuth, async (req, res, next) => {
 
 // POST /reseller/beli/user
 router.post('/beli/user', resellerAuth, async (req, res, next) => {
+    // Penambahan pelanggan oleh reseller dinonaktifkan (kebijakan).
+    return res.status(403).json({ error: 'Penambahan pelanggan oleh reseller dinonaktifkan. Hubungi admin.' });
+    // eslint-disable-next-line no-unreachable
     try {
         const { paket_id, username, password, nama_pelanggan,
                 no_hp_pelanggan, tipe_koneksi = 'pppoe' } = req.body;

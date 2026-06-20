@@ -671,7 +671,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
       <div class="page" id="p-r-pelanggan">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
           <h2 style="margin:0;font-size:20px">Pelanggan Saya</h2>
-          <button class="btn primary" onclick="rpBukaTambah()"><i class="ti ti-user-plus"></i> Tambah Pelanggan</button>
+          <div style="font-size:13px;color:var(--text2)">Pelanggan yang ditugaskan kepada Anda</div>
         </div>
         <div class="card" style="padding:0">
           <div style="overflow-x:auto">
@@ -3157,6 +3157,11 @@ Selamat menikmati! 🌐</textarea>
         <select id="f-paket" style="width:100%"><option value="">-- pilih paket --</option></select>
       </div>
 
+      <div class="fg">
+        <label>Reseller Pemilik (opsional)</label>
+        <select id="f-reseller" style="width:100%"><option value="">— Tanpa reseller —</option></select>
+      </div>
+
       <div class="fg"><label data-i18n="Alamat">Alamat</label><input id="f-alamat" placeholder="Alamat lengkap (opsional)"></div>
 
       <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)">
@@ -3329,6 +3334,10 @@ Selamat menikmati! 🌐</textarea>
       <div>
         <label class="fg-label">Pilih Paket</label>
         <select id="ep-paket" style="width:100%;margin-top:4px"><option value="">-- pilih paket --</option></select>
+      </div>
+      <div>
+        <label class="fg-label">Reseller Pemilik</label>
+        <select id="ep-reseller" style="width:100%;margin-top:4px"><option value="">— Tanpa reseller —</option></select>
       </div>
       <div class="nas-snmp-box">
         <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px;display:flex;align-items:center;gap:6px">
@@ -5655,6 +5664,7 @@ function openModal(id) {
     populateDropdowns();
   }
   if (id === 'm-add-pelanggan') {
+    loadResellerOptions('f-reseller');
     // Reset koordinat & init mini map
     ['f-latitude','f-longitude','f-odc','f-odp'].forEach(function(k) {
       const el = document.getElementById(k); if (el) el.value = '';
@@ -5935,7 +5945,7 @@ async function loadResellerPelanggan() {
   const tb = document.getElementById('rp-tbl');
   try {
     const rows = await apiFetch('/api/reseller/pelanggan');
-    if (!rows.length) { tb.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3)">Belum ada pelanggan. Klik "Tambah Pelanggan".</td></tr>'; return; }
+    if (!rows.length) { tb.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3)">Belum ada pelanggan yang ditugaskan kepada Anda.</td></tr>'; return; }
     tb.innerHTML = rows.map(p => `
       <tr style="border-top:1px solid var(--border)">
         <td style="padding:10px 14px;font-family:monospace;font-weight:600">${p.username}</td>
@@ -6759,9 +6769,20 @@ function epSetTipe(tipe) {
 }
 // ── EDIT PELANGGAN MODAL HELPERS END ────────────────────────
 
+async function loadResellerOptions(selId, selected) {
+  const sel = document.getElementById(selId);
+  if (!sel) return;
+  try {
+    const list = await apiFetch('/api/reseller/admin/list');
+    sel.innerHTML = '<option value="">— Tanpa reseller —</option>' +
+      (list||[]).map(r => `<option value="${r.id}" ${String(selected||'')===String(r.id)?'selected':''}>${r.nama} (${r.username})</option>`).join('');
+  } catch (e) {}
+}
+
 async function bukaModalEdit(id) {
   try {
     const p = await apiFetch('/api/pelanggan/' + id);
+    loadResellerOptions('ep-reseller', p.reseller_id);
     document.getElementById('ep-id').value       = p.id;
     document.getElementById('ep-nama').value     = p.nama || '';
     document.getElementById('ep-nohp').value     = p.no_hp || '';
@@ -6859,6 +6880,7 @@ async function apiUpdatePelanggan() {
       longitude: longitude ? parseFloat(longitude) : null,
       odc: odc || null, odp: odp || null,
       no_ktp: no_ktp || null, tgl_lahir: tgl_lahir || null,
+      reseller_id: document.getElementById('ep-reseller')?.value || null,
     };
     if (ktp_url) body.ktp_url = ktp_url;
     if (password) body.password = password;
@@ -6977,7 +6999,8 @@ async function apiSimpanPelanggan() {
         longitude: longitude ? parseFloat(longitude) : null,
         odc: odc || null, odp: odp || null,
         no_ktp: no_ktp || null, tgl_lahir: tgl_lahir || null,
-        ktp_url: ktp_url || null
+        ktp_url: ktp_url || null,
+        reseller_id: document.getElementById('f-reseller')?.value || null
       })
     });
     toast('✅ Pelanggan ditambahkan & RADIUS aktif');
