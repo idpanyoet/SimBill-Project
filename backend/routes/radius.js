@@ -848,12 +848,15 @@ router.get('/snmp-traffic', async (req, res, next) => {
         // Pakai ifIndex dari query, dari setting NAS, atau default 95 (Ether1-Metroe)
         const idx = ifIndex || nas.ports || '95';
 
+        // Counter 64-bit (ifHCInOctets/ifHCOutOctets) — WAJIB untuk link >~100 Mbps.
+        // Counter 32-bit (ifInOctets .2.2.1.10) wrap tiap ~57 dtk di 600 Mbps → angka
+        // ngaco/spike. Yang 64-bit praktis tak pernah wrap.
         const oids = [
-            `1.3.6.1.2.1.2.2.1.10.${idx}`,  // ifInOctets
-            `1.3.6.1.2.1.2.2.1.16.${idx}`,  // ifOutOctets
-            `1.3.6.1.2.1.2.2.1.5.${idx}`,   // ifSpeed
-            `1.3.6.1.2.1.2.2.1.2.${idx}`,   // ifDescr (nama interface)
-            '1.3.6.1.2.1.1.3.0',             // sysUpTime
+            `1.3.6.1.2.1.31.1.1.1.6.${idx}`,   // ifHCInOctets (64-bit)
+            `1.3.6.1.2.1.31.1.1.1.10.${idx}`,  // ifHCOutOctets (64-bit)
+            `1.3.6.1.2.1.2.2.1.5.${idx}`,      // ifSpeed
+            `1.3.6.1.2.1.2.2.1.2.${idx}`,      // ifDescr (nama interface)
+            '1.3.6.1.2.1.1.3.0',                // sysUpTime
         ];
 
         const snmp = require('net-snmp');
@@ -870,20 +873,28 @@ router.get('/snmp-traffic', async (req, res, next) => {
             }
             const result = {};
             varbinds.forEach(function(vb) {
-                if (!snmp.isVarbindError(vb)) {
-                    result[vb.oid] = typeof vb.value === 'object' ? vb.value.toString() : vb.value;
-                }
+                if (!snmp.isVarbindError(vb)) result[vb.oid] = vb.value; // simpan mentah
             });
+            // Counter64 dikembalikan net-snmp sebagai Buffer 8-byte → decode via BigInt.
+            const snmpCounter = (v) => {
+                if (v == null) return 0;
+                if (Buffer.isBuffer(v)) { try { return Number(BigInt('0x' + v.toString('hex'))); } catch { return 0; } }
+                const n = Number(typeof v === 'object' ? v.toString() : v);
+                return Number.isFinite(n) ? n : 0;
+            };
+            const snmpText = (v) => Buffer.isBuffer(v)
+                ? v.toString('utf8').replace(/[\x00-\x1F\x7F]/g, '')
+                : (v == null ? '' : String(v));
             res.json({
                 nas_id:      nas.id,
                 nas_name:    nas.shortname,
                 host:        host,
                 if_index:    idx,
-                if_name:     result[`1.3.6.1.2.1.2.2.1.2.${idx}`] || `if${idx}`,
-                in_octets:   parseInt(result[`1.3.6.1.2.1.2.2.1.10.${idx}`] || 0),
-                out_octets:  parseInt(result[`1.3.6.1.2.1.2.2.1.16.${idx}`] || 0),
-                if_speed:    parseInt(result[`1.3.6.1.2.1.2.2.1.5.${idx}`]  || 0),
-                uptime:      result['1.3.6.1.2.1.1.3.0'] || 0,
+                if_name:     snmpText(result[`1.3.6.1.2.1.2.2.1.2.${idx}`]) || `if${idx}`,
+                in_octets:   snmpCounter(result[`1.3.6.1.2.1.31.1.1.1.6.${idx}`]),
+                out_octets:  snmpCounter(result[`1.3.6.1.2.1.31.1.1.1.10.${idx}`]),
+                if_speed:    snmpCounter(result[`1.3.6.1.2.1.2.2.1.5.${idx}`]),
+                uptime:      snmpCounter(result['1.3.6.1.2.1.1.3.0']),
                 timestamp:   Date.now()
             });
         });

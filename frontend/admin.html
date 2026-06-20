@@ -12576,29 +12576,30 @@ function nasChartMulai(nasIp, nasId, ifIdx) {
   async function poll() {
     try {
       const snmpData = await apiFetch('/api/radius/snmp-traffic?nas_id=' + nasId + '&if_index=' + ifIdx);
-      const totalIn  = snmpData.in_octets  / 1048576;
-      const totalOut = snmpData.out_octets / 1048576;
+      const inB  = snmpData.in_octets;   // octet (byte) mentah dari counter 64-bit
+      const outB = snmpData.out_octets;
+      const tNow = snmpData.timestamp || Date.now();
 
       const prev = _nasPrevBytes[nasIp];
       if (prev) {
-        let diffIn  = totalIn  - prev.in;
-        let diffOut = totalOut - prev.out;
-        if (diffIn  < 0) diffIn  += 4096;
-        if (diffOut < 0) diffOut += 4096;
-
-        const dl = Math.max(0, +((diffIn  / 8 * 8)).toFixed(2));
-        const ul = Math.max(0, +((diffOut / 8 * 8)).toFixed(2));
-
-        if (dl < 10000 && ul < 10000) {
-          _nasDL.push(dl); _nasDL.shift();
-          _nasUL.push(ul); _nasUL.shift();
-          renderTrafficSVG();
-          setTxt('mt-dl', dl.toFixed(2));
-          setTxt('mt-ul', ul.toFixed(2));
-          setTxt('mt-peak', Math.max(..._nasDL).toFixed(2) + ' Mbps');
+        const dt = (tNow - prev.t) / 1000;   // detik aktual antar-sampel (bukan asumsi 3s)
+        const dIn  = inB  - prev.in;
+        const dOut = outB - prev.out;
+        // Counter 64-bit ~tak pernah wrap; delta negatif = router reboot/reset → buang sampel.
+        if (dt > 0 && dIn >= 0 && dOut >= 0) {
+          const dl = +(dIn  * 8 / dt / 1e6).toFixed(2);   // Mbps = byte × 8 / detik / 1e6
+          const ul = +(dOut * 8 / dt / 1e6).toFixed(2);
+          if (dl < 100000 && ul < 100000) {               // saring nilai absurd
+            _nasDL.push(dl); _nasDL.shift();
+            _nasUL.push(ul); _nasUL.shift();
+            renderTrafficSVG();
+            setTxt('mt-dl', dl.toFixed(2));
+            setTxt('mt-ul', ul.toFixed(2));
+            setTxt('mt-peak', Math.max(..._nasDL).toFixed(2) + ' Mbps');
+          }
         }
       }
-      _nasPrevBytes[nasIp] = { in: totalIn, out: totalOut };
+      _nasPrevBytes[nasIp] = { in: inB, out: outB, t: tNow };
 
       const dot = document.getElementById('nas-live-dot');
       if (dot) { dot.style.opacity = dotState ? '1' : '0.25'; dotState = !dotState; }
