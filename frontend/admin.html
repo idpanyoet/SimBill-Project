@@ -985,6 +985,12 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
           <button class="btn" onclick="apiExportPelangganCSV()"><i class="ti ti-download" aria-hidden="true"></i> Export CSV</button>
           <button class="btn" onclick="bukaImportCSV()"><i class="ti ti-upload" aria-hidden="true"></i> Import CSV</button>
         </div>
+        <div class="metrics" style="grid-template-columns:repeat(4,1fr)">
+          <div class="metric blue"><div class="metric-ico"><i class="ti ti-users"></i></div><div><div class="lbl">Total Pelanggan</div><div class="val" id="pl-st-total">0</div></div></div>
+          <div class="metric green"><div class="metric-ico"><i class="ti ti-circle-check"></i></div><div><div class="lbl">Aktif</div><div class="val" id="pl-st-aktif">0</div></div></div>
+          <div class="metric amber"><div class="metric-ico"><i class="ti ti-player-pause"></i></div><div><div class="lbl">Suspend</div><div class="val" id="pl-st-suspend">0</div></div></div>
+          <div class="metric red"><div class="metric-ico"><i class="ti ti-circle-x"></i></div><div><div class="lbl">Nonaktif</div><div class="val" id="pl-st-nonaktif">0</div></div></div>
+        </div>
         <div class="card">
           <div class="search-bar">
             <input placeholder="Cari nama, username, HP..." id="cari-pelanggan" oninput="filterTbl('tbl-pelanggan',this.value)">
@@ -1001,6 +1007,12 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
       <!-- ══ PAKET ══ -->
       <div class="page" id="p-paket">
         <div class="action-bar"><button class="btn primary" onclick="bukaTambahPaket()"><span data-i18n="+ Tambah Paket">+ Tambah Paket</span></button></div>
+        <div class="metrics" style="grid-template-columns:repeat(4,1fr)">
+          <div class="metric blue"><div class="metric-ico"><i class="ti ti-package"></i></div><div><div class="lbl">Total Paket</div><div class="val" id="pk-st-total">0</div></div></div>
+          <div class="metric green"><div class="metric-ico"><i class="ti ti-circle-check"></i></div><div><div class="lbl">Aktif</div><div class="val" id="pk-st-aktif">0</div></div></div>
+          <div class="metric purple"><div class="metric-ico"><i class="ti ti-router"></i></div><div><div class="lbl">PPPoE</div><div class="val" id="pk-st-pppoe">0</div></div></div>
+          <div class="metric teal"><div class="metric-ico"><i class="ti ti-wifi"></i></div><div><div class="lbl">Hotspot</div><div class="val" id="pk-st-hotspot">0</div></div></div>
+        </div>
         <div class="card" style="padding:0;overflow:hidden">
           <table id="plan-grid">
             <thead>
@@ -1851,34 +1863,10 @@ Selamat menikmati! 🌐</textarea>
         </div>
 
         <!-- Stats bar -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
-          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
-            <div style="width:38px;height:38px;border-radius:10px;background:rgba(124,58,237,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <i class="ti ti-shield-star" style="font-size:18px;color:#7c3aed" aria-hidden="true"></i>
-            </div>
-            <div>
-              <div id="pg-stat-superadmin" style="font-size:20px;font-weight:700;color:var(--text)">—</div>
-              <div class="td-text-sub" style="font-size:11px">Super Admin</div>
-            </div>
-          </div>
-          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
-            <div style="width:38px;height:38px;border-radius:10px;background:rgba(37,99,235,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <i class="ti ti-user-cog" style="font-size:18px;color:#2563eb" aria-hidden="true"></i>
-            </div>
-            <div>
-              <div id="pg-stat-admin" style="font-size:20px;font-weight:700;color:var(--text)">—</div>
-              <div class="td-text-sub" style="font-size:11px">Admin</div>
-            </div>
-          </div>
-          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
-            <div style="width:38px;height:38px;border-radius:10px;background:rgba(8,145,178,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <i class="ti ti-user" style="font-size:18px;color:#0891b2" aria-hidden="true"></i>
-            </div>
-            <div>
-              <div id="pg-stat-operator" style="font-size:20px;font-weight:700;color:var(--text)">—</div>
-              <div class="td-text-sub" style="font-size:11px">Operator</div>
-            </div>
-          </div>
+        <div class="metrics" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+          <div class="metric purple"><div class="metric-ico"><i class="ti ti-shield-star"></i></div><div><div class="lbl">Super Admin</div><div class="val" id="pg-stat-superadmin">—</div></div></div>
+          <div class="metric blue"><div class="metric-ico"><i class="ti ti-user-cog"></i></div><div><div class="lbl">Admin</div><div class="val" id="pg-stat-admin">—</div></div></div>
+          <div class="metric teal"><div class="metric-ico"><i class="ti ti-user"></i></div><div><div class="lbl">Operator</div><div class="val" id="pg-stat-operator">—</div></div></div>
         </div>
 
         <div class="card">
@@ -1957,33 +1945,33 @@ Selamat menikmati! 🌐</textarea>
 
         <!-- Stat cards per kategori -->
         <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:16px">
-          <div onclick="logFilterKategori('Auth')" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:border-color .15s" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='var(--border)'">
-            <div id="log-stat-Auth" style="font-size:18px;font-weight:700;color:#2563eb">—</div>
-            <div style="font-size:10px;color:#2563eb;font-weight:600;margin-top:2px">Auth</div>
+          <div onclick="logFilterKategori('Auth')" style="background:linear-gradient(135deg,#3b82f6,#2563eb);border-radius:11px;padding:11px 8px;cursor:pointer;text-align:center;color:#fff;box-shadow:0 6px 16px -10px rgba(0,0,0,.5)">
+            <div id="log-stat-Auth" style="font-size:18px;font-weight:800">—</div>
+            <div style="font-size:10px;font-weight:600;opacity:.9;margin-top:2px">Auth</div>
           </div>
-          <div onclick="logFilterKategori('Billing')" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:border-color .15s" onmouseover="this.style.borderColor='#16a34a'" onmouseout="this.style.borderColor='var(--border)'">
-            <div id="log-stat-Billing" style="font-size:18px;font-weight:700;color:#16a34a">—</div>
-            <div style="font-size:10px;color:#16a34a;font-weight:600;margin-top:2px">Billing</div>
+          <div onclick="logFilterKategori('Billing')" style="background:linear-gradient(135deg,#10b981,#059669);border-radius:11px;padding:11px 8px;cursor:pointer;text-align:center;color:#fff;box-shadow:0 6px 16px -10px rgba(0,0,0,.5)">
+            <div id="log-stat-Billing" style="font-size:18px;font-weight:800">—</div>
+            <div style="font-size:10px;font-weight:600;opacity:.9;margin-top:2px">Billing</div>
           </div>
-          <div onclick="logFilterKategori('Pelanggan')" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:border-color .15s" onmouseover="this.style.borderColor='#d97706'" onmouseout="this.style.borderColor='var(--border)'">
-            <div id="log-stat-Pelanggan" style="font-size:18px;font-weight:700;color:#d97706">—</div>
-            <div style="font-size:10px;color:#d97706;font-weight:600;margin-top:2px">Pelanggan</div>
+          <div onclick="logFilterKategori('Pelanggan')" style="background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:11px;padding:11px 8px;cursor:pointer;text-align:center;color:#fff;box-shadow:0 6px 16px -10px rgba(0,0,0,.5)">
+            <div id="log-stat-Pelanggan" style="font-size:18px;font-weight:800">—</div>
+            <div style="font-size:10px;font-weight:600;opacity:.9;margin-top:2px">Pelanggan</div>
           </div>
-          <div onclick="logFilterKategori('Hotspot')" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:border-color .15s" onmouseover="this.style.borderColor='#7c3aed'" onmouseout="this.style.borderColor='var(--border)'">
-            <div id="log-stat-Hotspot" style="font-size:18px;font-weight:700;color:#7c3aed">—</div>
-            <div style="font-size:10px;color:#7c3aed;font-weight:600;margin-top:2px">Hotspot</div>
+          <div onclick="logFilterKategori('Hotspot')" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:11px;padding:11px 8px;cursor:pointer;text-align:center;color:#fff;box-shadow:0 6px 16px -10px rgba(0,0,0,.5)">
+            <div id="log-stat-Hotspot" style="font-size:18px;font-weight:800">—</div>
+            <div style="font-size:10px;font-weight:600;opacity:.9;margin-top:2px">Hotspot</div>
           </div>
-          <div onclick="logFilterKategori('Pppoe')" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:border-color .15s" onmouseover="this.style.borderColor='#0891b2'" onmouseout="this.style.borderColor='var(--border)'">
-            <div id="log-stat-Pppoe" style="font-size:18px;font-weight:700;color:#0891b2">—</div>
-            <div style="font-size:10px;color:#0891b2;font-weight:600;margin-top:2px">PPPoE</div>
+          <div onclick="logFilterKategori('Pppoe')" style="background:linear-gradient(135deg,#06b6d4,#0891b2);border-radius:11px;padding:11px 8px;cursor:pointer;text-align:center;color:#fff;box-shadow:0 6px 16px -10px rgba(0,0,0,.5)">
+            <div id="log-stat-Pppoe" style="font-size:18px;font-weight:800">—</div>
+            <div style="font-size:10px;font-weight:600;opacity:.9;margin-top:2px">PPPoE</div>
           </div>
-          <div onclick="logFilterKategori('Reseller')" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:border-color .15s" onmouseover="this.style.borderColor='#dc2626'" onmouseout="this.style.borderColor='var(--border)'">
-            <div id="log-stat-Reseller" style="font-size:18px;font-weight:700;color:#dc2626">—</div>
-            <div style="font-size:10px;color:#dc2626;font-weight:600;margin-top:2px">Reseller</div>
+          <div onclick="logFilterKategori('Reseller')" style="background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:11px;padding:11px 8px;cursor:pointer;text-align:center;color:#fff;box-shadow:0 6px 16px -10px rgba(0,0,0,.5)">
+            <div id="log-stat-Reseller" style="font-size:18px;font-weight:800">—</div>
+            <div style="font-size:10px;font-weight:600;opacity:.9;margin-top:2px">Reseller</div>
           </div>
-          <div onclick="logFilterKategori('System')" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;cursor:pointer;text-align:center;transition:border-color .15s" onmouseover="this.style.borderColor='#64748b'" onmouseout="this.style.borderColor='var(--border)'">
-            <div id="log-stat-System" style="font-size:18px;font-weight:700;color:#64748b">—</div>
-            <div style="font-size:10px;color:#64748b;font-weight:600;margin-top:2px">System</div>
+          <div onclick="logFilterKategori('System')" style="background:linear-gradient(135deg,#64748b,#475569);border-radius:11px;padding:11px 8px;cursor:pointer;text-align:center;color:#fff;box-shadow:0 6px 16px -10px rgba(0,0,0,.5)">
+            <div id="log-stat-System" style="font-size:18px;font-weight:800">—</div>
+            <div style="font-size:10px;font-weight:600;opacity:.9;margin-top:2px">System</div>
           </div>
         </div>
 
@@ -2718,43 +2706,11 @@ Selamat menikmati! 🌐</textarea>
         </div>
 
         <!-- Stat Cards -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
-          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
-            <div style="width:40px;height:40px;border-radius:11px;background:rgba(37,99,235,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <i class="ti ti-router" style="font-size:20px;color:#2563eb" aria-hidden="true"></i>
-            </div>
-            <div>
-              <div id="acs-total" style="font-size:24px;font-weight:700;color:var(--text)">—</div>
-              <div class="td-text-sub" style="font-size:11px">Total Device</div>
-            </div>
-          </div>
-          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
-            <div style="width:40px;height:40px;border-radius:11px;background:rgba(22,163,74,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <i class="ti ti-circle-check" style="font-size:20px;color:#16a34a" aria-hidden="true"></i>
-            </div>
-            <div>
-              <div id="acs-online" style="font-size:24px;font-weight:700;color:#16a34a">—</div>
-              <div class="td-text-sub" style="font-size:11px">Online</div>
-            </div>
-          </div>
-          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
-            <div style="width:40px;height:40px;border-radius:11px;background:rgba(220,38,38,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <i class="ti ti-circle-x" style="font-size:20px;color:#dc2626" aria-hidden="true"></i>
-            </div>
-            <div>
-              <div id="acs-offline" style="font-size:24px;font-weight:700;color:#dc2626">—</div>
-              <div class="td-text-sub" style="font-size:11px">Offline</div>
-            </div>
-          </div>
-          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
-            <div style="width:40px;height:40px;border-radius:11px;background:rgba(217,119,6,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <i class="ti ti-clock" style="font-size:20px;color:#d97706" aria-hidden="true"></i>
-            </div>
-            <div>
-              <div id="acs-pending" style="font-size:24px;font-weight:700;color:#d97706">—</div>
-              <div class="td-text-sub" style="font-size:11px">Task Pending</div>
-            </div>
-          </div>
+        <div class="metrics" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+          <div class="metric blue"><div class="metric-ico"><i class="ti ti-router"></i></div><div><div class="lbl">Total Device</div><div class="val" id="acs-total">—</div></div></div>
+          <div class="metric green"><div class="metric-ico"><i class="ti ti-circle-check"></i></div><div><div class="lbl">Online</div><div class="val" id="acs-online">—</div></div></div>
+          <div class="metric red"><div class="metric-ico"><i class="ti ti-circle-x"></i></div><div><div class="lbl">Offline</div><div class="val" id="acs-offline">—</div></div></div>
+          <div class="metric amber"><div class="metric-ico"><i class="ti ti-clock"></i></div><div><div class="lbl">Task Pending</div><div class="val" id="acs-pending">—</div></div></div>
         </div>
 
         <!-- ACS URL Card -->
@@ -6908,6 +6864,22 @@ async function loadPelanggan() {
     const data = await apiFetch('/api/pelanggan?limit=50');
     renderTblPelanggan(data.data || data);
   } catch(e) { console.warn('Pelanggan API:', e.message); }
+  loadPelangganStats();
+}
+async function loadPelangganStats() {
+  const setp=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  try {
+    const [tot, akt, sus, non] = await Promise.all([
+      apiFetch('/api/pelanggan?limit=1'),
+      apiFetch('/api/pelanggan?status=aktif&limit=1'),
+      apiFetch('/api/pelanggan?status=suspended&limit=1'),
+      apiFetch('/api/pelanggan?status=nonaktif&limit=1')
+    ]);
+    setp('pl-st-total', tot.total ?? 0);
+    setp('pl-st-aktif', akt.total ?? 0);
+    setp('pl-st-suspend', sus.total ?? 0);
+    setp('pl-st-nonaktif', non.total ?? 0);
+  } catch(e) {}
 }
 
 function renderTblPelanggan(rows) {
@@ -7296,6 +7268,11 @@ async function loadPaket() {
 }
 
 function renderPaket(rows) {
+  const setp=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  setp('pk-st-total', rows.length);
+  setp('pk-st-aktif', rows.filter(p=>p.aktif).length);
+  setp('pk-st-pppoe', rows.filter(p=>p.tipe==='pppoe'||p.tipe==='keduanya').length);
+  setp('pk-st-hotspot', rows.filter(p=>p.tipe==='hotspot'||p.tipe==='keduanya').length);
   const tbody = document.getElementById('plan-tbody');
   if (!tbody) return;
 
