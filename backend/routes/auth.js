@@ -7,42 +7,50 @@ const { queryOne } = require('../config/db');
 // POST /api/auth/login
 router.post('/login', async (req, res, next) => {
     try {
-        const { email, password } = req.body;
-        if (!email || !password)
-            return res.status(400).json({ error: 'Email dan password wajib diisi' });
-
-        const admin = await queryOne(
-            'SELECT * FROM admin WHERE email = ? AND aktif = 1', [email]
-        );
-        if (!admin)
-            return res.status(401).json({ error: 'Email atau password salah' });
-
-        const valid = await bcrypt.compare(password, admin.password);
-        if (!valid)
-            return res.status(401).json({ error: 'Email atau password salah' });
-
-        // Update last_login
         const { query } = require('../config/db');
-        await query('UPDATE admin SET last_login = NOW() WHERE id = ?', [admin.id]);
+        const ident    = (req.body.email || req.body.username || '').trim();
+        const password = req.body.password;
+        if (!ident || !password)
+            return res.status(400).json({ error: 'Email/username dan password wajib diisi' });
 
-        const token = jwt.sign(
-            { id: admin.id, nama: admin.nama, email: admin.email, role: admin.role },
-            process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES || '8h' }
+        // 1) Coba sebagai ADMIN (identitas = email)
+        const admin = await queryOne('SELECT * FROM admin WHERE email = ? AND aktif = 1', [ident]);
+        if (admin && await bcrypt.compare(password, admin.password)) {
+            await query('UPDATE admin SET last_login = NOW() WHERE id = ?', [admin.id]);
+            const token = jwt.sign(
+                { id: admin.id, nama: admin.nama, email: admin.email, role: admin.role },
+                process.env.JWT_SECRET,
+                { expiresIn: process.env.JWT_EXPIRES || '8h' }
+            );
+            const { tulisLog } = require('./log');
+            const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || req.ip;
+            tulisLog({ kategori:'Auth', pelaku: admin.nama || admin.email, aksi:'LOGIN',
+                target: admin.nama, detail:'User logged in via Web UI', ip });
+            return res.json({
+                token, role: admin.role,
+                admin: { id: admin.id, nama: admin.nama, email: admin.email, role: admin.role }
+            });
+        }
+
+        // 2) Coba sebagai RESELLER (identitas = username / no_hp / email)
+        const r = await queryOne(
+            "SELECT * FROM reseller WHERE (username=? OR no_hp=? OR email=?) AND status='aktif'",
+            [ident, ident, ident]
         );
+        if (r && await bcrypt.compare(password, r.password)) {
+            await query('UPDATE reseller SET last_login = NOW() WHERE id = ?', [r.id]);
+            const token = jwt.sign(
+                { id: r.id, nama: r.nama, username: r.username, role: 'reseller', level: r.level },
+                process.env.JWT_SECRET + '_reseller',
+                { expiresIn: '12h' }
+            );
+            return res.json({
+                token, role: 'reseller',
+                reseller: { id: r.id, nama: r.nama, username: r.username, level: r.level, saldo: r.saldo, no_hp: r.no_hp }
+            });
+        }
 
-        // Audit log
-        const { tulisLog } = require('./log');
-        const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || req.ip;
-        tulisLog({ kategori:'Auth', pelaku: admin.nama || admin.email,
-            aksi:'LOGIN', target: admin.nama,
-            detail:`User logged in via Web UI`,
-            ip });
-
-        res.json({
-            token,
-            admin: { id: admin.id, nama: admin.nama, email: admin.email, role: admin.role }
-        });
+        return res.status(401).json({ error: 'Email/username atau password salah' });
     } catch (e) { next(e); }
 });
 

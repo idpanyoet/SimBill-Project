@@ -130,6 +130,18 @@ async function jalankanMigration() {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             ) ENGINE=InnoDB`,
             nama: 'table.vpn_account'
+        },
+        {
+            sql:  `ALTER TABLE paket ADD COLUMN harga_reseller DECIMAL(12,2) DEFAULT NULL COMMENT 'Harga khusus reseller (NULL = pakai komisi_persen)' AFTER harga`,
+            nama: 'paket.harga_reseller'
+        },
+        {
+            sql:  `ALTER TABLE pelanggan ADD COLUMN reseller_id INT UNSIGNED DEFAULT NULL AFTER paket_id`,
+            nama: 'pelanggan.reseller_id'
+        },
+        {
+            sql:  `ALTER TABLE pelanggan ADD INDEX pelanggan_reseller_id (reseller_id)`,
+            nama: 'pelanggan.idx_reseller_id'
         }
     ];
 
