@@ -86,6 +86,16 @@ body{font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;background:#f4f6
 .sb-user-info{flex:1;overflow:hidden}
 .sb-user-info .name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:rgba(255,255,255,.8)}
 .sb-user-info .role{font-size:10px;color:rgba(255,255,255,.3)}
+/* ── Role gating reseller ── */
+.rs-section,.rs-item{display:none}
+body.role-reseller .sb-item:not(.rs-item){display:none}
+body.role-reseller .sb-section:not(.rs-section){display:none}
+body.role-reseller .sb-section.rs-section{display:block}
+body.role-reseller .sb-item.rs-item{display:flex}
+body.role-reseller .admin-only{display:none!important}
+.rs-stat{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px}
+.rs-stat .lbl{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px}
+.rs-stat .val{font-size:22px;font-weight:700;margin-top:6px;color:var(--text)}
 .btn-logout{background:none;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:5px 8px;font-size:11px;color:rgba(255,255,255,.35);cursor:pointer;font-family:inherit;margin-top:6px;width:100%;transition:all .15s}
 .btn-logout:hover{border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.6)}
 
@@ -435,7 +445,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
       <p>Masuk untuk mengelola sistem</p>
     </div>
     <div class="login-err" id="login-err"></div>
-    <div class="field"><label>Email</label><input type="email" id="l-email" placeholder="admin@billing.id" autocomplete="username"></div>
+    <div class="field"><label>Email / Username</label><input type="text" id="l-email" placeholder="admin@billing.id atau username reseller" autocomplete="username"></div>
     <div class="field"><label>Password</label><input type="password" id="l-pass" placeholder="Password" autocomplete="current-password"></div>
     <button class="btn-submit" onclick="doLogin()">Masuk →</button>
     <p style="text-align:center;margin-top:14px;font-size:12px;color:var(--text3)">
@@ -456,6 +466,13 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
         <small style="font-size:9px;color:rgba(255,255,255,.35);letter-spacing:.06em;text-transform:uppercase">Admin Panel</small>
       </div>
     </div>
+
+    <div class="sb-section rs-section">Reseller</div>
+    <div class="sb-item rs-item active" onclick="goto('r-dashboard',this)"><i class="ti ti-layout-dashboard icon" aria-hidden="true"></i> Dashboard</div>
+    <div class="sb-item rs-item" onclick="goto('r-voucher',this)"><i class="ti ti-ticket icon" aria-hidden="true"></i> Beli Voucher</div>
+    <div class="sb-item rs-item" onclick="goto('r-pelanggan',this)"><i class="ti ti-users icon" aria-hidden="true"></i> Pelanggan Saya</div>
+    <div class="sb-item rs-item" onclick="goto('r-topup',this)"><i class="ti ti-wallet icon" aria-hidden="true"></i> Saldo &amp; Topup</div>
+    <div class="sb-item rs-item" onclick="goto('r-laporan',this)"><i class="ti ti-report icon" aria-hidden="true"></i> Laporan</div>
 
     <div class="sb-section">Utama</div>
     <div class="sb-item active" onclick="goto('dashboard',this)"><i class="ti ti-layout-dashboard icon" aria-hidden="true"></i> Dashboard</div>
@@ -584,6 +601,61 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="content">
 
       <!-- ══ DASHBOARD ══ -->
+      <!-- ════════ HALAMAN RESELLER ════════ -->
+      <div class="page" id="p-r-dashboard">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px">
+          <div>
+            <h2 style="margin:0;font-size:20px">Dashboard Reseller</h2>
+            <div style="font-size:13px;color:var(--text2);margin-top:2px">Halo, <b id="rs-nama">—</b> · level <span id="rs-level" class="tag">—</span></div>
+          </div>
+          <button class="btn primary" onclick="goto('r-voucher',document.querySelector('.rs-item[onclick*=r-voucher]'))"><i class="ti ti-ticket"></i> Beli Voucher</button>
+        </div>
+
+        <div style="background:linear-gradient(135deg,#BA7517,#EF9F27);border-radius:14px;padding:20px 22px;color:#fff;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-size:13px;opacity:.85">Saldo Anda</div>
+            <div id="rs-saldo" style="font-size:30px;font-weight:800;margin-top:2px">Rp 0</div>
+          </div>
+          <button class="btn" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)" onclick="goto('r-topup',document.querySelector('.rs-item[onclick*=r-topup]'))"><i class="ti ti-wallet"></i> Top Up</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px">
+          <div class="rs-stat"><div class="lbl"><i class="ti ti-calendar"></i> Penjualan Hari Ini</div><div class="val" id="rs-hari-total">Rp 0</div><div style="font-size:11px;color:var(--text3);margin-top:2px"><span id="rs-hari-jml">0</span> transaksi</div></div>
+          <div class="rs-stat"><div class="lbl"><i class="ti ti-calendar-stats"></i> Bulan Ini</div><div class="val" id="rs-bulan-total">Rp 0</div><div style="font-size:11px;color:var(--text3);margin-top:2px"><span id="rs-bulan-jml">0</span> transaksi</div></div>
+          <div class="rs-stat"><div class="lbl"><i class="ti ti-ticket"></i> Total Item Terjual</div><div class="val" id="rs-total-item">0</div></div>
+          <div class="rs-stat"><div class="lbl"><i class="ti ti-users"></i> Pelanggan Saya</div><div class="val" id="rs-jml-pelanggan">0</div></div>
+        </div>
+
+        <div class="card" style="padding:0">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-weight:600">Transaksi Terbaru</div>
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr style="text-align:left;font-size:12px;color:var(--text2)">
+                <th style="padding:10px 16px">Tanggal</th><th style="padding:10px 16px">Jenis</th><th style="padding:10px 16px">Paket</th><th style="padding:10px 16px">Qty</th><th style="padding:10px 16px;text-align:right">Total</th>
+              </tr></thead>
+              <tbody id="rs-tbl-transaksi"><tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text3)">Memuat…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="page" id="p-r-voucher">
+        <h2 style="margin:0 0 6px;font-size:20px">Beli Voucher</h2>
+        <div class="card" style="padding:40px;text-align:center;color:var(--text3)"><i class="ti ti-tools" style="font-size:32px"></i><div style="margin-top:8px">Halaman ini disiapkan di tahap berikutnya.</div></div>
+      </div>
+      <div class="page" id="p-r-pelanggan">
+        <h2 style="margin:0 0 6px;font-size:20px">Pelanggan Saya</h2>
+        <div class="card" style="padding:40px;text-align:center;color:var(--text3)"><i class="ti ti-tools" style="font-size:32px"></i><div style="margin-top:8px">Halaman ini disiapkan di tahap berikutnya.</div></div>
+      </div>
+      <div class="page" id="p-r-topup">
+        <h2 style="margin:0 0 6px;font-size:20px">Saldo &amp; Topup</h2>
+        <div class="card" style="padding:40px;text-align:center;color:var(--text3)"><i class="ti ti-tools" style="font-size:32px"></i><div style="margin-top:8px">Topup via payment gateway disiapkan di tahap berikutnya.</div></div>
+      </div>
+      <div class="page" id="p-r-laporan">
+        <h2 style="margin:0 0 6px;font-size:20px">Laporan &amp; Transaksi</h2>
+        <div class="card" style="padding:40px;text-align:center;color:var(--text3)"><i class="ti ti-tools" style="font-size:32px"></i><div style="margin-top:8px">Halaman ini disiapkan di tahap berikutnya.</div></div>
+      </div>
+
       <div class="page active" id="p-dashboard">
         <div class="metrics">
           <div class="metric blue">
@@ -4366,6 +4438,8 @@ Selamat menikmati! 🌐</textarea>
 const API = '';
 let TOKEN = localStorage.getItem('nb_token') || '';
 let ADMIN = JSON.parse(localStorage.getItem('nb_admin') || '{}');
+let ROLE = localStorage.getItem('nb_role') || '';
+let RESELLER = JSON.parse(localStorage.getItem('nb_reseller') || '{}');
 
 // ── UTILS ──
 // ── METODE AKTIF PAYMENT GATEWAY ──────────────────────────────
@@ -5615,7 +5689,7 @@ window.addEventListener('load', () => {
     o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); });
   });
   document.getElementById('l-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
-  TOKEN ? tampilApp() : null;
+  TOKEN ? (ROLE === 'reseller' ? tampilAppReseller() : tampilApp()) : null;
 });
 
 async function doLogin() {
@@ -5627,8 +5701,19 @@ async function doLogin() {
     const data = await apiFetch('/api/auth/login', {
       method:'POST', headers:{}, body: JSON.stringify({email, password: pass})
     });
-    TOKEN = data.token; ADMIN = data.admin;
+    TOKEN = data.token;
     localStorage.setItem('nb_token', TOKEN);
+    ROLE = data.role || (data.admin ? data.admin.role : '');
+    localStorage.setItem('nb_role', ROLE);
+
+    if (ROLE === 'reseller') {
+      RESELLER = data.reseller || {};
+      localStorage.setItem('nb_reseller', JSON.stringify(RESELLER));
+      tampilAppReseller();
+      return;
+    }
+
+    ADMIN = data.admin;
     topbarUpdateProfil(data.admin?.nama, data.admin?.role);
     topbarCekNotif();
     localStorage.setItem('nb_admin', JSON.stringify(ADMIN));
@@ -5639,7 +5724,8 @@ async function doLogin() {
 }
 
 function doLogout() {
-  localStorage.clear(); TOKEN=''; ADMIN={};
+  localStorage.clear(); TOKEN=''; ADMIN={}; ROLE=''; RESELLER={};
+  document.body.classList.remove('role-reseller');
   document.getElementById('app').classList.remove('visible');
   document.getElementById('login-screen').style.display='flex';
 }
@@ -5656,8 +5742,54 @@ function tampilApp() {
   populateDropdowns();
 }
 
+// ── RESELLER MODE ──
+function tampilAppReseller() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  document.body.classList.add('role-reseller');
+  const nm = RESELLER.nama || 'Reseller';
+  const el = id => document.getElementById(id);
+  if (el('sb-nama')) el('sb-nama').textContent = nm;
+  if (el('sb-role')) el('sb-role').textContent = 'Reseller';
+  if (el('sb-av'))   el('sb-av').textContent = nm.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  goto('r-dashboard', document.querySelector('.rs-item.active') || document.querySelector('.rs-item'));
+  loadResellerDashboard();
+}
+
+function rsRp(n){ return 'Rp ' + (parseInt(n)||0).toLocaleString('id-ID'); }
+
+async function loadResellerDashboard() {
+  try {
+    const d = await apiFetch('/api/reseller/dashboard');
+    const set = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+    set('rs-nama', d.reseller?.nama || '—');
+    set('rs-level', d.reseller?.level || '—');
+    set('rs-saldo', rsRp(d.reseller?.saldo));
+    set('rs-hari-total', rsRp(d.hari_ini?.total));
+    set('rs-hari-jml', d.hari_ini?.jml || 0);
+    set('rs-bulan-total', rsRp(d.bulan_ini?.total));
+    set('rs-bulan-jml', d.bulan_ini?.jml || 0);
+    set('rs-total-item', d.total_item_terjual || 0);
+    set('rs-jml-pelanggan', d.jml_pelanggan || 0);
+    const tb = document.getElementById('rs-tbl-transaksi');
+    const rows = d.transaksi_terbaru || [];
+    if (tb) tb.innerHTML = rows.length ? rows.map(t => `
+      <tr style="border-top:1px solid var(--border)">
+        <td style="padding:10px 16px;font-size:13px">${fmtDate ? fmtDate(t.created_at) : (t.created_at||'').slice(0,10)}</td>
+        <td style="padding:10px 16px"><span class="tag">${t.tipe}</span></td>
+        <td style="padding:10px 16px;font-size:13px">${t.nama_paket || '—'}</td>
+        <td style="padding:10px 16px;font-size:13px">${t.jumlah_item}</td>
+        <td style="padding:10px 16px;font-size:13px;text-align:right;font-weight:600">${rsRp(t.total_bayar)}</td>
+      </tr>`).join('') : '<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text3)">Belum ada transaksi</td></tr>';
+  } catch (e) {
+    if (typeof toast === 'function') toast('❌ ' + e.message, true);
+  }
+}
+
 // ── NAVIGASI ──
 const titles = {
+  'r-dashboard':'Dashboard Reseller', 'r-voucher':'Beli Voucher',
+  'r-pelanggan':'Pelanggan Saya', 'r-topup':'Saldo & Topup', 'r-laporan':'Laporan & Transaksi',
   dashboard:'Dashboard', pelanggan:'Manajemen Pelanggan',
   paket:'Paket Internet', invoice:'Invoice & Tagihan',
   voucher:'Voucher', whatsapp:'WhatsApp Gateway',
@@ -5672,6 +5804,7 @@ const titles = {
   'voucher-template':'Template Voucher', setting:'Setting Sistem'
 };
 const loaders = {
+  'r-dashboard': loadResellerDashboard,
   dashboard: loadDashboard, pelanggan: loadPelanggan,
   paket: loadPaket, invoice: loadInvoice,
   voucher: loadVoucher, whatsapp: loadWALog,

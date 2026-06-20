@@ -422,6 +422,36 @@ router.get('/transaksi', resellerAuth, async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// GET /reseller/dashboard — ringkasan untuk dashboard reseller
+router.get('/dashboard', resellerAuth, async (req, res, next) => {
+    try {
+        const id = req.reseller.id;
+        const r = await queryOne('SELECT nama, username, saldo, level FROM reseller WHERE id=?', [id]);
+        const [hariIni] = await query(
+            `SELECT COUNT(*) AS jml, COALESCE(SUM(total_bayar),0) AS total
+             FROM reseller_transaksi WHERE reseller_id=? AND status='success' AND DATE(created_at)=CURDATE()`, [id]);
+        const [bulanIni] = await query(
+            `SELECT COUNT(*) AS jml, COALESCE(SUM(total_bayar),0) AS total
+             FROM reseller_transaksi WHERE reseller_id=? AND status='success'
+               AND YEAR(created_at)=YEAR(CURDATE()) AND MONTH(created_at)=MONTH(CURDATE())`, [id]);
+        const [totalItem] = await query(
+            `SELECT COALESCE(SUM(jumlah_item),0) AS total FROM reseller_transaksi WHERE reseller_id=? AND status='success'`, [id]);
+        const [pelangganku] = await query(
+            `SELECT COUNT(*) AS jml FROM pelanggan WHERE reseller_id=?`, [id]);
+        const terbaru = await query(
+            `SELECT rt.tipe, rt.jumlah_item, rt.total_bayar, rt.created_at, p.nama AS nama_paket
+             FROM reseller_transaksi rt LEFT JOIN paket p ON rt.paket_id=p.id
+             WHERE rt.reseller_id=? ORDER BY rt.created_at DESC LIMIT 5`, [id]);
+        res.json({
+            reseller: r,
+            hari_ini: hariIni, bulan_ini: bulanIni,
+            total_item_terjual: totalItem.total,
+            jml_pelanggan: pelangganku.jml,
+            transaksi_terbaru: terbaru
+        });
+    } catch (e) { next(e); }
+});
+
 // ============================================================
 // ADMIN — kelola reseller
 // ============================================================
