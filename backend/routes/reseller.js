@@ -145,20 +145,19 @@ router.get('/saldo', resellerAuth, async (req, res, next) => {
 // POST /reseller/topup — buat request topup saldo via payment gateway
 router.post('/topup', resellerAuth, async (req, res, next) => {
     try {
-        const { jumlah, gateway } = req.body;
+        const { jumlah } = req.body;
         if (!jumlah || jumlah < 10000)
             return res.status(400).json({ error: 'Minimum topup Rp 10.000' });
         if (jumlah > 50000000)
             return res.status(400).json({ error: 'Maksimum topup Rp 50.000.000' });
 
-        const provider = ['tripay', 'midtrans'].includes(gateway) ? gateway : undefined;
         const r        = await queryOne('SELECT * FROM reseller WHERE id=?', [req.reseller.id]);
         const order_id = `TOP-${req.reseller.id}-${Date.now()}`;
 
+        // Provider mengikuti konfigurasi admin (Setting > Payment Gateway)
         const pg = await paymentService.buatTransaksi({
             order_id,
             gross_amount: jumlah,
-            provider,
             pelanggan: {
                 nama:      r.nama,
                 no_hp:     r.no_hp,
@@ -171,14 +170,15 @@ router.post('/topup', resellerAuth, async (req, res, next) => {
 
         if (!pg?.payment_url) {
             return res.status(400).json({
-                error: `Gagal membuat link pembayaran${provider ? ' via ' + provider : ''}. Pastikan gateway sudah dikonfigurasi admin di Setting > Payment Gateway.`
+                error: 'Gagal membuat link pembayaran. Pastikan payment gateway sudah dikonfigurasi admin di Setting > Payment Gateway.'
             });
         }
 
+        const prov = await queryOne("SELECT nilai FROM setting WHERE kunci='pg_provider'");
         await query(`
             INSERT INTO reseller_topup (reseller_id, order_id, jumlah, payment_url, payment_method, status)
             VALUES (?,?,?,?,?,'pending')
-        `, [req.reseller.id, order_id, jumlah, pg.payment_url, provider || 'auto']);
+        `, [req.reseller.id, order_id, jumlah, pg.payment_url, prov?.nilai || 'gateway']);
 
         res.json({
             order_id,
