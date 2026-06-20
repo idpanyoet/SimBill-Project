@@ -669,21 +669,25 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
         </div>
       </div>
       <div class="page" id="p-r-pelanggan">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+        <div style="margin-bottom:16px">
           <h2 style="margin:0;font-size:20px">Pelanggan Saya</h2>
-          <div style="font-size:13px;color:var(--text2)">Pelanggan yang ditugaskan kepada Anda</div>
+          <div style="font-size:13px;color:var(--text2);margin-top:2px">Pelanggan yang ditugaskan kepada Anda</div>
         </div>
-        <div class="card" style="padding:0">
-          <div style="overflow-x:auto">
-            <table style="width:100%;border-collapse:collapse">
-              <thead><tr style="text-align:left;font-size:12px;color:var(--text2)">
-                <th style="padding:10px 14px">Username</th><th style="padding:10px 14px">Nama</th>
-                <th style="padding:10px 14px">Paket</th><th style="padding:10px 14px">Status</th>
-                <th style="padding:10px 14px">Expired</th><th style="padding:10px 14px;text-align:right">Aksi</th>
-              </tr></thead>
-              <tbody id="rp-tbl"><tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3)">Memuat…</td></tr></tbody>
-            </table>
-          </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px">
+          <div class="rs-stat"><div class="lbl"><i class="ti ti-users"></i> Total</div><div class="val" id="rp-st-total">0</div></div>
+          <div class="rs-stat"><div class="lbl" style="color:#16a34a"><i class="ti ti-circle-check"></i> Aktif</div><div class="val" id="rp-st-aktif" style="color:#16a34a">0</div></div>
+          <div class="rs-stat"><div class="lbl" style="color:#d97706"><i class="ti ti-player-pause"></i> Suspend</div><div class="val" id="rp-st-suspend" style="color:#d97706">0</div></div>
+          <div class="rs-stat"><div class="lbl" style="color:#dc2626"><i class="ti ti-clock-exclamation"></i> Akan Expire ≤7h</div><div class="val" id="rp-st-expire" style="color:#dc2626">0</div></div>
+        </div>
+
+        <div style="position:relative;margin-bottom:14px;max-width:340px">
+          <i class="ti ti-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:15px"></i>
+          <input id="rp-cari" oninput="rpRender()" placeholder="Cari nama / username…" style="width:100%;padding:9px 12px 9px 34px;border:1px solid var(--border);border-radius:10px;font-family:inherit;background:var(--bg2)">
+        </div>
+
+        <div id="rp-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+          <div style="color:var(--text3);font-size:13px;padding:20px">Memuat…</div>
         </div>
       </div>
       <div class="page" id="p-r-topup">
@@ -5935,33 +5939,70 @@ async function rvBeli() {
 }
 
 // ── RESELLER: PELANGGAN SAYA ──
-let RP_PAKET = [];
+let RP_PAKET = [], RP_LIST = [];
 function rsBadgeStatus(s){
-  const map = { aktif:['aktif','#16a34a'], suspended:['suspend','#d97706'], nonaktif:['nonaktif','#dc2626'] };
-  const m = map[s] || [s,'#64748b'];
-  return `<span class="tag" style="color:${m[1]}">${m[0]}</span>`;
+  const map = { aktif:['Aktif','#16a34a','rgba(22,163,74,.12)'], suspended:['Suspend','#d97706','rgba(217,119,6,.12)'], nonaktif:['Nonaktif','#dc2626','rgba(220,38,38,.12)'] };
+  const m = map[s] || [s,'#64748b','rgba(100,116,139,.12)'];
+  return `<span style="font-size:11px;font-weight:600;color:${m[1]};background:${m[2]};padding:2px 9px;border-radius:20px">${m[0]}</span>`;
+}
+function rpSisaHari(tgl){
+  if(!tgl) return null;
+  const d = Math.ceil((new Date(tgl).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000);
+  return d;
 }
 async function loadResellerPelanggan() {
-  const tb = document.getElementById('rp-tbl');
+  const grid = document.getElementById('rp-grid');
   try {
-    const rows = await apiFetch('/api/reseller/pelanggan');
-    if (!rows.length) { tb.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3)">Belum ada pelanggan yang ditugaskan kepada Anda.</td></tr>'; return; }
-    tb.innerHTML = rows.map(p => `
-      <tr style="border-top:1px solid var(--border)">
-        <td style="padding:10px 14px;font-family:monospace;font-weight:600">${p.username}</td>
-        <td style="padding:10px 14px;font-size:13px">${p.nama||'—'}</td>
-        <td style="padding:10px 14px;font-size:13px">${p.nama_paket||'—'}</td>
-        <td style="padding:10px 14px">${rsBadgeStatus(p.status)}</td>
-        <td style="padding:10px 14px;font-size:13px">${p.tgl_expired ? (fmtDate?fmtDate(p.tgl_expired):String(p.tgl_expired).slice(0,10)) : '—'}</td>
-        <td style="padding:8px 14px;text-align:right;white-space:nowrap">
-          <button class="btn sm" onclick="rpPerpanjang(${p.id},'${p.username}')" title="Perpanjang">↻</button>
-          ${p.status==='aktif'
-            ? `<button class="btn sm" onclick="rpStatus(${p.id},'suspend')" title="Suspend">⏸</button>`
-            : `<button class="btn sm" onclick="rpStatus(${p.id},'aktifkan')" title="Aktifkan">▶</button>`}
-          <button class="btn sm danger" onclick="rpHapus(${p.id},'${p.username}')" title="Hapus">✕</button>
-        </td>
-      </tr>`).join('');
-  } catch (e) { tb.innerHTML = `<tr><td colspan="6" style="padding:16px;text-align:center;color:#dc2626">${e.message}</td></tr>`; }
+    RP_LIST = await apiFetch('/api/reseller/pelanggan');
+    const set = (id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+    set('rp-st-total', RP_LIST.length);
+    set('rp-st-aktif', RP_LIST.filter(p=>p.status==='aktif').length);
+    set('rp-st-suspend', RP_LIST.filter(p=>p.status==='suspended').length);
+    set('rp-st-expire', RP_LIST.filter(p=>{const d=rpSisaHari(p.tgl_expired);return d!==null&&d>=0&&d<=7;}).length);
+    rpRender();
+  } catch (e) { grid.innerHTML = `<div style="color:#dc2626;font-size:13px;padding:20px">${e.message}</div>`; }
+}
+function rpRender() {
+  const grid = document.getElementById('rp-grid');
+  const q = (document.getElementById('rp-cari')?.value || '').toLowerCase();
+  const list = RP_LIST.filter(p => !q || (p.nama||'').toLowerCase().includes(q) || (p.username||'').toLowerCase().includes(q));
+  if (!list.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text3);padding:36px;border:1px dashed var(--border);border-radius:12px"><i class="ti ti-users-group" style="font-size:30px;opacity:.5"></i><div style="margin-top:8px">${RP_LIST.length?'Tidak ada hasil pencarian.':'Belum ada pelanggan yang ditugaskan kepada Anda.'}</div></div>`;
+    return;
+  }
+  grid.innerHTML = list.map(p => {
+    const d = rpSisaHari(p.tgl_expired);
+    const expCol = d===null ? 'var(--text3)' : d<0 ? '#dc2626' : d<=7 ? '#d97706' : '#16a34a';
+    const expTxt = d===null ? '—' : d<0 ? `Expired ${-d} hari lalu` : d===0 ? 'Expire hari ini' : `Sisa ${d} hari`;
+    const tgl = p.tgl_expired ? (fmtDate?fmtDate(p.tgl_expired):String(p.tgl_expired).slice(0,10)) : '—';
+    const ini = (p.nama||p.username||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const avCol = p.status==='aktif'?'#16a34a':p.status==='suspended'?'#d97706':'#64748b';
+    return `
+    <div style="border:1px solid var(--border);border-radius:14px;padding:14px;background:var(--bg2);display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:40px;height:40px;border-radius:10px;background:${avCol}1f;color:${avCol};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">${ini}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nama||p.username}</div>
+          <div style="font-size:12px;color:var(--text3);font-family:monospace">@${p.username}</div>
+        </div>
+        ${rsBadgeStatus(p.status)}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:11px;background:rgba(186,117,23,.1);color:#BA7517;padding:2px 9px;border-radius:20px;font-weight:600"><i class="ti ti-package" style="font-size:11px"></i> ${p.nama_paket||'—'}</span>
+        <span style="font-size:11px;color:var(--text3)">${p.tipe_koneksi||''}</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;padding:8px 0;border-top:1px dashed var(--border)">
+        <span style="color:var(--text3)"><i class="ti ti-calendar"></i> ${tgl}</span>
+        <span style="color:${expCol};font-weight:600">${expTxt}</span>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn sm primary" style="flex:1" onclick="rpPerpanjang(${p.id},'${p.username}')"><i class="ti ti-refresh"></i> Perpanjang</button>
+        ${p.status==='aktif'
+          ? `<button class="btn sm" onclick="rpStatus(${p.id},'suspend')" title="Suspend"><i class="ti ti-player-pause"></i></button>`
+          : `<button class="btn sm" onclick="rpStatus(${p.id},'aktifkan')" title="Aktifkan"><i class="ti ti-player-play"></i></button>`}
+      </div>
+    </div>`;
+  }).join('');
 }
 async function rpBukaTambah() {
   try {

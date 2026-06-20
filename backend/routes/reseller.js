@@ -491,6 +491,9 @@ router.post('/pelanggan/:id/perpanjang', resellerAuth, async (req, res, next) =>
 
 // DELETE /reseller/pelanggan/:id
 router.delete('/pelanggan/:id', resellerAuth, async (req, res, next) => {
+    // Penghapusan pelanggan oleh reseller dinonaktifkan (kebijakan).
+    return res.status(403).json({ error: 'Penghapusan pelanggan oleh reseller dinonaktifkan. Hubungi admin.' });
+    // eslint-disable-next-line no-unreachable
     try {
         const p = await pelangganMilik(req.reseller.id, req.params.id);
         if (!p) return res.status(404).json({ error: 'Pelanggan tidak ditemukan' });
