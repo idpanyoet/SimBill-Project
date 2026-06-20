@@ -7163,7 +7163,7 @@ async function loadServiceInfo() {
       row(2,'🌐','SESSION', `${rad.sesi_aktif||0} <span style="color:var(--text3);font-weight:500">sesi aktif</span>`) +
       row(3,'👥','CUSTOMER', `${custTotal} <span style="color:var(--text3);font-weight:500">pelanggan</span>`) +
       row(4,'🎟️','VOUCHER', `${voucherCount} <span style="color:var(--text3);font-weight:500">voucher</span>`) +
-      row(5,'💬','WA GATEWAY', `<span id="svc-datetime" style="color:#16a34a;font-weight:700;font-variant-numeric:tabular-nums">${svcFmtNow()}</span>`);
+      row(5,'🕒','TANGGAL & JAM SERVER', `<span id="svc-datetime" style="color:#16a34a;font-weight:700;font-variant-numeric:tabular-nums">${svcFmtNow()}</span>`);
     svcStartClock();
   } catch(e) {
     el.innerHTML = '<div style="text-align:center;color:#dc2626;padding:14px;font-size:12px">Gagal memuat status</div>';
