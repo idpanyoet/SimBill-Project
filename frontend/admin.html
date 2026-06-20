@@ -99,6 +99,7 @@ body.role-reseller .admin-only{display:none!important}
 .rs-stat{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px}
 .rs-stat .lbl{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px}
 .rs-stat .val{font-size:22px;font-weight:700;margin-top:6px;color:var(--text)}
+@media(max-width:760px){.rv-layout{grid-template-columns:1fr!important}}
 .btn-logout{background:none;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:5px 8px;font-size:11px;color:rgba(255,255,255,.35);cursor:pointer;font-family:inherit;margin-top:6px;width:100%;transition:all .15s}
 .btn-logout:hover{border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.6)}
 
@@ -643,8 +644,29 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
       </div>
 
       <div class="page" id="p-r-voucher">
-        <h2 style="margin:0 0 6px;font-size:20px">Beli Voucher</h2>
-        <div class="card" style="padding:40px;text-align:center;color:var(--text3)"><i class="ti ti-tools" style="font-size:32px"></i><div style="margin-top:8px">Halaman ini disiapkan di tahap berikutnya.</div></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+          <h2 style="margin:0;font-size:20px">Beli Voucher</h2>
+          <div style="font-size:13px;color:var(--text2)">Saldo: <b id="rv-saldo" style="color:#BA7517">Rp 0</b></div>
+        </div>
+        <div class="rv-layout" style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:start">
+          <div class="card" style="padding:14px">
+            <div style="font-weight:600;margin-bottom:10px">Pilih Paket Voucher</div>
+            <div id="rv-paket-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">
+              <div style="color:var(--text3);font-size:13px">Memuat paket…</div>
+            </div>
+          </div>
+          <div class="card" style="padding:16px;position:sticky;top:70px">
+            <div style="font-weight:600;margin-bottom:12px">Ringkasan Pembelian</div>
+            <div style="font-size:12px;color:var(--text2)">Paket</div>
+            <div id="rv-sel-nama" style="font-size:15px;font-weight:700;margin-bottom:10px">— belum dipilih —</div>
+            <label class="fg-label">Jumlah Voucher (maks 100)</label>
+            <input id="rv-jumlah" type="number" min="1" max="100" value="1" oninput="rvHitung()" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;font-family:inherit">
+            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>Harga satuan</span><span id="rv-harga-satuan">Rp 0</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;border-top:1px solid var(--border);padding-top:8px;margin-top:4px"><span>Total</span><span id="rv-total" style="color:#BA7517">Rp 0</span></div>
+            <button class="btn primary" style="width:100%;margin-top:14px" onclick="rvBeli()" id="rv-btn-beli" disabled><i class="ti ti-shopping-cart"></i> Beli Sekarang</button>
+            <div id="rv-hasil" style="margin-top:14px"></div>
+          </div>
+        </div>
       </div>
       <div class="page" id="p-r-pelanggan">
         <h2 style="margin:0 0 6px;font-size:20px">Pelanggan Saya</h2>
@@ -3888,6 +3910,9 @@ Selamat menikmati! 🌐</textarea>
           <label>Harga (Rp)</label>
           <input id="fp-harga" type="number" placeholder="50000" oninput="fpPreviewHarga()">
           <div id="fp-harga-preview" style="font-size:11px;color:var(--text3);margin-top:3px">—</div>
+          <label style="margin-top:8px;display:block">Harga Reseller (opsional)</label>
+          <input id="fp-harga-reseller" type="number" placeholder="kosongkan = pakai komisi reseller">
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">Harga jual ke reseller untuk paket ini</div>
         </div>
         <div class="fg">
           <label>Masa Aktif</label>
@@ -3974,6 +3999,7 @@ Selamat menikmati! 🌐</textarea>
       </div>
       <div class="fg-row">
         <div class="fg"><label>Harga (Rp)</label><input id="ep2-harga" type="number" placeholder="50000"></div>
+        <div class="fg"><label>Harga Reseller</label><input id="ep2-harga-reseller" type="number" placeholder="opsional"></div>
         <div class="fg">
           <label>Masa Aktif</label>
           <div style="display:flex;gap:6px">
@@ -5789,6 +5815,71 @@ async function loadResellerDashboard() {
   }
 }
 
+// ── RESELLER: BELI VOUCHER ──
+let RV_PAKET = [], RV_SEL = null;
+async function loadResellerVoucher() {
+  try {
+    const d = await apiFetch('/api/reseller/dashboard');
+    const s = document.getElementById('rv-saldo'); if (s) s.textContent = rsRp(d.reseller?.saldo);
+  } catch (e) {}
+  try {
+    RV_PAKET = await apiFetch('/api/reseller/paket');
+    const box = document.getElementById('rv-paket-list');
+    if (!box) return;
+    const vp = RV_PAKET.filter(p => p.izin_voucher || p.tipe === 'hotspot' || p.tipe === 'keduanya');
+    if (!vp.length) { box.innerHTML = '<div style="color:var(--text3);font-size:13px">Belum ada paket voucher tersedia. Hubungi admin.</div>'; return; }
+    box.innerHTML = vp.map(p => `
+      <div class="rv-card" data-id="${p.id}" onclick="rvPilih(${p.id})" style="border:1.5px solid var(--border);border-radius:10px;padding:11px;cursor:pointer;transition:all .12s">
+        <div style="font-weight:700;font-size:14px">${p.nama}</div>
+        <div style="font-size:11px;color:var(--text3);margin:2px 0 6px">${p.kecepatan_dn||'-'} Mbps · ${p.masa_aktif} ${p.satuan_masa||'hari'}</div>
+        <div style="font-size:15px;font-weight:800;color:#BA7517">${rsRp(p.harga_jual)}</div>
+        ${Number(p.harga)>Number(p.harga_jual)?`<div style="font-size:11px;color:var(--text3);text-decoration:line-through">${rsRp(p.harga)}</div>`:''}
+      </div>`).join('');
+  } catch (e) { toast('❌ ' + e.message, true); }
+}
+function rvPilih(id) {
+  RV_SEL = RV_PAKET.find(p => p.id === id);
+  document.querySelectorAll('.rv-card').forEach(c => {
+    const on = +c.dataset.id === id;
+    c.style.borderColor = on ? '#BA7517' : 'var(--border)';
+    c.style.background  = on ? 'rgba(186,117,23,.07)' : '';
+  });
+  document.getElementById('rv-sel-nama').textContent = RV_SEL.nama;
+  document.getElementById('rv-btn-beli').disabled = false;
+  document.getElementById('rv-hasil').innerHTML = '';
+  rvHitung();
+}
+function rvHitung() {
+  if (!RV_SEL) return;
+  const jml = Math.max(1, Math.min(100, parseInt(document.getElementById('rv-jumlah').value) || 1));
+  const satuan = Number(RV_SEL.harga_jual) || 0;
+  document.getElementById('rv-harga-satuan').textContent = rsRp(satuan);
+  document.getElementById('rv-total').textContent = rsRp(satuan * jml);
+}
+async function rvBeli() {
+  if (!RV_SEL) return;
+  const jml = Math.max(1, Math.min(100, parseInt(document.getElementById('rv-jumlah').value) || 1));
+  const total = (Number(RV_SEL.harga_jual) || 0) * jml;
+  if (!confirm(`Beli ${jml}x voucher ${RV_SEL.nama} seharga ${rsRp(total)}?`)) return;
+  const btn = document.getElementById('rv-btn-beli');
+  btn.disabled = true; btn.textContent = 'Memproses…';
+  try {
+    const r = await apiFetch('/api/reseller/beli/voucher', {
+      method: 'POST', body: JSON.stringify({ paket_id: RV_SEL.id, jumlah: jml })
+    });
+    const kodes = r.voucher || [];
+    document.getElementById('rv-hasil').innerHTML = `
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px">
+        <div style="font-weight:700;color:#16a34a;margin-bottom:6px">✅ Berhasil! Sisa saldo ${rsRp(r.saldo_sisa)}</div>
+        <div style="font-family:monospace;line-height:1.7;max-height:180px;overflow:auto">${kodes.join('<br>')}</div>
+        <button class="btn sm" style="margin-top:8px" onclick="navigator.clipboard.writeText('${kodes.join('\\n')}').then(()=>toast('✅ Kode disalin'))">📋 Salin semua</button>
+      </div>`;
+    toast('✅ Pembelian berhasil');
+    loadResellerVoucher();
+  } catch (e) { toast('❌ ' + e.message, true); }
+  finally { btn.disabled = false; btn.innerHTML = '<i class="ti ti-shopping-cart"></i> Beli Sekarang'; }
+}
+
 // ── NAVIGASI ──
 const titles = {
   'r-dashboard':'Dashboard Reseller', 'r-voucher':'Beli Voucher',
@@ -5807,7 +5898,7 @@ const titles = {
   'voucher-template':'Template Voucher', setting:'Setting Sistem'
 };
 const loaders = {
-  'r-dashboard': loadResellerDashboard,
+  'r-dashboard': loadResellerDashboard, 'r-voucher': loadResellerVoucher,
   dashboard: loadDashboard, pelanggan: loadPelanggan,
   paket: loadPaket, invoice: loadInvoice,
   voucher: loadVoucher, whatsapp: loadWALog,
@@ -6942,6 +7033,7 @@ function bukaEditPaket(id) {
   document.getElementById('ep2-nama').value      = p.nama;
   document.getElementById('ep2-speed').value     = p.rate_limit || `${p.kecepatan_up||p.kecepatan_dn}M/${p.kecepatan_dn}M`;
   document.getElementById('ep2-harga').value     = p.harga;
+  document.getElementById('ep2-harga-reseller').value = (p.harga_reseller ?? '') === null ? '' : (p.harga_reseller ?? '');
   document.getElementById('ep2-pool').value      = p.pool_name || '';
   document.getElementById('ep2-masa').value      = p.masa_aktif || 30;
   document.getElementById('ep2-satuan').value    = p.satuan_masa || 'hari';
@@ -7017,7 +7109,7 @@ async function apiTambahPaket() {
   const { kecepatan_up, kecepatan_dn } = _parseRateLimit(rate_limit);
   try {
     await apiFetch('/api/paket', { method:'POST',
-      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, rate_limit, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi, izin_voucher})
+      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, rate_limit, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi, izin_voucher, harga_reseller: (document.getElementById('fp-harga-reseller')?.value || '')})
     });
     toast('✅ Paket berhasil ditambahkan');
     closeModal('m-add-paket');
@@ -7051,7 +7143,7 @@ async function apiUpdatePaketGrid() {
   const izin_voucher = document.getElementById('ep2-izin-voucher')?.checked ? 1 : 0;
   try {
     await apiFetch('/api/paket/'+id, {method:'PUT',
-      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, rate_limit, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi, izin_voucher})
+      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, rate_limit, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi, izin_voucher, harga_reseller: (document.getElementById('ep2-harga-reseller')?.value || '')})
     });
     toast('✅ Paket diperbarui');
     closeModal('m-edit-paket');
@@ -7061,7 +7153,7 @@ async function apiUpdatePaketGrid() {
 
 function bukaTambahPaket() {
   // Reset semua field
-  ['fp-nama','fp-speed','fp-harga','fp-pool','fp-deskripsi'].forEach(function(id) {
+  ['fp-nama','fp-speed','fp-harga','fp-harga-reseller','fp-pool','fp-deskripsi'].forEach(function(id) {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });

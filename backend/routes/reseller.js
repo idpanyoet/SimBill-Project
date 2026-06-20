@@ -12,17 +12,21 @@ const dayjs = require('dayjs');
 
 // ── Helper hitung harga reseller (terima db handle opsional untuk dipakai dalam transaksi) ──
 async function hitungHarga(resellerId, paketId, hargaNormal, db = { query, queryOne }) {
-    // Cek harga khusus dulu
+    // 1) Harga khusus per reseller (override tertinggi)
     const khusus = await db.queryOne(
         'SELECT harga_reseller FROM reseller_harga WHERE reseller_id=? AND paket_id=?',
         [resellerId, paketId]
     );
     if (khusus) return Math.max(0, parseFloat(khusus.harga_reseller) || 0);
 
-    // Pakai komisi persen dari profil reseller
+    // 2) Harga reseller global per paket (diatur admin di profil paket)
+    const pk = await db.queryOne('SELECT harga_reseller FROM paket WHERE id=?', [paketId]);
+    if (pk && pk.harga_reseller != null && pk.harga_reseller !== '')
+        return Math.max(0, parseFloat(pk.harga_reseller) || 0);
+
+    // 3) Fallback: komisi persen dari profil reseller
     const r = await db.queryOne('SELECT komisi_persen FROM reseller WHERE id=?', [resellerId]);
     const diskon = parseFloat(r?.komisi_persen || 0);
-    // Clamp: harga tidak boleh negatif walau komisi >100% (mencegah saldo malah bertambah saat beli)
     return Math.max(0, Math.round(hargaNormal * (1 - diskon / 100)));
 }
 
@@ -199,9 +203,9 @@ router.get('/paket', resellerAuth, async (req, res, next) => {
     try {
         const paket = await query(`
             SELECT p.*,
-                COALESCE(rh.harga_reseller,
+                COALESCE(rh.harga_reseller, p.harga_reseller,
                     ROUND(p.harga * (1 - r.komisi_persen/100))
-                ) AS harga_reseller
+                ) AS harga_jual
             FROM paket p
             CROSS JOIN reseller r
             LEFT JOIN reseller_harga rh ON rh.paket_id=p.id AND rh.reseller_id=r.id
