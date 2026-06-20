@@ -617,7 +617,22 @@ function renderInvItem(i) {
   var st = i.status === 'paid' ? 'paid' : (new Date(i.tgl_jatuh_tempo) < new Date() ? 'overdue' : 'unpaid');
   var stLabel = st === 'paid' ? 'Lunas' : st === 'overdue' ? 'Jatuh Tempo' : 'Belum Bayar';
   var bayarBtn = st !== 'paid' ? '<button class="btn sm primary" onclick="bayarInvoice(' + i.id + ')">Bayar</button>' : '';
-  return '<div class="inv-item"><div class="inv-left"><div class="no">' + i.no_invoice + '</div><div class="tgl">' + fmtTgl(i.tgl_invoice) + ' · ' + (i.nama_paket||'—') + '</div></div><div class="inv-right"><div class="harga" style="color:' + (st==='overdue'?'var(--red)':st==='paid'?'var(--green)':'var(--text)') + '">' + fmt(i.jumlah) + '</div><div class="aksi"><span class="tag ' + st + '">' + stLabel + '</span> ' + bayarBtn + '</div></div></div>';
+  var pdfBtn = '<button class="btn sm" onclick="downloadInvoicePDF(' + i.id + ',\'' + (i.no_invoice||'') + '\')">📄 PDF</button>';
+  return '<div class="inv-item"><div class="inv-left"><div class="no">' + i.no_invoice + '</div><div class="tgl">' + fmtTgl(i.tgl_invoice) + ' · ' + (i.nama_paket||'—') + '</div></div><div class="inv-right"><div class="harga" style="color:' + (st==='overdue'?'var(--red)':st==='paid'?'var(--green)':'var(--text)') + '">' + fmt(i.jumlah) + '</div><div class="aksi"><span class="tag ' + st + '">' + stLabel + '</span> ' + pdfBtn + ' ' + bayarBtn + '</div></div></div>';
+}
+
+async function downloadInvoicePDF(id, no) {
+  toast('⏳ Menyiapkan PDF…');
+  try {
+    var r = await fetch('/api/client/invoice/' + id + '/pdf', { headers: { 'Authorization': 'Bearer ' + getToken() } });
+    if (!r.ok) { var e = await r.json().catch(function(){ return { error: 'Gagal membuat PDF' }; }); throw new Error(e.error || 'Gagal membuat PDF'); }
+    var blob = await r.blob();
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = (no || 'invoice') + '.pdf';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+  } catch(e) { toast('❌ ' + e.message, true); }
 }
 
 // ── TAGIHAN ───────────────────────────────────────────────────

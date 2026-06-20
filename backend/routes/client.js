@@ -457,6 +457,23 @@ router.put('/profil', clientAuth, async (req, res, next) => {
     } catch(e) { next(e); }
 });
 
+// ── GET /api/client/invoice/:id/pdf — download PDF invoice milik sendiri ──
+router.get('/invoice/:id/pdf', clientAuth, async (req, res, next) => {
+    try {
+        const inv = await queryOne(
+            'SELECT id, no_invoice FROM invoice WHERE id=? AND pelanggan_id=?',
+            [req.params.id, req.client.id]
+        );
+        if (!inv) return res.status(404).json({ error: 'Invoice tidak ditemukan' });
+        const invoicePdf = require('../services/invoice-pdf');
+        const { filePath, no_invoice } = await invoicePdf.buatInvoicePDF(inv.id);
+        res.download(filePath, `${no_invoice || inv.no_invoice || 'invoice'}.pdf`);
+    } catch(e) {
+        console.warn('[client invoice pdf]', e.message);
+        if (!res.headersSent) res.status(500).json({ error: 'Gagal membuat PDF invoice' });
+    }
+});
+
 module.exports = router;
 
 // ── POST /api/client/tiket/:id/reply ─────────────────────────
