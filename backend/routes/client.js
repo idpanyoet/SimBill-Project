@@ -383,6 +383,58 @@ router.get('/sesi', clientAuth, async (req, res, next) => {
     } catch(e) { next(e); }
 });
 
+// ── GET /api/client/perangkat-wifi — perangkat terhubung (dari ACS Hosts) ──
+function parseHostsFromCache(cache) {
+    const map = {};
+    const re = /Hosts\.Host\.(\d+)\.(HostName|IPAddress|MACAddress|Active|AddressSource|InterfaceType|LeaseTimeRemaining)$/i;
+    for (const k in cache) {
+        const m = k.match(re);
+        if (!m) continue;
+        const idx = m[1], field = m[2].toLowerCase();
+        (map[idx] = map[idx] || {})[field] = cache[k];
+    }
+    return Object.keys(map).map(i => ({
+        hostname: map[i].hostname || '',
+        ip:       map[i].ipaddress || '',
+        mac:      (map[i].macaddress || '').toUpperCase(),
+        active:   /^(1|true)$/i.test(map[i].active || ''),
+        iface:    map[i].interfacetype || '',
+        sumber:   map[i].addresssource || ''
+    })).filter(h => h.mac || h.ip || h.hostname);
+}
+
+router.get('/perangkat-wifi', clientAuth, async (req, res, next) => {
+    try {
+        const device = await queryOne(
+            'SELECT id, param_cache, manufacturer, last_inform FROM acs_device WHERE pelanggan_id=? ORDER BY last_inform DESC LIMIT 1',
+            [req.client.id]
+        );
+        if (!device) return res.json({ device: false, perangkat: [], last_inform: null });
+
+        let cache = {};
+        try { cache = JSON.parse(device.param_cache || '{}'); } catch(e) {}
+        let perangkat = parseHostsFromCache(cache);
+        // perangkat aktif dulu, lalu urut nama
+        perangkat.sort((a, b) => (b.active - a.active) || (a.hostname || a.ip).localeCompare(b.hostname || b.ip));
+
+        // Antri refresh (sekali saja kalau belum ada task pending/running)
+        try {
+            const ada = await queryOne(
+                'SELECT id FROM acs_task WHERE device_id=? AND type="GetParameterValues" AND status IN ("pending","running") LIMIT 1',
+                [device.id]
+            );
+            if (!ada) {
+                await query(
+                    'INSERT INTO acs_task (device_id, type, status, created_by) VALUES (?,?,?,?)',
+                    [device.id, 'GetParameterValues', 'pending', 'client']
+                );
+            }
+        } catch(e) {}
+
+        res.json({ device: true, last_inform: device.last_inform, perangkat });
+    } catch(e) { next(e); }
+});
+
 module.exports = router;
 
 // ── POST /api/client/tiket/:id/reply ─────────────────────────

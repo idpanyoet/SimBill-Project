@@ -119,6 +119,7 @@ function getStatusParams(manufacturer) {
             'InternetGatewayDevice.DeviceInfo.SoftwareVersion',
             'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ExternalIPAddress',
             'InternetGatewayDevice.LANDevice.1.Hosts.HostNumberOfEntries',
+            'InternetGatewayDevice.LANDevice.1.Hosts.Host.',
             'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID',
         ];
     }
@@ -127,6 +128,7 @@ function getStatusParams(manufacturer) {
         'Device.DeviceInfo.SoftwareVersion',
         'Device.IP.Interface.1.IPv4Address.1.IPAddress',
         'Device.Hosts.HostNumberOfEntries',
+        'Device.Hosts.Host.',
         'Device.WiFi.SSID.1.SSID',
     ];
 }
