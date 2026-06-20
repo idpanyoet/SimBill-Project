@@ -962,40 +962,40 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
         <div class="grid2">
           <div class="card">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-              <div style="width:36px;height:36px;border-radius:8px;background:#1D9E75;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0"><i class="ti ti-activity" aria-hidden="true"></i></div>
-              <div style="flex:1">
-                <div style="font-size:13px;font-weight:500;color:var(--text)" data-i18n="Statistik Jaringan">Statistik Jaringan</span> <span id="nas-live-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#1D9E75;margin:0 4px;vertical-align:middle"></span><span style="font-size:11px;color:#1D9E75">Live</span></div>
-                <div style="font-size:11px;color:var(--text3)" data-i18n="Traffic real-time per NAS">Traffic real-time per NAS</div>
-              </div>
+              <div style="width:40px;height:40px;border-radius:11px;background:rgba(16,185,129,.12);color:#10b981;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0"><i class="ti ti-chart-line" aria-hidden="true"></i></div>
+              <div style="flex:1"><div style="font-size:15px;font-weight:700;color:var(--text)">Monitor Trafik</div></div>
+              <span id="nas-live-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981"></span><span style="font-size:11px;color:#10b981;font-weight:600">Live</span>
             </div>
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
-              <select id="nas-chart-select" style="flex:1;min-width:120px;font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)" onchange="nasChartGantiNAS()">
+            <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+              <select id="nas-chart-select" style="flex:1;min-width:120px;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)" onchange="nasChartGantiNAS()">
                 <option value="">— Pilih NAS —</option>
               </select>
-              <select id="nas-if-select" style="flex:1;min-width:120px;font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)" onchange="nasChartGantiNAS()">
+              <select id="nas-if-select" style="flex:1;min-width:120px;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text)" onchange="nasChartGantiNAS()">
                 <option value="95">Ether1-Metroe (95)</option>
               </select>
-              <div style="display:flex;gap:12px;font-size:11px;color:var(--text3);flex-shrink:0">
-                <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:3px;border-radius:2px;background:#378ADD;display:inline-block"></span>Unduh</span>
-                <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:3px;border-radius:2px;background:#1D9E75;display:inline-block"></span>Unggah</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+              <div>
+                <div style="font-size:12px;color:#10b981;font-weight:600;display:flex;align-items:center;gap:3px"><i class="ti ti-arrow-down"></i> Unduh</div>
+                <div id="mt-dl" style="font-size:30px;font-weight:800;color:#10b981;line-height:1.15">0.00</div>
+                <div style="font-size:11px;color:#10b981">Mbps</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:12px;color:#ef4444;font-weight:600;display:flex;align-items:center;gap:3px;justify-content:flex-end">Unggah <i class="ti ti-arrow-up"></i></div>
+                <div id="mt-ul" style="font-size:30px;font-weight:800;color:#ef4444;line-height:1.15">0.00</div>
+                <div style="font-size:11px;color:#ef4444">Mbps</div>
               </div>
             </div>
-            <div style="position:relative;width:100%;height:150px">
-              <canvas id="nas-traffic-chart" role="img" aria-label="Grafik traffic download dan upload NAS secara real-time">Grafik traffic jaringan NAS.</canvas>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="font-size:12px;color:var(--text3)">Grafik Real-time</span>
+              <span id="mt-peak" style="font-size:12px;color:var(--text2);font-weight:600">0.00 Mbps</span>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px">
-              <div style="background:var(--bg3);border-radius:8px;padding:10px 12px;text-align:center">
-                <div id="nas-s-dl" class="td-text-main" style="font-size:17px;font-weight:700">—</div>
-                <div style="font-size:11px;color:var(--text3);margin-top:2px" data-i18n="Unduh">Unduh</div>
-              </div>
-              <div style="background:var(--bg3);border-radius:8px;padding:10px 12px;text-align:center">
-                <div id="nas-s-ul" class="td-text-main" style="font-size:17px;font-weight:700">—</div>
-                <div style="font-size:11px;color:var(--text3);margin-top:2px" data-i18n="Unggah">Unggah</div>
-              </div>
-              <div style="background:var(--bg3);border-radius:8px;padding:10px 12px;text-align:center">
-                <div id="nas-s-sesi" class="td-text-main" style="font-size:17px;font-weight:700">—</div>
-                <div style="font-size:11px;color:var(--text3);margin-top:2px" data-i18n="Sesi aktif">Sesi aktif</div>
-              </div>
+            <div style="width:100%;height:150px">
+              <svg id="traffic-svg" viewBox="0 0 520 160" preserveAspectRatio="none" style="width:100%;height:100%;display:block" role="img" aria-label="Grafik traffic download dan upload real-time"></svg>
+            </div>
+            <div style="display:flex;gap:16px;margin-top:10px;font-size:11px;color:var(--text3)">
+              <span style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:50%;background:#10b981;display:inline-block"></span>Unduh</span>
+              <span style="display:flex;align-items:center;gap:5px"><span style="width:9px;height:9px;border-radius:50%;background:#ef4444;display:inline-block"></span>Unggah</span>
             </div>
           </div>
           <div class="card">
@@ -12474,84 +12474,70 @@ async function loadSNMPInterfaces(nasId) {
   } catch(e) { console.warn('SNMP interfaces:', e.message); }
 }
 
+let _nasDL = [], _nasUL = [];
+function renderTrafficSVG() {
+  const svg = document.getElementById('traffic-svg'); if (!svg) return;
+  const W = 520, H = 160, pad = 3, n = _nasDL.length || 1;
+  const max = Math.max(1, ..._nasDL, ..._nasUL) * 1.18;
+  const X = i => n <= 1 ? 0 : pad + (i / (n - 1)) * (W - 2 * pad);
+  const Y = v => H - pad - (v / max) * (H - 2 * pad);
+  const path = arr => arr.map((v, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+  const area = arr => arr.length ? `${path(arr)} L${X(n - 1).toFixed(1)},${H - pad} L${X(0).toFixed(1)},${H - pad} Z` : '';
+  svg.innerHTML =
+    `<defs><linearGradient id="tg-dl" x1="0" y1="0" x2="0" y2="1">` +
+    `<stop offset="0%" stop-color="#10b981" stop-opacity="0.28"/>` +
+    `<stop offset="100%" stop-color="#10b981" stop-opacity="0"/></linearGradient></defs>` +
+    (_nasDL.length
+      ? `<path d="${area(_nasDL)}" fill="url(#tg-dl)"/>` +
+        `<path d="${path(_nasDL)}" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>` +
+        `<path d="${path(_nasUL)}" fill="none" stroke="#ef4444" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`
+      : '');
+}
+
 function nasChartMulai(nasIp, nasId, ifIdx) {
   if (_nasTimer) clearInterval(_nasTimer);
   nasId = nasId || '';
   ifIdx = ifIdx || document.getElementById('nas-if-select')?.value || '95';
 
-  const dlData = Array(NAS_POINTS).fill(0);
-  const ulData = Array(NAS_POINTS).fill(0);
+  _nasDL = Array(NAS_POINTS).fill(0);
+  _nasUL = Array(NAS_POINTS).fill(0);
+  renderTrafficSVG();
 
-  if (_nasChart) { _nasChart.destroy(); _nasChart = null; }
-
-  const ctx = document.getElementById('nas-traffic-chart');
-  if (!ctx) return;
-
-  _nasChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: Array(NAS_POINTS).fill(''),
-      datasets: [
-        { label:'Unduh (Mbps)', data:[...dlData], borderColor:'#378ADD', backgroundColor:'rgba(55,138,221,0.08)', borderWidth:2, pointRadius:0, fill:true, tension:0.4 },
-        { label:'Unggah (Mbps)', data:[...ulData], borderColor:'#1D9E75', backgroundColor:'rgba(29,158,117,0.08)', borderWidth:2, pointRadius:0, fill:true, tension:0.4 }
-      ]
-    },
-    options: {
-      responsive:true, maintainAspectRatio:false, animation:false,
-      plugins:{ legend:{ display:false } },
-      scales:{
-        x:{ display:false },
-        y:{ min:0, grid:{ color:'rgba(128,128,128,0.08)' }, border:{ display:false },
-            ticks:{ font:{size:10}, color:'#888', callback: v => v.toFixed(1)+'M' } }
-      }
-    }
-  });
-
+  const setTxt = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
   let dotState = true;
+
   async function poll() {
     try {
       const snmpData = await apiFetch('/api/radius/snmp-traffic?nas_id=' + nasId + '&if_index=' + ifIdx);
-
       const totalIn  = snmpData.in_octets  / 1048576;
       const totalOut = snmpData.out_octets / 1048576;
 
       const prev = _nasPrevBytes[nasIp];
       if (prev) {
-        // Handle counter wraparound (Counter32 max ~4096 MB)
         let diffIn  = totalIn  - prev.in;
         let diffOut = totalOut - prev.out;
         if (diffIn  < 0) diffIn  += 4096;
         if (diffOut < 0) diffOut += 4096;
 
-        // Rate Mbps — interval 8 detik
         const dl = Math.max(0, +((diffIn  / 8 * 8)).toFixed(2));
         const ul = Math.max(0, +((diffOut / 8 * 8)).toFixed(2));
 
-        // Abaikan lonjakan tidak wajar (>10 Gbps)
         if (dl < 10000 && ul < 10000) {
-          _nasChart.data.datasets[0].data.push(dl); _nasChart.data.datasets[0].data.shift();
-          _nasChart.data.datasets[1].data.push(ul); _nasChart.data.datasets[1].data.shift();
-          _nasChart.update('none');
-
-          document.getElementById('nas-s-dl').textContent = dl.toFixed(1) + ' Mbps';
-          document.getElementById('nas-s-ul').textContent = ul.toFixed(1) + ' Mbps';
+          _nasDL.push(dl); _nasDL.shift();
+          _nasUL.push(ul); _nasUL.shift();
+          renderTrafficSVG();
+          setTxt('mt-dl', dl.toFixed(2));
+          setTxt('mt-ul', ul.toFixed(2));
+          setTxt('mt-peak', Math.max(..._nasDL).toFixed(2) + ' Mbps');
         }
       }
       _nasPrevBytes[nasIp] = { in: totalIn, out: totalOut };
 
-      // Jumlah sesi dari radacct
-      try {
-        const sesi = await apiFetch('/api/radius/sesi-aktif');
-        const sesiNAS = sesi.filter(s => s.nas_ip === nasIp);
-        document.getElementById('nas-s-sesi').textContent = sesiNAS.length;
-      } catch(e) {}
-
       const dot = document.getElementById('nas-live-dot');
-      if (dot) { dot.style.opacity = dotState ? '1' : '0.2'; dotState = !dotState; }
+      if (dot) { dot.style.opacity = dotState ? '1' : '0.25'; dotState = !dotState; }
     } catch(e) {
       console.warn('[NAS chart SNMP]', e.message);
-      document.getElementById('nas-s-dl').textContent = '—';
-      document.getElementById('nas-s-ul').textContent = '—';
+      setTxt('mt-dl', '—'); setTxt('mt-ul', '—');
     }
   }
 
