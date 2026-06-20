@@ -111,6 +111,17 @@ function getWifiParams(manufacturer) {
     };
 }
 
+// Parameter optik (redaman) ONU per vendor. Partial-path agar tidak memicu
+// SOAP Fault "Invalid parameter name" jika leaf-nya tidak ada.
+function redamanParams(manufacturer) {
+    const mfr = (manufacturer || '').toLowerCase();
+    if (mfr.includes('zte')) return ['InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.'];
+    if (mfr.includes('huawei') || mfr.includes('hg')) return ['InternetGatewayDevice.WANDevice.1.X_HW_WANGponInterfaceConfig.'];
+    if (mfr.includes('fiberhome') || mfr.includes('fh')) return ['InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.'];
+    // Fallback paling aman: seluruh subtree WANDevice (mengandung param optik)
+    return ['InternetGatewayDevice.WANDevice.1.'];
+}
+
 function getStatusParams(manufacturer) {
     const mfr = (manufacturer || '').toLowerCase();
     if (mfr.includes('huawei') || mfr.includes('zte') || mfr.includes('hg')) {
@@ -281,6 +292,8 @@ async function handleEmpty(req, res) {
     if (task.type === 'GetParameterValues') {
         const params = getStatusParams(device.manufacturer);
         soapBody = soapGetParam(params);
+    } else if (task.type === 'GetRedaman') {
+        soapBody = soapGetParam(redamanParams(device.manufacturer));
     } else if (task.type === 'SetParameterValues') {
         const pairs = JSON.parse(task.params || '[]');
         soapBody = soapSetParam(pairs);
@@ -307,7 +320,7 @@ async function handleGetParamResponse(req, res, xml) {
                 [JSON.stringify(cache), device.id]);
 
             // Tandai task done
-            await query('UPDATE acs_task SET status="done", result=?, done_at=NOW() WHERE device_id=? AND status="running" AND type="GetParameterValues"',
+            await query('UPDATE acs_task SET status="done", result=?, done_at=NOW() WHERE device_id=? AND status="running" AND type IN ("GetParameterValues","GetRedaman")',
                 [JSON.stringify(params), device.id]);
         }
     } catch(e) { console.warn('[ACS] GetParam response:', e.message); }

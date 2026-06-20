@@ -247,4 +247,35 @@ async function _prosesKonfirmasiBayar(order_id, payment_type, sukses, cancelled,
     }
 }
 
+// ============================================================
+// TELEGRAM WEBHOOK — perintah dari grup (cek redaman ONU dll)
+// ============================================================
+router.post('/telegram', async (req, res) => {
+    res.sendStatus(200); // ACK cepat agar Telegram tidak retry
+    try {
+        const tg = require('../services/telegram');
+        const cfg = await tg.getCfg();
+        if (cfg.tg_enabled !== '1') return;
+        // Verifikasi secret token
+        if (cfg.tg_webhook_secret && req.headers['x-telegram-bot-api-secret-token'] !== cfg.tg_webhook_secret) return;
+
+        const msg = req.body && (req.body.message || req.body.edited_message);
+        if (!msg || !msg.text) return;
+        const chatId = msg.chat && msg.chat.id;
+        const text = String(msg.text).trim();
+
+        // /redaman <id> | cek redaman <id> | /cek <id>
+        const m = text.match(/^\/?(?:redaman|cek\s*redaman|cek)\s+@?([A-Za-z0-9._\-]+)/i);
+        if (!m) {
+            if (/^\/(start|help|redaman|cek)\b/i.test(text)) {
+                await tg.kirim(chatId, '🤖 <b>Bot SimBill</b>\nPerintah:\n<code>/redaman &lt;username|serial&gt;</code> — cek redaman ONU pelanggan.');
+            }
+            return;
+        }
+        if (cfg.tg_ev_redaman !== '1') { await tg.kirim(chatId, '⚠️ Fitur cek redaman dinonaktifkan oleh admin.'); return; }
+        const teks = await tg.cekRedaman(m[1]);
+        await tg.kirim(chatId, teks);
+    } catch (e) { console.warn('[telegram webhook]', e.message); }
+});
+
 module.exports = router;
