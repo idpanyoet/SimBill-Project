@@ -23,12 +23,12 @@
 body{font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;background:#f4f6f9;color:#0f172a;min-height:100vh}
 
 /* ── METRIC CARDS — hardcode, tidak berubah ── */
-.metric.blue  {background:linear-gradient(135deg,#E6F1FB,#cce0f5)!important}
-.metric.green {background:linear-gradient(135deg,#EAF3DE,#d5eab8)!important}
-.metric.amber {background:linear-gradient(135deg,#FAEEDA,#f5dfb0)!important}
-.metric.red   {background:linear-gradient(135deg,#FCEBEB,#f8d4d4)!important}
-.metric.purple{background:linear-gradient(135deg,#EEEDFE,#dddcf9)!important}
-.metric.teal  {background:linear-gradient(135deg,#E1F5EE,#c5edde)!important}
+.metric.blue  {background:linear-gradient(135deg,#3b82f6,#2563eb)!important}
+.metric.green {background:linear-gradient(135deg,#10b981,#059669)!important}
+.metric.amber {background:linear-gradient(135deg,#f59e0b,#d97706)!important}
+.metric.red   {background:linear-gradient(135deg,#ef4444,#dc2626)!important}
+.metric.purple{background:linear-gradient(135deg,#8b5cf6,#7c3aed)!important}
+.metric.teal  {background:linear-gradient(135deg,#14b8a6,#0d9488)!important}
 
 /* ── LOGIN ── */
 #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f4f6f9}
@@ -131,29 +131,12 @@ body.role-reseller .admin-only{display:none!important}
 
 /* ── METRICS ── */
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
-.metric{border-radius:12px;padding:16px;display:flex;align-items:center;gap:14px}
-.metric-ico{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px}
-.metric.blue   .metric-ico{background:#378ADD;color:#fff}
-.metric.green  .metric-ico{background:#639922;color:#fff}
-.metric.amber  .metric-ico{background:#BA7517;color:#fff}
-.metric.red    .metric-ico{background:#E24B4A;color:#fff}
-.metric.purple .metric-ico{background:#7F77DD;color:#fff}
-.metric.teal   .metric-ico{background:#1D9E75;color:#fff}
-.metric .lbl{font-size:11px;font-weight:600;margin-bottom:4px}
-.metric.blue   .lbl{color:#185FA5}
-.metric.green  .lbl{color:#3B6D11}
-.metric.amber  .lbl{color:#854F0B}
-.metric.red    .lbl{color:#A32D2D}
-.metric.purple .lbl{color:#534AB7}
-.metric.teal   .lbl{color:#0F6E56}
-.metric .val{font-size:22px;font-weight:700;line-height:1}
-.metric.blue   .val{color:#0C447C}
-.metric.green  .val{color:#27500A}
-.metric.amber  .val{color:#633806}
-.metric.red    .val{color:#791F1F}
-.metric.purple .val{color:#3C3489}
-.metric.teal   .val{color:#085041}
-.metric .sub{font-size:10px;margin-top:3px;color:#94a3b8}
+.metric{position:relative;overflow:hidden;border-radius:14px;padding:16px;display:flex;align-items:center;gap:14px;color:#fff;box-shadow:0 8px 22px -12px rgba(0,0,0,.45);transition:transform .12s,box-shadow .12s}
+.metric:hover{transform:translateY(-2px);box-shadow:0 12px 26px -12px rgba(0,0,0,.5)}
+.metric-ico{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:21px;background:rgba(255,255,255,.22)!important;color:#fff!important}
+.metric .lbl{font-size:11px;font-weight:600;margin-bottom:4px;color:#fff!important;opacity:.92}
+.metric .val{font-size:22px;font-weight:800;line-height:1;color:#fff!important}
+.metric .sub{font-size:10px;margin-top:3px;color:#fff!important;opacity:.8}
 
 /* ── CARD ── */
 .card{background:#fff;border:1px solid #e2e7ef;border-radius:12px;padding:18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
@@ -2407,40 +2390,40 @@ Selamat menikmati! 🌐</textarea>
 
         <!-- Summary cards -->
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px">
-          <div style="background:#fff;border:1px solid #e2e7ef;border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
-            <div style="width:48px;height:48px;border-radius:10px;background:#e11d48;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <i class="ti ti-calendar" style="font-size:22px;color:#fff" aria-hidden="true"></i>
+          <div style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:14px;padding:15px;display:flex;align-items:center;gap:12px;color:#fff;box-shadow:0 8px 22px -12px rgba(0,0,0,.45)">
+            <div style="width:46px;height:46px;border-radius:11px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ti-calendar" style="font-size:21px;color:#fff" aria-hidden="true"></i>
             </div>
             <div>
-              <div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em">PERIOD ( <span id="np-year-label">2026</span> )</div>
-              <div id="np-period-label" style="font-size:14px;font-weight:700;color:#0f172a;margin-top:2px">Jan 01 – Des 31</div>
+              <div style="font-size:10px;font-weight:600;opacity:.9;text-transform:uppercase;letter-spacing:.05em">PERIOD ( <span id="np-year-label">2026</span> )</div>
+              <div id="np-period-label" style="font-size:14px;font-weight:800;margin-top:2px">Jan 01 – Des 31</div>
             </div>
           </div>
-          <div style="background:#fff;border:1px solid #e2e7ef;border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
-            <div style="width:48px;height:48px;border-radius:10px;background:#0ea5e9;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <i class="ti ti-shopping-cart" style="font-size:22px;color:#fff" aria-hidden="true"></i>
+          <div style="background:linear-gradient(135deg,#3b82f6,#2563eb);border-radius:14px;padding:15px;display:flex;align-items:center;gap:12px;color:#fff;box-shadow:0 8px 22px -12px rgba(0,0,0,.45)">
+            <div style="width:46px;height:46px;border-radius:11px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ti-shopping-cart" style="font-size:21px;color:#fff" aria-hidden="true"></i>
             </div>
             <div>
-              <div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em">GROSS INCOME ( IDR )</div>
-              <div id="np-gross" style="font-size:18px;font-weight:700;color:#0ea5e9;margin-top:2px">0</div>
+              <div style="font-size:10px;font-weight:600;opacity:.9;text-transform:uppercase;letter-spacing:.05em">GROSS INCOME ( IDR )</div>
+              <div id="np-gross" style="font-size:18px;font-weight:800;margin-top:2px">0</div>
             </div>
           </div>
-          <div style="background:#fff;border:1px solid #e2e7ef;border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
-            <div style="width:48px;height:48px;border-radius:10px;background:#f97316;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <i class="ti ti-file-invoice" style="font-size:22px;color:#fff" aria-hidden="true"></i>
+          <div style="background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:14px;padding:15px;display:flex;align-items:center;gap:12px;color:#fff;box-shadow:0 8px 22px -12px rgba(0,0,0,.45)">
+            <div style="width:46px;height:46px;border-radius:11px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ti-file-invoice" style="font-size:21px;color:#fff" aria-hidden="true"></i>
             </div>
             <div>
-              <div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em">MONEY OUT ( IDR )</div>
-              <div id="np-out" style="font-size:18px;font-weight:700;color:#f97316;margin-top:2px">0</div>
+              <div style="font-size:10px;font-weight:600;opacity:.9;text-transform:uppercase;letter-spacing:.05em">MONEY OUT ( IDR )</div>
+              <div id="np-out" style="font-size:18px;font-weight:800;margin-top:2px">0</div>
             </div>
           </div>
-          <div style="background:#fff;border:1px solid #e2e7ef;border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)">
-            <div style="width:48px;height:48px;border-radius:10px;background:#16a34a;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <i class="ti ti-currency-dollar" style="font-size:22px;color:#fff" aria-hidden="true"></i>
+          <div style="background:linear-gradient(135deg,#10b981,#059669);border-radius:14px;padding:15px;display:flex;align-items:center;gap:12px;color:#fff;box-shadow:0 8px 22px -12px rgba(0,0,0,.45)">
+            <div style="width:46px;height:46px;border-radius:11px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ti-currency-dollar" style="font-size:21px;color:#fff" aria-hidden="true"></i>
             </div>
             <div>
-              <div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em">PROFIT ( IDR )</div>
-              <div id="np-profit" style="font-size:18px;font-weight:700;color:#16a34a;margin-top:2px">0</div>
+              <div style="font-size:10px;font-weight:600;opacity:.9;text-transform:uppercase;letter-spacing:.05em">PROFIT ( IDR )</div>
+              <div id="np-profit" style="font-size:18px;font-weight:800;margin-top:2px">0</div>
             </div>
           </div>
         </div>
@@ -10422,40 +10405,40 @@ async function apiIncomeReport() {
     if (metricsEl) {
       metricsEl.style.display = 'grid';
       metricsEl.innerHTML = `
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
-          <div style="width:40px;height:40px;border-radius:11px;background:rgba(22,163,74,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <i class="ti ti-cash" style="font-size:20px;color:#16a34a" aria-hidden="true"></i>
+        <div style="background:linear-gradient(135deg,#10b981,#059669);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;color:#fff;box-shadow:0 8px 22px -12px rgba(0,0,0,.45)">
+          <div style="width:42px;height:42px;border-radius:11px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="ti ti-cash" style="font-size:20px;color:#fff" aria-hidden="true"></i>
           </div>
           <div>
-            <div style="font-size:16px;font-weight:700;color:#16a34a">${fmt(d.summary.total)}</div>
-            <div class="td-text-sub" style="font-size:11px">Total Pendapatan</div>
+            <div style="font-size:16px;font-weight:800">${fmt(d.summary.total)}</div>
+            <div style="font-size:11px;opacity:.85">Total Pendapatan</div>
           </div>
         </div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
-          <div style="width:40px;height:40px;border-radius:11px;background:rgba(37,99,235,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <i class="ti ti-receipt" style="font-size:20px;color:#2563eb" aria-hidden="true"></i>
+        <div style="background:linear-gradient(135deg,#3b82f6,#2563eb);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;color:#fff;box-shadow:0 8px 22px -12px rgba(0,0,0,.45)">
+          <div style="width:42px;height:42px;border-radius:11px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="ti ti-receipt" style="font-size:20px;color:#fff" aria-hidden="true"></i>
           </div>
           <div>
-            <div style="font-size:24px;font-weight:700;color:var(--text)">${d.summary.trx}</div>
-            <div class="td-text-sub" style="font-size:11px">Total Transaksi</div>
+            <div style="font-size:24px;font-weight:800">${d.summary.trx}</div>
+            <div style="font-size:11px;opacity:.85">Total Transaksi</div>
           </div>
         </div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
-          <div style="width:40px;height:40px;border-radius:11px;background:rgba(217,119,6,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <i class="ti ti-users" style="font-size:20px;color:#d97706" aria-hidden="true"></i>
+        <div style="background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;color:#fff;box-shadow:0 8px 22px -12px rgba(0,0,0,.45)">
+          <div style="width:42px;height:42px;border-radius:11px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="ti ti-users" style="font-size:20px;color:#fff" aria-hidden="true"></i>
           </div>
           <div>
-            <div style="font-size:24px;font-weight:700;color:var(--text)">${d.summary.customer}</div>
-            <div class="td-text-sub" style="font-size:11px">Customer</div>
+            <div style="font-size:24px;font-weight:800">${d.summary.customer}</div>
+            <div style="font-size:11px;opacity:.85">Customer</div>
           </div>
         </div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
-          <div style="width:40px;height:40px;border-radius:11px;background:rgba(124,58,237,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <i class="ti ti-ticket" style="font-size:20px;color:#7c3aed" aria-hidden="true"></i>
+        <div style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;color:#fff;box-shadow:0 8px 22px -12px rgba(0,0,0,.45)">
+          <div style="width:42px;height:42px;border-radius:11px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="ti ti-ticket" style="font-size:20px;color:#fff" aria-hidden="true"></i>
           </div>
           <div>
-            <div style="font-size:24px;font-weight:700;color:var(--text)">${d.summary.voucher}</div>
-            <div class="td-text-sub" style="font-size:11px">Voucher</div>
+            <div style="font-size:24px;font-weight:800">${d.summary.voucher}</div>
+            <div style="font-size:11px;opacity:.85">Voucher</div>
           </div>
         </div>`;
     }
