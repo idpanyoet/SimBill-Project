@@ -2061,7 +2061,29 @@ Selamat menikmati! 🌐</textarea>
             <span style="font-size:12px;color:var(--text2)">Status:</span>
             <div id="tk-status-btns" style="display:flex;gap:6px;flex-wrap:wrap"></div>
           </div>
-          <div id="tk-thread" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:180px;max-height:46vh"></div>
+          <div style="padding:12px 14px;border-bottom:1px solid var(--border);background:var(--bg2)">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div>
+                <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Prioritas</label>
+                <select id="tk-prioritas" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:9px;background:var(--bg);font-family:inherit;font-size:13px">
+                  <option value="rendah">🟢 Rendah</option>
+                  <option value="sedang">🟡 Sedang</option>
+                  <option value="tinggi">🟠 Tinggi</option>
+                  <option value="urgent">🔴 Urgent</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Perkiraan Perbaikan</label>
+                <input type="datetime-local" id="tk-estimasi" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:9px;background:var(--bg);font-family:inherit;font-size:13px">
+              </div>
+            </div>
+            <div style="margin-top:10px">
+              <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px">Penugasan Teknisi <span style="color:var(--text3)">· Ctrl/Cmd untuk pilih banyak</span></label>
+              <select id="tk-teknisi" multiple size="3" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:9px;background:var(--bg);font-family:inherit;font-size:13px;height:auto"></select>
+            </div>
+            <button class="btn sm primary" id="tk-btn-tugas" onclick="tkSimpanPenugasan()" style="margin-top:10px;background:linear-gradient(135deg,#7C3AED,#2563EB);border:none"><i class="ti ti-user-check"></i> Simpan Penugasan</button>
+          </div>
+          <div id="tk-thread" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:140px;max-height:34vh"></div>
           <div style="padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end">
             <textarea id="tk-balas" rows="2" placeholder="Tulis balasan…" style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:13px;resize:vertical;background:var(--bg2)"></textarea>
             <button class="btn primary" id="tk-btn-balas" onclick="tkKirimBalasan()" style="background:linear-gradient(135deg,#7C3AED,#2563EB);border:none"><i class="ti ti-send"></i></button>
@@ -6428,9 +6450,15 @@ async function testTelegram() {
 }
 
 // ── TIKET (admin) ──
-let TK_LIST = [], TK_STATUS = '', TK_AKTIF = null;
+let TK_LIST = [], TK_STATUS = '', TK_AKTIF = null, TK_TEKNISI = null;
 const TK_KAT = { umum:['Umum','#64748b'], gangguan:['Gangguan','#dc2626'], billing:['Billing','#7c3aed'], lainnya:['Lainnya','#0891b2'] };
 const TK_ST  = { open:['Open','#dc2626'], proses:['Proses','#d97706'], selesai:['Selesai','#16a34a'] };
+const TK_PRIO = { rendah:['Rendah','#16a34a'], sedang:['Sedang','#d97706'], tinggi:['Tinggi','#ea580c'], urgent:['Urgent','#dc2626'] };
+async function tkLoadTeknisi(){
+  if (TK_TEKNISI) return TK_TEKNISI;
+  try { TK_TEKNISI = await apiFetch('/api/tiket/teknisi'); } catch(e) { TK_TEKNISI = []; }
+  return TK_TEKNISI;
+}
 function tkBadge(n){ const b=document.getElementById('sb-tiket-badge'); if(!b) return; if(n>0){ b.textContent=n; b.style.display=''; } else b.style.display='none'; }
 async function tkRefreshBadge(){ try{ const s=await apiFetch('/api/tiket/stats'); tkBadge(s.open); }catch(e){} }
 async function loadTiket(){
@@ -6455,11 +6483,14 @@ function tkRender(){
   if(!list.length){ el.innerHTML='<div style="text-align:center;color:var(--text3);padding:30px;border:1px dashed var(--border);border-radius:12px">Tidak ada tiket</div>'; return; }
   el.innerHTML=list.map(t=>{
     const k=TK_KAT[t.kategori]||['?','#64748b']; const s=TK_ST[t.status]||['?','#64748b'];
+    const pr=TK_PRIO[t.prioritas]||null;
+    const prBadge = pr ? `<span style="font-size:10px;font-weight:700;color:${pr[1]};background:${pr[1]}1f;padding:1px 8px;border-radius:10px">⚑ ${pr[0]}</span>` : '';
     return `<div onclick="tkBuka(${t.id})" style="border:1px solid var(--border);border-left:4px solid ${s[1]};border-radius:12px;padding:12px 14px;background:var(--bg2);cursor:pointer;display:flex;gap:12px;align-items:center">
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span style="font-weight:700;font-size:14px">${(t.judul||'').replace(/</g,'&lt;')}</span>
           <span style="font-size:10px;font-weight:700;color:${k[1]};background:${k[1]}1f;padding:1px 8px;border-radius:10px">${k[0]}</span>
+          ${prBadge}
         </div>
         <div style="font-size:12px;color:var(--text3);margin-top:3px">${t.nama_pelanggan||'—'} · @${t.username||'-'} · ${fmtDate?fmtDate(t.created_at):''}${t.jumlah_reply>0?` · 💬 ${t.jumlah_reply}`:''}</div>
       </div>
@@ -6478,10 +6509,35 @@ async function tkBuka(id){
       return `<div style="display:flex;justify-content:${admin?'flex-end':'flex-start'}"><div style="max-width:80%;background:${admin?'linear-gradient(135deg,#7C3AED,#2563EB)':'var(--bg3)'};color:${admin?'#fff':'var(--text)'};padding:9px 12px;border-radius:12px;font-size:13px;word-break:break-word"><div style="font-size:10px;opacity:.75;margin-bottom:2px">${admin?'Admin':'Pelanggan'}</div>${(m.pesan||'').replace(/</g,'&lt;').replace(/\n/g,'<br>')}<div style="font-size:10px;opacity:.6;margin-top:4px">${fmtDate?fmtDate(m.created_at):''}</div></div></div>`;
     }).join('');
     tkStatusButtons(t.status);
+    // Panel penugasan
+    await tkLoadTeknisi();
+    const selProto = document.getElementById('tk-prioritas'); if (selProto) selProto.value = t.prioritas || 'sedang';
+    const estEl = document.getElementById('tk-estimasi');
+    if (estEl) estEl.value = t.perkiraan_perbaikan ? String(t.perkiraan_perbaikan).replace(' ','T').slice(0,16) : '';
+    const tekSel = document.getElementById('tk-teknisi');
+    if (tekSel) {
+      const assigned = (t.teknisi || []).map(x => String(x.id));
+      tekSel.innerHTML = (TK_TEKNISI || []).map(a =>
+        `<option value="${a.id}"${assigned.includes(String(a.id))?' selected':''}>${a.nama} — ${a.email} [${a.role}]</option>`
+      ).join('') || '<option disabled>Tidak ada admin/teknisi</option>';
+    }
     document.getElementById('tk-balas').value='';
     openModal('m-tiket-detail');
     setTimeout(()=>{const th=document.getElementById('tk-thread');if(th)th.scrollTop=th.scrollHeight;},60);
   }catch(e){ toast('❌ '+e.message,true); }
+}
+async function tkSimpanPenugasan(){
+  if(!TK_AKTIF) return;
+  const btn=document.getElementById('tk-btn-tugas'); btn.disabled=true;
+  const prioritas=document.getElementById('tk-prioritas').value;
+  const perkiraan_perbaikan=document.getElementById('tk-estimasi').value;
+  const teknisi_ids=Array.from(document.getElementById('tk-teknisi').selectedOptions).map(o=>o.value);
+  try{
+    await apiFetch('/api/tiket/'+TK_AKTIF.id,{method:'PUT',body:JSON.stringify({prioritas,perkiraan_perbaikan,teknisi_ids})});
+    toast('✅ Penugasan disimpan');
+    loadTiket();
+  }catch(e){ toast('❌ '+e.message,true); }
+  finally{ btn.disabled=false; }
 }
 function tkStatusButtons(cur){
   const wrap=document.getElementById('tk-status-btns'); if(!wrap) return;

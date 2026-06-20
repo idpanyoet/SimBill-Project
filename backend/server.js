@@ -107,6 +107,21 @@ async function jalankanMigration() {
             nama: 'table.tiket_reply'
         },
         {
+            cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='tiket' AND COLUMN_NAME='prioritas'`,
+            sql:  `ALTER TABLE tiket ADD COLUMN prioritas ENUM('rendah','sedang','tinggi','urgent') DEFAULT 'sedang' AFTER kategori`,
+            nama: 'tiket.prioritas'
+        },
+        {
+            cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='tiket' AND COLUMN_NAME='perkiraan_perbaikan'`,
+            sql:  `ALTER TABLE tiket ADD COLUMN perkiraan_perbaikan DATETIME DEFAULT NULL AFTER prioritas`,
+            nama: 'tiket.perkiraan_perbaikan'
+        },
+        {
+            cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='tiket' AND COLUMN_NAME='teknisi_ids'`,
+            sql:  `ALTER TABLE tiket ADD COLUMN teknisi_ids VARCHAR(255) DEFAULT NULL AFTER perkiraan_perbaikan`,
+            nama: 'tiket.teknisi_ids'
+        },
+        {
             cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='pelanggan' AND COLUMN_NAME='radius_password_enc'`,
             sql:  `ALTER TABLE pelanggan ADD COLUMN radius_password_enc TEXT DEFAULT NULL AFTER password`,
             nama: 'pelanggan.radius_password_enc'

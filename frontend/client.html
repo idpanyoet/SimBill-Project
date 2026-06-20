@@ -882,7 +882,12 @@ async function lihatTiket(id) {
   try {
     var d = await apiFetch('/api/client/tiket/' + id);
     document.getElementById('detail-judul').textContent = d.judul;
-    document.getElementById('detail-meta').innerHTML = '<span class="tag ' + d.status + '">' + d.status + '</span> &nbsp;' + fmtTgl(d.created_at);
+    var prioMap = { rendah:['Rendah','#16a34a'], sedang:['Sedang','#d97706'], tinggi:['Tinggi','#ea580c'], urgent:['Urgent','#dc2626'] };
+    var pr = prioMap[d.prioritas];
+    var extra = '';
+    if (pr) extra += ' &nbsp;<span style="font-size:11px;font-weight:700;color:' + pr[1] + '">⚑ ' + pr[0] + '</span>';
+    if (d.perkiraan_perbaikan) extra += '<br><span style="color:#4ade80">🛠️ Estimasi perbaikan: ' + fmtTgl(d.perkiraan_perbaikan) + '</span>';
+    document.getElementById('detail-meta').innerHTML = '<span class="tag ' + d.status + '">' + d.status + '</span> &nbsp;' + fmtTgl(d.created_at) + extra;
     var wrap = document.getElementById('chat-wrap');
     var msgs = [{dari:'pelanggan', pesan:d.pesan, foto:d.foto, created_at:d.created_at}].concat(d.reply||[]);
     wrap.innerHTML = msgs.map(function(m) {
