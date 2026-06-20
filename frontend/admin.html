@@ -926,7 +926,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
             </div>
           </div>
         </div>
-        <div class="grid2" style="margin-bottom:16px">
+        <div style="margin-bottom:16px">
           <div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
             <div style="padding:12px 14px 0">
               <div style="display:flex;gap:3px;background:var(--bg2);padding:4px;border-radius:10px">
@@ -942,19 +942,6 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
               <div class="dw-pane" id="dw-bayar" style="display:none"></div>
               <div class="dw-pane" id="dw-expired" style="display:none"></div>
             </div>
-          </div>
-          <div class="card">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-              <div style="width:36px;height:36px;border-radius:8px;background:#E24B4A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0"><i class="ti ti-calendar-due" aria-hidden="true"></i></div>
-              <div>
-                <div style="font-size:13px;font-weight:500;color:var(--text)" data-i18n="Jatuh Tempo Dekat">Jatuh Tempo Dekat</div>
-                <div style="font-size:11px;color:var(--text3)" data-i18n="7 hari ke depan">7 hari ke depan</div>
-              </div>
-            </div>
-            <div id="jt-list">
-              <div style="text-align:center;color:var(--text3);padding:16px">Tidak ada data</div>
-            </div>
-            <button class="btn primary" style="width:100%;justify-content:center;margin-top:8px" onclick="kirimReminderMassal()">💬 <span data-i18n="Kirim Reminder WA">Kirim Reminder WA</span></button>
           </div>
         </div>
 
@@ -6928,15 +6915,6 @@ async function loadDashboard() {
   }
 
   try {
-    const jt = await apiFetch('/api/laporan/jatuh-tempo?hari=7');
-    renderJatuhTempo(jt.slice(0,4));
-  } catch(e) {
-    console.warn('Jatuh tempo API:', e.message);
-    document.getElementById('jt-list').innerHTML =
-      '<div style="text-align:center;color:var(--text3);padding:16px">Gagal memuat data jatuh tempo</div>';
-  }
-
-  try {
     const nas = await apiFetch('/api/radius/nas');
     nasChartInit(nas);
   } catch(e) {
@@ -7093,24 +7071,7 @@ function renderHotspotPage(page) {
     <div style="display:flex;gap:4px;align-items:center">${btnPrev}${pages}${btnNext}</div>`;
 }
 
-function renderJatuhTempo(list) {
-  const c = document.getElementById('jt-list');
-  if (!c) return;
-  if (!list.length) {
-    c.innerHTML = '<div style="text-align:center;color:var(--text3);padding:16px">Tidak ada tagihan jatuh tempo dalam 7 hari</div>';
-    return;
-  }
-  c.innerHTML = list.map(item => {
-    const isOverdue = item.status === 'overdue';
-    const sisaLabel = isOverdue
-      ? `Terlambat ${Math.abs(item.sisa_hari)} hari`
-      : (item.sisa_hari === 0 ? 'Hari ini' : item.sisa_hari === 1 ? 'Besok' : `${item.sisa_hari} hari lagi`);
-    return `<div class="inv-item">
-      <div><b style="font-size:13px">${item.nama_pelanggan}</b><div style="font-size:11px;color:var(--text3)">${sisaLabel}</div></div>
-      <div><span class="tag ${isOverdue?'overdue':'unpaid'}">${isOverdue?'Terlambat':'Belum Bayar'}</span><div style="font-size:12px;font-weight:600;margin-top:2px">${fmt(item.jumlah)}</div></div>
-    </div>`;
-  }).join('');
-}
+
 
 function renderNASDashboard(rows) {
   const t = document.getElementById('tbl-dash-nas');
