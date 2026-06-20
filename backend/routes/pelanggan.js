@@ -85,6 +85,10 @@ router.get('/peta', async (req, res, next) => {
 // ── GET /api/pelanggan/export/csv ─────────────────────────────
 router.get('/export/csv', async (req, res, next) => {
     try {
+        const { tipe } = req.query;
+        const cond = []; const params = [];
+        if (tipe && ['pppoe','hotspot'].includes(tipe)) { cond.push('p.tipe_koneksi = ?'); params.push(tipe); }
+        const where = cond.length ? 'WHERE ' + cond.join(' AND ') : '';
         const rows = await query(`
             SELECT p.nama, p.username, p.no_hp, p.email, p.alamat,
                    p.tipe_koneksi, p.status, p.tgl_aktif, p.tgl_expired,
@@ -92,8 +96,9 @@ router.get('/export/csv', async (req, res, next) => {
                    pk.nama AS nama_paket, pk.id AS paket_id
             FROM pelanggan p
             JOIN paket pk ON p.paket_id = pk.id
+            ${where}
             ORDER BY p.created_at DESC
-        `);
+        `, params);
 
         const header = ['nama','username','no_hp','email','alamat','tipe_koneksi',
                         'status','tgl_aktif','tgl_expired','ip_tetap','notes',
@@ -109,8 +114,9 @@ router.get('/export/csv', async (req, res, next) => {
             ...rows.map(r => header.map(k => esc(r[k])).join(','))
         ].join('\r\n');
 
+        const suffix = (tipe && ['pppoe','hotspot'].includes(tipe)) ? '-' + tipe : '';
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-        res.setHeader('Content-Disposition', `attachment; filename="pelanggan-${new Date().toISOString().slice(0,10)}.csv"`);
+        res.setHeader('Content-Disposition', `attachment; filename="pelanggan${suffix}-${new Date().toISOString().slice(0,10)}.csv"`);
         res.send('\uFEFF' + csv); // BOM agar Excel baca UTF-8 dengan benar
     } catch (e) { next(e); }
 });

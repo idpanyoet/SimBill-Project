@@ -489,6 +489,8 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-section">Utama</div>
     <div class="sb-item active" onclick="goto('dashboard',this)"><i class="ti ti-layout-dashboard icon" aria-hidden="true"></i> Dashboard</div>
     <div class="sb-item" onclick="goto('pelanggan',this)"><i class="ti ti-users icon" aria-hidden="true"></i> Pelanggan</div>
+    <div class="sb-item" onclick="goto('userio',this)"><i class="ti ti-file-export icon" aria-hidden="true"></i> Export User</div>
+    <div class="sb-item" onclick="goto('userio',this)"><i class="ti ti-file-import icon" aria-hidden="true"></i> Import User</div>
     <div class="sb-item" onclick="goto('paket',this)"><i class="ti ti-package icon" aria-hidden="true"></i> Paket Internet</div>
     <div class="sb-item" onclick="goto('invoice',this)"><i class="ti ti-receipt icon" aria-hidden="true"></i> Invoice</div>
     <div class="sb-item" onclick="goto('voucher',this)"><i class="ti ti-ticket icon" aria-hidden="true"></i> Voucher</div>
@@ -1957,6 +1959,44 @@ Selamat menikmati! 🌐</textarea>
       </div>
 
       <!-- ══ LOG ADMIN ══ -->
+      <div class="page" id="p-userio">
+        <div style="margin-bottom:16px">
+          <h2 style="margin:0;font-size:20px;display:flex;align-items:center;gap:8px"><i class="ti ti-users-group" style="color:#3b82f6"></i> Import / Export User</h2>
+          <div style="font-size:13px;color:var(--text2);margin-top:2px">Kelola data pelanggan PPPoE &amp; Hotspot secara massal</div>
+        </div>
+
+        <div class="card">
+          <div style="font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:7px"><i class="ti ti-download" style="color:#10b981"></i> Export User</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Unduh data pelanggan ke file CSV (bisa dibuka di Excel).</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+            <div>
+              <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:5px">Tipe Koneksi</label>
+              <select id="uio-export-tipe" style="padding:9px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);font-family:inherit">
+                <option value="">Semua</option>
+                <option value="pppoe">PPPoE</option>
+                <option value="hotspot">Hotspot</option>
+              </select>
+            </div>
+            <button class="btn primary" onclick="exportUser()" style="background:linear-gradient(135deg,#10b981,#059669);border:none"><i class="ti ti-file-download"></i> Download CSV</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:7px"><i class="ti ti-upload" style="color:#3b82f6"></i> Import User</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Tambah banyak pelanggan sekaligus dari file CSV.</div>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:12px;color:var(--text2);margin-bottom:12px">
+            Kolom wajib: <code>nama, username, password, no_hp, tipe_koneksi, paket_id</code>. Opsional: <code>email, alamat, notes</code>.<br>
+            <code>tipe_koneksi</code> = <b>pppoe</b> atau <b>hotspot</b>. <code>paket_id</code> = ID paket (lihat tombol di bawah).
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn primary" onclick="bukaImportCSV()" style="background:linear-gradient(135deg,#3b82f6,#2563eb);border:none"><i class="ti ti-upload"></i> Buka Import CSV</button>
+            <button class="btn" onclick="downloadTemplateUser()"><i class="ti ti-file-text"></i> Download Template</button>
+            <button class="btn" onclick="uioLihatPaket()"><i class="ti ti-package"></i> Lihat ID Paket</button>
+          </div>
+          <div id="uio-paket-list" style="margin-top:12px"></div>
+        </div>
+      </div>
+
       <div class="page" id="p-telegram">
         <div style="margin-bottom:16px">
           <h2 style="margin:0;font-size:20px;display:flex;align-items:center;gap:8px"><i class="ti ti-brand-telegram" style="color:#229ED9"></i> Integrasi Telegram</h2>
@@ -6415,6 +6455,33 @@ async function rpHapus(id, username) {
 }
 
 // ── NAVIGASI ──
+// ── IMPORT/EXPORT USER ──
+function exportUser(){
+  const tipe = document.getElementById('uio-export-tipe').value;
+  const q = tipe ? ('?tipe='+tipe) : '';
+  toast('⏳ Menyiapkan CSV...');
+  fetch('/api/pelanggan/export/csv'+q, { headers:{ 'Authorization':`Bearer ${TOKEN}` } })
+    .then(r=>{ if(!r.ok) throw new Error('Gagal export'); return r.blob(); })
+    .then(blob=>{ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`pelanggan${tipe?'-'+tipe:''}-${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url); toast('✅ Export berhasil'); })
+    .catch(e=>toast('❌ '+e.message,true));
+}
+function downloadTemplateUser(){
+  const header='nama,username,password,no_hp,tipe_koneksi,paket_id,email,alamat,notes';
+  const contoh='Budi Santoso,budi01,rahasia123,08123456789,pppoe,1,budi@mail.com,Jl. Mawar No.1,';
+  const csv='\uFEFF'+header+'\r\n'+contoh;
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='template-import-user.csv'; a.click(); URL.revokeObjectURL(url);
+}
+async function uioLihatPaket(){
+  const el=document.getElementById('uio-paket-list'); if(!el) return;
+  try{
+    const list = await apiFetch('/api/paket');
+    el.innerHTML = '<div style="font-size:12px;color:var(--text2);margin-bottom:6px">Daftar ID Paket:</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:6px">' + (list||[]).map(p=>`<span style="font-size:12px;background:var(--bg3);padding:4px 10px;border-radius:8px"><b>${p.id}</b> · ${(p.nama||'').replace(/</g,'&lt;')}</span>`).join('') + '</div>';
+  }catch(e){ el.innerHTML='<span style="color:#dc2626">❌ '+e.message+'</span>'; }
+}
+function loadUserio(){ const el=document.getElementById('uio-paket-list'); if(el) el.innerHTML=''; }
+
 // ── TELEGRAM ──
 function tgBuildBody() {
   const v = id => (document.getElementById(id).value || '').trim();
@@ -6619,6 +6686,7 @@ const titles = {
   'pengguna':'Pengguna Admin',
   'tiket':'Tiket Laporan',
   'telegram':'Integrasi Telegram',
+  'userio':'Import / Export User',
   'sesi':'Sesi Aktif',
   'peta':'Peta Jaringan',
   'voucher-template':'Template Voucher', setting:'Setting Sistem'
@@ -6635,6 +6703,7 @@ const loaders = {
   pengguna: loadPengguna,
   tiket: loadTiket,
   telegram: loadTelegram,
+  userio: loadUserio,
   peta: loadPeta,
   acs: loadACS, 'voucher-template': loadVoucherTemplate,
   setting: loadSetting,
