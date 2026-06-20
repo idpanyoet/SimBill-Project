@@ -66,8 +66,11 @@ router.get('/paket', async (req, res, next) => {
 // di webhook setelah pembayaran benar-benar lunas dikonfirmasi PG.
 router.post('/beli', limitBeli, async (req, res, next) => {
   try {
-    const { paket_id, paket_nama, harga: hargaFallback,
+    let { paket_id, paket_nama, harga: hargaFallback,
             no_hp, nama = 'Pembeli', metode = 'qris' } = req.body;
+    // Pembeli voucher tidak login — buang < > dari nama agar tak menyisipkan
+    // tag HTML yang dirender mentah di daftar voucher panel admin.
+    nama = String(nama).replace(/[<>]/g, '').trim() || 'Pembeli';
 
     if (!no_hp) return res.status(400).json({ error: 'no_hp wajib diisi' });
     if (!paket_id && !paket_nama)
@@ -191,7 +194,7 @@ router.get('/stats', async (req, res, next) => {
 
 function _acakUsername() {
   const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  return Array.from({ length: 10 }, () => c[Math.floor(Math.random() * c.length)]).join('');
+  return Array.from({ length: 10 }, () => c[require('crypto').randomInt(c.length)]).join('');
 }
 
 async function _aktivasiVoucher(username, noHp, nama, paket) {

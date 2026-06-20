@@ -10,7 +10,10 @@ const waService   = require('../services/whatsapp');
 const radiusService = require('../services/radius');
 const paymentService = require('../services/payment');
 
-const JWT_SECRET  = process.env.JWT_SECRET || 'secret';
+const crypto      = require('crypto');
+// JWT_SECRET dijamin sudah di-set & cukup panjang oleh validasi di server.js
+// saat boot. Tidak ada fallback 'secret' — token client tak boleh bisa diforge.
+const JWT_SECRET  = process.env.JWT_SECRET;
 const OTP_EXPIRE  = 5 * 60 * 1000; // 5 menit
 
 // ── Upload foto tiket ─────────────────────────────────────────
@@ -47,8 +50,8 @@ router.post('/otp/kirim', async (req, res, next) => {
         );
         if (!pel) return res.status(404).json({ error: 'Nomor HP tidak terdaftar sebagai pelanggan' });
 
-        // Generate OTP 6 digit
-        const otp     = String(Math.floor(100000 + Math.random() * 900000));
+        // Generate OTP 6 digit (CSPRNG — tidak bisa ditebak seperti Math.random)
+        const otp     = String(crypto.randomInt(100000, 1000000));
         const expired = new Date(Date.now() + OTP_EXPIRE);
 
         // Simpan OTP
@@ -452,10 +455,13 @@ router.get('/perangkat-wifi', clientAuth, async (req, res, next) => {
 router.put('/profil', clientAuth, async (req, res, next) => {
     try {
         let { nama, no_hp, email, alamat } = req.body;
-        nama   = (nama || '').trim();
+        // Buang < > agar nama/alamat tak bisa menyisipkan tag HTML yang
+        // dirender di panel admin (pertahanan stored-XSS di sumber).
+        const tanpaTag = s => (s || '').replace(/[<>]/g, '');
+        nama   = tanpaTag(nama).trim();
         no_hp  = (no_hp || '').trim();
         email  = (email || '').trim();
-        alamat = (alamat || '').trim();
+        alamat = tanpaTag(alamat).trim();
         if (!nama) return res.status(400).json({ error: 'Nama wajib diisi' });
         if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))
             return res.status(400).json({ error: 'Format email tidak valid' });

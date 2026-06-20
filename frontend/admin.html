@@ -5777,8 +5777,8 @@ async function loadNotifikasiTiket() {
       return '<div onclick="notifBukaTiket(' + t.id + ')" style="padding:11px 14px;border-bottom:1px solid #f1f5f9;cursor:pointer;display:flex;gap:10px;align-items:flex-start" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'\'">'
         + '<div style="width:32px;height:32px;border-radius:9px;background:' + warna + '1f;color:' + warna + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px">🎫</div>'
         + '<div style="min-width:0;flex:1">'
-        + '<div style="font-size:13px;font-weight:600;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (t.judul||'').replace(/</g,'&lt;') + '</div>'
-        + '<div style="font-size:11px;color:#94a3b8;margin-top:2px">' + (t.nama_pelanggan||'—') + ' · ' + kat + ' · ' + (fmtDate?fmtDate(t.created_at):'') + '</div>'
+        + '<div style="font-size:13px;font-weight:600;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escapeHtml(t.judul||'') + '</div>'
+        + '<div style="font-size:11px;color:#94a3b8;margin-top:2px">' + escapeHtml(t.nama_pelanggan||'—') + ' · ' + kat + ' · ' + (fmtDate?fmtDate(t.created_at):'') + '</div>'
         + '</div>'
         + '<span style="width:8px;height:8px;border-radius:50%;background:#dc2626;flex-shrink:0;margin-top:5px"></span>'
         + '</div>';
@@ -5923,6 +5923,9 @@ async function cekStatusSistem() {
 
 function fmt(n) { return 'Rp ' + Number(parseFloat(n)||0).toLocaleString('id-ID'); }
 function fmtDate(d) { return d ? new Date(d).toLocaleDateString('id-ID') : '—'; }
+// Escape data dari API sebelum disisipkan ke innerHTML (cegah stored-XSS).
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => (
+  {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function toast(msg, err=false) {
   const el = document.getElementById('toast-el');
@@ -6595,11 +6598,11 @@ function tkRender(){
     return `<div onclick="tkBuka(${t.id})" style="border:1px solid var(--border);border-left:4px solid ${s[1]};border-radius:12px;padding:12px 14px;background:var(--bg2);cursor:pointer;display:flex;gap:12px;align-items:center">
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span style="font-weight:700;font-size:14px">${(t.judul||'').replace(/</g,'&lt;')}</span>
+          <span style="font-weight:700;font-size:14px">${escapeHtml(t.judul||'')}</span>
           <span style="font-size:10px;font-weight:700;color:${k[1]};background:${k[1]}1f;padding:1px 8px;border-radius:10px">${k[0]}</span>
           ${prBadge}
         </div>
-        <div style="font-size:12px;color:var(--text3);margin-top:3px">${t.nama_pelanggan||'—'} · @${t.username||'-'} · ${fmtDate?fmtDate(t.created_at):''}${t.jumlah_reply>0?` · 💬 ${t.jumlah_reply}`:''}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:3px">${escapeHtml(t.nama_pelanggan||'—')} · @${escapeHtml(t.username||'-')} · ${fmtDate?fmtDate(t.created_at):''}${t.jumlah_reply>0?` · 💬 ${t.jumlah_reply}`:''}</div>
       </div>
       <span style="font-size:11px;font-weight:700;color:${s[1]};background:${s[1]}1f;padding:3px 10px;border-radius:20px;white-space:nowrap">${s[0]}</span>
     </div>`;
@@ -6613,7 +6616,7 @@ async function tkBuka(id){
     const items=[{dari:'pelanggan',pesan:t.pesan,created_at:t.created_at},...(t.reply||[])];
     document.getElementById('tk-thread').innerHTML=items.map(m=>{
       const admin=m.dari==='admin';
-      return `<div style="display:flex;justify-content:${admin?'flex-end':'flex-start'}"><div style="max-width:80%;background:${admin?'linear-gradient(135deg,#7C3AED,#2563EB)':'var(--bg3)'};color:${admin?'#fff':'var(--text)'};padding:9px 12px;border-radius:12px;font-size:13px;word-break:break-word"><div style="font-size:10px;opacity:.75;margin-bottom:2px">${admin?'Admin':'Pelanggan'}</div>${(m.pesan||'').replace(/</g,'&lt;').replace(/\n/g,'<br>')}<div style="font-size:10px;opacity:.6;margin-top:4px">${fmtDate?fmtDate(m.created_at):''}</div></div></div>`;
+      return `<div style="display:flex;justify-content:${admin?'flex-end':'flex-start'}"><div style="max-width:80%;background:${admin?'linear-gradient(135deg,#7C3AED,#2563EB)':'var(--bg3)'};color:${admin?'#fff':'var(--text)'};padding:9px 12px;border-radius:12px;font-size:13px;word-break:break-word"><div style="font-size:10px;opacity:.75;margin-bottom:2px">${admin?'Admin':'Pelanggan'}</div>${escapeHtml(m.pesan||'').replace(/\n/g,'<br>')}<div style="font-size:10px;opacity:.6;margin-top:4px">${fmtDate?fmtDate(m.created_at):''}</div></div></div>`;
     }).join('');
     tkStatusButtons(t.status);
     // Panel penugasan

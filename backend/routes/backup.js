@@ -49,10 +49,16 @@ router.post('/export', async (req, res, next) => {
     try {
         const { tables: selectedTables } = req.body;
 
-        // Ambil semua tabel jika tidak ada pilihan
+        // Daftar tabel sah dari DB (whitelist) — cegah injeksi via nama tabel
+        const tabelSah = new Set((await query(`SHOW TABLES`)).map(r => Object.values(r)[0]));
+
+        // Ambil semua tabel jika tidak ada pilihan; jika ada, saring ke yang sah saja
         let tabelList = selectedTables && selectedTables.length
-            ? selectedTables
-            : (await query(`SHOW TABLES`)).map(r => Object.values(r)[0]);
+            ? selectedTables.filter(t => tabelSah.has(t))
+            : [...tabelSah];
+
+        if (selectedTables && selectedTables.length && tabelList.length === 0)
+            return res.status(400).json({ error: 'Tidak ada nama tabel valid pada pilihan' });
 
         const tgl  = new Date().toISOString().slice(0,19).replace(/[T:]/g, '-');
         const nama = `simbill-backup-${tgl}.sql`;

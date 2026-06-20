@@ -226,7 +226,7 @@ router.get('/statistik', async (req, res, next) => {
 });
 
 function _acak(charset, panjang) {
-  return Array.from({ length: panjang }, () => charset[Math.floor(Math.random() * charset.length)]).join('');
+  return Array.from({ length: panjang }, () => charset[require('crypto').randomInt(charset.length)]).join('');
 }
 
 // ============================================================

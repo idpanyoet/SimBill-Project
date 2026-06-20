@@ -324,6 +324,29 @@ const WG_CONF      = `/etc/wireguard/${WG_IFACE}.conf`;
 const L2TP_SECRETS = '/etc/ppp/chap-secrets';
 const IPSEC_CONF   = '/etc/ipsec.secrets';
 
+// ── Validator input VPN (cegah injeksi baris ke file config) ──
+// File .conf / chap-secrets bersifat line-based: input yang mengandung
+// newline atau karakter delimiter bisa menyelipkan direktif/akun palsu.
+const RX_WG_PUBKEY  = /^[A-Za-z0-9+/]{43}=$/;            // 32-byte base64
+const RX_IP_CIDR    = /^\d{1,3}(\.\d{1,3}){3}(\/\d{1,2})?$/;
+const RX_USERNAME   = /^[A-Za-z0-9._@-]{1,64}$/;
+function ipv4Valid(s) {
+    if (s === '*') return true;
+    if (!RX_IP_CIDR.test(s)) return false;
+    return s.split('/')[0].split('.').every(o => +o >= 0 && +o <= 255);
+}
+function allowedIpsValid(s) {
+    return String(s).split(',').map(x => x.trim()).filter(Boolean).every(ipv4Valid);
+}
+// Bersihkan teks bebas (nama/catatan) agar tak memuat newline / pemisah config.
+function teksAman(s, maks = 100) {
+    return String(s == null ? '' : s).replace(/[\r\n]+/g, ' ').slice(0, maks).trim();
+}
+// Tolak whitespace/newline pada field yang ditulis ke baris delimited.
+function tanpaWhitespace(s) {
+    return typeof s === 'string' && s.length > 0 && !/[\s]/.test(s);
+}
+
 function execP(cmd, opts={}) {
     return new Promise((res, rej) => {
         exec(cmd, { timeout: 60000, ...opts }, (err, stdout, stderr) => {
@@ -513,9 +536,22 @@ router.post('/vpn/wg/toggle', authMiddleware, async (req, res, next) => {
 // POST /api/radius/vpn/wg/peer — tambah peer
 router.post('/vpn/wg/peer', authMiddleware, async (req, res, next) => {
     try {
-        const { nama, ip_tunnel, pubkey, allowed_ips, catatan } = req.body;
+        let { nama, ip_tunnel, pubkey, allowed_ips, catatan } = req.body;
         if (!nama || !ip_tunnel || !pubkey)
             return res.status(400).json({ error: 'nama, ip_tunnel, pubkey wajib diisi' });
+
+        // ── Validasi (cegah injeksi direktif ke wg0.conf) ──
+        pubkey = String(pubkey).trim();
+        if (!RX_WG_PUBKEY.test(pubkey))
+            return res.status(400).json({ error: 'PublicKey WireGuard tidak valid (harus base64 44 karakter)' });
+        if (!ipv4Valid(String(ip_tunnel).trim()))
+            return res.status(400).json({ error: 'ip_tunnel bukan IPv4/CIDR yang valid' });
+        if (allowed_ips && !allowedIpsValid(allowed_ips))
+            return res.status(400).json({ error: 'allowed_ips tidak valid (IPv4/CIDR, pisah koma)' });
+        ip_tunnel = String(ip_tunnel).trim();
+        nama      = teksAman(nama, 64);
+        catatan   = catatan ? teksAman(catatan, 120) : '';
+        if (!nama) return res.status(400).json({ error: 'nama tidak valid' });
 
         const peerConf = `\n# Peer: ${nama}${catatan?' — '+catatan:''}\n[Peer]\nPublicKey = ${pubkey}\nAllowedIPs = ${ip_tunnel}\n`;
         fs.appendFileSync(WG_CONF, peerConf);
@@ -613,6 +649,14 @@ router.post('/vpn/l2tp/user', authMiddleware, async (req, res, next) => {
     try {
         const { username, password, ip } = req.body;
         if (!username || !password) return res.status(400).json({ error: 'username dan password wajib' });
+
+        // ── Validasi (chap-secrets dipisah spasi; tolak whitespace/newline) ──
+        if (!RX_USERNAME.test(username))
+            return res.status(400).json({ error: 'username hanya boleh huruf/angka . _ @ - (maks 64)' });
+        if (!tanpaWhitespace(password) || password.length > 128)
+            return res.status(400).json({ error: 'password tidak boleh mengandung spasi/baris baru (maks 128 karakter)' });
+        if (ip && !ipv4Valid(String(ip).trim()))
+            return res.status(400).json({ error: 'ip bukan IPv4 yang valid' });
 
         // Pastikan direktori /etc/ppp ada
         const secretsDir = path.dirname(L2TP_SECRETS);

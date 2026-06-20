@@ -92,9 +92,21 @@ router.post('/auth/login', async (req, res, next) => {
 // POST /reseller/auth/register (publik, perlu approve admin)
 router.post('/auth/register', async (req, res, next) => {
     try {
-        const { nama, username, password, no_hp, email } = req.body;
+        let { nama, username, password, no_hp, email } = req.body;
         if (!nama || !username || !password || !no_hp)
             return res.status(400).json({ error: 'Semua field wajib diisi' });
+        // Pendaftaran publik — netralkan input sebelum admin melihatnya di panel.
+        nama  = String(nama).replace(/[<>]/g, '').trim();
+        email = email ? String(email).replace(/[<>]/g, '').trim() : null;
+        username = String(username).trim();
+        if (!nama) return res.status(400).json({ error: 'Nama tidak valid' });
+        if (!/^[A-Za-z0-9._-]{3,32}$/.test(username))
+            return res.status(400).json({ error: 'Username 3-32 karakter, hanya huruf/angka . _ -' });
+        if (!/^[0-9+]{8,16}$/.test(String(no_hp).trim()))
+            return res.status(400).json({ error: 'Nomor HP tidak valid' });
+        no_hp = String(no_hp).trim();
+        if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))
+            return res.status(400).json({ error: 'Format email tidak valid' });
 
         const ada = await queryOne('SELECT id FROM reseller WHERE username=?', [username]);
         if (ada) return res.status(400).json({ error: 'Username sudah digunakan' });
@@ -234,7 +246,7 @@ router.post('/beli/voucher', resellerAuth, async (req, res, next) => {
 
         const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         const genKode = () => {
-            const b = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+            const b = () => Array.from({ length: 4 }, () => chars[require('crypto').randomInt(chars.length)]).join('');
             return `${b()}-${b()}-${b()}`;
         };
 
