@@ -2050,43 +2050,11 @@ Selamat menikmati! 🌐</textarea>
         </div>
 
         <!-- Stat cards -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
-          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
-            <div style="width:40px;height:40px;border-radius:11px;background:rgba(37,99,235,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <i class="ti ti-router" style="font-size:20px;color:#2563eb" aria-hidden="true"></i>
-            </div>
-            <div>
-              <div id="sesi-stat-pppoe" style="font-size:22px;font-weight:700;color:var(--text)">—</div>
-              <div class="td-text-sub" style="font-size:11px">PPPoE Aktif</div>
-            </div>
-          </div>
-          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
-            <div style="width:40px;height:40px;border-radius:11px;background:rgba(124,58,237,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <i class="ti ti-wifi" style="font-size:20px;color:#7c3aed" aria-hidden="true"></i>
-            </div>
-            <div>
-              <div id="sesi-stat-hotspot" style="font-size:22px;font-weight:700;color:var(--text)">—</div>
-              <div class="td-text-sub" style="font-size:11px">Hotspot Aktif</div>
-            </div>
-          </div>
-          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
-            <div style="width:40px;height:40px;border-radius:11px;background:rgba(22,163,74,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <i class="ti ti-users" style="font-size:20px;color:#16a34a" aria-hidden="true"></i>
-            </div>
-            <div>
-              <div id="sesi-stat-total" style="font-size:22px;font-weight:700;color:var(--text)">—</div>
-              <div class="td-text-sub" style="font-size:11px">Total Online</div>
-            </div>
-          </div>
-          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
-            <div style="width:40px;height:40px;border-radius:11px;background:rgba(217,119,6,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-              <i class="ti ti-clock" style="font-size:20px;color:#d97706" aria-hidden="true"></i>
-            </div>
-            <div>
-              <div id="sesi-stat-update" style="font-size:13px;font-weight:600;color:var(--text)">—</div>
-              <div class="td-text-sub" style="font-size:11px">Terakhir diperbarui</div>
-            </div>
-          </div>
+        <div class="metrics" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+          <div class="metric blue"><div class="metric-ico"><i class="ti ti-router"></i></div><div><div class="lbl">PPPoE Aktif</div><div class="val" id="sesi-stat-pppoe">—</div></div></div>
+          <div class="metric purple"><div class="metric-ico"><i class="ti ti-wifi"></i></div><div><div class="lbl">Hotspot Aktif</div><div class="val" id="sesi-stat-hotspot">—</div></div></div>
+          <div class="metric green"><div class="metric-ico"><i class="ti ti-users"></i></div><div><div class="lbl">Total Online</div><div class="val" id="sesi-stat-total">—</div></div></div>
+          <div class="metric amber"><div class="metric-ico"><i class="ti ti-clock"></i></div><div><div class="lbl">Terakhir diperbarui</div><div class="val" id="sesi-stat-update" style="font-size:14px">—</div></div></div>
         </div>
 
         <div class="card">
