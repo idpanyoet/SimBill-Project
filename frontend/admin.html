@@ -926,24 +926,6 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
             </div>
           </div>
         </div>
-        <div style="margin-bottom:16px">
-          <div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
-            <div style="padding:12px 14px 0">
-              <div style="display:flex;gap:3px;background:var(--bg2);padding:4px;border-radius:10px">
-                <button class="dw-tab active" data-t="tren" onclick="dwTab('tren')">📈 Tren</button>
-                <button class="dw-tab" data-t="status" onclick="dwTab('status')">🩺 Status</button>
-                <button class="dw-tab" data-t="bayar" onclick="dwTab('bayar')">💳 Bayar</button>
-                <button class="dw-tab" data-t="expired" onclick="dwTab('expired')">⏰ Expired</button>
-              </div>
-            </div>
-            <div style="padding:14px;flex:1">
-              <div class="dw-pane" id="dw-tren"><div style="color:var(--text3);font-size:12px;text-align:center;padding:20px">Memuat…</div></div>
-              <div class="dw-pane" id="dw-status" style="display:none"></div>
-              <div class="dw-pane" id="dw-bayar" style="display:none"></div>
-              <div class="dw-pane" id="dw-expired" style="display:none"></div>
-            </div>
-          </div>
-        </div>
 
 
         <div class="grid2">
@@ -1000,11 +982,29 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
             </div>
           </div>
           </div>
+          <div style="display:flex;flex-direction:column;gap:14px">
           <div class="card">
             <div class="card-title">Service Information</div>
             <div id="svc-info" style="margin-top:6px">
               <div style="text-align:center;color:var(--text3);padding:16px;font-size:12px">Memuat…</div>
             </div>
+          </div>
+          <div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+            <div style="padding:12px 14px 0">
+              <div style="display:flex;gap:3px;background:var(--bg2);padding:4px;border-radius:10px">
+                <button class="dw-tab active" data-t="tren" onclick="dwTab('tren')">📈 Tren</button>
+                <button class="dw-tab" data-t="status" onclick="dwTab('status')">🩺 Status</button>
+                <button class="dw-tab" data-t="bayar" onclick="dwTab('bayar')">💳 Bayar</button>
+                <button class="dw-tab" data-t="expired" onclick="dwTab('expired')">⏰ Expired</button>
+              </div>
+            </div>
+            <div style="padding:14px;flex:1">
+              <div class="dw-pane" id="dw-tren"><div style="color:var(--text3);font-size:12px;text-align:center;padding:20px">Memuat…</div></div>
+              <div class="dw-pane" id="dw-status" style="display:none"></div>
+              <div class="dw-pane" id="dw-bayar" style="display:none"></div>
+              <div class="dw-pane" id="dw-expired" style="display:none"></div>
+            </div>
+          </div>
           </div>
         </div>
 
