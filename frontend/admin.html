@@ -404,7 +404,7 @@ body.dark .main{background:#0d1117}
 body.dark .topbar{background:#161b22;border-color:#30363d}
 body.dark .topbar h1{color:#e6edf3}
 body.dark #topbar-search{background:#0d1117!important;border-color:#30363d!important;color:#e6edf3!important}
-body.dark #topbar-search-dropdown,body.dark #topbar-profil-menu{background:#161b22!important;border-color:#30363d!important}
+body.dark #topbar-search-dropdown,body.dark #topbar-profil-menu,body.dark #topbar-notif-menu{background:#161b22!important;border-color:#30363d!important}
 body.dark #topbar-notif-btn,body.dark #topbar-dark-btn,body.dark #topbar-lang-btn{background:#0d1117!important;border-color:#30363d!important}
 body.dark .card{background:#161b22;border-color:#30363d;color:#e6edf3}
 body.dark .card-title{color:#e6edf3}
@@ -556,10 +556,21 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
         </div>
 
         <!-- Notifikasi -->
-        <button id="topbar-notif-btn" onclick="topbarToggleNotif()" title="Notifikasi" style="width:36px;height:36px;border-radius:10px;border:1px solid #e2e7ef;background:#f8fafc;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;transition:all .15s" onmouseover="this.style.background='#eff6ff';this.style.borderColor='#2563eb'" onmouseout="this.style.background='#f8fafc';this.style.borderColor='#e2e7ef'">
-          <i class="ti ti-bell" style="font-size:16px;color:#2563eb" aria-hidden="true"></i>
-          <span id="topbar-notif-dot" style="display:none;position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:#dc2626;border:1.5px solid #fff"></span>
-        </button>
+        <div style="position:relative">
+          <button id="topbar-notif-btn" onclick="topbarToggleNotif()" title="Notifikasi" style="width:36px;height:36px;border-radius:10px;border:1px solid #e2e7ef;background:#f8fafc;cursor:pointer;display:flex;align-items:center;justify-content:center;position:relative;transition:all .15s" onmouseover="this.style.background='#eff6ff';this.style.borderColor='#2563eb'" onmouseout="this.style.background='#f8fafc';this.style.borderColor='#e2e7ef'">
+            <i class="ti ti-bell" style="font-size:16px;color:#2563eb" aria-hidden="true"></i>
+            <span id="topbar-notif-dot" style="display:none"></span>
+            <span id="topbar-notif-badge" style="display:none;position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;padding:0 4px;border-radius:9px;background:#dc2626;color:#fff;font-size:9px;font-weight:700;align-items:center;justify-content:center;border:1.5px solid #fff">0</span>
+          </button>
+          <div id="topbar-notif-menu" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:324px;max-height:430px;overflow-y:auto;background:#fff;border:1px solid #e2e7ef;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.14);z-index:200">
+            <div style="padding:12px 14px;border-bottom:1px solid #e2e7ef;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff">
+              <span style="font-size:13px;font-weight:700;color:#0f172a">🔔 Notifikasi Tiket</span>
+              <span id="topbar-notif-count" style="font-size:11px;color:#94a3b8"></span>
+            </div>
+            <div id="topbar-notif-list"><div style="padding:22px;text-align:center;color:#94a3b8;font-size:12px">Memuat…</div></div>
+            <div onclick="goto('tiket',document.querySelector('.sb-item[onclick*=tiket]'));topbarTutupNotif()" style="padding:11px;text-align:center;font-size:12px;font-weight:600;color:#2563eb;cursor:pointer;border-top:1px solid #e2e7ef;position:sticky;bottom:0;background:#fff">Lihat semua tiket →</div>
+          </div>
+        </div>
 
         <!-- Dark mode toggle -->
         <button onclick="toggleDarkMode()" title="Mode siang/malam" style="width:36px;height:36px;border-radius:10px;border:1px solid #e2e7ef;background:#f8fafc;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s" onmouseover="this.style.background='#fffbeb';this.style.borderColor='#d97706'" onmouseout="this.style.background='#f8fafc';this.style.borderColor='#e2e7ef'">
@@ -5578,9 +5589,57 @@ function topbarSearchHide() {
 }
 
 // ── TOPBAR NOTIF ──────────────────────────────────────────────
+function topbarTutupNotif() {
+  const menu = document.getElementById('topbar-notif-menu');
+  if (menu) menu.style.display = 'none';
+}
 function topbarToggleNotif() {
-  // Sementara navigasi ke halaman invoice belum dibayar
-  goto('invoice', null);
+  const menu = document.getElementById('topbar-notif-menu');
+  if (!menu) return;
+  const isOpen = menu.style.display !== 'none';
+  menu.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    loadNotifikasiTiket();
+    setTimeout(function() {
+      document.addEventListener('click', function close(e) {
+        const btn = document.getElementById('topbar-notif-btn');
+        if (!menu.contains(e.target) && btn && !btn.contains(e.target)) { menu.style.display='none'; document.removeEventListener('click',close); }
+      });
+    }, 10);
+  }
+}
+const TK_KAT_NOTIF = { umum:'Umum', gangguan:'Gangguan', billing:'Billing', lainnya:'Lainnya' };
+async function loadNotifikasiTiket() {
+  const list = document.getElementById('topbar-notif-list');
+  const cnt = document.getElementById('topbar-notif-count');
+  if (!list) return;
+  try {
+    const rows = await apiFetch('/api/tiket?status=open');
+    if (cnt) cnt.textContent = rows.length + ' open';
+    if (!rows.length) {
+      list.innerHTML = '<div style="padding:26px;text-align:center;color:#94a3b8;font-size:12px">✅ Tidak ada tiket baru</div>';
+      return;
+    }
+    list.innerHTML = rows.slice(0, 12).map(function(t) {
+      const kat = TK_KAT_NOTIF[t.kategori] || 'Umum';
+      const warna = t.kategori === 'gangguan' ? '#dc2626' : t.kategori === 'billing' ? '#7c3aed' : t.kategori === 'lainnya' ? '#0891b2' : '#64748b';
+      return '<div onclick="notifBukaTiket(' + t.id + ')" style="padding:11px 14px;border-bottom:1px solid #f1f5f9;cursor:pointer;display:flex;gap:10px;align-items:flex-start" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'\'">'
+        + '<div style="width:32px;height:32px;border-radius:9px;background:' + warna + '1f;color:' + warna + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px">🎫</div>'
+        + '<div style="min-width:0;flex:1">'
+        + '<div style="font-size:13px;font-weight:600;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (t.judul||'').replace(/</g,'&lt;') + '</div>'
+        + '<div style="font-size:11px;color:#94a3b8;margin-top:2px">' + (t.nama_pelanggan||'—') + ' · ' + kat + ' · ' + (fmtDate?fmtDate(t.created_at):'') + '</div>'
+        + '</div>'
+        + '<span style="width:8px;height:8px;border-radius:50%;background:#dc2626;flex-shrink:0;margin-top:5px"></span>'
+        + '</div>';
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div style="padding:22px;text-align:center;color:#dc2626;font-size:12px">' + e.message + '</div>';
+  }
+}
+function notifBukaTiket(id) {
+  topbarTutupNotif();
+  goto('tiket', document.querySelector('.sb-item[onclick*=tiket]'));
+  setTimeout(function(){ if (typeof tkBuka === 'function') tkBuka(id); }, 150);
 }
 
 // ── TOPBAR PROFIL ─────────────────────────────────────────────
@@ -5613,13 +5672,17 @@ function topbarUpdateProfil(nama, role) {
   if (roleEl && role) roleEl.textContent = role === 'superadmin' ? 'Super Admin' : role === 'admin' ? 'Admin' : 'Operator';
 }
 
-// Cek notif unpaid invoice count
+// Cek notif tiket open → badge angka di lonceng
 async function topbarCekNotif() {
+  if (typeof ROLE !== 'undefined' && ROLE === 'reseller') return;
   try {
-    const d = await apiFetch('/api/invoice?status=unpaid&limit=1');
-    const n = d.total || (Array.isArray(d) ? d.length : 0);
-    const dot = document.getElementById('topbar-notif-dot');
-    if (dot) dot.style.display = n > 0 ? '' : 'none';
+    const s = await apiFetch('/api/tiket/stats');
+    const n = s.open || 0;
+    const badge = document.getElementById('topbar-notif-badge');
+    if (badge) {
+      badge.textContent = n > 9 ? '9+' : n;
+      badge.style.display = n > 0 ? 'flex' : 'none';
+    }
   } catch(e) {}
 }
 // ── END TOPBAR ────────────────────────────────────────────────
