@@ -525,16 +525,6 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-item" onclick="goto('pengguna',this)"><i class="ti ti-users-group icon" aria-hidden="true"></i> Pengguna Admin</div>
     <div class="sb-item" onclick="goto('log',this)"><i class="ti ti-clipboard-list icon" aria-hidden="true"></i> Log Admin</div>
 
-    <div class="sb-bottom">
-      <div class="sb-user">
-        <div class="sb-avatar" id="sb-av">SA</div>
-        <div class="sb-user-info">
-          <div class="name" id="sb-nama">Super Admin</div>
-          <div class="role" id="sb-role">superadmin</div>
-        </div>
-      </div>
-      <button class="btn-logout" onclick="doLogout()">🚪 Keluar</button>
-    </div>
   </div>
 
   <!-- MAIN -->
@@ -5839,9 +5829,6 @@ function doLogout() {
 function tampilApp() {
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app').classList.add('visible');
-  document.getElementById('sb-nama').textContent = ADMIN.nama||'Admin';
-  document.getElementById('sb-role').textContent = ADMIN.role||'';
-  document.getElementById('sb-av').textContent   = (ADMIN.nama||'A').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   topbarUpdateProfil(ADMIN.nama, ADMIN.role);
   topbarCekNotif();
   loadDashboard();
@@ -5858,6 +5845,7 @@ function tampilAppReseller() {
   if (el('sb-nama')) el('sb-nama').textContent = nm;
   if (el('sb-role')) el('sb-role').textContent = 'Reseller';
   if (el('sb-av'))   el('sb-av').textContent = nm.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  if (typeof topbarUpdateProfil === 'function') topbarUpdateProfil(nm, 'Reseller');
   goto('r-dashboard', document.querySelector('.rs-item.active') || document.querySelector('.rs-item'));
   loadResellerDashboard();
 }
