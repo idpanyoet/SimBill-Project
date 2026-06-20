@@ -96,8 +96,8 @@ router.post('/auth/register', async (req, res, next) => {
         if (!nama || !username || !password || !no_hp)
             return res.status(400).json({ error: 'Semua field wajib diisi' });
         // Pendaftaran publik — netralkan input sebelum admin melihatnya di panel.
-        nama  = String(nama).replace(/[<>]/g, '').trim();
-        email = email ? String(email).replace(/[<>]/g, '').trim() : null;
+        nama  = String(nama).replace(/[<>]/g, '').replace(/[\x00-\x1F\x7F]/g, '').trim().slice(0, 100);
+        email = email ? String(email).replace(/[<>]/g, '').trim().slice(0, 254) : null;
         username = String(username).trim();
         if (!nama) return res.status(400).json({ error: 'Nama tidak valid' });
         if (!/^[A-Za-z0-9._-]{3,32}$/.test(username))

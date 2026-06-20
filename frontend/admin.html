@@ -5926,6 +5926,12 @@ function fmtDate(d) { return d ? new Date(d).toLocaleDateString('id-ID') : '—'
 // Escape data dari API sebelum disisipkan ke innerHTML (cegah stored-XSS).
 function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => (
   {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// Untuk nilai yang dipakai sebagai string JS di dalam atribut, mis.
+// onclick="fn('${jsAttr(x)}')". escapeHtml saja TIDAK aman di konteks ini.
+function jsAttr(s){ return String(s==null?'':s)
+  .replace(/\\/g,'\\\\').replace(/'/g,"\\'")
+  .replace(/"/g,'&quot;').replace(/</g,'\\x3C')
+  .replace(/[\r\n]+/g,' '); }
 
 function toast(msg, err=false) {
   const el = document.getElementById('toast-el');
@@ -6258,13 +6264,13 @@ function rpRender() {
       <div style="display:flex;align-items:center;gap:10px">
         <div style="width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,${avCol},${avCol2});color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;box-shadow:0 4px 10px -4px ${avCol}88">${ini}</div>
         <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nama||p.username}</div>
-          <div style="font-size:12px;color:var(--text3);font-family:monospace">@${p.username}</div>
+          <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(p.nama||p.username)}</div>
+          <div style="font-size:12px;color:var(--text3);font-family:monospace">@${escapeHtml(p.username)}</div>
         </div>
         ${rsBadgeStatus(p.status)}
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <span style="font-size:11px;background:rgba(186,117,23,.1);color:#BA7517;padding:2px 9px;border-radius:20px;font-weight:600"><i class="ti ti-package" style="font-size:11px"></i> ${p.nama_paket||'—'}</span>
+        <span style="font-size:11px;background:rgba(186,117,23,.1);color:#BA7517;padding:2px 9px;border-radius:20px;font-weight:600"><i class="ti ti-package" style="font-size:11px"></i> ${escapeHtml(p.nama_paket||'—')}</span>
         <span style="font-size:11px;color:var(--text3)">${p.tipe_koneksi||''}</span>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;padding:8px 0;border-top:1px dashed var(--border)">
@@ -6272,7 +6278,7 @@ function rpRender() {
         <span style="color:${expCol};font-weight:600">${expTxt}</span>
       </div>
       <div style="display:flex;gap:6px">
-        <button class="btn sm" style="flex:1;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;font-weight:600" onclick="rpPerpanjang(${p.id},'${p.username}')"><i class="ti ti-refresh"></i> Perpanjang</button>
+        <button class="btn sm" style="flex:1;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;font-weight:600" onclick="rpPerpanjang(${p.id},'${jsAttr(p.username)}')"><i class="ti ti-refresh"></i> Perpanjang</button>
         ${p.status==='aktif'
           ? `<button class="btn sm" style="border-color:#f59e0b;color:#d97706" onclick="rpStatus(${p.id},'suspend')" title="Suspend"><i class="ti ti-player-pause"></i></button>`
           : `<button class="btn sm" style="border-color:#10b981;color:#059669" onclick="rpStatus(${p.id},'aktifkan')" title="Aktifkan"><i class="ti ti-player-play"></i></button>`}
@@ -7451,28 +7457,28 @@ function renderTblPelanggan(rows) {
   t.innerHTML = rows.map((p,i) => `
     <tr>
       <td>${i+1}</td>
-      <td><div style="font-weight:500">${p.nama}</div><div style="font-size:11px;color:var(--text3)">${p.email||''}</div></td>
-      <td><span style="font-family:monospace;font-size:12px">${p.username}</span></td>
-      <td>${p.no_hp}</td>
-      <td>${p.nama_paket||'—'}</td>
+      <td><div style="font-weight:500">${escapeHtml(p.nama)}</div><div style="font-size:11px;color:var(--text3)">${escapeHtml(p.email||'')}</div></td>
+      <td><span style="font-family:monospace;font-size:12px">${escapeHtml(p.username)}</span></td>
+      <td>${escapeHtml(p.no_hp)}</td>
+      <td>${escapeHtml(p.nama_paket||'—')}</td>
       <td><span class="tag ${p.tipe_koneksi}">${p.tipe_koneksi}</span></td>
       <td>${fmtDate(p.tgl_expired)}</td>
       <td><span class="tag ${p.status}">${p.status==='aktif'?'Aktif':p.status==='suspended'?'Suspended':'Nonaktif'}</span></td>
       <td style="white-space:nowrap">
-        <button class="btn sm" title="Kirim WA" onclick="apiKirimWAPelanggan(${p.id},'${p.nama}')" style="padding:5px 8px;background:rgba(22,163,74,.1);border-color:rgba(22,163,74,.3);color:#16a34a">
+        <button class="btn sm" title="Kirim WA" onclick="apiKirimWAPelanggan(${p.id},'${jsAttr(p.nama)}')" style="padding:5px 8px;background:rgba(22,163,74,.1);border-color:rgba(22,163,74,.3);color:#16a34a">
           <i class="ti ti-brand-whatsapp" style="font-size:13px" aria-hidden="true"></i>
         </button>
         <button class="btn sm" title="Edit pelanggan" onclick="bukaModalEdit(${p.id})" style="padding:5px 10px;gap:4px">
           <i class="ti ti-edit" style="font-size:13px" aria-hidden="true"></i> Edit
         </button>
         ${p.status==='aktif'
-          ? `<button class="btn sm" title="Suspend" onclick="apiSuspend(${p.id},'${p.nama}')" style="padding:5px 8px;background:rgba(217,119,6,.1);border-color:rgba(217,119,6,.3);color:#d97706">
+          ? `<button class="btn sm" title="Suspend" onclick="apiSuspend(${p.id},'${jsAttr(p.nama)}')" style="padding:5px 8px;background:rgba(217,119,6,.1);border-color:rgba(217,119,6,.3);color:#d97706">
               <i class="ti ti-player-pause" style="font-size:13px" aria-hidden="true"></i>
             </button>`
-          : `<button class="btn sm" title="Aktifkan" onclick="apiAktifkan(${p.id},'${p.nama}')" style="padding:5px 8px;background:rgba(37,99,235,.1);border-color:rgba(37,99,235,.3);color:#2563eb">
+          : `<button class="btn sm" title="Aktifkan" onclick="apiAktifkan(${p.id},'${jsAttr(p.nama)}')" style="padding:5px 8px;background:rgba(37,99,235,.1);border-color:rgba(37,99,235,.3);color:#2563eb">
               <i class="ti ti-player-play" style="font-size:13px" aria-hidden="true"></i>
             </button>`}
-        <button class="btn sm danger" title="Hapus pelanggan" onclick="apiHapusPelanggan(${p.id},'${p.nama}')" style="padding:5px 8px">
+        <button class="btn sm danger" title="Hapus pelanggan" onclick="apiHapusPelanggan(${p.id},'${jsAttr(p.nama)}')" style="padding:5px 8px">
           <i class="ti ti-trash" style="font-size:13px" aria-hidden="true"></i>
         </button>
       </td>
@@ -7542,7 +7548,7 @@ async function loadResellerOptions(selId, selected) {
   try {
     const list = await apiFetch('/api/reseller/admin/list');
     sel.innerHTML = '<option value="">— Tanpa reseller —</option>' +
-      (list||[]).map(r => `<option value="${r.id}" ${String(selected||'')===String(r.id)?'selected':''}>${r.nama} (${r.username})</option>`).join('');
+      (list||[]).map(r => `<option value="${r.id}" ${String(selected||'')===String(r.id)?'selected':''}>${escapeHtml(r.nama)} (${escapeHtml(r.username)})</option>`).join('');
   } catch (e) {}
 }
 
@@ -7853,7 +7859,7 @@ function renderPaket(rows) {
     const tipeBadge   = p.tipe === 'pppoe' ? 'pppoe' : p.tipe === 'hotspot' ? 'hotspot' : 'blue';
     const tipeBadgeLabel = p.tipe === 'keduanya' ? 'Keduanya' : (p.tipe === 'pppoe' ? 'PPPoE' : 'Hotspot');
     const statusDot   = p.aktif ? 'dot-green' : 'dot-red';
-    const namaEsc     = p.nama.replace(/'/g, "\\'");
+    const namaEsc     = jsAttr(p.nama);
     const izinVcr     = p.izin_voucher ? 1 : 0;
     const speedLabel  = p.rate_limit || `${p.kecepatan_dn} Mbps`;
     return `<tr>
@@ -7861,8 +7867,8 @@ function renderPaket(rows) {
         <div style="display:flex;align-items:center;gap:8px">
           <span class="status-dot ${statusDot}"></span>
           <div>
-            <div class="td-text-main">${p.nama}</div>
-            ${p.deskripsi ? `<div class="td-text-sub">${p.deskripsi}</div>` : ''}
+            <div class="td-text-main">${escapeHtml(p.nama)}</div>
+            ${p.deskripsi ? `<div class="td-text-sub">${escapeHtml(p.deskripsi)}</div>` : ''}
           </div>
         </div>
       </td>
@@ -8612,7 +8618,7 @@ function renderTblInvoice(rows) {
     <tr>
       <td><input type="checkbox" class="inv-chk" value="${i.id}" data-no="${i.no_invoice}" data-status="${i.status}" onchange="invUpdateSelBtn()" style="width:15px;height:15px;accent-color:#dc2626;cursor:pointer"></td>
       <td class="td-text-main" style="font-size:12px">${i.no_invoice}</td>
-      <td>${i.nama_pelanggan||'—'}</td>
+      <td>${escapeHtml(i.nama_pelanggan||'—')}</td>
       <td class="td-text-sub">${i.nama_paket||'—'}</td>
       <td class="td-text-bold">${fmt(i.jumlah)}</td>
       <td class="td-text-sub">${fmtDate(i.tgl_jatuh_tempo)}</td>
@@ -8620,7 +8626,7 @@ function renderTblInvoice(rows) {
       <td style="white-space:nowrap">
         ${i.status!=='paid' ? `<button class="btn sm" onclick="apiKirimReminder(${i.id})" title="Kirim reminder WA"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i></button>
         <button class="btn sm" onclick="apiBayarTunai(${i.id})" title="Lunasi manual"><i class="ti ti-check" aria-hidden="true"></i> Lunasi</button>` : ''}
-        ${i.status==='overdue' ? `<button class="btn sm danger" onclick="apiSuspendDariInvoice(${i.id}, '${i.nama_pelanggan}')" title="Suspend pelanggan"><i class="ti ti-ban" aria-hidden="true"></i></button>` : ''}
+        ${i.status==='overdue' ? `<button class="btn sm danger" onclick="apiSuspendDariInvoice(${i.id}, '${jsAttr(i.nama_pelanggan)}')" title="Suspend pelanggan"><i class="ti ti-ban" aria-hidden="true"></i></button>` : ''}
         <button class="btn sm" onclick="cetakInvoice(${i.id},'a4')" title="Print A4"><i class="ti ti-printer" style="font-size:12px" aria-hidden="true"></i> A4</button>
         <button class="btn sm" onclick="cetakInvoice(${i.id},'thermal')" title="Print Thermal 58mm"><i class="ti ti-receipt" style="font-size:12px" aria-hidden="true"></i> Thermal</button>
         <button class="btn sm" onclick="unduhInvoicePDF(${i.id},'${i.no_invoice}')" title="Download PDF"><i class="ti ti-file-type-pdf" style="font-size:12px" aria-hidden="true"></i> PDF</button>
@@ -9997,7 +10003,7 @@ function renderWAChatPreview(rows) {
     const centang  = r.status === 'sent' ? '✓✓' : r.status === 'failed' ? '✗' : '⏳';
     const centangColor = r.status === 'sent' ? '#53bdeb' : r.status === 'failed' ? '#dc2626' : '#94a3b8';
     const pesanRingkas = (r.pesan||'').replace(/\*(.*?)\*/g,'<b>$1</b>').slice(0, 300);
-    const nama     = r.nama_pelanggan ? `<div style="font-size:10px;color:#94a3b8;margin-bottom:3px">${r.nama_pelanggan} · ${r.no_hp||''}</div>` : '';
+    const nama     = r.nama_pelanggan ? `<div style="font-size:10px;color:#94a3b8;margin-bottom:3px">${escapeHtml(r.nama_pelanggan)} · ${escapeHtml(r.no_hp||'')}</div>` : '';
     return `<div class="wa-msg out">${nama}${pesanRingkas}<div class="time">${jam} <span style="color:${centangColor}">${centang}</span></div></div>`;
   }).join('');
   chat.scrollTop = chat.scrollHeight;
@@ -10150,7 +10156,7 @@ async function loadPayment() {
     if (!rows.length) { t.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:16px">Belum ada transaksi</td></tr>'; return; }
     t.innerHTML = rows.map(r=>`
       <tr>
-        <td>${r.nama_pelanggan||'Voucher'}</td>
+        <td>${escapeHtml(r.nama_pelanggan||'Voucher')}</td>
         <td>${r.payment_type||r.metode_bayar||'—'}</td>
         <td>${fmt(r.gross_amount||r.jumlah)}</td>
         <td><span class="tag ${r.status==='success'||r.status==='paid'?'paid':'unpaid'}">${r.status==='success'||r.status==='paid'?'Sukses':'Pending'}</span></td>
@@ -10736,7 +10742,7 @@ function renderNAS(rows) {
     const tipeLabel = n.type === 'pppoe' ? 'PPPoE' : n.type === 'hotspot' ? 'Hotspot' : 'PPPoE/Hotspot';
     const lastSeen  = n.last_seen ? new Date(n.last_seen).toLocaleString('id-ID') : '—';
     const sid       = 'nas-sec-' + i;
-    const secEsc    = (n.secret || '').replace(/'/g, "\\'");
+    const secEsc    = jsAttr(n.secret || '');
     return `<tr>
       <td>
         <div style="display:flex;align-items:center;gap:7px">
@@ -10756,7 +10762,7 @@ function renderNAS(rows) {
       </td>
       <td style="font-size:11px;color:var(--text3)">${lastSeen}</td>
       <td style="white-space:nowrap">
-        <button class="btn sm" onclick="bukaEditNAS(${n.id},'${(n.shortname||'').replace(/'/g,"\\'")}','${n.nasname}','${secEsc}','${n.type||'other'}','${(n.community||'').replace(/'/g,"\\'")}',${n.ports||0})">✏️</button>
+        <button class="btn sm" onclick="bukaEditNAS(${n.id},'${jsAttr(n.shortname||'')}','${jsAttr(n.nasname)}','${secEsc}','${n.type||'other'}','${jsAttr(n.community||'')}',${n.ports||0})">✏️</button>
         <button class="btn sm danger" onclick="apiHapusNAS(${n.id})">🗑️</button>
       </td>
     </tr>`;
@@ -11016,7 +11022,7 @@ async function apiIncomeReport() {
           <td class="td-text-sub">${i+1}</td>
           <td class="td-text-sub td-mono" style="font-size:11px">${r.tgl_bayar ? r.tgl_bayar.toString().slice(0,10) : '—'}</td>
           <td class="td-mono" style="font-size:11px">${r.no_invoice}</td>
-          <td class="td-text-main">${r.nama}</td>
+          <td class="td-text-main">${escapeHtml(r.nama)}</td>
           <td>${tipe}</td>
           <td class="td-text-sub" style="font-size:11px">${r.nama_paket}</td>
           <td><span class="badge blue" style="font-size:10px;text-transform:capitalize">${metode}</span></td>
@@ -11158,11 +11164,11 @@ function petaFilter() {
 
     const popup = `
       <div style="min-width:180px;font-family:inherit">
-        <div style="font-weight:700;font-size:13px;margin-bottom:6px">${r.nama}</div>
+        <div style="font-weight:700;font-size:13px;margin-bottom:6px">${escapeHtml(r.nama)}</div>
         <div style="font-size:11px;color:#64748b;line-height:1.8">
           👤 ${r.username}<br>
           📦 ${r.nama_paket}<br>
-          📍 ${r.alamat || '—'}<br>
+          📍 ${escapeHtml(r.alamat || '—')}<br>
           ${r.odc ? `🔌 ODC: ${r.odc}<br>` : ''}
           ${r.odp ? `🔌 ODP: ${r.odp}<br>` : ''}
           📶 ${r.tipe_koneksi?.toUpperCase()}<br>
@@ -11259,7 +11265,7 @@ async function loadPengguna() {
           <div style="display:flex;align-items:center;gap:10px">
             <div style="width:36px;height:36px;border-radius:10px;background:${avColor};color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${inisial}</div>
             <div>
-              <div class="td-text-main" style="font-weight:600;font-size:13px">${r.nama}</div>
+              <div class="td-text-main" style="font-weight:600;font-size:13px">${escapeHtml(r.nama)}</div>
               <div class="td-text-sub" style="font-size:11px">@${r.username || r.email?.split('@')[0] || '—'}</div>
             </div>
           </div>
@@ -11276,20 +11282,20 @@ async function loadPengguna() {
             ${aktif ? 'Aktif' : 'Nonaktif'}
           </span>
         </td>
-        <td class="td-text-sub" style="font-size:12px">${r.no_hp || '—'}</td>
+        <td class="td-text-sub" style="font-size:12px">${escapeHtml(r.no_hp || '—')}</td>
         <td class="td-text-sub" style="font-size:11px;white-space:nowrap">${fmtDT(r.updated_at || r.created_at)}</td>
         <td>
           <div style="position:relative">
             <button class="btn sm" onclick="pgToggleMenu(${r.id},this)" style="padding:5px 9px;font-size:16px;line-height:1;border-radius:8px">⋯</button>
             <div id="pg-menu-${r.id}" style="display:none;position:absolute;right:0;top:calc(100% + 4px);z-index:100;background:var(--bg2);border:1px solid var(--border);border-radius:10px;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.15);overflow:hidden">
-              <button onclick="bukaPgEdit(${r.id},'${(r.username||'').replace(/'/g,"\\'")}','${r.nama.replace(/'/g,"\\'")}','${(r.email||'').replace(/'/g,"\\'")}','${(r.no_hp||'').replace(/'/g,"\\'")}','${r.role}')" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:var(--text);cursor:pointer;font-size:13px;font-family:inherit">
+              <button onclick="bukaPgEdit(${r.id},'${jsAttr(r.username||'')}','${jsAttr(r.nama)}','${jsAttr(r.email||'')}','${jsAttr(r.no_hp||'')}','${r.role}')" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:var(--text);cursor:pointer;font-size:13px;font-family:inherit">
                 <i class="ti ti-edit" style="font-size:14px;color:#2563eb" aria-hidden="true"></i> Edit
               </button>
-              <button onclick="apiToggleAktifPg(${r.id},'${r.nama.replace(/'/g,"\\'")}',${aktif})" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:${aktif?'#d97706':'#16a34a'};cursor:pointer;font-size:13px;font-family:inherit">
+              <button onclick="apiToggleAktifPg(${r.id},'${jsAttr(r.nama)}',${aktif})" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:${aktif?'#d97706':'#16a34a'};cursor:pointer;font-size:13px;font-family:inherit">
                 <i class="ti ti-${aktif?'player-pause':'player-play'}" style="font-size:14px" aria-hidden="true"></i> ${aktif?'Nonaktifkan':'Aktifkan'}
               </button>
               <div style="height:1px;background:var(--border);margin:2px 0"></div>
-              <button onclick="apiHapusPg(${r.id},'${r.nama.replace(/'/g,"\\'")}' )" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:#dc2626;cursor:pointer;font-size:13px;font-family:inherit">
+              <button onclick="apiHapusPg(${r.id},'${jsAttr(r.nama)}' )" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:#dc2626;cursor:pointer;font-size:13px;font-family:inherit">
                 <i class="ti ti-trash" style="font-size:14px" aria-hidden="true"></i> Hapus
               </button>
             </div>
@@ -12038,17 +12044,17 @@ async function loadReseller() {
         totalTopupMasuk += parseFloat(r.total_topup||0);
         return `<tr>
           <td>${i+1}</td>
-          <td><div style="font-weight:500">${r.nama}</div><div style="font-size:11px;color:var(--text3)">${r.email||r.no_hp}</div></td>
+          <td><div style="font-weight:500">${escapeHtml(r.nama)}</div><div style="font-size:11px;color:var(--text3)">${escapeHtml(r.email||r.no_hp)}</div></td>
           <td style="font-family:monospace;font-size:12px">${r.username}</td>
           <td><span class="badge ${r.level==='platinum'?'amber':r.level==='gold'?'blue':'green'}">${r.level}</span></td>
           <td><strong>${fmt(r.saldo)}</strong></td>
           <td><span class="badge ${r.status==='aktif'?'green':r.status==='nonaktif'?'amber':'red'}">${r.status}</span></td>
           <td>${r.total_transaksi||0}</td>
           <td style="white-space:nowrap">
-            ${r.status==='nonaktif'?`<button class="btn sm success" onclick="apiApproveReseller(${r.id},'${r.nama}')">✅ Approve</button>`:'' }
-            <button class="btn sm" onclick="bukaTambahSaldoReseller(${r.id},'${r.nama}')">💰 Saldo</button>
-            <button class="btn sm" onclick="bukaEditReseller(${r.id},'${r.nama}','${r.level}','${r.status}')">✏️</button>
-            <button class="btn sm" onclick="lihatMutasiReseller(${r.id},'${r.nama}')">💳</button>
+            ${r.status==='nonaktif'?`<button class="btn sm success" onclick="apiApproveReseller(${r.id},'${jsAttr(r.nama)}')">✅ Approve</button>`:'' }
+            <button class="btn sm" onclick="bukaTambahSaldoReseller(${r.id},'${jsAttr(r.nama)}')">💰 Saldo</button>
+            <button class="btn sm" onclick="bukaEditReseller(${r.id},'${jsAttr(r.nama)}','${r.level}','${r.status}')">✏️</button>
+            <button class="btn sm" onclick="lihatMutasiReseller(${r.id},'${jsAttr(r.nama)}')">💳</button>
           </td>
         </tr>`;
       }).join('');
@@ -12074,11 +12080,11 @@ async function loadTopupPending() {
         totalPending += parseFloat(r.jumlah);
         return `<tr>
           <td style="font-family:monospace;font-size:11px">${r.order_id}</td>
-          <td>${r.nama_reseller}</td>
+          <td>${escapeHtml(r.nama_reseller)}</td>
           <td><strong>${fmt(r.jumlah)}</strong></td>
           <td style="font-size:11px;color:var(--text3)">${fmtDate(r.created_at)}</td>
-          <td><button class="btn sm success" onclick="apiKonfirmasiTopup('${r.order_id}','${r.nama_reseller}')">✅ Konfirmasi</button>
-              <button class="btn sm danger" onclick="apiHapusTopupPending('${r.order_id}','${r.nama_reseller}')">🗑️</button></td>
+          <td><button class="btn sm success" onclick="apiKonfirmasiTopup('${r.order_id}','${jsAttr(r.nama_reseller)}')">✅ Konfirmasi</button>
+              <button class="btn sm danger" onclick="apiHapusTopupPending('${r.order_id}','${jsAttr(r.nama_reseller)}')">🗑️</button></td>
         </tr>`;
       }).join('');
     }

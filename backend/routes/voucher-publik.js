@@ -70,7 +70,7 @@ router.post('/beli', limitBeli, async (req, res, next) => {
             no_hp, nama = 'Pembeli', metode = 'qris' } = req.body;
     // Pembeli voucher tidak login — buang < > dari nama agar tak menyisipkan
     // tag HTML yang dirender mentah di daftar voucher panel admin.
-    nama = String(nama).replace(/[<>]/g, '').trim() || 'Pembeli';
+    nama = String(nama).replace(/[<>]/g, '').replace(/[\x00-\x1F\x7F]/g, '').trim().slice(0, 80) || 'Pembeli';
 
     if (!no_hp) return res.status(400).json({ error: 'no_hp wajib diisi' });
     if (!paket_id && !paket_nama)

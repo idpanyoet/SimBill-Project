@@ -105,8 +105,11 @@ router.get('/export/csv', async (req, res, next) => {
                         'nama_paket','paket_id'];
         const esc = (v) => {
             if (v == null) return '';
-            const s = String(v);
-            return s.includes(',') || s.includes('"') || s.includes('\n')
+            let s = String(v);
+            // Cegah formula injection: nilai diawali = + - @ (atau tab/CR) bisa
+            // dieksekusi sebagai rumus oleh Excel/Sheets saat file dibuka.
+            if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+            return s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')
                 ? `"${s.replace(/"/g, '""')}"` : s;
         };
         const csv = [

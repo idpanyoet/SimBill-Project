@@ -124,3 +124,121 @@ Untuk tiap hasil yang merender **teks** (bukan markup), bungkus:
 
 Catatan: data lama yang sudah terlanjur tersimpan dengan `<...>` tidak otomatis
 bersih oleh perbaikan di sumber — escape-on-output adalah pelindung lengkapnya.
+
+---
+
+# 🧱 Refactor escape-on-output — Tahap 1: Modul Pelanggan
+
+Tanggal: 2026-06-20
+
+## Helper baru di `admin.html`
+- `escapeHtml(s)` — escape `& < > " '` untuk **konteks teks** (isi elemen).
+- `jsAttr(s)` — escape untuk **string JS di dalam atribut**, mis.
+  `onclick="fn('${jsAttr(x)}')"`. Di konteks ini `escapeHtml` saja TIDAK aman.
+  Bonus: ini juga memperbaiki **bug nyata** — nama berapostrof (mis. `O'Brien`)
+  sebelumnya memecah handler `onclick`.
+
+## Yang diamankan
+- `renderTblPelanggan` — sel teks (`nama`, `email`, `username`, `no_hp`,
+  `nama_paket`) via `escapeHtml`; tombol aksi (WA/Suspend/Aktifkan/Hapus)
+  via `jsAttr` pada argumen nama.
+- `rpRender` (daftar pelanggan reseller) — judul kartu, `@username`,
+  `nama_paket` via `escapeHtml`; tombol Perpanjang via `jsAttr`.
+- `loadResellerOptions` — opsi dropdown `nama (username)` via `escapeHtml`.
+
+## Server — `routes/pelanggan.js`
+- Export CSV: cegah **formula injection** Excel/Sheets — nilai diawali
+  `= + - @ \t \r` diberi prefix `'`. (Sebelumnya hanya quoting RFC-4180.)
+
+## ⚠️ Tahap berikutnya (belum dikerjakan)
+- Modul **voucher**, **laporan**, **reseller (manajemen)**, **paket**, **tiket
+  detail (dropdown teknisi)** — terapkan `escapeHtml`/`jsAttr` pada render teks
+  & argumen onclick dengan pola yang sama.
+- Cek export CSV/Excel lain (voucher, laporan) untuk formula injection yang
+  sama seperti perbaikan di `pelanggan.js`.
+- Pola pencarian onclick rawan apostrof/quote:
+  `grep -noE "onclick=\"[a-zA-Z]+\([^)]*'\\\$\{[^}]+\}'" admin.html`
+
+---
+
+# 🖥️ Audit Frontend — Stored XSS (admin.html)
+
+Tanggal: 2026-06-20
+
+## Threat model
+Data yang diisi pihak **non-admin** (nama/alamat/no_hp pelanggan dari signup
+voucher publik, nama reseller, dll) ditampilkan di panel admin. Bila di-render
+ke `innerHTML` tanpa escape, payload seperti `<img src=x onerror=...>` atau
+breakout `onclick="fn('...')"` akan **mengeksekusi JS di sesi admin** =
+ambil-alih penuh (curi token admin → kendali penuh sistem).
+
+## Temuan & perbaikan
+Helper `escapeHtml()` (konteks HTML) dan `jsAttr()` (konteks string-JS di dalam
+atribut `onclick`) **sudah ada** dan benar, tapi dipakai **tidak konsisten** —
+banyak render masih menyisipkan field mentah. Diperbaiki **25 titik**:
+
+- **onclick dengan data tak-tepercaya (paling berbahaya — bisa breakout `'`/`"`/`<`):**
+  invoice suspend (`nama_pelanggan`), reseller approve/saldo/edit/mutasi (`nama`),
+  topup konfirmasi/hapus (`nama_reseller`), pengguna edit/toggle/hapus (`nama`,
+  `username`, `email`, `no_hp`) → semua dibungkus `jsAttr()`.
+  Catatan: beberapa sebelumnya hanya `.replace(/'/g,...)` — itu **tidak cukup**
+  (tidak menutup `"`, `<`, `\`, newline). Diganti ke `jsAttr()`.
+- **teks bebas pelanggan/reseller ke innerHTML:** nama/deskripsi pelanggan,
+  nama+kontak reseller, nama_pelanggan di list invoice & transaksi voucher,
+  alamat di kartu pelanggan, no_hp pengguna → dibungkus `escapeHtml()`.
+- **config admin (self-XSS, dirapikan utk konsistensi):** nama paket, NAS
+  shortname/nasname/community/secret → `jsAttr()`.
+
+## Sudah aman / tidak diubah
+- Render tiket (`escapeHtml(t.judul)`) + detail tiket pakai `.textContent`.
+- Tabel pelanggan utama (kolom nama/email/no_hp) sudah pakai `escapeHtml`.
+- `toast()` pakai `.textContent` (pesan API aman).
+- Escape password di NAS/WG (`pwd.replace(...)`) **sengaja dibiarkan** — `jsAttr`
+  bisa mengubah nilai password yang memuat `"`; ini nilai admin-only, bukan vektor.
+
+## Catatan scope
+- `client.html` (portal pelanggan) menampilkan data milik pelanggan itu sendiri
+  → paling parah self-XSS (risiko rendah). Tidak diubah di pass ini.
+- Validasi tetap **defense-in-depth**: idealnya juga batasi karakter pada input
+  nama/alamat di sisi server, tapi escape di output adalah pertahanan utama XSS.
+
+## Verifikasi
+JS inline `admin.html` lolos `node --check` setelah semua edit (tidak ada
+template literal / kurung yang rusak).
+
+---
+
+# 🧱 Validasi Input Sisi Server (lapis kedua)
+
+Tanggal: 2026-06-20
+
+Pertahanan utama XSS = escape di output (sudah). Ini lapis kedua di sumber input.
+Util baru: `backend/utils/sanitasi.js` — `teksSatuBaris`, `teksMultiBaris`,
+`noHp`, `email`. Sengaja **lossless** untuk karakter terlihat (`< > & ' "`
+tidak dibuang) agar nama/alamat sah tak rusak; yang dibuang hanya null byte,
+karakter kontrol, dan newline pada field satu-baris (diubah jadi spasi).
+
+## Sudah ada sebelumnya (tidak diubah signifikan)
+- `voucher-publik /beli` — strip `<>` nama (+ kini cap 80 char & strip kontrol).
+- `client PUT /profil` — strip `<>` nama/alamat, validasi email & no_hp
+  (+ kini cap 100/200 char & strip kontrol).
+- `reseller /auth/register` — strip `<>`, regex username/no_hp/email
+  (+ kini cap panjang nama/email).
+
+## Gap yang diisi
+- `client POST /tiket` (buat tiket oleh pelanggan) — `judul`/`pesan`/`kategori`
+  sebelumnya **tanpa batas panjang & tanpa strip kontrol**. Kini:
+  judul `teksSatuBaris(150)`, pesan `teksMultiBaris(4000)`, kategori dibatasi.
+- `client POST /tiket/:id/reply` — `pesan` kini `teksMultiBaris(4000)`.
+
+Manfaat: cegah write berukuran ekstrem (DoS/penuh disk), log/CSV/header
+injection via newline & karakter kontrol, sekaligus mempersempit permukaan
+payload — tanpa merusak input sah.
+
+## Catatan
+- Route pelanggan sisi **admin** (`/api/pelanggan`) tidak disanitasi karena
+  input dari admin (tepercaya) dan output tetap di-escape. Bisa ditambah cap
+  panjang bila diinginkan.
+- Pertimbangan lanjutan (belum dikerjakan): proteksi **CSV/formula injection**
+  saat export Excel (exceljs) — prefiks `'` pada sel yang diawali `= + - @`,
+  agar nama pelanggan seperti `=cmd|...` tak tereksekusi saat admin buka file.

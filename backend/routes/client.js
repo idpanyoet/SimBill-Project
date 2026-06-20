@@ -9,6 +9,7 @@ const { query, queryOne } = require('../config/db');
 const waService   = require('../services/whatsapp');
 const radiusService = require('../services/radius');
 const paymentService = require('../services/payment');
+const sanitasi    = require('../utils/sanitasi');
 
 const crypto      = require('crypto');
 // JWT_SECRET dijamin sudah di-set & cukup panjang oleh validasi di server.js
@@ -327,8 +328,14 @@ router.get('/wifi-tasks', clientAuth, async (req, res, next) => {
 // ── POST /api/client/tiket ────────────────────────────────────
 router.post('/tiket', clientAuth, upload.single('foto'), async (req, res, next) => {
     try {
-        const { judul, pesan, kategori } = req.body;
+        let { judul, pesan, kategori } = req.body;
         if (!judul || !pesan) return res.status(400).json({ error: 'Judul dan pesan wajib diisi' });
+        // Lapis kedua: pelanggan menulis ini → admin membacanya. Buang karakter
+        // kontrol & batasi panjang (cegah write ekstrem / log injection).
+        judul   = sanitasi.teksSatuBaris(judul, 150);
+        pesan   = sanitasi.teksMultiBaris(pesan, 4000);
+        kategori = sanitasi.teksSatuBaris(kategori || 'umum', 30) || 'umum';
+        if (!judul || !pesan) return res.status(400).json({ error: 'Judul dan pesan tidak boleh kosong' });
 
         const foto = req.file ? '/uploads/tiket/' + req.file.filename : null;
         const result = await query(`
@@ -458,10 +465,10 @@ router.put('/profil', clientAuth, async (req, res, next) => {
         // Buang < > agar nama/alamat tak bisa menyisipkan tag HTML yang
         // dirender di panel admin (pertahanan stored-XSS di sumber).
         const tanpaTag = s => (s || '').replace(/[<>]/g, '');
-        nama   = tanpaTag(nama).trim();
+        nama   = sanitasi.teksSatuBaris(tanpaTag(nama), 100);
         no_hp  = (no_hp || '').trim();
         email  = (email || '').trim();
-        alamat = tanpaTag(alamat).trim();
+        alamat = sanitasi.teksSatuBaris(tanpaTag(alamat), 200);
         if (!nama) return res.status(400).json({ error: 'Nama wajib diisi' });
         if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))
             return res.status(400).json({ error: 'Format email tidak valid' });
@@ -518,8 +525,10 @@ module.exports = router;
 // ── POST /api/client/tiket/:id/reply ─────────────────────────
 router.post('/tiket/:id/reply', clientAuth, async (req, res, next) => {
     try {
-        const { pesan, dari } = req.body;
+        let { pesan, dari } = req.body;
         if (!pesan) return res.status(400).json({ error: 'Pesan wajib diisi' });
+        pesan = sanitasi.teksMultiBaris(pesan, 4000);
+        if (!pesan) return res.status(400).json({ error: 'Pesan tidak boleh kosong' });
         const tiket = await queryOne('SELECT * FROM tiket WHERE id=? AND pelanggan_id=?',
             [req.params.id, req.client.id]);
         if (!tiket) return res.status(404).json({ error: 'Tiket tidak ditemukan' });
