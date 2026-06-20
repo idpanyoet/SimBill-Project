@@ -259,6 +259,12 @@ router.post('/', async (req, res, next) => {
             (alamat ? `Alamat: ${alamat}` : '')
         ).catch(()=>{});
 
+        // Notif Telegram PENDAFTARAN (data lengkap + foto KTP + maps)
+        require('../services/telegram').notifPendaftaran({
+            nama, alamat, paket: paket.nama, username, no_hp,
+            latitude, longitude, ktp_url
+        }).catch(()=>{});
+
         const { tulisLog } = require('./log');
         tulisLog({ kategori:'Pelanggan', pelaku: req.admin?.nama || 'Admin',
             aksi:'PELANGGAN_TAMBAH', target: username,

@@ -9,7 +9,7 @@ router.use(authMiddleware);
 const KEYS = [
     'tg_enabled', 'tg_bot_token', 'tg_username_bot', 'tg_api_url',
     'tg_chat_teknisi', 'tg_chat_owner', 'tg_chat_cs',
-    'tg_ev_tiket', 'tg_ev_pelanggan', 'tg_ev_pembayaran', 'tg_ev_expired', 'tg_ev_suspend',
+    'tg_ev_tiket', 'tg_ev_pelanggan', 'tg_ev_pembayaran', 'tg_ev_expired', 'tg_ev_suspend', 'tg_ev_pendaftaran',
     'tg_keterangan'
 ];
 

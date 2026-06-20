@@ -53,4 +53,62 @@ async function notif(event, pesan) {
     }
 }
 
-module.exports = { getCfg, kirim, notif };
+// Kirim foto (KTP dll) dengan caption
+async function kirimFoto(chatId, fotoUrl, caption) {
+    const cfg = await getCfg();
+    if (!cfg.tg_bot_token) throw new Error('Bot token Telegram belum dikonfigurasi');
+    if (!chatId) throw new Error('Chat ID tujuan kosong');
+    const base = (cfg.tg_api_url || 'https://api.telegram.org').replace(/\/+$/, '');
+    const url = `${base}/bot${cfg.tg_bot_token}/sendPhoto`;
+    const r = await axios.post(url, {
+        chat_id: chatId,
+        photo: fotoUrl,
+        caption: caption,
+        parse_mode: 'HTML'
+    }, { timeout: 15000 });
+    return r.data;
+}
+
+async function getBaseUrl() {
+    try {
+        const r = await query("SELECT nilai FROM setting WHERE kunci='app_url' LIMIT 1");
+        return (r[0]?.nilai || process.env.APP_URL || '').replace(/\/+$/, '');
+    } catch (e) { return (process.env.APP_URL || '').replace(/\/+$/, ''); }
+}
+
+// Notifikasi pendaftaran pelanggan baru — data lengkap + foto KTP + link maps
+async function notifPendaftaran(data) {
+    try {
+        const cfg = await getCfg();
+        if (cfg.tg_enabled !== '1' || cfg.tg_ev_pendaftaran !== '1') return;
+        const target = cfg.tg_chat_teknisi || cfg.tg_chat_owner;
+        if (!target) return;
+
+        const { nama, alamat, paket, latitude, longitude, no_hp, username, ktp_url } = data;
+        const maps = (latitude && longitude) ? `https://maps.google.com/?q=${latitude},${longitude}` : '';
+        let teks = `🆕 <b>Pendaftaran Pelanggan Baru</b>\n\n`
+            + `👤 <b>${nama || '-'}</b>\n`
+            + (username ? `🔑 ${username}\n` : '')
+            + `📦 Paket: ${paket || '-'}\n`
+            + `📍 Alamat: ${alamat || '-'}\n`
+            + (no_hp ? `📞 ${no_hp}\n` : '')
+            + ((latitude && longitude) ? `📌 Titik Koordinat: ${latitude}, ${longitude}\n` : '')
+            + (maps ? `🗺️ ${maps}` : '');
+
+        let fotoUrl = '';
+        if (ktp_url) fotoUrl = String(ktp_url).startsWith('http') ? ktp_url : (await getBaseUrl()) + ktp_url;
+
+        if (fotoUrl) {
+            try { await kirimFoto(target, fotoUrl, teks); return; }
+            catch (e) {
+                console.warn('[telegram] sendPhoto KTP gagal, fallback teks:', e.response?.data?.description || e.message);
+                teks += `\n\n🪪 Foto KTP: ${fotoUrl}`;
+            }
+        }
+        await kirim(target, teks);
+    } catch (err) {
+        console.warn('[telegram] notifPendaftaran gagal:', err.response?.data?.description || err.message);
+    }
+}
+
+module.exports = { getCfg, kirim, kirimFoto, notif, notifPendaftaran };

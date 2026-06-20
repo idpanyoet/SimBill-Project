@@ -2009,6 +2009,7 @@ Selamat menikmati! 🌐</textarea>
           <div style="font-size:12px;color:var(--text3);margin-bottom:6px">Pilih kejadian yang akan dikirim ke Telegram.</div>
           <div class="tg-evt"><div style="font-size:20px">🎫</div><div style="flex:1"><div style="font-weight:600;font-size:13px">Tiket Gangguan Masuk</div><div style="font-size:11px;color:var(--text3)">Kirim ke Teknisi saat pelanggan buat tiket</div></div><label class="tg-switch"><input type="checkbox" id="tg-ev-tiket"><span></span></label></div>
           <div class="tg-evt"><div style="font-size:20px">👤</div><div style="flex:1"><div style="font-weight:600;font-size:13px">Pelanggan Baru</div><div style="font-size:11px;color:var(--text3)">Kirim ke Teknisi saat pelanggan ditambahkan</div></div><label class="tg-switch"><input type="checkbox" id="tg-ev-pelanggan"><span></span></label></div>
+          <div class="tg-evt"><div style="font-size:20px">🆕</div><div style="flex:1"><div style="font-weight:600;font-size:13px">Pendaftaran Pelanggan Baru <span style="font-size:10px;color:#229ED9;background:#229ED91f;padding:1px 6px;border-radius:8px">+Foto KTP & Maps</span></div><div style="font-size:11px;color:var(--text3)">Kirim ke Grup: nama, alamat, paket, titik koordinat, foto KTP & link Google Maps</div></div><label class="tg-switch"><input type="checkbox" id="tg-ev-pendaftaran"><span></span></label></div>
           <div class="tg-evt"><div style="font-size:20px">💰</div><div style="flex:1"><div style="font-weight:600;font-size:13px">Pembayaran Masuk</div><div style="font-size:11px;color:var(--text3)">Kirim ke Owner saat invoice lunas</div></div><label class="tg-switch"><input type="checkbox" id="tg-ev-pembayaran"><span></span></label></div>
           <div class="tg-evt"><div style="font-size:20px">⏰</div><div style="flex:1"><div style="font-weight:600;font-size:13px">Pelanggan Akan Expired</div><div style="font-size:11px;color:var(--text3)">Kirim ke Teknisi (perlu penjadwalan)</div></div><label class="tg-switch"><input type="checkbox" id="tg-ev-expired"><span></span></label></div>
           <div class="tg-evt"><div style="font-size:20px">🔌</div><div style="flex:1"><div style="font-weight:600;font-size:13px">Pelanggan Suspend / Isolir</div><div style="font-size:11px;color:var(--text3)">Kirim ke Teknisi saat pelanggan disuspend</div></div><label class="tg-switch"><input type="checkbox" id="tg-ev-suspend"><span></span></label></div>
@@ -6412,7 +6413,7 @@ function tgBuildBody() {
     tg_keterangan: v('tg-keterangan'),
     tg_ev_tiket: ck('tg-ev-tiket'), tg_ev_pelanggan: ck('tg-ev-pelanggan'),
     tg_ev_pembayaran: ck('tg-ev-pembayaran'), tg_ev_expired: ck('tg-ev-expired'),
-    tg_ev_suspend: ck('tg-ev-suspend')
+    tg_ev_suspend: ck('tg-ev-suspend'), tg_ev_pendaftaran: ck('tg-ev-pendaftaran')
   };
   const tk = v('tg-token'); if (tk) body.tg_bot_token = tk;
   return body;
@@ -6430,6 +6431,7 @@ async function loadTelegram() {
     set('tg-keterangan', c.tg_keterangan);
     chk('tg-ev-tiket', c.tg_ev_tiket); chk('tg-ev-pelanggan', c.tg_ev_pelanggan);
     chk('tg-ev-pembayaran', c.tg_ev_pembayaran); chk('tg-ev-expired', c.tg_ev_expired); chk('tg-ev-suspend', c.tg_ev_suspend);
+    chk('tg-ev-pendaftaran', c.tg_ev_pendaftaran);
   } catch(e) { toast('❌ ' + e.message, true); }
 }
 async function simpanTelegram() {
