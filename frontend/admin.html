@@ -97,6 +97,13 @@ body.role-reseller .sb-section.rs-section{display:block}
 body.role-reseller .sb-item.rs-item{display:flex}
 body.role-reseller .admin-only{display:none!important}
 .rs-stat{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px}
+.rp-tile{position:relative;overflow:hidden;border-radius:14px;padding:16px;color:#fff;box-shadow:0 8px 22px -12px rgba(0,0,0,.45)}
+.rp-tile .ic{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:17px}
+.rp-tile .lbl{font-size:12px;opacity:.92;font-weight:600}
+.rp-tile .val{font-size:26px;font-weight:800;margin-top:4px;line-height:1}
+.rp-card{position:relative;overflow:hidden;border:1px solid var(--border);border-radius:14px;padding:14px;padding-left:16px;background:var(--bg2);display:flex;flex-direction:column;gap:10px;transition:transform .12s,box-shadow .12s}
+.rp-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px -14px rgba(0,0,0,.4)}
+.rp-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--ac,#64748b)}
 .rs-stat .lbl{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px}
 .rs-stat .val{font-size:22px;font-weight:700;margin-top:6px;color:var(--text)}
 @media(max-width:760px){.rv-layout{grid-template-columns:1fr!important}}
@@ -679,10 +686,22 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px">
-          <div class="rs-stat"><div class="lbl"><i class="ti ti-users"></i> Total</div><div class="val" id="rp-st-total">0</div></div>
-          <div class="rs-stat"><div class="lbl" style="color:#16a34a"><i class="ti ti-circle-check"></i> Aktif</div><div class="val" id="rp-st-aktif" style="color:#16a34a">0</div></div>
-          <div class="rs-stat"><div class="lbl" style="color:#d97706"><i class="ti ti-player-pause"></i> Suspend</div><div class="val" id="rp-st-suspend" style="color:#d97706">0</div></div>
-          <div class="rs-stat"><div class="lbl" style="color:#dc2626"><i class="ti ti-clock-exclamation"></i> Akan Expire ≤7h</div><div class="val" id="rp-st-expire" style="color:#dc2626">0</div></div>
+          <div class="rp-tile" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">
+            <div class="ic"><i class="ti ti-users"></i></div>
+            <div class="lbl">Total</div><div class="val" id="rp-st-total">0</div>
+          </div>
+          <div class="rp-tile" style="background:linear-gradient(135deg,#10b981,#059669)">
+            <div class="ic"><i class="ti ti-circle-check"></i></div>
+            <div class="lbl">Aktif</div><div class="val" id="rp-st-aktif">0</div>
+          </div>
+          <div class="rp-tile" style="background:linear-gradient(135deg,#f59e0b,#d97706)">
+            <div class="ic"><i class="ti ti-player-pause"></i></div>
+            <div class="lbl">Suspend</div><div class="val" id="rp-st-suspend">0</div>
+          </div>
+          <div class="rp-tile" style="background:linear-gradient(135deg,#ef4444,#dc2626)">
+            <div class="ic"><i class="ti ti-clock-exclamation"></i></div>
+            <div class="lbl">Akan Expire ≤7h</div><div class="val" id="rp-st-expire">0</div>
+          </div>
         </div>
 
         <div style="position:relative;margin-bottom:14px;max-width:340px">
@@ -6041,11 +6060,12 @@ function rpRender() {
     const expTxt = d===null ? '—' : d<0 ? `Expired ${-d} hari lalu` : d===0 ? 'Expire hari ini' : `Sisa ${d} hari`;
     const tgl = p.tgl_expired ? (fmtDate?fmtDate(p.tgl_expired):String(p.tgl_expired).slice(0,10)) : '—';
     const ini = (p.nama||p.username||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-    const avCol = p.status==='aktif'?'#16a34a':p.status==='suspended'?'#d97706':'#64748b';
+    const avCol = p.status==='aktif'?'#10b981':p.status==='suspended'?'#f59e0b':'#64748b';
+    const avCol2 = p.status==='aktif'?'#059669':p.status==='suspended'?'#d97706':'#475569';
     return `
-    <div style="border:1px solid var(--border);border-radius:14px;padding:14px;background:var(--bg2);display:flex;flex-direction:column;gap:10px">
+    <div class="rp-card" style="--ac:${avCol}">
       <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:40px;height:40px;border-radius:10px;background:${avCol}1f;color:${avCol};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">${ini}</div>
+        <div style="width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,${avCol},${avCol2});color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0;box-shadow:0 4px 10px -4px ${avCol}88">${ini}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nama||p.username}</div>
           <div style="font-size:12px;color:var(--text3);font-family:monospace">@${p.username}</div>
@@ -6061,10 +6081,10 @@ function rpRender() {
         <span style="color:${expCol};font-weight:600">${expTxt}</span>
       </div>
       <div style="display:flex;gap:6px">
-        <button class="btn sm primary" style="flex:1" onclick="rpPerpanjang(${p.id},'${p.username}')"><i class="ti ti-refresh"></i> Perpanjang</button>
+        <button class="btn sm" style="flex:1;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;font-weight:600" onclick="rpPerpanjang(${p.id},'${p.username}')"><i class="ti ti-refresh"></i> Perpanjang</button>
         ${p.status==='aktif'
-          ? `<button class="btn sm" onclick="rpStatus(${p.id},'suspend')" title="Suspend"><i class="ti ti-player-pause"></i></button>`
-          : `<button class="btn sm" onclick="rpStatus(${p.id},'aktifkan')" title="Aktifkan"><i class="ti ti-player-play"></i></button>`}
+          ? `<button class="btn sm" style="border-color:#f59e0b;color:#d97706" onclick="rpStatus(${p.id},'suspend')" title="Suspend"><i class="ti ti-player-pause"></i></button>`
+          : `<button class="btn sm" style="border-color:#10b981;color:#059669" onclick="rpStatus(${p.id},'aktifkan')" title="Aktifkan"><i class="ti ti-player-play"></i></button>`}
       </div>
     </div>`;
   }).join('');
