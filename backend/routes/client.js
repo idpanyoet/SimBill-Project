@@ -474,6 +474,26 @@ router.get('/invoice/:id/pdf', clientAuth, async (req, res, next) => {
     }
 });
 
+// ── GET /api/client/pemakaian — total unduh/unggah bulan berjalan ──
+router.get('/pemakaian', clientAuth, async (req, res, next) => {
+    try {
+        const pel = await queryOne('SELECT username FROM pelanggan WHERE id=?', [req.client.id]);
+        if (!pel) return res.json({ download_bytes: 0, upload_bytes: 0 });
+        const rows = await query(`
+            SELECT COALESCE(SUM(acctoutputoctets),0) AS download_bytes,
+                   COALESCE(SUM(acctinputoctets),0)  AS upload_bytes
+            FROM radacct
+            WHERE username=?
+              AND (acctstarttime >= DATE_FORMAT(NOW(),'%Y-%m-01') OR acctstoptime IS NULL)
+        `, [pel.username]);
+        const r = rows[0] || {};
+        res.json({
+            download_bytes: Number(r.download_bytes) || 0,
+            upload_bytes:   Number(r.upload_bytes)   || 0
+        });
+    } catch(e) { next(e); }
+});
+
 module.exports = router;
 
 // ── POST /api/client/tiket/:id/reply ─────────────────────────

@@ -248,9 +248,19 @@ body{padding-bottom:70px}
       <div class="status-row"><span class="lbl">Status</span><span class="val" id="d-status-tag">—</span></div>
     </div>
 
-    <div class="card" id="card-sesi">
-      <div class="card-title">Sesi Aktif <span class="sub" id="sesi-count"></span></div>
-      <div id="sesi-list"><div class="empty"><div class="ico">📡</div><p>Tidak ada sesi aktif</p></div></div>
+    <div class="card" id="card-pemakaian">
+      <div class="card-title">📊 Pemakaian Bulan Ini <span class="sub" id="pakai-bulan"></span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="position:relative;overflow:hidden;border-radius:14px;padding:14px;color:#fff;background:linear-gradient(135deg,#3b82f6,#2563eb);box-shadow:0 8px 22px -12px rgba(0,0,0,.5)">
+          <div style="position:absolute;top:-22px;right:-14px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.14)"></div>
+          <div style="position:relative"><div style="font-size:12px;opacity:.9">⬇️ Unduh (Download)</div><div id="pakai-unduh" style="font-size:22px;font-weight:800;margin-top:4px">0 GB</div></div>
+        </div>
+        <div style="position:relative;overflow:hidden;border-radius:14px;padding:14px;color:#fff;background:linear-gradient(135deg,#8b5cf6,#7c3aed);box-shadow:0 8px 22px -12px rgba(0,0,0,.5)">
+          <div style="position:absolute;top:-22px;right:-14px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.14)"></div>
+          <div style="position:relative"><div style="font-size:12px;opacity:.9">⬆️ Unggah (Upload)</div><div id="pakai-unggah" style="font-size:22px;font-weight:800;margin-top:4px">0 GB</div></div>
+        </div>
+      </div>
+      <div style="margin-top:10px;text-align:center;font-size:12px;color:var(--text2)">Total pemakaian: <b id="pakai-total" style="color:var(--text)">0 GB</b></div>
     </div>
 
     <div class="card">
@@ -465,6 +475,13 @@ function togglePw(id, btn) {
 function fmt(n) {
   return 'Rp ' + Number(n).toLocaleString('id-ID');
 }
+function fmtData(bytes) {
+  var b = Number(bytes) || 0;
+  if (b >= 1073741824) return (b / 1073741824).toFixed(2) + ' GB';
+  if (b >= 1048576)    return (b / 1048576).toFixed(1) + ' MB';
+  if (b >= 1024)       return (b / 1024).toFixed(0) + ' KB';
+  return b + ' B';
+}
 
 function fmtTgl(s) {
   if (!s) return '—';
@@ -589,16 +606,17 @@ async function loadDashboard() {
 
   try {
     var sesi = await apiFetch('/api/client/sesi');
-    document.getElementById('m-sesi').textContent = sesi.length;
-    document.getElementById('sesi-count').textContent = sesi.length + ' sesi';
-    var sl = document.getElementById('sesi-list');
-    if (!sesi.length) {
-      sl.innerHTML = '<div class="empty"><div class="ico">📡</div><p>Tidak ada sesi aktif</p></div>';
-    } else {
-      sl.innerHTML = sesi.map(function(s) {
-        return '<div class="sesi-item"><div class="sesi-dot"></div><div class="sesi-info"><div class="ip">' + (s.framedipaddress||'—') + '</div><div class="meta">' + (s.durasi_menit||0) + ' mnt · ' + (s.total_mb||0) + ' MB</div></div></div>';
-      }).join('');
-    }
+    var ms = document.getElementById('m-sesi'); if (ms) ms.textContent = sesi.length;
+  } catch(e) {}
+
+  try {
+    var pk = await apiFetch('/api/client/pemakaian');
+    var blnArr = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    var pb = document.getElementById('pakai-bulan'); if (pb) pb.textContent = blnArr[new Date().getMonth()] + ' ' + new Date().getFullYear();
+    var dn = Number(pk.download_bytes) || 0, up = Number(pk.upload_bytes) || 0;
+    document.getElementById('pakai-unduh').textContent  = fmtData(dn);
+    document.getElementById('pakai-unggah').textContent = fmtData(up);
+    document.getElementById('pakai-total').textContent  = fmtData(dn + up);
   } catch(e) {}
 
   try {
