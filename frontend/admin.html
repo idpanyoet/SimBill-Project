@@ -134,6 +134,9 @@ body.role-reseller .admin-only{display:none!important}
 /* ── METRICS ── */
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
 .metric{position:relative;overflow:hidden;border-radius:14px;padding:16px;display:flex;align-items:center;gap:14px;color:#fff;box-shadow:0 8px 22px -12px rgba(0,0,0,.45);transition:transform .12s,box-shadow .12s}
+.metric::before{content:"";position:absolute;top:-34px;right:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.14);z-index:0;pointer-events:none}
+.metric::after{content:"";position:absolute;bottom:-44px;right:48px;width:74px;height:74px;border-radius:50%;background:rgba(255,255,255,.10);z-index:0;pointer-events:none}
+.metric>*{position:relative;z-index:1}
 .metric:hover{transform:translateY(-2px);box-shadow:0 12px 26px -12px rgba(0,0,0,.5)}
 .metric-ico{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:21px;background:rgba(255,255,255,.22)!important;color:#fff!important}
 .metric .lbl{font-size:11px;font-weight:600;margin-bottom:4px;color:#fff!important;opacity:.92}
