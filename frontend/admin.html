@@ -102,9 +102,8 @@ body.role-reseller .admin-only{display:none!important}
 @media(max-width:760px){.rv-layout{grid-template-columns:1fr!important}}
 .rl-chip{padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:var(--bg2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .12s}
 .rl-chip.active{background:#BA7517;border-color:#BA7517;color:#fff}
-.rt-amt{padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .12s}
-.rt-amt:hover,.rt-amt.active{border-color:#BA7517;color:#BA7517;background:rgba(186,117,23,.07)}
-.rt-gw.active{border-color:#BA7517!important;background:rgba(186,117,23,.08);color:#BA7517}
+.rt-amt:hover{transform:translateY(-2px);filter:brightness(1.05)}
+.rt-amt:active{transform:translateY(0)}
 .btn-logout{background:none;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:5px 8px;font-size:11px;color:rgba(255,255,255,.35);cursor:pointer;font-family:inherit;margin-top:6px;width:100%;transition:all .15s}
 .btn-logout:hover{border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.6)}
 
@@ -698,43 +697,33 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
       <div class="page" id="p-r-topup">
         <h2 style="margin:0 0 16px;font-size:20px">Saldo &amp; Topup</h2>
 
-        <div style="background:linear-gradient(135deg,#BA7517,#EF9F27);border-radius:14px;padding:22px;color:#fff;margin-bottom:18px">
-          <div style="font-size:13px;opacity:.85">Saldo Anda</div>
-          <div id="rt-saldo" style="font-size:32px;font-weight:800;margin-top:2px">Rp 0</div>
+        <div style="position:relative;overflow:hidden;background:linear-gradient(135deg,#7C3AED 0%,#2563EB 55%,#06B6D4 100%);border-radius:18px;padding:24px;color:#fff;margin-bottom:18px;box-shadow:0 10px 30px -10px rgba(37,99,235,.5)">
+          <div style="position:absolute;top:-32px;right:-18px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.13)"></div>
+          <div style="position:absolute;bottom:-44px;right:72px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,.09)"></div>
+          <div style="position:relative">
+            <div style="display:flex;align-items:center;gap:7px;font-size:13px;opacity:.9"><i class="ti ti-wallet"></i> Saldo Anda</div>
+            <div id="rt-saldo" style="font-size:34px;font-weight:800;margin-top:4px;letter-spacing:-.5px">Rp 0</div>
+            <div style="font-size:12px;opacity:.8;margin-top:6px">Reseller · <span id="rt-level" style="text-transform:capitalize">—</span></div>
+          </div>
         </div>
 
-        <div class="rv-layout" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+        <div class="rv-layout" style="display:grid;grid-template-columns:1.1fr .9fr;gap:16px;align-items:start">
           <div class="card" style="padding:18px">
-            <div style="font-weight:600;margin-bottom:12px">Top Up Saldo</div>
+            <div style="font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:7px"><i class="ti ti-credit-card" style="color:#7C3AED"></i> Top Up Saldo</div>
 
             <label class="fg-label">Pilih Nominal</label>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 12px" id="rt-presets">
-              <button class="rt-amt" onclick="rtNominal(50000)">50rb</button>
-              <button class="rt-amt" onclick="rtNominal(100000)">100rb</button>
-              <button class="rt-amt" onclick="rtNominal(200000)">200rb</button>
-              <button class="rt-amt" onclick="rtNominal(300000)">300rb</button>
-              <button class="rt-amt" onclick="rtNominal(500000)">500rb</button>
-              <button class="rt-amt" onclick="rtNominal(1000000)">1jt</button>
-            </div>
+            <div id="rt-presets" style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:6px 0 14px"></div>
 
             <label class="fg-label">Atau nominal lain (min Rp 10.000)</label>
-            <input id="rt-nominal" type="number" min="10000" step="1000" placeholder="0" oninput="rtSyncPreset()" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;margin:6px 0 16px;font-family:inherit;font-size:15px;font-weight:600">
+            <input id="rt-nominal" type="number" min="10000" step="1000" placeholder="0" oninput="rtSyncPreset()" style="width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:10px;margin:6px 0 16px;font-family:inherit;font-size:15px;font-weight:700;background:var(--bg2)">
 
-            <button class="btn primary" style="width:100%" id="rt-btn" onclick="rtBayar()"><i class="ti ti-arrow-right"></i> Lanjut Bayar</button>
-            <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px">Pembayaran via gateway yang dikonfigurasi admin</div>
+            <button class="btn" style="width:100%;background:linear-gradient(135deg,#7C3AED,#2563EB);color:#fff;border:none;font-weight:700;padding:12px" id="rt-btn" onclick="rtBayar()">Lanjut Bayar <i class="ti ti-arrow-right"></i></button>
+            <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:9px"><i class="ti ti-shield-check" style="color:#16a34a"></i> Pembayaran via gateway resmi yang dikonfigurasi admin</div>
           </div>
 
-          <div class="card" style="padding:0">
-            <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-weight:600">Riwayat Topup</div>
-            <div style="overflow-x:auto">
-              <table style="width:100%;border-collapse:collapse">
-                <thead><tr style="text-align:left;font-size:12px;color:var(--text2)">
-                  <th style="padding:10px 14px">Tanggal</th><th style="padding:10px 14px">Metode</th>
-                  <th style="padding:10px 14px;text-align:right">Jumlah</th><th style="padding:10px 14px;text-align:center">Status</th>
-                </tr></thead>
-                <tbody id="rt-tbl"><tr><td colspan="4" style="padding:16px;text-align:center;color:var(--text3)">Memuat…</td></tr></tbody>
-              </table>
-            </div>
+          <div class="card" style="padding:0;overflow:hidden">
+            <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700">Riwayat Topup</div>
+            <div id="rt-list"><div style="padding:18px;text-align:center;color:var(--text3);font-size:13px">Memuat…</div></div>
           </div>
         </div>
       </div>
@@ -6129,58 +6118,68 @@ function rlRender() {
 }
 
 // ── RESELLER: SALDO & TOPUP ──
+const RT_PRESETS = [
+  {amt:50000,label:'50rb',c:'#10b981'},{amt:100000,label:'100rb',c:'#3b82f6'},
+  {amt:200000,label:'200rb',c:'#8b5cf6'},{amt:300000,label:'300rb',c:'#ec4899'},
+  {amt:500000,label:'500rb',c:'#f59e0b'},{amt:1000000,label:'1jt',c:'#ef4444'}
+];
 async function loadResellerTopup() {
+  rtRenderPresets();
   try {
     const d = await apiFetch('/api/reseller/dashboard');
-    const s = document.getElementById('rt-saldo'); if (s) s.textContent = rsRp(d.reseller?.saldo);
+    const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+    set('rt-saldo', rsRp(d.reseller?.saldo));
+    set('rt-level', d.reseller?.level || '—');
   } catch (e) {}
   rtLoadRiwayat();
 }
-function rtNominal(n) {
-  document.getElementById('rt-nominal').value = n;
-  rtSyncPreset();
+function rtRenderPresets() {
+  const box = document.getElementById('rt-presets');
+  if (!box) return;
+  box.innerHTML = RT_PRESETS.map(p => `
+    <div class="rt-amt" data-amt="${p.amt}" onclick="rtNominal(${p.amt})" style="--c:${p.c};border:1.5px solid transparent;background:${p.c}1f;color:${p.c};border-radius:11px;padding:13px 6px;text-align:center;font-weight:800;font-size:14px;cursor:pointer;transition:all .12s">${p.label}</div>
+  `).join('');
 }
+function rtNominal(n){ document.getElementById('rt-nominal').value = n; rtSyncPreset(); }
 function rtSyncPreset() {
   const v = parseInt(document.getElementById('rt-nominal').value) || 0;
-  document.querySelectorAll('.rt-amt').forEach(b => {
-    const bn = parseInt((b.getAttribute('onclick')||'').replace(/\D/g,'')) || 0;
-    b.classList.toggle('active', bn === v);
+  document.querySelectorAll('#rt-presets .rt-amt').forEach(b => {
+    const on = parseInt(b.dataset.amt) === v;
+    const c = b.style.getPropertyValue('--c');
+    b.style.borderColor = on ? c : 'transparent';
+    b.style.boxShadow   = on ? `0 0 0 3px ${c}22` : 'none';
   });
 }
-function rtGateway(){}
 async function rtBayar() {
   const jumlah = parseInt(document.getElementById('rt-nominal').value) || 0;
   if (jumlah < 10000) return toast('❌ Minimum topup Rp 10.000', true);
   const btn = document.getElementById('rt-btn');
   btn.disabled = true; btn.textContent = 'Memproses…';
   try {
-    const r = await apiFetch('/api/reseller/topup', {
-      method: 'POST', body: JSON.stringify({ jumlah })
-    });
-    if (r.payment_url) {
-      toast('✅ Membuka halaman pembayaran…');
-      window.open(r.payment_url, '_blank');
-      rtLoadRiwayat();
-    } else {
-      toast('❌ Gagal membuat pembayaran', true);
-    }
+    const r = await apiFetch('/api/reseller/topup', { method:'POST', body: JSON.stringify({ jumlah }) });
+    if (r.payment_url) { toast('✅ Membuka halaman pembayaran…'); window.open(r.payment_url, '_blank'); rtLoadRiwayat(); }
+    else toast('❌ Gagal membuat pembayaran', true);
   } catch (e) { toast('❌ ' + e.message, true); }
-  finally { btn.disabled = false; btn.innerHTML = '<i class="ti ti-arrow-right"></i> Lanjut Bayar'; }
+  finally { btn.disabled = false; btn.innerHTML = 'Lanjut Bayar <i class="ti ti-arrow-right"></i>'; }
 }
 async function rtLoadRiwayat() {
-  const tb = document.getElementById('rt-tbl');
+  const box = document.getElementById('rt-list');
   try {
     const rows = await apiFetch('/api/reseller/topup');
-    if (!rows.length) { tb.innerHTML = '<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--text3)">Belum ada topup.</td></tr>'; return; }
-    const badge = (s)=>{ const m={paid:['Berhasil','#16a34a'],pending:['Menunggu','#d97706'],expired:['Kadaluarsa','#dc2626'],cancelled:['Batal','#64748b']}[s]||[s,'#64748b']; return `<span style="font-size:11px;font-weight:600;color:${m[1]}">${m[0]}</span>`; };
-    tb.innerHTML = rows.map(t => `
-      <tr style="border-top:1px solid var(--border)">
-        <td style="padding:10px 14px;font-size:13px">${fmtDate?fmtDate(t.created_at):String(t.created_at).slice(0,10)}</td>
-        <td style="padding:10px 14px;font-size:13px;text-transform:capitalize">${t.payment_method||'—'}</td>
-        <td style="padding:10px 14px;font-size:13px;text-align:right;font-weight:600">${rsRp(t.jumlah)}</td>
-        <td style="padding:10px 14px;text-align:center">${badge(t.status)}${t.status==='pending'&&t.payment_url?` · <a href="${t.payment_url}" target="_blank" style="color:#BA7517;font-size:11px">bayar</a>`:''}</td>
-      </tr>`).join('');
-  } catch (e) { tb.innerHTML = `<tr><td colspan="4" style="padding:16px;text-align:center;color:#dc2626">${e.message}</td></tr>`; }
+    if (!rows.length) { box.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">Belum ada topup.</div>'; return; }
+    const st = (s)=>({paid:['Berhasil','#16a34a'],pending:['Menunggu','#d97706'],expired:['Kadaluarsa','#dc2626'],cancelled:['Batal','#64748b']}[s]||[s,'#64748b']);
+    box.innerHTML = rows.map(t => { const m=st(t.status); return `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border)">
+        <div style="min-width:0">
+          <div style="font-size:14px;font-weight:700">${rsRp(t.jumlah)}</div>
+          <div style="font-size:11px;color:var(--text3);text-transform:capitalize">${fmtDate?fmtDate(t.created_at):String(t.created_at).slice(0,10)} · ${t.payment_method||'—'}</div>
+        </div>
+        <div style="text-align:right">
+          <span style="font-size:11px;font-weight:700;color:${m[1]};background:${m[1]}1f;padding:3px 10px;border-radius:20px">${m[0]}</span>
+          ${t.status==='pending'&&t.payment_url?`<div style="margin-top:3px"><a href="${t.payment_url}" target="_blank" style="color:#7C3AED;font-size:11px;font-weight:600">Bayar sekarang →</a></div>`:''}
+        </div>
+      </div>`; }).join('');
+  } catch (e) { box.innerHTML = `<div style="padding:18px;text-align:center;color:#dc2626;font-size:13px">${e.message}</div>`; }
 }
 async function rpBukaTambah() {
   try {
