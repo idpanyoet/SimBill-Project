@@ -7127,6 +7127,20 @@ function renderWAStatDashboard(stats) {
   setEl('wa-stat-rate', total > 0 ? `${((sent/total)*100).toFixed(1)}%` : '—');
 }
 
+let _svcClock = null;
+function svcFmtNow() {
+  const d = new Date();
+  const hari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][d.getDay()];
+  const bln = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'][d.getMonth()];
+  const p = n => String(n).padStart(2,'0');
+  return `${hari}, ${p(d.getDate())} ${bln} ${d.getFullYear()} · ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+function svcStartClock() {
+  if (_svcClock) clearInterval(_svcClock);
+  const upd = () => { const e = document.getElementById('svc-datetime'); if (e) e.textContent = svcFmtNow(); else { clearInterval(_svcClock); _svcClock = null; } };
+  upd(); _svcClock = setInterval(upd, 1000);
+}
+
 async function loadServiceInfo() {
   const el = document.getElementById('svc-info'); if (!el) return;
   try {
@@ -7149,7 +7163,8 @@ async function loadServiceInfo() {
       row(2,'🌐','SESSION', `${rad.sesi_aktif||0} <span style="color:var(--text3);font-weight:500">sesi aktif</span>`) +
       row(3,'👥','CUSTOMER', `${custTotal} <span style="color:var(--text3);font-weight:500">pelanggan</span>`) +
       row(4,'🎟️','VOUCHER', `${voucherCount} <span style="color:var(--text3);font-weight:500">voucher</span>`) +
-      row(5,'💬','WA GATEWAY', badge('30 Hari', !!(wa&&wa.aktif)));
+      row(5,'💬','WA GATEWAY', `<span id="svc-datetime" style="color:#16a34a;font-weight:700;font-variant-numeric:tabular-nums">${svcFmtNow()}</span>`);
+    svcStartClock();
   } catch(e) {
     el.innerHTML = '<div style="text-align:center;color:#dc2626;padding:14px;font-size:12px">Gagal memuat status</div>';
   }
