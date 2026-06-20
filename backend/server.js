@@ -132,14 +132,17 @@ async function jalankanMigration() {
             nama: 'table.vpn_account'
         },
         {
+            cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='paket' AND COLUMN_NAME='harga_reseller'`,
             sql:  `ALTER TABLE paket ADD COLUMN harga_reseller DECIMAL(12,2) DEFAULT NULL COMMENT 'Harga khusus reseller (NULL = pakai komisi_persen)' AFTER harga`,
             nama: 'paket.harga_reseller'
         },
         {
+            cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='pelanggan' AND COLUMN_NAME='reseller_id'`,
             sql:  `ALTER TABLE pelanggan ADD COLUMN reseller_id INT UNSIGNED DEFAULT NULL AFTER paket_id`,
             nama: 'pelanggan.reseller_id'
         },
         {
+            cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='pelanggan' AND INDEX_NAME='pelanggan_reseller_id'`,
             sql:  `ALTER TABLE pelanggan ADD INDEX pelanggan_reseller_id (reseller_id)`,
             nama: 'pelanggan.idx_reseller_id'
         }
