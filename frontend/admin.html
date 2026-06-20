@@ -8104,6 +8104,7 @@ async function loadBatchHistory() {
         <button class="btn sm primary" onclick="printBatch('${b.batch_id}',${b.jumlah})">🖨️ Print</button>
         <button class="btn sm" onclick="exportBatchXlsx('${b.batch_id}')" title="Export Excel">📊 Excel</button>
         <button class="btn sm" onclick="exportBatchPdf('${b.batch_id}')" title="Export PDF kartu">📄 PDF</button>
+        <button class="btn sm danger" onclick="hapusBatch('${b.batch_id}',${b.jumlah})" title="Hapus batch">🗑️</button>
       </div>`;
     }).join('') + '<div style="text-align:center;font-size:11px;color:var(--text3);padding-top:8px">Menampilkan 20 batch terakhir</div>';
   } catch(e) {
@@ -8387,6 +8388,17 @@ function exportBatchXlsx(batchId) {
 }
 function exportBatchPdf(batchId) {
   _unduhBatch('/api/voucher/batch/' + encodeURIComponent(batchId) + '/export-pdf', batchId, 'pdf');
+}
+
+async function hapusBatch(batchId, jumlah) {
+  if (!confirm(`Hapus SELURUH batch ini (${jumlah} voucher)?\nVoucher & data RADIUS-nya ikut terhapus. Tindakan ini tidak bisa dibatalkan.`)) return;
+  try {
+    toast('⏳ Menghapus batch...');
+    const r = await apiFetch('/api/voucher/batch/' + encodeURIComponent(batchId), { method: 'DELETE' });
+    toast('✅ ' + (r.pesan || 'Batch dihapus'));
+    loadBatchHistory();
+    if (typeof loadVoucher === 'function') loadVoucher();
+  } catch (e) { toast('❌ ' + e.message, true); }
 }
 
 function bukaWindowPrint(appName, vouchers) {

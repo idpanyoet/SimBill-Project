@@ -309,4 +309,21 @@ router.get('/batch/:batchId/export-pdf', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// DELETE /api/voucher/batch/:batchId — hapus SELURUH voucher dalam satu batch
+router.delete('/batch/:batchId', async (req, res, next) => {
+    try {
+        const rows = await query('SELECT username FROM voucher WHERE batch_id=?', [req.params.batchId]);
+        if (!rows.length) return res.status(404).json({ error: 'Batch tidak ditemukan' });
+
+        const usernames = rows.map(r => r.username);
+        const ph = usernames.map(() => '?').join(',');
+        // Bersihkan entri RADIUS milik voucher ini (dibatasi ke username voucher batch ini)
+        await query(`DELETE FROM radcheck WHERE username IN (${ph})`, usernames).catch(() => {});
+        await query(`DELETE FROM radreply WHERE username IN (${ph})`, usernames).catch(() => {});
+
+        const result = await query('DELETE FROM voucher WHERE batch_id=?', [req.params.batchId]);
+        res.json({ pesan: `Batch dihapus — ${result.affectedRows} voucher terhapus`, jumlah: result.affectedRows });
+    } catch (e) { next(e); }
+});
+
 module.exports = router;
