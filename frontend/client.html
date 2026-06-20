@@ -330,6 +330,7 @@ body{padding-bottom:70px}
       <div class="status-row"><span class="lbl">Username</span><span class="val" id="p-username">—</span></div>
       <div class="status-row"><span class="lbl">Paket</span><span class="val" id="p-paket">—</span></div>
     </div>
+    <button class="btn primary full" onclick="bukaEditProfil()" style="margin-bottom:10px">✏️ Edit Profil</button>
     <button class="btn danger full" onclick="logout()">🚪 Keluar</button>
   </div>
 
@@ -385,6 +386,21 @@ body{padding-bottom:70px}
         </div>
         <button class="btn primary full" onclick="kirimBalasan()" id="btn-balas">📤 Kirim Balasan</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ov-edit-profil">
+  <div class="modal">
+    <div class="modal-hdr"><h3>✏️ Edit Profil</h3><button class="btn-x" onclick="tutupModal('ov-edit-profil')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label>Nama</label><input id="ep-nama" type="text" placeholder="Nama lengkap"></div>
+      <div class="fg"><label>Nomor HP</label><input id="ep-nohp" type="tel" placeholder="08xxxxxxxxxx"></div>
+      <div class="fg"><label>Email</label><input id="ep-email" type="email" placeholder="email@contoh.com"></div>
+      <div class="fg"><label>Alamat</label><textarea id="ep-alamat" placeholder="Alamat lengkap"></textarea></div>
+      <div class="fg"><label>Username (tidak bisa diubah)</label><input id="ep-username" type="text" disabled style="opacity:.6;cursor:not-allowed"></div>
+      <div class="fg"><label>Paket (tidak bisa diubah)</label><input id="ep-paket" type="text" disabled style="opacity:.6;cursor:not-allowed"></div>
+      <button class="btn primary full" id="ep-btn" onclick="simpanProfil()">💾 Simpan Perubahan</button>
     </div>
   </div>
 </div>
@@ -851,6 +867,7 @@ async function kirimBalasan() {
 async function loadProfil() {
   try {
     var d = await apiFetch('/api/client/profil');
+    _profilData = d;
     document.getElementById('p-nama').textContent    = d.nama || '—';
     document.getElementById('p-nohp').textContent    = d.no_hp || '—';
     document.getElementById('p-email').textContent   = d.email || '—';
@@ -858,6 +875,38 @@ async function loadProfil() {
     document.getElementById('p-username').textContent = d.username || '—';
     document.getElementById('p-paket').textContent   = d.nama_paket ? d.nama_paket + ' (' + d.kecepatan_dn + '/' + d.kecepatan_up + ' Mbps)' : '—';
   } catch(e) {}
+}
+var _profilData = null;
+function bukaEditProfil() {
+  var d = _profilData || {};
+  document.getElementById('ep-nama').value   = d.nama || '';
+  document.getElementById('ep-nohp').value   = d.no_hp || '';
+  document.getElementById('ep-email').value  = d.email || '';
+  document.getElementById('ep-alamat').value = d.alamat || '';
+  document.getElementById('ep-username').value = d.username || '';
+  document.getElementById('ep-paket').value  = d.nama_paket ? d.nama_paket + ' (' + d.kecepatan_dn + '/' + d.kecepatan_up + ' Mbps)' : '';
+  document.getElementById('ov-edit-profil').classList.add('open');
+}
+async function simpanProfil() {
+  var nama = document.getElementById('ep-nama').value.trim();
+  if (!nama) return toast('❌ Nama wajib diisi', true);
+  var btn = document.getElementById('ep-btn'); btn.disabled = true; btn.textContent = 'Menyimpan…';
+  try {
+    await apiFetch('/api/client/profil', {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        nama: nama,
+        no_hp: document.getElementById('ep-nohp').value.trim(),
+        email: document.getElementById('ep-email').value.trim(),
+        alamat: document.getElementById('ep-alamat').value.trim()
+      })
+    });
+    toast('✅ Profil berhasil diperbarui');
+    tutupModal('ov-edit-profil');
+    loadProfil();
+    var nn = document.getElementById('nav-nama'); if (nn) nn.textContent = nama;
+  } catch(e) { toast('❌ ' + e.message, true); }
+  finally { btn.disabled = false; btn.innerHTML = '💾 Simpan Perubahan'; }
 }
 
 function escHtml(s) {

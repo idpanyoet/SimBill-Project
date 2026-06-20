@@ -435,6 +435,28 @@ router.get('/perangkat-wifi', clientAuth, async (req, res, next) => {
     } catch(e) { next(e); }
 });
 
+// ── PUT /api/client/profil — update profil sendiri (kecuali username & paket) ──
+router.put('/profil', clientAuth, async (req, res, next) => {
+    try {
+        let { nama, no_hp, email, alamat } = req.body;
+        nama   = (nama || '').trim();
+        no_hp  = (no_hp || '').trim();
+        email  = (email || '').trim();
+        alamat = (alamat || '').trim();
+        if (!nama) return res.status(400).json({ error: 'Nama wajib diisi' });
+        if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))
+            return res.status(400).json({ error: 'Format email tidak valid' });
+        if (no_hp && !/^[0-9+]{8,16}$/.test(no_hp))
+            return res.status(400).json({ error: 'Nomor HP tidak valid' });
+
+        await query(
+            'UPDATE pelanggan SET nama=?, no_hp=?, email=?, alamat=? WHERE id=?',
+            [nama, no_hp || null, email || null, alamat || null, req.client.id]
+        );
+        res.json({ pesan: 'Profil berhasil diperbarui' });
+    } catch(e) { next(e); }
+});
+
 module.exports = router;
 
 // ── POST /api/client/tiket/:id/reply ─────────────────────────
