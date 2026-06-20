@@ -111,6 +111,7 @@ body.role-reseller .admin-only{display:none!important}
 .rl-chip.active{background:#BA7517;border-color:#BA7517;color:#fff}
 .rt-amt:hover{transform:translateY(-2px);filter:brightness(1.05)}
 .rt-amt:active{transform:translateY(0)}
+.rv-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px -12px rgba(0,0,0,.4)}
 .btn-logout{background:none;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:5px 8px;font-size:11px;color:rgba(255,255,255,.35);cursor:pointer;font-family:inherit;margin-top:6px;width:100%;transition:all .15s}
 .btn-logout:hover{border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.6)}
 
@@ -635,10 +636,24 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px">
-          <div class="rs-stat"><div class="lbl"><i class="ti ti-calendar"></i> Penjualan Hari Ini</div><div class="val" id="rs-hari-total">Rp 0</div><div style="font-size:11px;color:var(--text3);margin-top:2px"><span id="rs-hari-jml">0</span> transaksi</div></div>
-          <div class="rs-stat"><div class="lbl"><i class="ti ti-calendar-stats"></i> Bulan Ini</div><div class="val" id="rs-bulan-total">Rp 0</div><div style="font-size:11px;color:var(--text3);margin-top:2px"><span id="rs-bulan-jml">0</span> transaksi</div></div>
-          <div class="rs-stat"><div class="lbl"><i class="ti ti-ticket"></i> Total Item Terjual</div><div class="val" id="rs-total-item">0</div></div>
-          <div class="rs-stat"><div class="lbl"><i class="ti ti-users"></i> Pelanggan Saya</div><div class="val" id="rs-jml-pelanggan">0</div></div>
+          <div class="rp-tile" style="background:linear-gradient(135deg,#3b82f6,#2563eb)">
+            <div class="ic"><i class="ti ti-calendar"></i></div>
+            <div class="lbl">Penjualan Hari Ini</div><div class="val" id="rs-hari-total">Rp 0</div>
+            <div style="font-size:11px;opacity:.85;margin-top:3px"><span id="rs-hari-jml">0</span> transaksi</div>
+          </div>
+          <div class="rp-tile" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed)">
+            <div class="ic"><i class="ti ti-calendar-stats"></i></div>
+            <div class="lbl">Bulan Ini</div><div class="val" id="rs-bulan-total">Rp 0</div>
+            <div style="font-size:11px;opacity:.85;margin-top:3px"><span id="rs-bulan-jml">0</span> transaksi</div>
+          </div>
+          <div class="rp-tile" style="background:linear-gradient(135deg,#ec4899,#db2777)">
+            <div class="ic"><i class="ti ti-ticket"></i></div>
+            <div class="lbl">Total Item Terjual</div><div class="val" id="rs-total-item">0</div>
+          </div>
+          <div class="rp-tile" style="background:linear-gradient(135deg,#14b8a6,#0d9488)">
+            <div class="ic"><i class="ti ti-users"></i></div>
+            <div class="lbl">Pelanggan Saya</div><div class="val" id="rs-jml-pelanggan">0</div>
+          </div>
         </div>
 
         <div class="card" style="padding:0">
@@ -655,9 +670,10 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
       </div>
 
       <div class="page" id="p-r-voucher">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-          <h2 style="margin:0;font-size:20px">Beli Voucher</h2>
-          <div style="font-size:13px;color:var(--text2)">Saldo: <b id="rv-saldo" style="color:#BA7517">Rp 0</b></div>
+        <h2 style="margin:0 0 14px;font-size:20px">Beli Voucher</h2>
+        <div style="background:linear-gradient(135deg,#7C3AED,#2563EB);border-radius:14px;padding:16px 18px;color:#fff;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 8px 22px -12px rgba(37,99,235,.5)">
+          <div><div style="font-size:12px;opacity:.85">Saldo tersedia</div><div id="rv-saldo" style="font-size:24px;font-weight:800;margin-top:2px">Rp 0</div></div>
+          <i class="ti ti-ticket" style="font-size:34px;opacity:.5"></i>
         </div>
         <div class="rv-layout" style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:start">
           <div class="card" style="padding:14px">
@@ -674,7 +690,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
             <input id="rv-jumlah" type="number" min="1" max="100" value="1" oninput="rvHitung()" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;font-family:inherit">
             <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>Harga satuan</span><span id="rv-harga-satuan">Rp 0</span></div>
             <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;border-top:1px solid var(--border);padding-top:8px;margin-top:4px"><span>Total</span><span id="rv-total" style="color:#BA7517">Rp 0</span></div>
-            <button class="btn primary" style="width:100%;margin-top:14px" onclick="rvBeli()" id="rv-btn-beli" disabled><i class="ti ti-shopping-cart"></i> Beli Sekarang</button>
+            <button class="btn" style="width:100%;margin-top:14px;background:linear-gradient(135deg,#7C3AED,#2563EB);color:#fff;border:none;font-weight:700;padding:11px" onclick="rvBeli()" id="rv-btn-beli" disabled><i class="ti ti-shopping-cart"></i> Beli Sekarang</button>
             <div id="rv-hasil" style="margin-top:14px"></div>
           </div>
         </div>
@@ -753,10 +769,22 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px">
-          <div class="rs-stat"><div class="lbl"><i class="ti ti-receipt"></i> Total Transaksi</div><div class="val" id="rl-st-jml">0</div></div>
-          <div class="rs-stat"><div class="lbl"><i class="ti ti-cash"></i> Total Pengeluaran</div><div class="val" id="rl-st-total">Rp 0</div></div>
-          <div class="rs-stat"><div class="lbl"><i class="ti ti-calendar-stats"></i> Bulan Ini</div><div class="val" id="rl-st-bulan">Rp 0</div></div>
-          <div class="rs-stat"><div class="lbl" style="color:#BA7517"><i class="ti ti-wallet"></i> Saldo</div><div class="val" id="rl-st-saldo" style="color:#BA7517">Rp 0</div></div>
+          <div class="rp-tile" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">
+            <div class="ic"><i class="ti ti-receipt"></i></div>
+            <div class="lbl">Total Transaksi</div><div class="val" id="rl-st-jml">0</div>
+          </div>
+          <div class="rp-tile" style="background:linear-gradient(135deg,#ec4899,#db2777)">
+            <div class="ic"><i class="ti ti-cash"></i></div>
+            <div class="lbl">Total Pengeluaran</div><div class="val" id="rl-st-total">Rp 0</div>
+          </div>
+          <div class="rp-tile" style="background:linear-gradient(135deg,#3b82f6,#2563eb)">
+            <div class="ic"><i class="ti ti-calendar-stats"></i></div>
+            <div class="lbl">Bulan Ini</div><div class="val" id="rl-st-bulan">Rp 0</div>
+          </div>
+          <div class="rp-tile" style="background:linear-gradient(135deg,#f59e0b,#d97706)">
+            <div class="ic"><i class="ti ti-wallet"></i></div>
+            <div class="lbl">Saldo</div><div class="val" id="rl-st-saldo">Rp 0</div>
+          </div>
         </div>
 
         <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap" id="rl-filter">
@@ -5983,8 +6011,9 @@ function rvPilih(id) {
   RV_SEL = RV_PAKET.find(p => p.id === id);
   document.querySelectorAll('.rv-card').forEach(c => {
     const on = +c.dataset.id === id;
-    c.style.borderColor = on ? '#BA7517' : 'var(--border)';
-    c.style.background  = on ? 'rgba(186,117,23,.07)' : '';
+    c.style.borderColor = on ? '#7C3AED' : 'var(--border)';
+    c.style.background  = on ? 'rgba(124,58,237,.08)' : '';
+    c.style.boxShadow   = on ? '0 0 0 3px rgba(124,58,237,.18)' : 'none';
   });
   document.getElementById('rv-sel-nama').textContent = RV_SEL.nama;
   document.getElementById('rv-btn-beli').disabled = false;
