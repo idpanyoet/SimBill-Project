@@ -669,8 +669,22 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
         </div>
       </div>
       <div class="page" id="p-r-pelanggan">
-        <h2 style="margin:0 0 6px;font-size:20px">Pelanggan Saya</h2>
-        <div class="card" style="padding:40px;text-align:center;color:var(--text3)"><i class="ti ti-tools" style="font-size:32px"></i><div style="margin-top:8px">Halaman ini disiapkan di tahap berikutnya.</div></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+          <h2 style="margin:0;font-size:20px">Pelanggan Saya</h2>
+          <button class="btn primary" onclick="rpBukaTambah()"><i class="ti ti-user-plus"></i> Tambah Pelanggan</button>
+        </div>
+        <div class="card" style="padding:0">
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr style="text-align:left;font-size:12px;color:var(--text2)">
+                <th style="padding:10px 14px">Username</th><th style="padding:10px 14px">Nama</th>
+                <th style="padding:10px 14px">Paket</th><th style="padding:10px 14px">Status</th>
+                <th style="padding:10px 14px">Expired</th><th style="padding:10px 14px;text-align:right">Aksi</th>
+              </tr></thead>
+              <tbody id="rp-tbl"><tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3)">Memuat…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
       </div>
       <div class="page" id="p-r-topup">
         <h2 style="margin:0 0 6px;font-size:20px">Saldo &amp; Topup</h2>
@@ -679,6 +693,36 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
       <div class="page" id="p-r-laporan">
         <h2 style="margin:0 0 6px;font-size:20px">Laporan &amp; Transaksi</h2>
         <div class="card" style="padding:40px;text-align:center;color:var(--text3)"><i class="ti ti-tools" style="font-size:32px"></i><div style="margin-top:8px">Halaman ini disiapkan di tahap berikutnya.</div></div>
+      </div>
+
+      <div class="overlay" id="m-rp-tambah">
+        <div class="modal" style="max-width:460px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
+            <div style="font-size:15px;font-weight:700">Tambah Pelanggan</div>
+            <button class="btn-x" onclick="closeModal('m-rp-tambah')">✕</button>
+          </div>
+          <div style="padding:18px 20px;max-height:72vh;overflow:auto">
+            <label class="fg-label">Paket</label>
+            <select id="rp-paket" onchange="rpHargaInfo()" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;font-family:inherit"></select>
+            <label class="fg-label">Tipe Koneksi</label>
+            <select id="rp-tipe" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;font-family:inherit">
+              <option value="pppoe">PPPoE</option><option value="hotspot">Hotspot</option>
+            </select>
+            <div style="display:flex;gap:10px;margin-bottom:12px">
+              <div style="flex:1"><label class="fg-label">Username</label><input id="rp-username" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-family:inherit"></div>
+              <div style="flex:1"><label class="fg-label">Password</label><input id="rp-password" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-family:inherit"></div>
+            </div>
+            <label class="fg-label">Nama Pelanggan</label>
+            <input id="rp-nama" placeholder="(opsional)" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;font-family:inherit">
+            <label class="fg-label">No HP</label>
+            <input id="rp-hp" placeholder="(opsional)" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;font-family:inherit">
+            <div id="rp-harga-info" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;display:flex;justify-content:space-between"><span>Biaya (potong saldo)</span><b id="rp-harga-val" style="color:#BA7517">Rp 0</b></div>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border)">
+            <button class="btn" onclick="closeModal('m-rp-tambah')">Batal</button>
+            <button class="btn primary" onclick="rpSimpan()" id="rp-btn-simpan"><i class="ti ti-check"></i> Buat &amp; Potong Saldo</button>
+          </div>
+        </div>
       </div>
 
       <div class="page active" id="p-dashboard">
@@ -5880,6 +5924,98 @@ async function rvBeli() {
   finally { btn.disabled = false; btn.innerHTML = '<i class="ti ti-shopping-cart"></i> Beli Sekarang'; }
 }
 
+// ── RESELLER: PELANGGAN SAYA ──
+let RP_PAKET = [];
+function rsBadgeStatus(s){
+  const map = { aktif:['aktif','#16a34a'], suspended:['suspend','#d97706'], nonaktif:['nonaktif','#dc2626'] };
+  const m = map[s] || [s,'#64748b'];
+  return `<span class="tag" style="color:${m[1]}">${m[0]}</span>`;
+}
+async function loadResellerPelanggan() {
+  const tb = document.getElementById('rp-tbl');
+  try {
+    const rows = await apiFetch('/api/reseller/pelanggan');
+    if (!rows.length) { tb.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3)">Belum ada pelanggan. Klik "Tambah Pelanggan".</td></tr>'; return; }
+    tb.innerHTML = rows.map(p => `
+      <tr style="border-top:1px solid var(--border)">
+        <td style="padding:10px 14px;font-family:monospace;font-weight:600">${p.username}</td>
+        <td style="padding:10px 14px;font-size:13px">${p.nama||'—'}</td>
+        <td style="padding:10px 14px;font-size:13px">${p.nama_paket||'—'}</td>
+        <td style="padding:10px 14px">${rsBadgeStatus(p.status)}</td>
+        <td style="padding:10px 14px;font-size:13px">${p.tgl_expired ? (fmtDate?fmtDate(p.tgl_expired):String(p.tgl_expired).slice(0,10)) : '—'}</td>
+        <td style="padding:8px 14px;text-align:right;white-space:nowrap">
+          <button class="btn sm" onclick="rpPerpanjang(${p.id},'${p.username}')" title="Perpanjang">↻</button>
+          ${p.status==='aktif'
+            ? `<button class="btn sm" onclick="rpStatus(${p.id},'suspend')" title="Suspend">⏸</button>`
+            : `<button class="btn sm" onclick="rpStatus(${p.id},'aktifkan')" title="Aktifkan">▶</button>`}
+          <button class="btn sm danger" onclick="rpHapus(${p.id},'${p.username}')" title="Hapus">✕</button>
+        </td>
+      </tr>`).join('');
+  } catch (e) { tb.innerHTML = `<tr><td colspan="6" style="padding:16px;text-align:center;color:#dc2626">${e.message}</td></tr>`; }
+}
+async function rpBukaTambah() {
+  try {
+    RP_PAKET = await apiFetch('/api/reseller/paket');
+    const sel = document.getElementById('rp-paket');
+    const pp = RP_PAKET.filter(p => p.tipe === 'pppoe' || p.tipe === 'keduanya' || p.tipe === 'hotspot');
+    sel.innerHTML = pp.map(p => `<option value="${p.id}">${p.nama} — ${rsRp(p.harga_jual)}</option>`).join('');
+    ['rp-username','rp-password','rp-nama','rp-hp'].forEach(id => { const e=document.getElementById(id); if(e) e.value=''; });
+    rpHargaInfo();
+    openModal('m-rp-tambah');
+  } catch (e) { toast('❌ ' + e.message, true); }
+}
+function rpHargaInfo() {
+  const id = parseInt(document.getElementById('rp-paket').value);
+  const p = RP_PAKET.find(x => x.id === id);
+  document.getElementById('rp-harga-val').textContent = rsRp(p ? p.harga_jual : 0);
+}
+async function rpSimpan() {
+  const paket_id = parseInt(document.getElementById('rp-paket').value);
+  const username = document.getElementById('rp-username').value.trim();
+  const password = document.getElementById('rp-password').value.trim();
+  const tipe_koneksi = document.getElementById('rp-tipe').value;
+  if (!paket_id || !username || !password) return toast('❌ Paket, username, password wajib', true);
+  const btn = document.getElementById('rp-btn-simpan');
+  btn.disabled = true; btn.textContent = 'Memproses…';
+  try {
+    const r = await apiFetch('/api/reseller/beli/user', {
+      method: 'POST',
+      body: JSON.stringify({
+        paket_id, username, password, tipe_koneksi,
+        nama_pelanggan: document.getElementById('rp-nama').value.trim(),
+        no_hp_pelanggan: document.getElementById('rp-hp').value.trim()
+      })
+    });
+    toast('✅ Pelanggan dibuat. Sisa saldo ' + rsRp(r.saldo_sisa));
+    closeModal('m-rp-tambah');
+    loadResellerPelanggan();
+  } catch (e) { toast('❌ ' + e.message, true); }
+  finally { btn.disabled = false; btn.innerHTML = '<i class="ti ti-check"></i> Buat & Potong Saldo'; }
+}
+async function rpStatus(id, aksi) {
+  try {
+    const r = await apiFetch(`/api/reseller/pelanggan/${id}/${aksi==='suspend'?'suspend':'aktifkan'}`, { method: 'POST' });
+    toast('✅ ' + (r.pesan || 'Berhasil'));
+    loadResellerPelanggan();
+  } catch (e) { toast('❌ ' + e.message, true); }
+}
+async function rpPerpanjang(id, username) {
+  if (!confirm(`Perpanjang masa aktif ${username}? Saldo akan terpotong sesuai harga paket.`)) return;
+  try {
+    const r = await apiFetch(`/api/reseller/pelanggan/${id}/perpanjang`, { method: 'POST' });
+    toast('✅ ' + (r.pesan || 'Diperpanjang') + ' · sisa ' + rsRp(r.saldo_sisa));
+    loadResellerPelanggan();
+  } catch (e) { toast('❌ ' + e.message, true); }
+}
+async function rpHapus(id, username) {
+  if (!confirm(`Hapus pelanggan ${username}? Akun & akses internetnya dihapus permanen.`)) return;
+  try {
+    const r = await apiFetch(`/api/reseller/pelanggan/${id}`, { method: 'DELETE' });
+    toast('✅ ' + (r.pesan || 'Dihapus'));
+    loadResellerPelanggan();
+  } catch (e) { toast('❌ ' + e.message, true); }
+}
+
 // ── NAVIGASI ──
 const titles = {
   'r-dashboard':'Dashboard Reseller', 'r-voucher':'Beli Voucher',
@@ -5898,7 +6034,7 @@ const titles = {
   'voucher-template':'Template Voucher', setting:'Setting Sistem'
 };
 const loaders = {
-  'r-dashboard': loadResellerDashboard, 'r-voucher': loadResellerVoucher,
+  'r-dashboard': loadResellerDashboard, 'r-voucher': loadResellerVoucher, 'r-pelanggan': loadResellerPelanggan,
   dashboard: loadDashboard, pelanggan: loadPelanggan,
   paket: loadPaket, invoice: loadInvoice,
   voucher: loadVoucher, whatsapp: loadWALog,

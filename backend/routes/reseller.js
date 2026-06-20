@@ -344,13 +344,13 @@ router.post('/beli/user', resellerAuth, async (req, res, next) => {
 
             const result = await db.query(`
                 INSERT INTO pelanggan
-                  (nama, username, password, no_hp, paket_id, tipe_koneksi,
+                  (nama, username, password, no_hp, paket_id, reseller_id, tipe_koneksi,
                    tgl_aktif, tgl_expired, status, notes)
-                VALUES (?,?,?,?,?,?,?,?,'aktif',?)
+                VALUES (?,?,?,?,?,?,?,?,?,'aktif',?)
             `, [
                 nama_pelanggan || username, username, hash,
                 no_hp_pelanggan || re.no_hp,
-                paket_id, tipe_koneksi, tgl_aktif, tgl_expired,
+                paket_id, req.reseller.id, tipe_koneksi, tgl_aktif, tgl_expired,
                 `Dibuat oleh reseller: ${req.reseller.username}`
             ]);
 
@@ -400,6 +400,101 @@ router.post('/beli/user', resellerAuth, async (req, res, next) => {
             return res.status(400).json({ error: 'Saldo tidak mencukupi untuk pembelian ini' });
         next(e);
     }
+});
+
+// ============================================================
+// PELANGGAN SAYA — reseller kelola pelanggan PPPoE/hotspot miliknya
+// ============================================================
+
+// GET /reseller/pelanggan — daftar pelanggan milik reseller ini
+router.get('/pelanggan', resellerAuth, async (req, res, next) => {
+    try {
+        const rows = await query(`
+            SELECT p.id, p.nama, p.username, p.no_hp, p.tipe_koneksi, p.status,
+                   p.tgl_aktif, p.tgl_expired, pk.nama AS nama_paket, pk.id AS paket_id
+            FROM pelanggan p
+            LEFT JOIN paket pk ON p.paket_id = pk.id
+            WHERE p.reseller_id = ?
+            ORDER BY p.id DESC
+        `, [req.reseller.id]);
+        res.json(rows);
+    } catch (e) { next(e); }
+});
+
+// Helper: pastikan pelanggan milik reseller ini
+async function pelangganMilik(resellerId, id) {
+    return await queryOne('SELECT * FROM pelanggan WHERE id=? AND reseller_id=?', [id, resellerId]);
+}
+
+// POST /reseller/pelanggan/:id/suspend
+router.post('/pelanggan/:id/suspend', resellerAuth, async (req, res, next) => {
+    try {
+        const p = await pelangganMilik(req.reseller.id, req.params.id);
+        if (!p) return res.status(404).json({ error: 'Pelanggan tidak ditemukan' });
+        await query("UPDATE pelanggan SET status='suspended' WHERE id=?", [p.id]);
+        try { await radiusService.suspendUser(p.username); } catch (e) { console.warn('[RESELLER] suspend radius:', e.message); }
+        res.json({ pesan: `${p.nama} disuspend` });
+    } catch (e) { next(e); }
+});
+
+// POST /reseller/pelanggan/:id/aktifkan
+router.post('/pelanggan/:id/aktifkan', resellerAuth, async (req, res, next) => {
+    try {
+        const p = await pelangganMilik(req.reseller.id, req.params.id);
+        if (!p) return res.status(404).json({ error: 'Pelanggan tidak ditemukan' });
+        await query("UPDATE pelanggan SET status='aktif' WHERE id=?", [p.id]);
+        try { await radiusService.aktifkanUser(p.username); } catch (e) { console.warn('[RESELLER] aktifkan radius:', e.message); }
+        res.json({ pesan: `${p.nama} diaktifkan` });
+    } catch (e) { next(e); }
+});
+
+// POST /reseller/pelanggan/:id/perpanjang — perpanjang masa aktif (potong saldo)
+router.post('/pelanggan/:id/perpanjang', resellerAuth, async (req, res, next) => {
+    try {
+        const p = await pelangganMilik(req.reseller.id, req.params.id);
+        if (!p) return res.status(404).json({ error: 'Pelanggan tidak ditemukan' });
+        const paket = await queryOne('SELECT * FROM paket WHERE id=?', [p.paket_id]);
+        if (!paket) return res.status(404).json({ error: 'Paket pelanggan tidak ditemukan' });
+
+        const hasil = await withTransaction(async (db) => {
+            const harga = await hitungHarga(req.reseller.id, p.paket_id, paket.harga, db);
+            const refId = `TRX-${Date.now()}`;
+            const saldoSisa = await catatMutasi(db, req.reseller.id, 'pembelian', harga,
+                `Perpanjang ${p.username} paket ${paket.nama}`, refId);
+
+            // Perpanjang dari tgl_expired (jika belum lewat) atau dari hari ini
+            const mulai = (p.tgl_expired && dayjs(p.tgl_expired).isAfter(dayjs())) ? dayjs(p.tgl_expired) : dayjs();
+            const tglBaru = mulai.add(paket.masa_aktif, 'day').format('YYYY-MM-DD');
+            await db.query("UPDATE pelanggan SET tgl_expired=?, status='aktif' WHERE id=?", [tglBaru, p.id]);
+
+            await db.query(`
+                INSERT INTO reseller_transaksi
+                  (reseller_id, tipe, paket_id, jumlah_item, harga_normal, harga_reseller, total_bayar, detail)
+                VALUES (?,?,?,?,?,?,?,?)
+            `, [req.reseller.id, p.tipe_koneksi, p.paket_id, 1, paket.harga, harga, harga,
+                JSON.stringify({ perpanjang: p.username, tgl_expired: tglBaru })]);
+
+            return { harga, saldoSisa, tglBaru };
+        });
+
+        try { await radiusService.aktifkanUser(p.username); } catch (e) {}
+        res.json({ sukses: true, pesan: `Diperpanjang s/d ${hasil.tglBaru}`, saldo_sisa: hasil.saldoSisa, harga: hasil.harga });
+    } catch (e) {
+        if (e.message === 'Saldo tidak mencukupi')
+            return res.status(400).json({ error: 'Saldo tidak mencukupi untuk perpanjangan' });
+        next(e);
+    }
+});
+
+// DELETE /reseller/pelanggan/:id
+router.delete('/pelanggan/:id', resellerAuth, async (req, res, next) => {
+    try {
+        const p = await pelangganMilik(req.reseller.id, req.params.id);
+        if (!p) return res.status(404).json({ error: 'Pelanggan tidak ditemukan' });
+        try { await radiusService.hapusUser(p.username); } catch (e) { console.warn('[RESELLER] hapus radius:', e.message); }
+        await query('DELETE FROM pelanggan WHERE id=?', [p.id]);
+        res.json({ pesan: `${p.nama} dihapus` });
+    } catch (e) { next(e); }
 });
 
 // ============================================================
