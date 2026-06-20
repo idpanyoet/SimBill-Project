@@ -2517,7 +2517,7 @@ Selamat menikmati! 🌐</textarea>
         </div>
         <div class="card">
           <div class="card-title">Daftar Reseller</div>
-          <table><thead><tr><th>#</th><th>Nama</th><th>Username</th><th>Level</th><th>Saldo</th><th>Komisi</th><th>Status</th><th>Trx</th><th>Aksi</th></tr></thead>
+          <table><thead><tr><th>#</th><th>Nama</th><th>Username</th><th>Level</th><th>Saldo</th><th>Status</th><th>Trx</th><th>Aksi</th></tr></thead>
           <tbody id="tbl-reseller">
             <tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">Tidak ada data</td></tr>
           </tbody></table>
@@ -3709,19 +3709,9 @@ Selamat menikmati! 🌐</textarea>
         </select>
       </div>
 
-      <!-- Komisi -->
-      <div>
-        <label class="fg-label">Komisi / Diskon — <span id="rs-komisi-lbl" style="color:#7c3aed;font-weight:700">10%</span></label>
-        <div style="display:flex;align-items:center;gap:10px">
-          <input type="range" id="nr-komisi-range" min="0" max="80" value="10" oninput="rsSyncKomisi('range')" style="flex:1;height:5px;cursor:pointer;accent-color:#7c3aed">
-          <div style="display:flex;align-items:center;gap:4px">
-            <input type="number" id="nr-komisi" min="0" max="80" value="10" oninput="rsSyncKomisi('input')" style="width:56px;padding:6px 8px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;color:#7c3aed;font-size:15px;font-weight:700;text-align:center;font-family:inherit">
-            <span class="td-text-sub" style="font-size:13px">%</span>
-          </div>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:10px;margin-top:3px">
-          <span class="td-text-sub">0%</span><span class="td-text-sub">Maks. 80%</span>
-        </div>
+      <!-- Harga reseller info -->
+      <div style="background:rgba(124,58,237,.07);border:1px solid rgba(124,58,237,.2);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text2)">
+        <i class="ti ti-info-circle" style="color:#7c3aed"></i> Harga jual reseller diatur per <b>paket</b> (kolom "Harga Reseller" di menu Paket), atau khusus per reseller bila diperlukan.
       </div>
 
       <!-- Info -->
@@ -3767,7 +3757,7 @@ Selamat menikmati! 🌐</textarea>
         </div>
         <div>
           <div id="er-title" class="td-text-main" style="font-size:15px;font-weight:700">Edit Reseller</div>
-          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Ubah level, komisi, dan status</div>
+          <div class="td-text-sub" style="font-size:11px;margin-top:1px">Ubah level dan status</div>
         </div>
       </div>
       <button class="btn-x" onclick="closeModal('m-edit-reseller')">✕</button>
@@ -3786,16 +3776,9 @@ Selamat menikmati! 🌐</textarea>
         </select>
       </div>
 
-      <!-- Komisi -->
-      <div>
-        <label class="fg-label">Komisi / Diskon — <span id="er-komisi-lbl" style="color:#7c3aed;font-weight:700">10%</span></label>
-        <div style="display:flex;align-items:center;gap:10px">
-          <input type="range" id="er-komisi-range" min="0" max="80" value="10" oninput="erSyncKomisi('range')" style="flex:1;height:5px;cursor:pointer;accent-color:#7c3aed">
-          <input type="number" id="er-komisi" min="0" max="80" value="10" oninput="erSyncKomisi('input')" style="width:64px;padding:7px 10px;border:1px solid #e2e7ef;border-radius:8px;background:#f8fafc;font-size:15px;font-weight:700;text-align:center;color:#7c3aed;font-family:inherit">
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:10px;margin-top:3px">
-          <span class="td-text-sub">0%</span><span class="td-text-sub">Maks. 80%</span>
-        </div>
+      <!-- Harga reseller info -->
+      <div style="background:rgba(124,58,237,.07);border:1px solid rgba(124,58,237,.2);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text2)">
+        <i class="ti ti-info-circle" style="color:#7c3aed"></i> Harga jual reseller mengikuti <b>Harga Reseller</b> per paket. Atur di menu Paket atau khusus per reseller.
       </div>
 
       <!-- Status -->
@@ -4079,7 +4062,7 @@ Selamat menikmati! 🌐</textarea>
           <input id="fp-harga" type="number" placeholder="50000" oninput="fpPreviewHarga()">
           <div id="fp-harga-preview" style="font-size:11px;color:var(--text3);margin-top:3px">—</div>
           <label style="margin-top:8px;display:block">Harga Reseller (opsional)</label>
-          <input id="fp-harga-reseller" type="number" placeholder="kosongkan = pakai komisi reseller">
+          <input id="fp-harga-reseller" type="number" placeholder="kosongkan = pakai harga normal">
           <div style="font-size:11px;color:var(--text3);margin-top:3px">Harga jual ke reseller untuk paket ini</div>
         </div>
         <div class="fg">
@@ -11536,13 +11519,12 @@ async function loadReseller() {
           <td style="font-family:monospace;font-size:12px">${r.username}</td>
           <td><span class="badge ${r.level==='platinum'?'amber':r.level==='gold'?'blue':'green'}">${r.level}</span></td>
           <td><strong>${fmt(r.saldo)}</strong></td>
-          <td>${r.komisi_persen}%</td>
           <td><span class="badge ${r.status==='aktif'?'green':r.status==='nonaktif'?'amber':'red'}">${r.status}</span></td>
           <td>${r.total_transaksi||0}</td>
           <td style="white-space:nowrap">
             ${r.status==='nonaktif'?`<button class="btn sm success" onclick="apiApproveReseller(${r.id},'${r.nama}')">✅ Approve</button>`:'' }
             <button class="btn sm" onclick="bukaTambahSaldoReseller(${r.id},'${r.nama}')">💰 Saldo</button>
-            <button class="btn sm" onclick="bukaEditReseller(${r.id},'${r.nama}',${r.komisi_persen},'${r.level}','${r.status}')">✏️</button>
+            <button class="btn sm" onclick="bukaEditReseller(${r.id},'${r.nama}','${r.level}','${r.status}')">✏️</button>
             <button class="btn sm" onclick="lihatMutasiReseller(${r.id},'${r.nama}')">💳</button>
           </td>
         </tr>`;
@@ -11656,17 +11638,13 @@ async function apiApproveReseller(id, nama) {
   } catch(e) { toast('❌ '+e.message, true); }
 }
 
-function bukaEditReseller(id, nama, komisi, level, status) {
+function bukaEditReseller(id, nama, level, status) {
   document.getElementById('er-id').value = id;
   document.getElementById('er-saldo-koreksi').value = '';
   document.getElementById('er-ket-koreksi').value   = '';
   document.getElementById('er-title').textContent   = 'Edit: ' + nama;
   erSetLevel(level || 'gold');
   erSetStatus(status || 'aktif');
-  const k = parseFloat(komisi) || 0;
-  document.getElementById('er-komisi').value       = k;
-  document.getElementById('er-komisi-range').value = k;
-  document.getElementById('er-komisi-lbl').textContent = k + '%';
   openModal('m-edit-reseller');
 
   // Load izin paket reseller ini
@@ -11713,19 +11691,8 @@ function erSetStatus(status) {
   });
 }
 
-function erSyncKomisi(src) {
-  const range = document.getElementById('er-komisi-range');
-  const input = document.getElementById('er-komisi');
-  const lbl   = document.getElementById('er-komisi-lbl');
-  if (!range || !input) return;
-  if (src === 'range') input.value = range.value;
-  else { const v = Math.min(80, Math.max(0, parseInt(input.value)||0)); input.value = v; range.value = v; }
-  if (lbl) lbl.textContent = input.value + '%';
-}
-
 async function apiUpdateReseller() {
   const id     = document.getElementById('er-id').value;
-  const komisi = document.getElementById('er-komisi').value;
   const level  = document.getElementById('er-level').value;
   const status = document.getElementById('er-status').value;
   const saldo  = document.getElementById('er-saldo-koreksi').value;
@@ -11733,7 +11700,6 @@ async function apiUpdateReseller() {
   try {
     await apiFetch('/api/reseller/admin/'+id, {
       method:'PUT', body: JSON.stringify({
-        komisi_persen: parseFloat(komisi),
         level, status,
         saldo_tambah: saldo ? parseFloat(saldo) : undefined,
         keterangan_koreksi: ket
@@ -11857,7 +11823,6 @@ async function apiTambahReseller() {
   const user   = document.getElementById('nr-username').value.trim();
   const hp     = document.getElementById('nr-nohp').value.trim();
   const pass   = document.getElementById('nr-password').value;
-  const komisi = document.getElementById('nr-komisi').value;
   const level  = document.getElementById('nr-level').value;
   if (!nama||!user||!hp||!pass) return toast('❌ Nama, username, HP, password wajib', true);
   try {
@@ -11871,13 +11836,13 @@ async function apiTambahReseller() {
     const d = await res.json();
     if (!res.ok) return toast('❌ '+(d.error||'Gagal'), true);
 
-    // Cari id reseller baru dan approve + set komisi
+    // Cari id reseller baru dan approve + set level
     const list = await apiFetch('/api/reseller/admin/list');
     const baru = list.find(r=>r.username===user);
     if (baru) {
       await apiFetch('/api/reseller/admin/approve/'+baru.id, {method:'POST'});
       await apiFetch('/api/reseller/admin/'+baru.id, {
-        method:'PUT', body: JSON.stringify({komisi_persen:parseFloat(komisi||0), level})
+        method:'PUT', body: JSON.stringify({level})
       });
       // Simpan izin paket
       const paket_ids = rsGetSelectedPaket('nr-paket-list');

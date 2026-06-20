@@ -24,10 +24,8 @@ async function hitungHarga(resellerId, paketId, hargaNormal, db = { query, query
     if (pk && pk.harga_reseller != null && pk.harga_reseller !== '')
         return Math.max(0, parseFloat(pk.harga_reseller) || 0);
 
-    // 3) Fallback: komisi persen dari profil reseller
-    const r = await db.queryOne('SELECT komisi_persen FROM reseller WHERE id=?', [resellerId]);
-    const diskon = parseFloat(r?.komisi_persen || 0);
-    return Math.max(0, Math.round(hargaNormal * (1 - diskon / 100)));
+    // 3) Tidak ada Harga Reseller yang diset → pakai harga normal
+    return Math.max(0, Math.round(hargaNormal));
 }
 
 // ── Helper catat mutasi saldo. WAJIB dipanggil dengan db handle dari withTransaction
@@ -209,13 +207,10 @@ router.get('/paket', resellerAuth, async (req, res, next) => {
     try {
         const paket = await query(`
             SELECT p.*,
-                COALESCE(rh.harga_reseller, p.harga_reseller,
-                    ROUND(p.harga * (1 - r.komisi_persen/100))
-                ) AS harga_jual
+                COALESCE(rh.harga_reseller, p.harga_reseller, p.harga) AS harga_jual
             FROM paket p
-            CROSS JOIN reseller r
-            LEFT JOIN reseller_harga rh ON rh.paket_id=p.id AND rh.reseller_id=r.id
-            WHERE p.aktif=1 AND r.id=?
+            LEFT JOIN reseller_harga rh ON rh.paket_id=p.id AND rh.reseller_id=?
+            WHERE p.aktif=1
             ORDER BY p.harga
         `, [req.reseller.id]);
         res.json(paket);
@@ -630,16 +625,15 @@ router.post('/admin/approve/:id', authMiddleware, requireAdmin, async (req, res,
 // PUT /reseller/admin/:id
 router.put('/admin/:id', authMiddleware, requireAdmin, async (req, res, next) => {
     try {
-        const { komisi_persen, level, status, saldo_tambah, keterangan_koreksi } = req.body;
+        const { level, status, saldo_tambah, keterangan_koreksi } = req.body;
 
-        if (komisi_persen !== undefined || level !== undefined || status !== undefined) {
+        if (level !== undefined || status !== undefined) {
             await query(`
                 UPDATE reseller SET
-                    komisi_persen = COALESCE(?, komisi_persen),
                     level         = COALESCE(?, level),
                     status        = COALESCE(?, status)
                 WHERE id=?
-            `, [komisi_persen ?? null, level ?? null, status ?? null, req.params.id]);
+            `, [level ?? null, status ?? null, req.params.id]);
         }
 
         // Koreksi saldo manual
