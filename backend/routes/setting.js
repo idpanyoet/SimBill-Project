@@ -10,7 +10,8 @@ router.get('/', async (req, res, next) => {
         const rows = await query('SELECT kunci, nilai, deskripsi FROM setting ORDER BY kunci');
         const SENSITIVE = [
             'wa_token', 'pg_server_key', 'pg_client_key',
-            'pg_secret_key', 'pg_webhook_token', 'pg_api_key', 'pg_private_key'
+            'pg_secret_key', 'pg_webhook_token', 'pg_api_key', 'pg_private_key',
+            'github_token'
         ];
         const safe = rows.map(r => ({
             ...r,

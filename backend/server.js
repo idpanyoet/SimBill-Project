@@ -298,6 +298,7 @@ app.use('/api/payment',   require('./routes/payment'));
 app.use('/api/radius',    require('./routes/radius'));
 app.use('/api/laporan',   require('./routes/laporan'));
 app.use('/api/setting',   require('./routes/setting'));
+app.use('/api/update',    require('./routes/update'));
 app.use('/api/backup',    require('./routes/backup'));
 app.use('/api/log',       require('./routes/log').router);
 app.use('/api/pengguna',  require('./routes/pengguna'));
