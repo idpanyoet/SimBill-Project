@@ -999,13 +999,10 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
             </div>
           </div>
           <div class="card">
-            <div class="card-title">WA Gateway — 30 Hari</div>
-            <div class="stat-row"><span class="lbl" data-i18n="Reminder terkirim">Reminder terkirim</span><span class="val" style="color:var(--green)" id="wa-stat-reminder">—</span></div>
-            <div class="stat-row"><span class="lbl" data-i18n="Notif suspend">Notif suspend</span><span class="val" style="color:var(--red)" id="wa-stat-suspend">—</span></div>
-            <div class="stat-row"><span class="lbl" data-i18n="Konfirmasi bayar">Konfirmasi bayar</span><span class="val" style="color:var(--accent)" id="wa-stat-konfirmasi">—</span></div>
-            <div class="stat-row"><span class="lbl" data-i18n="Voucher terkirim">Voucher terkirim</span><span class="val" id="wa-stat-voucher">—</span></div>
-            <div class="divider"></div>
-            <div class="stat-row"><span class="lbl" data-i18n="Delivery rate">Delivery rate</span><span class="val" style="color:var(--green)" id="wa-stat-rate">—</span></div>
+            <div class="card-title">Service Information</div>
+            <div id="svc-info" style="margin-top:6px">
+              <div style="text-align:center;color:var(--text3);padding:16px;font-size:12px">Memuat…</div>
+            </div>
           </div>
         </div>
 
@@ -6904,6 +6901,7 @@ async function loadDashboard() {
   } catch(e) { console.warn('Dashboard API:', e.message); }
 
   loadDashboardWidget();
+  loadServiceInfo();
 
   try {
     const sesi = await apiFetch('/api/radius/sesi-aktif');
@@ -7120,12 +7118,41 @@ function renderWAStatDashboard(stats) {
     if (s.status === 'failed') failed += parseInt(s.total);
     if (byTipe[s.tipe] !== undefined) byTipe[s.tipe] += parseInt(s.total);
   });
-  document.getElementById('wa-stat-reminder').textContent    = byTipe.reminder;
-  document.getElementById('wa-stat-suspend').textContent     = byTipe.suspend;
-  document.getElementById('wa-stat-konfirmasi').textContent  = byTipe.konfirmasi_bayar;
-  document.getElementById('wa-stat-voucher').textContent     = byTipe.otp; // voucher dikirim dengan tipe 'otp'
+  const setEl=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  setEl('wa-stat-reminder',   byTipe.reminder);
+  setEl('wa-stat-suspend',    byTipe.suspend);
+  setEl('wa-stat-konfirmasi', byTipe.konfirmasi_bayar);
+  setEl('wa-stat-voucher',    byTipe.otp);
   const total = sent + failed;
-  document.getElementById('wa-stat-rate').textContent = total > 0 ? `${((sent/total)*100).toFixed(1)}%` : '—';
+  setEl('wa-stat-rate', total > 0 ? `${((sent/total)*100).toFixed(1)}%` : '—');
+}
+
+async function loadServiceInfo() {
+  const el = document.getElementById('svc-info'); if (!el) return;
+  try {
+    const [rad, wa, nas, dash] = await Promise.all([
+      apiFetch('/api/radius/status').catch(()=>({online:false,sesi_aktif:0})),
+      apiFetch('/api/whatsapp/status').catch(()=>({aktif:false})),
+      apiFetch('/api/radius/nas').catch(()=>[]),
+      apiFetch('/api/laporan/dashboard').catch(()=>({}))
+    ]);
+    const nasCount = Array.isArray(nas) ? nas.length : 0;
+    const custTotal = (dash.pppoe_total || 0) + (dash.hotspot_total || 0);
+    const voucherCount = dash.vcr_jumlah ?? 0;
+    const badge = (txt, ok) => `<span style="font-size:11px;font-weight:700;color:#fff;background:${ok?'#16a34a':'#dc2626'};padding:3px 12px;border-radius:20px">${txt}</span>`;
+    const row = (i, ic, label, valHtml) => `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;border-radius:9px;background:${i%2?'transparent':'var(--bg2)'}">
+      <div style="display:flex;align-items:center;gap:9px;font-size:12px;font-weight:700;letter-spacing:.4px;color:var(--text2)"><span style="font-size:15px">${ic}</span>${label}</div>
+      <div style="font-size:13px;font-weight:700;text-align:right">${valHtml}</div></div>`;
+    el.innerHTML =
+      row(0,'🗄️','CORE RADIUS', badge(rad.online?'Running':'Stopped', !!rad.online)) +
+      row(1,'📡','MIKROTIK', `${nasCount} <span style="color:var(--text3);font-weight:500">Router</span>`) +
+      row(2,'🌐','SESSION', `${rad.sesi_aktif||0} <span style="color:var(--text3);font-weight:500">sesi aktif</span>`) +
+      row(3,'👥','CUSTOMER', `${custTotal} <span style="color:var(--text3);font-weight:500">pelanggan</span>`) +
+      row(4,'🎟️','VOUCHER', `${voucherCount} <span style="color:var(--text3);font-weight:500">voucher</span>`) +
+      row(5,'💬','WA GATEWAY', badge('30 Hari', !!(wa&&wa.aktif)));
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;color:#dc2626;padding:14px;font-size:12px">Gagal memuat status</div>';
+  }
 }
 
 async function apiPutusKoneksi(username) {
