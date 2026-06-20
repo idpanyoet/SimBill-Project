@@ -12,6 +12,15 @@ try { puppeteer = require('puppeteer'); } catch (e) {}
 
 const OUT_DIR = path.join(__dirname, '../../frontend/uploads/invoice');
 
+// Escape data (nama/alamat pelanggan, setting) sebelum disisipkan ke HTML yang
+// dirender Puppeteer. Tanpa ini, pelanggan bernama mis. <img src=x onerror=...>
+// bisa mengeksekusi HTML/JS di dalam headless Chrome saat PDF dibuat (SSRF/
+// exfil/baca file lokal). Nominal & tanggal tidak terpengaruh.
+function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 function fmtTgl(d) {
     if (!d) return '—';
     try { return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }); }
@@ -119,10 +128,10 @@ body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 <div class="page">
   <div class="header">
     <div>
-      <div class="company-name">${appName}</div>
+      <div class="company-name">${esc(appName)}</div>
       <div class="company-sub">High Speed Internet</div>
-      <div class="company-info">${appAlamat ? 'Alamat : ' + appAlamat : ''}</div>
-      <div class="company-info">${appWa ? 'No HP : ' + appWa + (appUrl ? ' &nbsp;|&nbsp; ' + appUrl : '') : appUrl}</div>
+      <div class="company-info">${appAlamat ? 'Alamat : ' + esc(appAlamat) : ''}</div>
+      <div class="company-info">${appWa ? 'No HP : ' + esc(appWa) + (appUrl ? ' &nbsp;|&nbsp; ' + esc(appUrl) : '') : esc(appUrl)}</div>
     </div>
     <div style="text-align:right">
       ${logoDataUrl ? `<img src="${logoDataUrl}" class="logo" alt="Logo">` : ''}
@@ -133,9 +142,9 @@ body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   <div class="row2">
     <div class="to-box">
       <div class="label">Kepada :</div>
-      <div class="nama">${inv.nama_pelanggan || '—'}</div>
-      <div style="font-size:9pt;color:#444">${inv.no_hp || ''}</div>
-      <div style="font-size:9pt;color:#444">${inv.alamat || ''}</div>
+      <div class="nama">${esc(inv.nama_pelanggan || '—')}</div>
+      <div style="font-size:9pt;color:#444">${esc(inv.no_hp || '')}</div>
+      <div style="font-size:9pt;color:#444">${esc(inv.alamat || '')}</div>
     </div>
     <table class="info-table">
       <tr><td>ID Pelanggan</td><td>:</td><td>${inv.pelanggan_id || '—'}</td></tr>
@@ -155,7 +164,7 @@ body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     <tbody>
       <tr>
         <td>1.</td>
-        <td>${inv.nama_paket || 'Paket Internet'}</td>
+        <td>${esc(inv.nama_paket || 'Paket Internet')}</td>
         <td style="text-align:center">1</td>
         <td>${jumlah.toLocaleString('id-ID')}</td>
         <td>-</td>
@@ -197,7 +206,7 @@ body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     </div>
   </div>
 
-  <div class="footer-bottom">${appName} &mdash; ${appUrl || ''}</div>
+  <div class="footer-bottom">${esc(appName)} &mdash; ${esc(appUrl || '')}</div>
 </div>
 </body></html>`;
 }

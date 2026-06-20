@@ -5,6 +5,11 @@ const { authMiddleware } = require('../middleware/auth');
 const waService = require('../services/whatsapp');
 const radiusService = require('../services/radius');
 
+// Cegah CSV/formula injection pada export Excel voucher.
+function sf(v) {
+    return (typeof v === 'string' && /^[=+\-@\t\r]/.test(v)) ? "'" + v : v;
+}
+
 router.use(authMiddleware);
 
 // GET /api/voucher — daftar voucher
@@ -263,8 +268,8 @@ router.get('/batch/:batchId/export-xlsx', async (req, res, next) => {
         ];
         ws.getRow(1).font = { bold: true };
         rows.forEach((v, i) => ws.addRow({
-            no: i + 1, username: v.username, password: v.password,
-            paket: v.nama_paket || '-', status: v.status,
+            no: i + 1, username: sf(v.username), password: sf(v.password),
+            paket: sf(v.nama_paket || '-'), status: sf(v.status),
             harga: v.harga ? Number(v.harga) : 0,
             dibuat: v.created_at ? new Date(v.created_at).toLocaleString('id-ID') : ''
         }));

@@ -265,6 +265,13 @@ app.use('/api/client/otp/', rateLimit({
     max: 12,
     message: { error: 'Terlalu banyak permintaan OTP, coba lagi beberapa menit.' }
 }));
+// Limiter pendaftaran reseller publik — cegah pembuatan akun massal otomatis.
+app.use('/api/reseller/auth/register', rateLimit({
+    validate: {xForwardedForHeader: false},
+    windowMs: 60 * 60 * 1000,
+    max: 8,
+    message: { error: 'Terlalu banyak pendaftaran dari IP ini, coba lagi nanti.' }
+}));
 
 // --- Halaman publik ---
 app.get('/', (req, res) => {

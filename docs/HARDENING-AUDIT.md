@@ -242,3 +242,69 @@ payload — tanpa merusak input sah.
 - Pertimbangan lanjutan (belum dikerjakan): proteksi **CSV/formula injection**
   saat export Excel (exceljs) — prefiks `'` pada sel yang diawali `= + - @`,
   agar nama pelanggan seperti `=cmd|...` tak tereksekusi saat admin buka file.
+
+---
+
+# 📊 Proteksi CSV / Formula Injection (export Excel)
+
+Tanggal: 2026-06-20
+
+Nilai string yang diawali `= + - @` (atau tab/CR) bisa **tereksekusi sebagai
+formula** saat file dibuka di Excel/Google Sheets — mis. pelanggan menamai
+dirinya `=HYPERLINK(...)` atau `=cmd|'/c calc'!A1`. Mitigasi: prefiks `'`
+agar sel diperlakukan sebagai teks. Helper `sf()` ditambahkan.
+
+## Sudah aman (tidak diubah)
+- Export CSV daftar pelanggan (`pelanggan.js`) — sudah punya `esc()` yang
+  memberi prefiks `'` + quote-escaping CSV yang benar.
+
+## Gap yang diisi
+- `laporan.js` — semua sheet export Excel:
+  - `dataRow()` kini memetakan setiap sel array lewat `sf()` → otomatis
+    melindungi sheet **Per Paket** & **Invoice** (nama pelanggan, nama paket,
+    no_invoice, status).
+  - Export pembayaran (form objek) — field `inv/nama/tipe/paket/metode`
+    dibungkus `sf()`.
+- `voucher-admin.js` — export Excel batch voucher: `username/password/paket/
+  status` dibungkus `sf()` (username/password sebenarnya dari charset aman,
+  tapi dibungkus untuk konsistensi).
+
+`sf()` hanya menyentuh string yang diawali karakter formula; angka, tanggal,
+dan nama biasa tidak berubah.
+
+---
+
+# 🧾 PDF Invoice (Puppeteer) & Rate-Limiting
+
+Tanggal: 2026-06-20
+
+## XSS pada render PDF invoice (Puppeteer) — DIPERBAIKI
+`services/invoice-pdf.js` punya helper `esc()` lengkap dengan komentar yang
+menjelaskan risikonya, **tapi tidak pernah dipasang** — field `nama_pelanggan`,
+`no_hp`, `alamat`, `nama_paket` disuntik mentah ke HTML yang dirender headless
+Chrome. Pelanggan bernama `<img src=x onerror=fetch('http://169.254.169.254/...')>`
+bisa eksekusi HTML/JS di dalam Puppeteer saat PDF dibuat (potensi SSRF ke
+metadata cloud / baca file lokal / exfil). Diperbaiki: 8 titik dibungkus `esc()`
+(field pelanggan + setting perusahaan appName/appAlamat/appWa/appUrl). Data URL
+logo/QR & angka/tanggal sengaja tidak di-esc (akan rusak / tak perlu).
+
+### Tidak diubah (bukan vektor)
+- Cetak voucher PDF (`voucher-admin.js`) memakai **template HTML rancangan admin**
+  (sengaja mengizinkan script inline untuk pewarnaan kartu). Nilai substitusi
+  (`username`/`password` dari charset CSPRNG aman, angka) bukan input pelanggan.
+
+## Rate-limiting
+Sudah cukup baik:
+- `/api/` global 500/15m; `/api/auth/` 50/15m (menutup login admin **&** reseller,
+  keduanya lewat `/api/auth/login`); `/api/client/otp/` 12/10m + cap percobaan
+  per-record; voucher `/beli` 20/jam.
+
+### Ditambah
+- `/api/reseller/auth/register` — limiter khusus **8/jam per IP** (sebelumnya hanya
+  di bawah limit global longgar → rawan pembuatan akun massal otomatis).
+
+### Catatan (tuning, bukan kerentanan)
+- `/webhook/*` tak punya rate-limit, tapi terlindung verifikasi signature
+  (mitigasi utama). Membatasi IP gateway pembayaran berisiko false-positive.
+- `/api/auth/` max:50 bisa diperketat (~20) bila ingin lebih rapat terhadap
+  brute-force login; tetap aman karena bcrypt.

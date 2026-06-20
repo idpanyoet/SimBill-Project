@@ -3,6 +3,13 @@ const router = require('express').Router();
 const { query } = require('../config/db');
 const { authMiddleware } = require('../middleware/auth');
 
+// Cegah CSV/formula injection pada export Excel: nilai string yang diawali
+// = + - @ (atau tab/CR) bisa tereksekusi sebagai formula saat dibuka di
+// Excel/Google Sheets. Diberi prefiks ' agar diperlakukan sebagai teks.
+function sf(v) {
+    return (typeof v === 'string' && /^[=+\-@\t\r]/.test(v)) ? "'" + v : v;
+}
+
 router.use(authMiddleware);
 
 // GET /api/laporan/dashboard — ringkasan utama
@@ -237,7 +244,7 @@ router.get('/export-excel', async (req, res, next) => {
         }
 
         function dataRow(sheet, row) {
-            const r = sheet.addRow(row);
+            const r = sheet.addRow(Array.isArray(row) ? row.map(sf) : row);
             r.eachCell({ includeEmpty: true }, c => {
                 c.border = {
                     top: {style:'thin', color:{argb:'FFD0D0D0'}},
@@ -546,11 +553,11 @@ router.get('/income-report-excel', async (req, res, next) => {
             ws.addRow({
                 no:     i + 1,
                 tgl,
-                inv:    r.no_invoice,
-                nama:   r.nama,
-                tipe:   r.user_type,
-                paket:  r.nama_paket,
-                metode: r.metode_bayar || 'cash',
+                inv:    sf(r.no_invoice),
+                nama:   sf(r.nama),
+                tipe:   sf(r.user_type),
+                paket:  sf(r.nama_paket),
+                metode: sf(r.metode_bayar || 'cash'),
                 jumlah: parseFloat(r.jumlah || 0)
             });
             total += parseFloat(r.jumlah || 0);
