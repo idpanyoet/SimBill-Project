@@ -496,28 +496,28 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-item" onclick="goto('peta',this)"><i class="ti ti-map-pin icon" aria-hidden="true"></i> Peta Jaringan</div>
 
     <!-- Finance Report Group -->
-    <div class="sb-group-hdr open" id="sb-finance-hdr" onclick="sbToggleGroup('finance')">
+    <div class="sb-group-hdr" id="sb-finance-hdr" onclick="sbToggleGroup('finance')">
       <div style="display:flex;align-items:center;gap:8px">
         <i class="ti ti-report-analytics" style="font-size:14px" aria-hidden="true"></i>
         Laporan
       </div>
       <i class="ti ti-chevron-down sb-group-arrow" aria-hidden="true"></i>
     </div>
-    <div class="sb-group-body open" id="sb-finance-body">
+    <div class="sb-group-body" id="sb-finance-body">
       <div class="sb-sub-item" onclick="goto('laporan',this)"><span class="sb-sub-dot"></span> Ringkasan</div>
       <div class="sb-sub-item" onclick="goto('income-report',this)"><span class="sb-sub-dot"></span> Priode Pemasukan</div>
       <div class="sb-sub-item" onclick="goto('net-profit',this)"><span class="sb-sub-dot"></span> Net Profit</div>
     </div>
 
     <!-- Lainnya Group -->
-    <div class="sb-group-hdr open" id="sb-lainnya-hdr" onclick="sbToggleGroup('lainnya')">
+    <div class="sb-group-hdr" id="sb-lainnya-hdr" onclick="sbToggleGroup('lainnya')">
       <div style="display:flex;align-items:center;gap:8px">
         <i class="ti ti-dots-circle-horizontal" style="font-size:14px" aria-hidden="true"></i>
         Lainnya
       </div>
       <i class="ti ti-chevron-down sb-group-arrow" aria-hidden="true"></i>
     </div>
-    <div class="sb-group-body open" id="sb-lainnya-body">
+    <div class="sb-group-body" id="sb-lainnya-body">
       <div class="sb-sub-item" onclick="goto('voucher-template',this)"><span class="sb-sub-dot"></span> Template Voucher</div>
       <div class="sb-sub-item" onclick="goto('acs',this)"><span class="sb-sub-dot"></span> ACS TR-069</div>
       <div class="sb-sub-item" onclick="goto('backup',this)"><span class="sb-sub-dot"></span> Backup & Restore</div>
@@ -6251,8 +6251,8 @@ function sbToggleGroup(name) {
 function sbRestoreGroups() {
   ['finance', 'lainnya'].forEach(function(name) {
     const saved = localStorage.getItem('sb_group_' + name);
-    // Default: open
-    const shouldOpen = saved === null ? true : saved === '1';
+    // Default: tertutup
+    const shouldOpen = saved === null ? false : saved === '1';
     const hdr  = document.getElementById('sb-' + name + '-hdr');
     const body = document.getElementById('sb-' + name + '-body');
     if (!hdr || !body) return;
