@@ -610,12 +610,15 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
           <button class="btn primary" onclick="goto('r-voucher',document.querySelector('.rs-item[onclick*=r-voucher]'))"><i class="ti ti-ticket"></i> Beli Voucher</button>
         </div>
 
-        <div style="background:linear-gradient(135deg,#BA7517,#EF9F27);border-radius:14px;padding:20px 22px;color:#fff;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-          <div>
-            <div style="font-size:13px;opacity:.85">Saldo Anda</div>
-            <div id="rs-saldo" style="font-size:30px;font-weight:800;margin-top:2px">Rp 0</div>
+        <div style="position:relative;overflow:hidden;background:linear-gradient(135deg,#7C3AED 0%,#2563EB 55%,#06B6D4 100%);border-radius:18px;padding:24px;color:#fff;margin-bottom:18px;box-shadow:0 10px 30px -10px rgba(37,99,235,.5)">
+          <div style="position:absolute;top:-32px;right:-18px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.13)"></div>
+          <div style="position:absolute;bottom:-44px;right:72px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,.09)"></div>
+          <button class="btn" style="position:absolute;top:18px;right:18px;z-index:2;background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.45)" onclick="goto('r-topup',document.querySelector('.rs-item[onclick*=r-topup]'))"><i class="ti ti-wallet"></i> Top Up</button>
+          <div style="position:relative">
+            <div style="display:flex;align-items:center;gap:7px;font-size:13px;opacity:.9"><i class="ti ti-wallet"></i> Saldo Anda</div>
+            <div id="rs-saldo" style="font-size:34px;font-weight:800;margin-top:4px;letter-spacing:-.5px">Rp 0</div>
+            <div style="font-size:12px;opacity:.8;margin-top:6px">Reseller · <span id="rs-saldo-level" style="text-transform:capitalize">—</span></div>
           </div>
-          <button class="btn" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4)" onclick="goto('r-topup',document.querySelector('.rs-item[onclick*=r-topup]'))"><i class="ti ti-wallet"></i> Top Up</button>
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px">
@@ -5852,6 +5855,7 @@ async function loadResellerDashboard() {
     const set = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
     set('rs-nama', d.reseller?.nama || '—');
     set('rs-level', d.reseller?.level || '—');
+    set('rs-saldo-level', d.reseller?.level || '—');
     set('rs-saldo', rsRp(d.reseller?.saldo));
     set('rs-hari-total', rsRp(d.hari_ini?.total));
     set('rs-hari-jml', d.hari_ini?.jml || 0);
