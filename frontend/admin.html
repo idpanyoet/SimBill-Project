@@ -112,6 +112,8 @@ body.role-reseller .admin-only{display:none!important}
 .rt-amt:hover{transform:translateY(-2px);filter:brightness(1.05)}
 .rt-amt:active{transform:translateY(0)}
 .rv-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px -12px rgba(0,0,0,.4)}
+.dw-tab{flex:1;padding:7px 4px;border:none;background:transparent;border-radius:8px;font-size:11.5px;font-weight:600;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .12s;white-space:nowrap}
+.dw-tab.active{background:var(--card);color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.12)}
 .btn-logout{background:none;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:5px 8px;font-size:11px;color:rgba(255,255,255,.35);cursor:pointer;font-family:inherit;margin-top:6px;width:100%;transition:all .15s}
 .btn-logout:hover{border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.6)}
 
@@ -910,8 +912,21 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
           </div>
         </div>
         <div class="grid2" style="margin-bottom:16px">
-          <div class="card" style="display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px">
-            <!-- placeholder -->
+          <div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+            <div style="padding:12px 14px 0">
+              <div style="display:flex;gap:3px;background:var(--bg2);padding:4px;border-radius:10px">
+                <button class="dw-tab active" data-t="tren" onclick="dwTab('tren')">📈 Tren</button>
+                <button class="dw-tab" data-t="status" onclick="dwTab('status')">🩺 Status</button>
+                <button class="dw-tab" data-t="bayar" onclick="dwTab('bayar')">💳 Bayar</button>
+                <button class="dw-tab" data-t="expired" onclick="dwTab('expired')">⏰ Expired</button>
+              </div>
+            </div>
+            <div style="padding:14px;flex:1">
+              <div class="dw-pane" id="dw-tren"><div style="color:var(--text3);font-size:12px;text-align:center;padding:20px">Memuat…</div></div>
+              <div class="dw-pane" id="dw-status" style="display:none"></div>
+              <div class="dw-pane" id="dw-bayar" style="display:none"></div>
+              <div class="dw-pane" id="dw-expired" style="display:none"></div>
+            </div>
           </div>
           <div class="card">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
@@ -6285,6 +6300,84 @@ function goto(id, el) {
 // ================================================================
 // DASHBOARD
 // ================================================================
+// ── DASHBOARD WIDGET (tab: Tren / Status / Bayar / Expired) ──
+function dwRp(n){ return (typeof fmt==='function') ? fmt(n) : 'Rp ' + Number(n||0).toLocaleString('id-ID'); }
+function dwTab(name){
+  document.querySelectorAll('.dw-tab').forEach(b=>b.classList.toggle('active', b.dataset.t===name));
+  ['tren','status','bayar','expired'].forEach(n=>{ const p=document.getElementById('dw-'+n); if(p) p.style.display = (n===name)?'':'none'; });
+}
+async function loadDashboardWidget(){
+  try{
+    const [w, rad, wa] = await Promise.all([
+      apiFetch('/api/laporan/widget'),
+      apiFetch('/api/radius/status').catch(()=>({online:false})),
+      apiFetch('/api/whatsapp/status').catch(()=>({aktif:false}))
+    ]);
+    dwRenderTren(w.tren||[]);
+    dwRenderStatus(w.status||{}, rad, wa);
+    dwRenderBayar(w.pembayaran||[]);
+    dwRenderExpired(w.expired||[]);
+  }catch(e){
+    const t=document.getElementById('dw-tren'); if(t) t.innerHTML='<div style="color:#dc2626;font-size:12px;text-align:center;padding:20px">'+e.message+'</div>';
+  }
+}
+function dwRenderTren(rows){
+  const el=document.getElementById('dw-tren'); if(!el) return;
+  const hari=['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+  const max=Math.max(1,...rows.map(r=>Number(r.total)||0));
+  const total=rows.reduce((s,r)=>s+(Number(r.total)||0),0);
+  const bars=rows.map(r=>{
+    const v=Number(r.total)||0; const h=Math.max(4,Math.round((v/max)*100));
+    const d=new Date(r.tgl); const lbl=isNaN(d)?'':hari[d.getDay()];
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px" title="${dwRp(v)}">
+      <div style="width:100%;height:108px;display:flex;align-items:flex-end">
+        <div style="width:100%;height:${h}%;background:linear-gradient(180deg,#7C3AED,#2563EB);border-radius:6px 6px 0 0;min-height:4px"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text3)">${lbl}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:600;color:var(--text2)">Pendapatan 7 hari</div>
+      <div style="font-size:14px;font-weight:800;color:#7C3AED">${dwRp(total)}</div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:flex-end">${bars}</div>`;
+}
+function dwRenderStatus(s, rad, wa){
+  const el=document.getElementById('dw-status'); if(!el) return;
+  const row=(ic,name,ok,sub)=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--border)">
+    <div style="width:30px;height:30px;border-radius:8px;background:${ok?'rgba(22,163,74,.12)':'rgba(220,38,38,.12)'};color:${ok?'#16a34a':'#dc2626'};display:flex;align-items:center;justify-content:center;font-size:15px">${ic}</div>
+    <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">${name}</div><div style="font-size:11px;color:var(--text3)">${sub}</div></div>
+    <span style="font-size:11px;font-weight:700;color:${ok?'#16a34a':'#dc2626'};background:${ok?'rgba(22,163,74,.12)':'rgba(220,38,38,.12)'};padding:3px 10px;border-radius:20px">${ok?'Aktif':'Nonaktif'}</span>
+  </div>`;
+  el.innerHTML =
+    row('📡','MikroTik (NAS)', !!s.mikrotik, s.mikrotik?'Router terdaftar':'Belum ada NAS') +
+    row('🗄️','FreeRADIUS', !!(rad&&rad.online), (rad&&rad.online)?((rad.sesi_aktif||0)+' sesi aktif'):'Tidak terhubung') +
+    row('💬','WhatsApp Gateway', !!(wa&&wa.aktif), (wa&&wa.aktif)?('Provider: '+(wa.provider||'-')):'Belum dikonfigurasi') +
+    row('💳','Payment Gateway', !!s.payment, s.payment?'Terkonfigurasi':'Belum dikonfigurasi');
+}
+function dwRenderBayar(rows){
+  const el=document.getElementById('dw-bayar'); if(!el) return;
+  if(!rows.length){ el.innerHTML='<div style="color:var(--text3);font-size:12px;text-align:center;padding:24px">Belum ada pembayaran lunas</div>'; return; }
+  el.innerHTML=rows.map(p=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 2px;border-bottom:1px solid var(--border)">
+    <div style="min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nama}</div>
+      <div style="font-size:11px;color:var(--text3)">${p.no_invoice||''} · ${fmtDate?fmtDate(p.tgl_bayar):String(p.tgl_bayar||'').slice(0,10)}</div></div>
+    <div style="font-size:13px;font-weight:700;color:#16a34a;white-space:nowrap">${dwRp(p.jumlah)}</div>
+  </div>`).join('');
+}
+function dwRenderExpired(rows){
+  const el=document.getElementById('dw-expired'); if(!el) return;
+  if(!rows.length){ el.innerHTML='<div style="color:var(--text3);font-size:12px;text-align:center;padding:24px">Tidak ada yang akan expired dalam 3 hari 🎉</div>'; return; }
+  el.innerHTML=rows.map(p=>{
+    const s=Number(p.sisa); const col=s<=0?'#dc2626':s<=1?'#d97706':'#16a34a';
+    const txt=s<=0?'Hari ini':(s+' hari lagi');
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 2px;border-bottom:1px solid var(--border)">
+      <div style="min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nama}</div>
+        <div style="font-size:11px;color:var(--text3);font-family:monospace">@${p.username}</div></div>
+      <span style="font-size:11px;font-weight:700;color:${col};background:${col}1f;padding:3px 10px;border-radius:20px;white-space:nowrap">${txt}</span>
+    </div>`;
+  }).join('');
+}
+
 async function loadDashboard() {
   cekStatusSistem(); // update badge RADIUS & WA di topbar
   try {
@@ -6334,6 +6427,8 @@ async function loadDashboard() {
       }
     }
   } catch(e) { console.warn('Dashboard API:', e.message); }
+
+  loadDashboardWidget();
 
   try {
     const sesi = await apiFetch('/api/radius/sesi-aktif');

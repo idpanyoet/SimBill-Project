@@ -107,6 +107,48 @@ router.get('/dashboard', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// GET /api/laporan/widget — data gabungan untuk widget dashboard
+router.get('/widget', async (req, res, next) => {
+    try {
+        const tren = await query(`
+            SELECT d.tgl AS tgl,
+              COALESCE((SELECT SUM(jumlah) FROM invoice WHERE status='paid' AND DATE(tgl_bayar)=d.tgl),0)
+              + COALESCE((SELECT SUM(p.harga) FROM voucher v JOIN paket p ON v.paket_id=p.id
+                          WHERE v.status='used' AND DATE(v.tgl_digunakan)=d.tgl),0) AS total
+            FROM (
+              SELECT CURDATE() - INTERVAL n DAY AS tgl FROM
+              (SELECT 0 n UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6) nums
+            ) d
+            ORDER BY d.tgl ASC
+        `);
+
+        const pembayaran = await query(`
+            SELECT i.no_invoice, i.jumlah, i.tgl_bayar,
+                   COALESCE(p.nama,'Pembeli Voucher') AS nama
+            FROM invoice i LEFT JOIN pelanggan p ON i.pelanggan_id=p.id
+            WHERE i.status='paid' AND i.tgl_bayar IS NOT NULL
+            ORDER BY i.tgl_bayar DESC LIMIT 5
+        `);
+
+        const expired = await query(`
+            SELECT nama, username, tgl_expired, DATEDIFF(tgl_expired, CURDATE()) AS sisa
+            FROM pelanggan
+            WHERE status='aktif' AND tgl_expired IS NOT NULL
+              AND tgl_expired BETWEEN CURDATE() AND CURDATE() + INTERVAL 3 DAY
+            ORDER BY tgl_expired ASC LIMIT 8
+        `);
+
+        let nasN = 0, pgVal = '';
+        try { const r = await query(`SELECT COUNT(*) AS n FROM nas`); nasN = r[0]?.n || 0; } catch(e) {}
+        try { const r = await query(`SELECT nilai FROM setting WHERE kunci='pg_provider'`); pgVal = r[0]?.nilai || ''; } catch(e) {}
+
+        res.json({
+            tren, pembayaran, expired,
+            status: { mikrotik: nasN > 0, payment: !!pgVal }
+        });
+    } catch (e) { next(e); }
+});
+
 // GET /api/laporan/pendapatan — per bulan
 router.get('/pendapatan', async (req, res, next) => {
     try {
