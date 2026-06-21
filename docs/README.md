@@ -1,4 +1,4 @@
-<img width="948" height="1135" alt="image" src="https://github.com/user-attachments/assets/a926fcfb-7a89-4874-8014-75109a1cb92c" /># 📡 Billing RADIUS PPPoE/Hotspot
+# 📡 Billing RADIUS PPPoE/Hotspot
 ## Dokumentasi Lengkap: Instalasi, API, & Konfigurasi
 
 ---
