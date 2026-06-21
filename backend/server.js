@@ -289,7 +289,9 @@ app.get('/client', (req, res) => {
 app.use('/uploads', express.static(path.join(__dirname, '../frontend/uploads')));
 
 // --- API Routes ---
+app.use(require('./middleware/license-guard'));   // penegakan lisensi (default nonaktif)
 app.use('/api/auth',      require('./routes/auth'));
+app.use('/api/license',   require('./routes/license'));
 app.use('/api/pelanggan', require('./routes/pelanggan'));
 app.use('/api/paket',     require('./routes/paket'));
 app.use('/api/invoice',   require('./routes/invoice'));
@@ -395,6 +397,7 @@ app.listen(PORT, () => {
     console.log(`   Env: ${process.env.NODE_ENV || 'development'}`);
     console.log(`   Build marker: pelanggan-route-step-tracking-v2`);
     require('./services/cron');
+    try { require('./services/license').mulaiHeartbeat(); } catch (e) { console.error('Heartbeat lisensi gagal start:', e.message); }
 });
 
 module.exports = app;

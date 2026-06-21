@@ -448,6 +448,28 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 </style></head>
 <body>
 
+<!-- ══ GERBANG AKTIVASI LISENSI ══ -->
+<div id="lic-gate" style="display:none;position:fixed;inset:0;z-index:99999;background:#f4f6f9;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border:1px solid #e2e7ef;border-radius:20px;padding:40px 36px;max-width:380px;width:100%;color:#0f172a;box-shadow:0 20px 60px rgba(0,0,0,.08);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif">
+    <h1 style="font-size:24px;font-weight:800;margin:0 0 8px;color:#0f172a">Aktifkan lisensi</h1>
+    <p style="color:#94a3b8;font-size:14px;margin:0 0 18px;line-height:1.5">Masukkan kunci lisensi untuk membuka akses sistem.</p>
+    <div style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:10px;padding:12px 14px;font-size:13px;margin-bottom:18px;line-height:1.5">Sistem terkunci. Silakan aktifkan lisensi Anda.</div>
+    <label style="font-size:11px;font-weight:600;display:block;margin-bottom:6px;color:#475569;text-transform:uppercase;letter-spacing:.05em">Kunci Lisensi</label>
+    <input id="lic-gate-key" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off"
+      style="width:100%;padding:12px 14px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#0f172a;font-size:14px;font-family:ui-monospace,monospace;box-sizing:border-box">
+    <div id="lic-gate-adv" style="display:none">
+      <label style="font-size:11px;font-weight:600;display:block;margin:14px 0 6px;color:#475569;text-transform:uppercase;letter-spacing:.05em">URL License Server</label>
+      <input id="lic-gate-url" placeholder="https://license.cmi.my.id" autocomplete="off"
+        style="width:100%;padding:12px 14px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#0f172a;font-size:14px;box-sizing:border-box">
+    </div>
+    <div id="lic-gate-err" style="color:#dc2626;font-size:13px;min-height:18px;margin:10px 0 4px"></div>
+    <button id="lic-gate-btn" onclick="licAktifkan()"
+      style="width:100%;padding:13px;border:none;border-radius:10px;background:#BA7517;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(186,117,23,.3)">Aktifkan Lisensi</button>
+    <div style="text-align:center;color:#64748b;font-size:13px;margin-top:14px">Butuh lisensi? <a href="https://license.cmi.my.id/" target="_blank" rel="noopener" style="color:#2563eb;font-weight:600;text-decoration:none">Hubungi provider Anda</a></div>
+    <div style="text-align:center;margin-top:10px"><a href="#" onclick="doLogout();return false" style="color:#94a3b8;font-size:13px;text-decoration:none">⎋ Logout</a></div>
+  </div>
+</div>
+
 <!-- ══ LOGIN SCREEN ══ -->
 <div id="login-screen">
   <div class="login-box">
@@ -536,6 +558,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 
     <div class="sb-section">Admin</div>
     <div class="sb-item" onclick="goto('setting',this)"><i class="ti ti-settings icon" aria-hidden="true"></i> Setting</div>
+    <div class="sb-item" onclick="goto('lisensi',this)"><i class="ti ti-license icon" aria-hidden="true"></i> Lisensi</div>
     <div class="sb-item" onclick="goto('pengguna',this)"><i class="ti ti-users-group icon" aria-hidden="true"></i> Pengguna Admin</div>
     <div class="sb-item" onclick="goto('log',this)"><i class="ti ti-clipboard-list icon" aria-hidden="true"></i> Log Admin</div>
 
@@ -3356,6 +3379,55 @@ Selamat menikmati! 🌐</textarea>
         </div>
       </div>
 
+      <!-- ═══════════════ MANAJEMEN LISENSI ═══════════════ -->
+      <div class="page" id="p-lisensi">
+        <style>
+          #p-lisensi .lic-cell{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+          #p-lisensi .lic-lbl{font-size:11px;color:var(--text3);letter-spacing:.04em;display:flex;align-items:center;gap:6px;margin-bottom:4px}
+          #p-lisensi .lic-val{font-size:14px;font-weight:600;color:var(--text);word-break:break-all}
+        </style>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+          <div>
+            <h2 style="font-size:22px;font-weight:800;color:var(--primary,#2563eb);margin:0;border-left:4px solid var(--primary,#2563eb);padding-left:10px">Manajemen Lisensi</h2>
+            <div id="lic-sub" class="td-text-sub" style="margin-left:14px">Status lisensi aplikasi ini.</div>
+          </div>
+          <button class="btn" onclick="loadLisensi(true)"><i class="ti ti-refresh" aria-hidden="true"></i> Muat ulang</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:start">
+
+          <!-- Ringkasan -->
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <div style="font-size:16px;font-weight:700;color:var(--text)">Ringkasan Lisensi</div>
+              <span id="lic-badge" class="badge" style="background:#e2e8f0;color:#475569">—</span>
+            </div>
+            <div class="td-text-sub" style="margin-bottom:14px">Status, detail, dan metadata lisensi dari license manager.</div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div class="lic-cell"><div class="lic-lbl"><i class="ti ti-key"></i> KUNCI LISENSI</div><div id="lic-key" class="lic-val">—</div></div>
+              <div class="lic-cell"><div class="lic-lbl"><i class="ti ti-user"></i> NAMA CLIENT</div><div id="lic-client" class="lic-val">—</div></div>
+              <div class="lic-cell"><div class="lic-lbl"><i class="ti ti-shield"></i> STATUS</div><div id="lic-status" class="lic-val">—</div></div>
+              <div class="lic-cell"><div class="lic-lbl"><i class="ti ti-calendar"></i> EXPIRED</div><div id="lic-exp" class="lic-val">—</div></div>
+              <div class="lic-cell"><div class="lic-lbl"><i class="ti ti-server-2"></i> HARDWARE ID</div><div id="lic-hwid" class="lic-val" style="font-size:12px">—</div></div>
+              <div class="lic-cell"><div class="lic-lbl"><i class="ti ti-clock"></i> RESET TERAKHIR</div><div id="lic-lastreset" class="lic-val">—</div></div>
+              <div class="lic-cell"><div class="lic-lbl"><i class="ti ti-eye"></i> TERLIHAT TERAKHIR</div><div id="lic-lastseen" class="lic-val">—</div></div>
+              <div class="lic-cell"><div class="lic-lbl"><i class="ti ti-refresh-dot"></i> JUMLAH RESET</div><div id="lic-resetcount" class="lic-val">—</div></div>
+              <div class="lic-cell" style="grid-column:1/-1"><div class="lic-lbl"><i class="ti ti-wifi"></i> STATUS KONEKSI</div><div id="lic-conn" class="lic-val">—</div></div>
+            </div>
+          </div>
+
+          <!-- Perpanjang -->
+          <div class="card">
+            <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">Perpanjang Lisensi</div>
+            <div class="td-text-sub" style="margin-bottom:14px">Perpanjangan mengikuti aturan license manager (otomatis +1 bulan, hanya dalam window H-7 sebelum expired).</div>
+            <div id="lic-extend-info" style="font-size:13px;color:var(--text2);background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px">—</div>
+            <button id="lic-btn-extend" class="btn primary" style="width:100%;opacity:.5" disabled onclick="licPerpanjang()">Perpanjang Sekarang</button>
+          </div>
+
+        </div>
+      </div>
+
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /app -->
@@ -6137,6 +6209,7 @@ function tampilApp() {
   if (typeof tkRefreshBadge === 'function') tkRefreshBadge();
   loadDashboard();
   populateDropdowns();
+  if (typeof licGateCek === 'function') licGateCek();
 }
 
 // ── RESELLER MODE ──
@@ -6728,7 +6801,8 @@ const titles = {
   'userio':'Import / Export User',
   'sesi':'Sesi Aktif',
   'peta':'Peta Jaringan',
-  'voucher-template':'Template Voucher', setting:'Setting Sistem'
+  'voucher-template':'Template Voucher', setting:'Setting Sistem',
+  lisensi:'Manajemen Lisensi'
 };
 const loaders = {
   'r-dashboard': loadResellerDashboard, 'r-voucher': loadResellerVoucher, 'r-pelanggan': loadResellerPelanggan, 'r-laporan': loadResellerLaporan, 'r-topup': loadResellerTopup,
@@ -6746,6 +6820,7 @@ const loaders = {
   peta: loadPeta,
   acs: loadACS, 'voucher-template': loadVoucherTemplate,
   setting: loadSetting,
+  lisensi: loadLisensi,
   backup:  loadBackup
 };
 
@@ -11917,10 +11992,93 @@ async function loadSetting() {
     }
   } catch(e) { console.warn('Setting API:', e.message); }
   loadSysInfo();
-  if (typeof psuCek === 'function') psuCek();   // tampilkan versi & cek update
+  if (typeof psuCek === 'function') {
+    psuCek();                                              // cek saat halaman Setting dibuka
+    if (!window._psuTimer) window._psuTimer = setInterval(psuCek, 86400000); // auto sekali sehari (24 jam)
+  }
 }
 
-// ── PEMBARUAN SISTEM (GitHub Releases) ──────────────────────────────────────
+// ── GERBANG AKTIVASI LISENSI ────────────────────────────────────────────────
+async function licGateCek(){
+  try{
+    const d = await apiFetch('/api/license/status');
+    const srv = d.license_server_url || 'https://license.cmi.my.id';
+    const u=document.getElementById('lic-gate-url'); if(u) u.value=srv;
+    const s=document.getElementById('lic-gate-srv'); if(s) s.textContent=srv.replace(/^https?:\/\//,'');
+    if (!d.valid) licBukaGate();   // wajib aktivasi: lisensi belum valid → kunci layar
+  }catch(e){}
+}
+function licBukaGate(){ const g=document.getElementById('lic-gate'); if(g) g.style.display='flex'; }
+async function licAktifkan(){
+  const key=document.getElementById('lic-gate-key').value.trim();
+  const url=document.getElementById('lic-gate-url').value.trim();
+  const err=document.getElementById('lic-gate-err'); err.style.color='#f87171'; err.textContent='';
+  if(!key){ err.textContent='Masukkan kunci lisensi'; return; }
+  const b=document.getElementById('lic-gate-btn'); const t=b.textContent; b.disabled=true; b.textContent='Mengaktifkan…';
+  try{
+    await apiFetch('/api/license/activate',{method:'POST',body:JSON.stringify({license_key:key, license_server_url:url||undefined})});
+    err.style.color='#34d399'; err.textContent='✅ Lisensi aktif. Memuat ulang…';
+    setTimeout(()=>location.reload(), 900);
+  }catch(e){ err.textContent=e.message||'Aktivasi gagal'; b.disabled=false; b.textContent=t; }
+}
+
+// ── MANAJEMEN LISENSI ───────────────────────────────────────────────────────
+function _licSet(id,t){ const e=document.getElementById(id); if(e) e.textContent = (t==null||t==='')?'—':t; }
+function _licTgl(s){ if(!s) return '—'; try{ return new Date(s).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); }catch(_){ return s; } }
+
+async function loadLisensi(reload){
+  const badge=document.getElementById('lic-badge');
+  const btn=document.getElementById('lic-btn-extend');
+  try{
+    const d = await apiFetch('/api/license/status' + (reload?'?reload=1':''));
+    const st = (d.status||'').toLowerCase();
+    const aktif = d.valid && (st==='active'||st==='aktif');
+    // Badge status
+    badge.textContent = aktif ? 'Active' : (d.status||'Tidak aktif');
+    badge.style.background = aktif ? '#dcfce7' : '#fee2e2';
+    badge.style.color      = aktif ? '#166534' : '#991b1b';
+
+    _licSet('lic-key',   d.key || d.license_key);
+    _licSet('lic-client',d.client || d.nama_client || d.client_name);
+    _licSet('lic-status',d.status);
+    _licSet('lic-exp',   _licTgl(d.expired || d.expired_at));
+    _licSet('lic-hwid',  d.hwid);
+    _licSet('lic-lastreset', d.reset_terakhir ? _licTgl(d.reset_terakhir) : '-');
+    _licSet('lic-lastseen',  d.last_seen ? _licTgl(d.last_seen) : _licTgl(new Date().toISOString()));
+    _licSet('lic-resetcount', (d.reset_count!=null? d.reset_count : '-'));
+    _licSet('lic-conn',  d.offline ? 'offline (memakai cache)' : (d.valid?'online':'gagal terhubung'));
+    document.getElementById('lic-sub').textContent = d.client ? ('Lisensi aktif untuk '+d.client+'.') : (d.pesan||'Status lisensi aplikasi ini.');
+
+    // Window perpanjang (H-7) — server boleh kirim can_extend & extend_info
+    const info=document.getElementById('lic-extend-info');
+    if (d.unconfigured || st==='unconfigured'){
+      info.textContent='Lisensi belum aktif. Klik "Aktifkan Lisensi" untuk memasukkan kunci.';
+      btn.disabled=false; btn.style.opacity='1'; btn.textContent='Aktifkan Lisensi'; btn.onclick=licBukaGate;
+    } else {
+      info.textContent = d.extend_info || (d.can_extend ? 'Perpanjangan tersedia sekarang.' : ('Perpanjangan baru tersedia mulai '+_licTgl(d.extend_open||d.expired)+'.'));
+      btn.textContent='Perpanjang Sekarang'; btn.onclick=licPerpanjang;
+      btn.disabled = !d.can_extend; btn.style.opacity = d.can_extend?'1':'.5';
+    }
+  }catch(e){
+    badge.textContent='Error'; badge.style.background='#fee2e2'; badge.style.color='#991b1b';
+    document.getElementById('lic-extend-info').textContent='Gagal memuat status: '+(e.message||e);
+  }
+}
+
+async function licPerpanjang(){
+  const btn=document.getElementById('lic-btn-extend');
+  if(btn.disabled) return;
+  if(!confirm('Perpanjang lisensi sekarang?')) return;
+  btn.disabled=true; const t=btn.textContent; btn.textContent='Memproses…';
+  try{
+    const d=await apiFetch('/api/license/extend',{method:'POST',body:JSON.stringify({})});
+    if(typeof toast==='function') toast('✅ '+(d.pesan||'Lisensi diperpanjang'));
+    loadLisensi(true);
+  }catch(e){
+    if(typeof toast==='function') toast('❌ '+(e.message||e),true);
+    btn.disabled=false; btn.textContent=t;
+  }
+}
 let _psuLatestTag = null;
 function _psuSet(id, t){ const e = document.getElementById(id); if (e) e.textContent = t; }
 
