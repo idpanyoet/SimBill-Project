@@ -1,4 +1,4 @@
-# 📡 Billing RADIUS PPPoE/Hotspot
+<img width="948" height="1135" alt="image" src="https://github.com/user-attachments/assets/a926fcfb-7a89-4874-8014-75109a1cb92c" /># 📡 Billing RADIUS PPPoE/Hotspot
 ## Dokumentasi Lengkap: Instalasi, API, & Konfigurasi
 
 ---
@@ -569,6 +569,16 @@ mysql -u root -p nama_database < database/migration_voucher_username_password.sq
 Migrasi ini aman — voucher lama tidak akan hilang, otomatis diisi `username = password = kode lama`. Re-import `schema.sql` versi terbaru juga otomatis menjalankan migrasi yang sama, jadi tidak perlu jalankan keduanya.
 
 ---
+##  Kontribusi Kontribusi selalu diterima! Silakan buat pull request atau laporkan issue jika menemukan bug.
+
+https://wa.me/628113951987
+
+atau link telegram
+
+https://t.me/@rfhotspot
+
+SILAHKAN YANG INGIN BERBAGI UANG KOPI
+https://paypal.me/panyoet?locale.x=en_US&country.x=ID
 
 ## 📝 Lisensi
 
