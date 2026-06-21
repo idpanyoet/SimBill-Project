@@ -349,10 +349,15 @@ app.get('/health', async (req, res) => {
     let db_ok = false, radius_ok = false;
     try { await query('SELECT 1'); db_ok = true; } catch(e) {}
     try { await query('SELECT 1 FROM radacct LIMIT 1'); radius_ok = true; } catch(e) {}
+    // Versi app: baca file VERSION (root) → fallback package.json
+    let appVer = '';
+    try { appVer = require('fs').readFileSync(path.join(__dirname, '../VERSION'), 'utf8').trim(); } catch(e) {}
+    if (!appVer) { try { appVer = require('./package.json').version; } catch(e) {} }
+    appVer = (appVer || '1.0.0').replace(/^v/i, '');
     res.json({
         status:         'ok',
         time:           new Date().toISOString(),
-        app_version:    '1.0.0',
+        app_version:    appVer,
         node_version:   process.version,
         uptime_seconds: Math.floor(process.uptime()),
         db_ok,

@@ -36,6 +36,21 @@ wget -qO- https://raw.githubusercontent.com/idpanyoet/SimBill-Project/master/upd
 
 Installer otomatis memasang **Node.js 20, pm2, MariaDB**, membuat database, meng-clone aplikasi ke `/opt/simbill`, membuat file `.env` (JWT digenerate otomatis), mengimpor schema, lalu menjalankan aplikasi via **pm2** dengan nama `billing-radius`. Setelah selesai, akses dashboard di `http://IP-VPS:3000`.
 
+### 🔑 Login Default
+
+Setelah install, masuk dengan akun default:
+
+| Username | Password   |
+|----------|------------|
+| `admin`  | `admin123` |
+
+> ⚠️ **Segera ganti password** dari menu profil setelah login pertama.
+>
+> Ingin set password sendiri saat install? Tambahkan `ADMIN_PASS`:
+> ```bash
+> curl -fsSL https://raw.githubusercontent.com/idpanyoet/SimBill-Project/master/install.sh | sudo ADMIN_PASS=PasswordKuatku bash
+> ```
+
 > ⚠️ `install.sh` hanya untuk server **baru/kosong**. Untuk server yang sudah berjalan, gunakan `update.sh` (otomatis mem-backup `.env` lebih dulu).
 
 ---
