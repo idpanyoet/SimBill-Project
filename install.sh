@@ -25,6 +25,11 @@ DB_NAME="${DB_NAME:-billing_radius}"
 DB_USER="${DB_USER:-billing}"
 DB_PASS="${DB_PASS:-}"                 # kosong = digenerate otomatis
 INSTALL_RADIUS="${INSTALL_RADIUS:-}"   # y | n  (FreeRADIUS opsional)
+INSTALL_VPN="${INSTALL_VPN:-y}"        # y | n  (tools WireGuard & L2TP)
+TZ_REGION="${TZ_REGION:-Asia/Jakarta}" # timezone server
+DOMAIN="${DOMAIN:-}"                    # mis. simbill.domain.com → pasang Nginx+SSL (opsional)
+EMAIL_SSL="${EMAIL_SSL:-}"             # email untuk Let's Encrypt (jika DOMAIN diisi)
+MAKE_SWAP="${MAKE_SWAP:-y}"            # y | n  (buat swap bila RAM kecil)
 # ─────────────────────────────────────────────────────────────────────────────
 
 REPO_URL="https://github.com/${GITHUB_USER}/${GITHUB_REPO}.git"
@@ -46,6 +51,22 @@ esac
 
 export DEBIAN_FRONTEND=noninteractive
 [ -z "$DB_PASS" ] && DB_PASS="$(openssl rand -base64 18 | tr -d '/+=' | head -c 24)"
+
+# ── Timezone (penting untuk cron tagihan/reminder & tanggal invoice) ──
+timedatectl set-timezone "$TZ_REGION" >/dev/null 2>&1 || ln -sf "/usr/share/zoneinfo/${TZ_REGION}" /etc/localtime 2>/dev/null || true
+ok "Timezone: ${TZ_REGION}"
+
+# ── Swap (Chromium x2 berat — cegah OOM di VPS RAM kecil) ──
+if [[ "${MAKE_SWAP,,}" == y* ]]; then
+  RAM_MB=$(awk '/MemTotal/{print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 2048)
+  if [ "${RAM_MB:-2048}" -lt 2048 ] && ! swapon --show 2>/dev/null | grep -q .; then
+    if fallocate -l 2G /swapfile 2>/dev/null || dd if=/dev/zero of=/swapfile bs=1M count=2048 2>/dev/null; then
+      chmod 600 /swapfile && mkswap /swapfile >/dev/null 2>&1 && swapon /swapfile 2>/dev/null || true
+      grep -q '/swapfile' /etc/fstab 2>/dev/null || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+      ok "Swap 2GB dibuat (RAM ${RAM_MB}MB)"
+    fi
+  fi
+fi
 
 step "1/7 Paket dasar"
 apt-get update -y -qq
@@ -81,7 +102,7 @@ step "2c/7 Tools VPN (WireGuard & L2TP/IPSec)"
 INSTALL_VPN="${INSTALL_VPN:-y}"
 if [[ "${INSTALL_VPN,,}" == y* ]]; then
   VPN_OK=0
-  for pkg in wireguard-tools xl2tpd strongswan strongswan-pki libcharon-extra-plugins; do
+  for pkg in wireguard-tools ppp xl2tpd strongswan strongswan-pki libcharon-extra-plugins; do
     apt-get install -y -qq "$pkg" >/dev/null 2>&1 && VPN_OK=$((VPN_OK+1)) || true
   done
   ok "Tools VPN terpasang (${VPN_OK} paket) — konfigurasi via menu VPN SimBill"
@@ -231,10 +252,50 @@ if [[ "${INSTALL_RADIUS,,}" == y* ]]; then
   fi
 fi
 
+# ── Nginx + SSL (opsional, jika DOMAIN diisi) — penting untuk webhook payment HTTPS ──
+ACCESS_URL="http://$(hostname -I 2>/dev/null | awk '{print $1}'):${APP_PORT}"
+if [ -n "$DOMAIN" ]; then
+  step "Nginx + SSL untuk ${DOMAIN}"
+  apt-get install -y -qq nginx >/dev/null 2>&1 || true
+  cat > /etc/nginx/sites-available/simbill <<NGINX
+server {
+    listen 80;
+    server_name ${DOMAIN};
+    client_max_body_size 25m;
+    location / {
+        proxy_pass http://127.0.0.1:${APP_PORT};
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+    }
+}
+NGINX
+  ln -sf /etc/nginx/sites-available/simbill /etc/nginx/sites-enabled/simbill
+  rm -f /etc/nginx/sites-enabled/default
+  nginx -t >/dev/null 2>&1 && systemctl reload nginx >/dev/null 2>&1 || systemctl restart nginx >/dev/null 2>&1 || true
+  ok "Nginx reverse-proxy aktif (:80 → :${APP_PORT})"
+  # SSL via certbot
+  apt-get install -y -qq certbot python3-certbot-nginx >/dev/null 2>&1 || true
+  CB_EMAIL_ARG="--register-unsafely-without-email"
+  [ -n "$EMAIL_SSL" ] && CB_EMAIL_ARG="-m ${EMAIL_SSL}"
+  if certbot --nginx -d "${DOMAIN}" --non-interactive --agree-tos ${CB_EMAIL_ARG} --redirect >/dev/null 2>&1; then
+    ok "SSL aktif → https://${DOMAIN}"
+    ACCESS_URL="https://${DOMAIN}"
+  else
+    info "Nginx aktif, tapi SSL gagal (cek: DNS ${DOMAIN} sudah arah ke IP ini?). Jalankan ulang: certbot --nginx -d ${DOMAIN}"
+    ACCESS_URL="http://${DOMAIN}"
+  fi
+fi
+
 IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
 echo
 echo "${C_B}════════════════ SELESAI ════════════════${C_R}"
-echo "  URL aplikasi : ${C_OK}http://${IP}:${APP_PORT}${C_R}"
+echo "  URL aplikasi : ${C_OK}${ACCESS_URL}${C_R}"
 echo "  Folder       : ${INSTALL_DIR}"
 echo "  pm2 name     : ${PM2_NAME}"
 echo "  Database     : ${DB_NAME}"
@@ -243,6 +304,10 @@ echo "  ${C_WARN}↑ Simpan kredensial DB ini.${C_R}"
 echo
 echo "  Login admin  : ${C_OK}${ADMIN_USER}${C_R} / ${C_WARN}${ADMIN_PASS}${C_R}"
 echo "  ${C_WARN}↑ Ganti password admin segera setelah login.${C_R}"
+echo
+echo "  Port yang dipakai (buka di firewall bila perlu):"
+echo "    3000 (app) · 7547 (TR-069/ACS)"
+echo "    1812-1813/udp (RADIUS) · 51820/udp (WireGuard) · 1701/500/4500/udp (L2TP/IPSec)"
 echo "  Update nanti :"
 echo "    wget -qO- https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/update.sh | sudo bash"
 echo "${C_B}═════════════════════════════════════════${C_R}"
