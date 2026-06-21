@@ -3522,11 +3522,11 @@ Selamat menikmati! 🌐</textarea>
       <button id="ap-tab-btn-1" onclick="apSwitchTab(1)" style="flex:1;padding:10px;font-size:12px;font-weight:600;border:none;background:none;border-bottom:2px solid #BA7517;margin-bottom:-2px;color:#BA7517;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
         <i class="ti ti-user" style="font-size:14px" aria-hidden="true"></i> <span data-i18n="Data Utama">Data Utama</span>
       </button>
-      <button id="ap-tab-btn-2" onclick="apSwitchTab(2)" style="flex:1;padding:10px;font-size:12px;font-weight:600;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
-        <i class="ti ti-map-pin" style="font-size:14px" aria-hidden="true"></i> <span data-i18n="Lokasi & Jaringan">Lokasi & Jaringan</span>
-      </button>
       <button id="ap-tab-btn-3" onclick="apSwitchTab(3)" style="flex:1;padding:10px;font-size:12px;font-weight:600;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
         <i class="ti ti-id-badge" style="font-size:14px" aria-hidden="true"></i> <span data-i18n="KTP">KTP</span>
+      </button>
+      <button id="ap-tab-btn-2" onclick="apSwitchTab(2)" style="flex:1;padding:10px;font-size:12px;font-weight:600;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+        <i class="ti ti-map-pin" style="font-size:14px" aria-hidden="true"></i> <span data-i18n="Lokasi & Jaringan">Lokasi & Jaringan</span>
       </button>
     </div>
 
@@ -3583,7 +3583,7 @@ Selamat menikmati! 🌐</textarea>
 
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
         <button class="btn" onclick="closeModal('m-add-pelanggan')">Batal</button>
-        <button class="btn primary" onclick="apSwitchTab(2)">
+        <button class="btn primary" onclick="apSwitchTab(3)">
           <span data-i18n="Berikutnya">Berikutnya</span> <i class="ti ti-arrow-right" style="font-size:13px" aria-hidden="true"></i>
         </button>
       </div>
@@ -3603,7 +3603,7 @@ Selamat menikmati! 🌐</textarea>
       </div>
 
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
-        <button class="btn" onclick="apSwitchTab(1)">
+        <button class="btn" onclick="apSwitchTab(3)">
           <i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> <span data-i18n="Kembali">Kembali</span>
         </button>
         <button class="btn primary" onclick="apiSimpanPelanggan()">
@@ -3650,11 +3650,11 @@ Selamat menikmati! 🌐</textarea>
       </div>
 
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
-        <button class="btn" onclick="apSwitchTab(2)">
+        <button class="btn" onclick="apSwitchTab(1)">
           <i class="ti ti-arrow-left" style="font-size:13px" aria-hidden="true"></i> <span data-i18n="Kembali">Kembali</span>
         </button>
-        <button class="btn primary" onclick="apiSimpanPelanggan()">
-          <i class="ti ti-check" style="font-size:13px" aria-hidden="true"></i> <span data-i18n="Simpan & Aktifkan">Simpan & Aktifkan</span>
+        <button class="btn primary" onclick="apSwitchTab(2)">
+          <span data-i18n="Berikutnya">Berikutnya</span> <i class="ti ti-arrow-right" style="font-size:13px" aria-hidden="true"></i>
         </button>
       </div>
     </div>
