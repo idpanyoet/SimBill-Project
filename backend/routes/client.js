@@ -52,15 +52,20 @@ router.post('/otp/kirim', async (req, res, next) => {
         if (!pel) return res.status(404).json({ error: 'Nomor HP tidak terdaftar sebagai pelanggan' });
 
         // Generate OTP 6 digit (CSPRNG — tidak bisa ditebak seperti Math.random)
-        const otp     = String(crypto.randomInt(100000, 1000000));
-        const expired = new Date(Date.now() + OTP_EXPIRE);
+        const otp = String(crypto.randomInt(100000, 1000000));
 
-        // Simpan OTP
+        // Simpan OTP. expired_at dihitung pakai NOW() MySQL (bukan JS Date) agar
+        // konsisten dengan pengecekan "expired_at > NOW()" saat verifikasi —
+        // tahan terhadap perbedaan timezone server/koneksi.
         await query(`
-            INSERT INTO client_otp (no_hp, otp, expired_at, attempts)
-            VALUES (?, ?, ?, 0)
-            ON DUPLICATE KEY UPDATE otp=?, expired_at=?, created_at=NOW(), attempts=0
-        `, [noHpNormal, otp, expired, otp, expired]);
+            INSERT INTO client_otp (no_hp, otp, expired_at, attempts, created_at)
+            VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 5 MINUTE), 0, NOW())
+            ON DUPLICATE KEY UPDATE
+                otp=?,
+                expired_at=DATE_ADD(NOW(), INTERVAL 5 MINUTE),
+                created_at=NOW(),
+                attempts=0
+        `, [noHpNormal, otp, otp]);
 
         // Kirim via WhatsApp
         const pesan = `*Kode OTP Login SimBill*\n\nKode Anda: *${otp}*\n\nBerlaku 5 menit. Jangan bagikan ke siapapun.`;

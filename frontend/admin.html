@@ -458,6 +458,75 @@ body.dark .progress{background:#21262d}
 body.dark .auth-mode-item{border-color:#30363d}
 body.dark .auth-mode-item:hover{background:rgba(186,117,23,.1)}
 body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);border-color:#BA7517}
+
+/* ════════════════════════ RESPONSIVE / MOBILE (full audit) ════════════════════════ */
+#sidebar-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:150;opacity:0;visibility:hidden;transition:opacity .25s ease}
+#sidebar-overlay.show{opacity:1;visibility:visible}
+
+@media(max-width:820px){
+  html,body{overflow-x:hidden}
+  /* ── App shell: sidebar → drawer geser ── */
+  #app{height:auto;min-height:100vh;overflow:visible}
+  .sidebar{position:fixed;left:0;top:0;height:100vh;height:100dvh;width:78vw;max-width:300px;z-index:200;
+           transform:translateX(-100%);transition:transform .28s ease;box-shadow:4px 0 28px rgba(0,0,0,.28)}
+  .sidebar.open{transform:translateX(0)}
+  .main{flex:1;min-width:0;width:100%;min-height:100vh;overflow:visible}
+  .btn-hamburger{display:flex}
+
+  /* ── Topbar ── */
+  .topbar{padding:0 12px;position:sticky;top:0;z-index:50;gap:8px}
+  .topbar h1{font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .topbar-right{gap:6px;min-width:0;flex-shrink:1}
+  .topbar-right input{min-width:0}
+  /* Pencarian: tersembunyi default, muncul jadi bar lebar penuh saat ikon ditekan */
+  .topbar-search-wrap{display:none!important}
+  .tb-search-btn{display:flex!important}
+  .topbar.tb-search-open .topbar-search-wrap{display:block!important;position:absolute;top:100%;left:0;right:0;
+        padding:8px 12px;background:#fff;border-bottom:1px solid #e2e7ef;box-shadow:0 8px 16px rgba(0,0,0,.08);z-index:60}
+  .topbar.tb-search-open .topbar-search-wrap input#topbar-search{width:100%!important;box-sizing:border-box}
+  .topbar.tb-search-open #topbar-search-dropdown{min-width:0!important;left:12px;right:12px}
+  body.dark .topbar.tb-search-open .topbar-search-wrap{background:#161b22;border-color:#30363d}
+  .topbar-right>*{flex-shrink:0}
+
+  /* ── Konten ── */
+  .content{padding:14px 12px;overflow-x:hidden;overflow-y:visible}
+
+  /* ── Stack semua grid inline & form rows ── */
+  .content [style*="grid-template-columns"],
+  .modal   [style*="grid-template-columns"]{grid-template-columns:1fr!important}
+  .fg-row{display:grid!important;grid-template-columns:1fr!important;gap:10px}
+
+  /* ── Kartu KPI atas (.metrics) → 2x2 biar nominal kebaca ── */
+  .metrics{grid-template-columns:1fr 1fr!important;gap:10px!important;margin-bottom:14px!important}
+  .metric{padding:13px!important;gap:11px!important}
+  .metric-ico{width:40px!important;height:40px!important;font-size:18px!important}
+  .metric .lbl{font-size:10px!important}
+  .metric .val{font-size:18px!important;word-break:break-word}
+  .metric>div:last-child{min-width:0}
+  /* ── Grid 2/3 kolom (class) → 1 kolom ── */
+  .grid2,.grid3{grid-template-columns:1fr!important}
+
+  /* ── Tabel: scroll horizontal (dibungkus .tbl-scroll oleh JS) ── */
+  .tbl-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px}
+  .tbl-scroll table{min-width:560px}
+  .content table{font-size:12px}
+
+  /* ── Modal full-screen ── */
+  .overlay{padding:0!important;align-items:stretch!important;justify-content:stretch!important}
+  .overlay>.modal{max-width:100%!important;width:100%!important;height:100vh!important;height:100dvh!important;
+         max-height:100vh!important;max-height:100dvh!important;margin:0!important;border-radius:0!important;
+         display:flex!important;flex-direction:column;overflow-y:auto}
+
+  /* ── Login card ── */
+  .login-card{margin:16px;width:auto!important}
+}
+
+@media(max-width:560px){
+  .topbar h1{font-size:13px;max-width:46vw}
+  .content{padding:12px 10px}
+  .content [style*="padding:24px"],
+  .content [style*="padding: 24px"]{padding:14px!important}
+}
 </style></head>
 <body>
 
@@ -593,7 +662,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
       </div>
       <div class="topbar-right">
         <!-- Search Invoice -->
-        <div style="position:relative">
+        <div class="topbar-search-wrap" style="position:relative">
           <i class="ti ti-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:#94a3b8" aria-hidden="true"></i>
           <input id="topbar-search" placeholder="Cari invoice belum dibayar"
             oninput="topbarSearchInvoice(this.value)"
@@ -605,6 +674,11 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
           <!-- Dropdown hasil -->
           <div id="topbar-search-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid #e2e7ef;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:200;max-height:320px;overflow-y:auto;min-width:320px"></div>
         </div>
+
+        <!-- Tombol cari (HP) -->
+        <button class="tb-search-btn" onclick="topbarSearchMobileToggle()" title="Cari invoice" style="display:none;width:36px;height:36px;border-radius:10px;border:1px solid #e2e7ef;background:#f8fafc;cursor:pointer;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-search" style="font-size:16px;color:#2563eb" aria-hidden="true"></i>
+        </button>
 
         <!-- Notifikasi -->
         <div style="position:relative">
@@ -5912,6 +5986,15 @@ function topbarSearchHide() {
   const dd = document.getElementById('topbar-search-dropdown');
   if (dd) dd.style.display = 'none';
 }
+// Toggle bar pencarian di HP (ikon kaca pembesar)
+function topbarSearchMobileToggle() {
+  const tb = document.querySelector('.topbar');
+  if (!tb) return;
+  const open = tb.classList.toggle('tb-search-open');
+  const inp = document.getElementById('topbar-search');
+  if (open) { if (inp) setTimeout(() => inp.focus(), 50); }
+  else { if (inp) inp.value=''; topbarSearchHide(); }
+}
 
 // ── TOPBAR NOTIF ──────────────────────────────────────────────
 function topbarTutupNotif() {
@@ -7008,6 +7091,33 @@ function goto(id, el) {
   closeSidebar();
 }
 
+// ── Bungkus tabel agar bisa scroll horizontal di layar kecil ──
+function wrapTablesResponsive(){
+  document.querySelectorAll('.content table').forEach(function(tb){
+    var p = tb.parentElement;
+    if(!p || p.classList.contains('tbl-scroll')) return;
+    var w = document.createElement('div');
+    w.className = 'tbl-scroll';
+    p.insertBefore(w, tb);
+    w.appendChild(tb);
+  });
+}
+(function(){
+  function initTblObs(){
+    var c = document.querySelector('.content');
+    if(!c) return;
+    wrapTablesResponsive();
+    try{
+      var mo = new MutationObserver(function(){
+        clearTimeout(window.__tblT); window.__tblT = setTimeout(wrapTablesResponsive, 120);
+      });
+      mo.observe(c, {childList:true, subtree:true});
+    }catch(e){}
+  }
+  if(document.readyState !== 'loading') initTblObs();
+  else document.addEventListener('DOMContentLoaded', initTblObs);
+})();
+
 // ================================================================
 // DASHBOARD
 // ================================================================
@@ -7605,10 +7715,10 @@ function initMiniMap(prefix) {
     // Hapus peta lama
     if (prefix === 'add') {
       if (_fMap)  { _fMap.remove();  _fMap  = null; _fMarker  = null; }
-      _fMap  = L.map(elId, { scrollWheelZoom: true }).setView([1.0857, 104.0305], 12);
+      _fMap  = L.map(elId, { scrollWheelZoom: true }).setView([4.9311, 97.8336], 13);
     } else {
       if (_epMap) { _epMap.remove(); _epMap = null; _epMarker = null; }
-      _epMap = L.map(elId, { scrollWheelZoom: true }).setView([1.0857, 104.0305], 12);
+      _epMap = L.map(elId, { scrollWheelZoom: true }).setView([4.9311, 97.8336], 13);
     }
     const map = prefix === 'add' ? _fMap : _epMap;
     const osmL = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -7619,6 +7729,34 @@ function initMiniMap(prefix) {
     });
     osmL.addTo(map);
     L.control.layers({ '🗺️ Peta': osmL, '🛰️ Satelit': satL }, {}, { position: 'topright' }).addTo(map);
+    // Tombol "Lokasi Saya" (GPS)
+    const locBtn = L.control({ position: 'topleft' });
+    locBtn.onAdd = function() {
+      const b = L.DomUtil.create('button', '');
+      b.type = 'button';
+      b.innerHTML = '📍';
+      b.title = 'Pindah ke lokasi saya sekarang';
+      b.style.cssText = 'width:34px;height:34px;background:#fff;border:2px solid rgba(0,0,0,.25);border-radius:6px;cursor:pointer;font-size:17px;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,.2);margin-top:6px';
+      L.DomEvent.disableClickPropagation(b);
+      L.DomEvent.on(b, 'click', function(ev) {
+        L.DomEvent.stop(ev);
+        if (!navigator.geolocation) { alert('Perangkat tidak mendukung GPS.'); return; }
+        b.innerHTML = '⏳';
+        navigator.geolocation.getCurrentPosition(function(pos) {
+          b.innerHTML = '📍';
+          const la = pos.coords.latitude.toFixed(7);
+          const ln = pos.coords.longitude.toFixed(7);
+          document.getElementById(latId).value = la;
+          document.getElementById(lngId).value = ln;
+          setMapPin(prefix, parseFloat(la), parseFloat(ln));
+        }, function() {
+          b.innerHTML = '📍';
+          alert('Gagal mendapatkan lokasi. Pastikan izin lokasi (GPS) diizinkan.');
+        }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
+      });
+      return b;
+    };
+    locBtn.addTo(map);
     // Klik peta → isi lat/lng
     map.on('click', function(e) {
       const lat = e.latlng.lat.toFixed(7);
@@ -7627,10 +7765,21 @@ function initMiniMap(prefix) {
       document.getElementById(lngId).value = lng;
       setMapPin(prefix, parseFloat(lat), parseFloat(lng));
     });
-    // Jika sudah ada koordinat, tampilkan pin
+    // Jika sudah ada koordinat → tampilkan pin. Jika belum & mode TAMBAH → auto-deteksi lokasi (GPS)
     const lat0 = parseFloat(document.getElementById(latId)?.value);
     const lng0 = parseFloat(document.getElementById(lngId)?.value);
-    if (lat0 && lng0) setMapPin(prefix, lat0, lng0);
+    if (lat0 && lng0) {
+      setMapPin(prefix, lat0, lng0);
+    } else if (prefix === 'add' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function(pos) {
+        const la = pos.coords.latitude.toFixed(7);
+        const ln = pos.coords.longitude.toFixed(7);
+        document.getElementById(latId).value = la;
+        document.getElementById(lngId).value = ln;
+        setMapPin('add', parseFloat(la), parseFloat(ln));
+      }, function() { /* ditolak/gagal — tetap di titik default */ },
+         { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 });
+    }
   }, 150);
 }
 
@@ -11329,7 +11478,7 @@ let _petaGeserMode = false;
 function loadPeta() {
   // Init peta Leaflet saat pertama
   if (!_petaMap) {
-    _petaMap = L.map('peta-map', { scrollWheelZoom: true }).setView([0.7893, 113.9213], 5);
+    _petaMap = L.map('peta-map', { scrollWheelZoom: true }).setView([4.9311, 97.8336], 12);
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors', maxZoom: 19
     });
