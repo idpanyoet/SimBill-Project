@@ -2,7 +2,7 @@
 # =============================================================================
 #  SimBill — Update (tarik versi terbaru dari GitHub, lalu restart)
 #  Pakai (one-liner):
-#     wget -qO- https://raw.githubusercontent.com/idpanyoet/netbill/master/update.sh | sudo bash
+#     wget -qO- https://raw.githubusercontent.com/idpanyoet/SimBill-Project/master/update.sh | sudo bash
 # =============================================================================
 set -euo pipefail
 

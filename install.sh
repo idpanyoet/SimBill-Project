@@ -4,7 +4,7 @@
 #  Stack : Node.js + Express, MariaDB, pm2   |   Target: Ubuntu 22/24 & Debian 11/12
 #
 #  Pakai (one-liner):
-#     wget -qO- https://raw.githubusercontent.com/idpanyoet/netbill/master/install.sh | sudo bash
+#     wget -qO- https://raw.githubusercontent.com/idpanyoet/SimBill-Project/master/install.sh | sudo bash
 #
 #  Non-interaktif (lewati pertanyaan), contoh:
 #     curl -fsSL .../install.sh | sudo DB_PASS=Rahasia123 INSTALL_RADIUS=n bash
@@ -13,7 +13,7 @@ set -euo pipefail
 
 # ───────────────────────── KONFIGURASI (ganti sesuai repo-mu) ────────────────
 GITHUB_USER="${GITHUB_USER:-idpanyoet}"
-GITHUB_REPO="${GITHUB_REPO:-netbill}"
+GITHUB_REPO="${GITHUB_REPO:-SimBill-Project}"
 GITHUB_BRANCH="${GITHUB_BRANCH:-master}"
 
 INSTALL_DIR="${INSTALL_DIR:-/opt/simbill}"
