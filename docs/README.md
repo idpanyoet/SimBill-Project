@@ -3,40 +3,6 @@
 
 ---
 
-## 🗂️ Struktur Proyek
-
-```
-billing-radius/
-├── database/
-│   └── schema.sql              ← Skema database + seed data
-├── backend/
-│   ├── server.js               ← Entry point utama
-│   ├── package.json
-│   ├── .env.example            ← Template konfigurasi
-│   ├── config/
-│   │   └── db.js               ← Koneksi database
-│   ├── middleware/
-│   │   └── auth.js             ← JWT authentication
-│   ├── routes/
-│   │   ├── auth.js             ← Login admin
-│   │   ├── pelanggan.js        ← CRUD pelanggan + RADIUS sync
-│   │   ├── paket.js            ← Manajemen paket internet
-│   │   ├── invoice.js          ← Tagihan & pembayaran
-│   │   ├── whatsapp.js         ← WA gateway & broadcast
-│   │   ├── payment.js          ← Riwayat transaksi
-│   │   ├── radius.js           ← NAS & sesi aktif
-│   │   ├── laporan.js          ← Laporan & statistik
-│   │   ├── setting.js          ← Konfigurasi sistem
-│   │   └── webhook.js          ← Callback payment gateway
-│   └── services/
-│       ├── radius.js           ← Manajemen FreeRADIUS
-│       ├── whatsapp.js         ← Multi-provider WA gateway
-│       ├── payment.js          ← Multi-provider payment gateway
-│       └── cron.js             ← Otomasi (reminder, suspend, invoice)
-```
-
----
-
 ## 🚀 Instalasi
 
 ### 1. Prasyarat
