@@ -518,7 +518,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-item rs-item" onclick="goto('r-laporan',this)"><i class="ti ti-report icon" aria-hidden="true"></i> Laporan</div>
 
     <div class="sb-section tk-section">Teknisi</div>
-    <div class="sb-item tk-item active" onclick="goto('dashboard',this)"><i class="ti ti-layout-dashboard icon" aria-hidden="true"></i> Dashboard</div>
+    <div class="sb-item tk-item active" onclick="goto('tk-dashboard',this)"><i class="ti ti-layout-dashboard icon" aria-hidden="true"></i> Dashboard</div>
     <div class="sb-item tk-item" onclick="goto('pelanggan',this)"><i class="ti ti-users icon" aria-hidden="true"></i> Pelanggan / PPPoE</div>
     <div class="sb-item tk-item" onclick="goto('tiket',this)"><i class="ti ti-headset icon" aria-hidden="true"></i> Tiket Gangguan</div>
     <div class="sb-item tk-item" onclick="goto('peta',this)"><i class="ti ti-map-pin icon" aria-hidden="true"></i> Peta Jaringan</div>
@@ -1050,6 +1050,53 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
       </div>
 
       <!-- ══ PELANGGAN ══ -->
+      <div class="page" id="p-tk-dashboard">
+        <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:2px">Selamat datang</div>
+        <h2 id="tkd-greeting" style="font-size:22px;font-weight:700;margin:0 0 18px">Selamat datang</h2>
+
+        <div class="card" style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+          <div id="tkd-avatar" style="width:48px;height:48px;border-radius:12px;background:#2563eb;color:#fff;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">T</div>
+          <div style="flex:1;min-width:0">
+            <div id="tkd-nama" style="font-size:16px;font-weight:700">—</div>
+            <div id="tkd-username" style="font-size:13px;color:var(--text3)">@—</div>
+            <div style="display:flex;gap:6px;margin-top:6px">
+              <span style="background:#dcfce7;color:#15803d;font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px">Aktif</span>
+              <span style="background:#dbeafe;color:#2563eb;font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px">Teknisi</span>
+            </div>
+          </div>
+          <i class="ti ti-tool" style="color:#2563eb;font-size:18px" aria-hidden="true"></i>
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+            <div>
+              <div style="font-size:15px;font-weight:700">Dashboard Teknisi</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:2px">Cari berdasarkan username atau nama untuk menemukan member.</div>
+            </div>
+            <button class="btn primary" onclick="openModal('m-add-pelanggan')" style="gap:6px"><i class="ti ti-plus" aria-hidden="true"></i> Tambah Member</button>
+          </div>
+          <div style="position:relative;margin-top:14px">
+            <i class="ti ti-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px" aria-hidden="true"></i>
+            <input id="tkd-search" oninput="tkdCariMember()" placeholder="Cari member berdasarkan username/nama" style="width:100%;padding:11px 12px 11px 36px;border:1px solid var(--border);border-radius:10px;background:var(--bg2);color:var(--text);font-size:14px;font-family:inherit">
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+          <div class="card" style="display:flex;align-items:center;gap:12px">
+            <div style="width:42px;height:42px;border-radius:11px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-ticket" aria-hidden="true"></i></div>
+            <div><div style="font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--text3)">Tiket Open</div><div id="tkd-tiket-open" style="font-size:24px;font-weight:800">0</div></div>
+          </div>
+          <div class="card" style="display:flex;align-items:center;gap:12px">
+            <div style="width:42px;height:42px;border-radius:11px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-message-2" aria-hidden="true"></i></div>
+            <div><div style="font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--text3)">Komentar belum dibaca</div><div id="tkd-komentar" style="font-size:24px;font-weight:800">0</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div id="tkd-hasil" style="color:var(--text3);font-size:13px;text-align:center;padding:18px">Cari berdasarkan username atau nama untuk menemukan member.</div>
+        </div>
+      </div>
+
       <div class="page" id="p-pelanggan">
         <div class="action-bar">
           <button class="btn primary" onclick="openModal('m-add-pelanggan')"><span data-i18n="+ Tambah Pelanggan">+ Tambah Pelanggan</span></button>
@@ -6230,10 +6277,13 @@ function tampilApp() {
   topbarUpdateProfil(ADMIN.nama, ADMIN.role);
   topbarCekNotif();
   if (typeof tkRefreshBadge === 'function') tkRefreshBadge();
-  loadDashboard();
   populateDropdowns();
   if (typeof licGateCek === 'function') licGateCek();
-  if (isTeknisi) goto('dashboard', document.querySelector('.tk-item.active') || document.querySelector('.tk-item'));
+  if (isTeknisi) {
+    goto('tk-dashboard', document.querySelector('.tk-item.active') || document.querySelector('.tk-item'));
+  } else {
+    loadDashboard();
+  }
 }
 
 // ── RESELLER MODE ──
@@ -6812,6 +6862,7 @@ const titles = {
   'r-dashboard':'Dashboard Reseller', 'r-voucher':'Beli Voucher',
   'r-pelanggan':'Pelanggan Saya', 'r-topup':'Saldo & Topup', 'r-laporan':'Laporan & Transaksi',
   dashboard:'Dashboard', pelanggan:'Manajemen Pelanggan',
+  'tk-dashboard':'Dashboard',
   paket:'Paket Internet', invoice:'Invoice & Tagihan',
   voucher:'Voucher', whatsapp:'WhatsApp Gateway',
   payment:'Payment Gateway', radius:'RADIUS / NAS',
@@ -6831,6 +6882,7 @@ const titles = {
 const loaders = {
   'r-dashboard': loadResellerDashboard, 'r-voucher': loadResellerVoucher, 'r-pelanggan': loadResellerPelanggan, 'r-laporan': loadResellerLaporan, 'r-topup': loadResellerTopup,
   dashboard: loadDashboard, pelanggan: loadPelanggan,
+  'tk-dashboard': loadTkDashboard,
   paket: loadPaket, invoice: loadInvoice,
   voucher: loadVoucher, whatsapp: loadWALog,
   payment: loadPayment, radius: loadRadius,
@@ -6847,6 +6899,47 @@ const loaders = {
   lisensi: loadLisensi,
   backup:  loadBackup
 };
+
+function tkdGreeting(){ const h=new Date().getHours(); return h<11?'Selamat Pagi ☀️':h<15?'Selamat Siang 🌤️':h<19?'Selamat Sore 🌅':'Selamat Malam 🌙'; }
+async function loadTkDashboard(){
+  const nm = (ADMIN && ADMIN.nama) || 'Teknisi';
+  const uname = (ADMIN && ADMIN.username) || (ADMIN && ADMIN.email ? ADMIN.email.split('@')[0] : 'teknisi');
+  const set=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+  const g=document.getElementById('tkd-greeting'); if(g) g.textContent=tkdGreeting();
+  set('tkd-nama', nm); set('tkd-username', '@'+uname);
+  const av=document.getElementById('tkd-avatar'); if(av) av.textContent=(nm[0]||'T').toUpperCase();
+  try { const s=await apiFetch('/api/tiket/stats'); set('tkd-tiket-open', s.open||0); } catch(e){}
+  tkdCariMember();
+}
+let _tkdTimer=null;
+function tkdCariMember(){
+  clearTimeout(_tkdTimer);
+  _tkdTimer=setTimeout(async ()=>{
+    const q=(document.getElementById('tkd-search')?.value||'').trim();
+    const box=document.getElementById('tkd-hasil'); if(!box) return;
+    if(!q){ box.style.textAlign='center'; box.style.padding='18px'; box.style.color='var(--text3)'; box.textContent='Cari berdasarkan username atau nama untuk menemukan member.'; return; }
+    box.style.textAlign='center'; box.style.padding='14px'; box.style.color='var(--text3)'; box.innerHTML='<i class="ti ti-loader"></i> Mencari...';
+    try{
+      const d=await apiFetch('/api/pelanggan?limit=20&cari='+encodeURIComponent(q));
+      const rows=d.data||[];
+      if(!rows.length){ box.textContent='Tidak ada member cocok.'; return; }
+      box.style.textAlign='left'; box.style.padding='0';
+      box.innerHTML=rows.map(r=>{
+        const st=r.status||'';
+        const c = st==='aktif'?'#16a34a':st==='suspend'?'#d97706':st==='isolir'?'#dc2626':'#94a3b8';
+        const ini=(r.nama||r.username||'?').substring(0,2).toUpperCase();
+        return `<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border)">
+          <div style="width:36px;height:36px;border-radius:10px;background:#eff6ff;color:#2563eb;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${ini}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:13px">${escapeHtml(r.nama||'-')}</div>
+            <div style="font-size:11px;color:var(--text3)">@${escapeHtml(r.username||'-')} · ${escapeHtml(r.nama_paket||'-')}</div>
+          </div>
+          <span style="font-size:11px;font-weight:600;color:${c};background:${c}18;padding:3px 10px;border-radius:99px;text-transform:capitalize;flex-shrink:0">${escapeHtml(st||'-')}</span>
+        </div>`;
+      }).join('');
+    }catch(e){ box.style.textAlign='center'; box.style.padding='14px'; box.style.color='var(--red,#dc2626)'; box.textContent=e.message; }
+  },300);
+}
 
 function toggleSidebar() {
   const sb = document.querySelector('.sidebar');

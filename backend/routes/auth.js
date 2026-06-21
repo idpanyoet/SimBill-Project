@@ -18,7 +18,7 @@ router.post('/login', async (req, res, next) => {
         if (admin && await bcrypt.compare(password, admin.password)) {
             await query('UPDATE admin SET last_login = NOW() WHERE id = ?', [admin.id]);
             const token = jwt.sign(
-                { id: admin.id, nama: admin.nama, email: admin.email, role: admin.role },
+                { id: admin.id, nama: admin.nama, username: admin.username, email: admin.email, role: admin.role },
                 process.env.JWT_SECRET,
                 { expiresIn: process.env.JWT_EXPIRES || '8h' }
             );
@@ -28,7 +28,7 @@ router.post('/login', async (req, res, next) => {
                 target: admin.nama, detail:'User logged in via Web UI', ip });
             return res.json({
                 token, role: admin.role,
-                admin: { id: admin.id, nama: admin.nama, email: admin.email, role: admin.role }
+                admin: { id: admin.id, nama: admin.nama, username: admin.username, email: admin.email, role: admin.role }
             });
         }
 
