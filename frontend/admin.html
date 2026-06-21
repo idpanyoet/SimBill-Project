@@ -108,6 +108,7 @@ body.role-teknisi .sb-item.tk-item{display:flex}
 body.role-teknisi .admin-only{display:none!important}
 body.role-teknisi .pl-tipe-hotspot{display:none!important}
 body.role-teknisi .pl-tipe-wrap{grid-template-columns:1fr!important}
+body.role-teknisi .pl-tipe-wrap{grid-template-columns:1fr!important}
 .rs-stat{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px}
 .rp-tile{position:relative;overflow:hidden;border-radius:14px;padding:16px;color:#fff;box-shadow:0 8px 22px -12px rgba(0,0,0,.45)}
 .rp-tile .ic{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:17px}
@@ -490,7 +491,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
       <p>Masuk untuk mengelola sistem</p>
     </div>
     <div class="login-err" id="login-err"></div>
-    <div class="field"><label>Email / Username</label><input type="text" id="l-email" placeholder="admin@billing.id atau username reseller" autocomplete="username"></div>
+    <div class="field"><label>Username</label><input type="text" id="l-email" placeholder="Username" autocomplete="username"></div>
     <div class="field"><label>Password</label><input type="password" id="l-pass" placeholder="Password" autocomplete="current-password"></div>
     <button class="btn-submit" onclick="doLogin()">Masuk →</button>
     <p style="text-align:center;margin-top:14px;font-size:12px;color:var(--text3)">
