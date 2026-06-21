@@ -3825,7 +3825,7 @@ Selamat menikmati! 🌐</textarea>
         <div class="fg"><label>Username</label><input id="ap-username" placeholder="username"></div>
         <div class="fg"><label>Nama Lengkap</label><input id="ap-nama" placeholder="Nama tampilan"></div>
       </div>
-      <div class="fg"><label>Email</label><input id="ap-email" type="email" placeholder="admin@domain.com"></div>
+      <div class="fg"><label>Email <span style="color:var(--text3);font-weight:400">(opsional)</span></label><input id="ap-email" type="email" placeholder="admin@domain.com"></div>
       <div class="fg-row">
         <div class="fg"><label>No. HP / Kontak</label><input id="ap-nohp" placeholder="08xxxxxxxxxx"></div>
         <div class="fg">
@@ -3876,7 +3876,7 @@ Selamat menikmati! 🌐</textarea>
         <div class="fg"><label>Username</label><input id="ep-pg-username" placeholder="username"></div>
         <div class="fg"><label>Nama Lengkap</label><input id="ep-pg-nama" placeholder="Nama"></div>
       </div>
-      <div class="fg"><label>Email</label><input id="ep-pg-email" type="email"></div>
+      <div class="fg"><label>Email <span style="color:var(--text3);font-weight:400">(opsional)</span></label><input id="ep-pg-email" type="email"></div>
       <div class="fg-row">
         <div class="fg"><label>No. HP / Kontak</label><input id="ep-pg-nohp" placeholder="08xxxxxxxxxx"></div>
         <div class="fg">
@@ -11475,11 +11475,11 @@ async function apiTambahPengguna() {
   const no_hp    = document.getElementById('ap-nohp').value.trim();
   const role     = document.getElementById('ap-role').value;
   const password = document.getElementById('ap-password').value;
-  if (!nama || !email || !password) return toast('❌ Nama, email, dan password wajib diisi', true);
+  if (!username || !password) return toast('❌ Username dan password wajib diisi', true);
   if (password.length < 6) return toast('❌ Password minimal 6 karakter', true);
   try {
-    await apiFetch('/api/pengguna', { method:'POST', body: JSON.stringify({ username, nama, email, no_hp, role, password }) });
-    toast('✅ Pengguna ' + nama + ' ditambahkan');
+    await apiFetch('/api/pengguna', { method:'POST', body: JSON.stringify({ username, nama: nama||username, email, no_hp, role, password }) });
+    toast('✅ Pengguna ' + (nama||username) + ' ditambahkan');
     closeModal('m-add-pengguna');
     ['ap-username','ap-nama','ap-email','ap-nohp','ap-password'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
     loadPengguna();
@@ -11494,8 +11494,8 @@ async function apiUpdatePengguna() {
   const no_hp    = document.getElementById('ep-pg-nohp').value.trim();
   const role     = document.getElementById('ep-pg-role').value;
   const password = document.getElementById('ep-pg-password').value;
-  if (!nama || !email) return toast('❌ Nama dan email wajib diisi', true);
-  const body = { username, nama, email, no_hp, role };
+  if (!username) return toast('❌ Username wajib diisi', true);
+  const body = { username, nama: nama||username, email, no_hp, role };
   if (password) body.password = password;
   try {
     await apiFetch('/api/pengguna/' + id, { method:'PUT', body: JSON.stringify(body) });

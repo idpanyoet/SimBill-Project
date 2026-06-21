@@ -290,13 +290,16 @@ CREATE TABLE voucher (
 -- Admin Users
 CREATE TABLE admin (
     id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    username     VARCHAR(64) NULL UNIQUE,
     nama         VARCHAR(100) NOT NULL,
-    email        VARCHAR(150) NOT NULL UNIQUE,
+    email        VARCHAR(150) NULL UNIQUE,
     password     VARCHAR(255) NOT NULL,
     role         ENUM('superadmin','admin','operator','teknisi') NOT NULL DEFAULT 'operator',
+    no_hp        VARCHAR(20) NULL,
     aktif        TINYINT(1) NOT NULL DEFAULT 1,
     last_login   DATETIME,
     created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at   DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
@@ -346,8 +349,8 @@ INSERT INTO nas (nasname, shortname, type, secret, description) VALUES
 ('192.168.88.10', 'AP-Timur',        'other', 'testing123', 'Access Point Hotspot Timur'),
 ('192.168.88.11', 'AP-Barat',        'other', 'testing123', 'Access Point Hotspot Barat');
 
-INSERT INTO admin (nama, email, password, role) VALUES
-('Super Admin', 'admin@billing.id', '$2b$12$placeholder_hash_ganti_dulu', 'superadmin');
+INSERT INTO admin (username, nama, email, password, role) VALUES
+('admin', 'Super Admin', 'admin@billing.id', '$2b$12$placeholder_hash_ganti_dulu', 'superadmin');
 
 -- ============================================================
 -- VIEWS BERGUNA

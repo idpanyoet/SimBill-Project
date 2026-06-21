@@ -13,8 +13,8 @@ router.post('/login', async (req, res, next) => {
         if (!ident || !password)
             return res.status(400).json({ error: 'Email/username dan password wajib diisi' });
 
-        // 1) Coba sebagai ADMIN (identitas = email)
-        const admin = await queryOne('SELECT * FROM admin WHERE email = ? AND aktif = 1', [ident]);
+        // 1) Coba sebagai ADMIN (identitas = username ATAU email)
+        const admin = await queryOne('SELECT * FROM admin WHERE (username = ? OR email = ?) AND aktif = 1', [ident, ident]);
         if (admin && await bcrypt.compare(password, admin.password)) {
             await query('UPDATE admin SET last_login = NOW() WHERE id = ?', [admin.id]);
             const token = jwt.sign(

@@ -21,6 +21,8 @@ async function migrateAdminTable() {
     await query(`ALTER TABLE admin ADD COLUMN IF NOT EXISTS updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP`).catch(()=>{});
     // Tambah peran 'teknisi' ke ENUM role (idempotent)
     await query(`ALTER TABLE admin MODIFY COLUMN role ENUM('superadmin','admin','operator','teknisi') NOT NULL DEFAULT 'operator'`).catch(()=>{});
+    // Email jadi opsional (login utama pakai username)
+    await query(`ALTER TABLE admin MODIFY COLUMN email VARCHAR(150) NULL`).catch(()=>{});
     // Set username default = email prefix untuk yang belum punya
     await query(`UPDATE admin SET username = SUBSTRING_INDEX(email,'@',1) WHERE username IS NULL`).catch(()=>{});
 }
@@ -60,13 +62,17 @@ router.get('/', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
     try {
         const { username, nama, email, password, no_hp, role = 'operator' } = req.body;
-        if (!nama || !email || !password) return res.status(400).json({ error: 'nama, email, password wajib' });
-        const existing = await queryOne('SELECT id FROM admin WHERE email=? OR username=?', [email, username||email]);
-        if (existing) return res.status(400).json({ error: 'Email atau username sudah digunakan' });
+        if (!username || !password) return res.status(400).json({ error: 'Username & password wajib diisi' });
+        const dupU = await queryOne('SELECT id FROM admin WHERE username=?', [username]);
+        if (dupU) return res.status(400).json({ error: 'Username sudah digunakan' });
+        if (email) {
+            const dupE = await queryOne('SELECT id FROM admin WHERE email=?', [email]);
+            if (dupE) return res.status(400).json({ error: 'Email sudah digunakan' });
+        }
         const hash = await bcrypt.hash(password, 12);
         const result = await query(
             `INSERT INTO admin (username, nama, email, password, no_hp, role) VALUES (?,?,?,?,?,?)`,
-            [username || email.split('@')[0], nama, email, hash, no_hp || null, role]
+            [username, nama || username, email || null, hash, no_hp || null, role]
         );
         tulisLog({ kategori:'System', pelaku: req.admin?.nama||'Admin',
             aksi:'PENGGUNA_TAMBAH', target: username||email,
