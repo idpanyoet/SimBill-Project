@@ -49,7 +49,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 step "1/7 Paket dasar"
 apt-get update -y -qq
-apt-get install -y -qq curl wget git ca-certificates gnupg lsb-release openssl build-essential >/dev/null
+apt-get install -y -qq curl wget git ca-certificates gnupg lsb-release openssl build-essential unzip tar iproute2 cron >/dev/null
 ok "Paket dasar terpasang"
 
 step "2/7 Node.js ${NODE_MAJOR}.x"
@@ -61,6 +61,34 @@ ok "Node $(node -v) • npm $(npm -v)"
 npm install -g pm2 >/dev/null 2>&1 || npm install -g pm2
 ok "pm2 $(pm2 -v)"
 
+step "2b/7 Dependency Chromium (cetak invoice/voucher PDF & WhatsApp QR)"
+# Puppeteer & whatsapp-web.js menjalankan Chromium headless yang butuh library ini.
+# Diinstall satu per satu agar tahan perbedaan nama paket antar Ubuntu 22/24 & Debian.
+CHROME_DEPS="ca-certificates fonts-liberation fonts-noto-color-emoji fontconfig \
+libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libatspi2.0-0 libcups2 libdrm2 \
+libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libgtk-3-0 \
+libpango-1.0-0 libpangocairo-1.0-0 libcairo2 libxshmfence1 libxcb1 libx11-xcb1 \
+libxss1 libglib2.0-0 libasound2 libasound2t64"
+INSTALLED=0
+for pkg in $CHROME_DEPS; do
+  apt-get install -y -qq "$pkg" >/dev/null 2>&1 && INSTALLED=$((INSTALLED+1)) || true
+done
+ok "Library Chromium terpasang (${INSTALLED} paket)"
+
+step "2c/7 Tools VPN (WireGuard & L2TP/IPSec)"
+# Dipakai fitur 'VPN Server' SimBill (app memanggil wg/wg-quick; cek xl2tpd & ipsec).
+# Konfigurasi VPN dilakukan dari menu VPN di dashboard — ini hanya menyiapkan binary-nya.
+INSTALL_VPN="${INSTALL_VPN:-y}"
+if [[ "${INSTALL_VPN,,}" == y* ]]; then
+  VPN_OK=0
+  for pkg in wireguard-tools xl2tpd strongswan strongswan-pki libcharon-extra-plugins; do
+    apt-get install -y -qq "$pkg" >/dev/null 2>&1 && VPN_OK=$((VPN_OK+1)) || true
+  done
+  ok "Tools VPN terpasang (${VPN_OK} paket) — konfigurasi via menu VPN SimBill"
+else
+  info "Tools VPN dilewati (INSTALL_VPN=n)"
+fi
+
 step "3/7 MariaDB"
 apt-get install -y -qq mariadb-server mariadb-client >/dev/null
 systemctl enable --now mariadb >/dev/null 2>&1 || service mariadb start
@@ -70,8 +98,11 @@ step "4/7 Database '${DB_NAME}' & user '${DB_USER}'"
 mysql <<SQL
 CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASS}';
+CREATE USER IF NOT EXISTS '${DB_USER}'@'127.0.0.1' IDENTIFIED BY '${DB_PASS}';
 ALTER USER '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASS}';
+ALTER USER '${DB_USER}'@'127.0.0.1' IDENTIFIED BY '${DB_PASS}';
 GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'localhost';
+GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'127.0.0.1';
 FLUSH PRIVILEGES;
 SQL
 ok "Database & user siap"
@@ -155,10 +186,49 @@ if [ -z "$INSTALL_RADIUS" ]; then
   if [ -t 0 ]; then read -r -p "Pasang FreeRADIUS sekarang? [y/N]: " INSTALL_RADIUS || true; else INSTALL_RADIUS=n; fi
 fi
 if [[ "${INSTALL_RADIUS,,}" == y* ]]; then
-  step "FreeRADIUS"
+  step "FreeRADIUS + integrasi DB"
   apt-get install -y -qq freeradius freeradius-mysql freeradius-utils >/dev/null
-  systemctl enable --now freeradius >/dev/null 2>&1 || true
-  ok "FreeRADIUS terpasang (konfigurasi modul SQL→DB perlu disetel manual)"
+  systemctl stop freeradius >/dev/null 2>&1 || true
+
+  RADDIR="$(ls -d /etc/freeradius/*/ 2>/dev/null | head -1)"
+  SQLMOD="${RADDIR}mods-available/sql"
+  if [ -z "$RADDIR" ] || [ ! -f "$SQLMOD" ]; then
+    info "Direktori config FreeRADIUS tak ditemukan — lewati auto-config"
+  else
+    # 1) Modul sql → arahkan ke DB SimBill (dialect mysql)
+    sed -i \
+      -e 's|^\([[:space:]]*\)dialect = .*|\1dialect = "mysql"|' \
+      -e 's|^\([[:space:]]*\)driver = "rlm_sql_null"|\1driver = "rlm_sql_mysql"|' \
+      -e "s|^\([[:space:]]*\)server = .*|\1server = \"127.0.0.1\"|" \
+      -e "s|^\([[:space:]]*\)login = .*|\1login = \"${DB_USER}\"|" \
+      -e "s|^\([[:space:]]*\)password = .*|\1password = \"${DB_PASS}\"|" \
+      -e "s|^\([[:space:]]*\)radius_db = .*|\1radius_db = \"${DB_NAME}\"|" \
+      -e 's|^\([[:space:]]*\)#[[:space:]]*read_clients = yes|\1read_clients = yes|' \
+      "$SQLMOD"
+
+    # 2) Aktifkan modul sql
+    ln -sf ../mods-available/sql "${RADDIR}mods-enabled/sql"
+
+    # 3) Aktifkan sql di sites (uncomment baris '#sql' di authorize/accounting/post-auth/session)
+    for site in "${RADDIR}sites-enabled/default" "${RADDIR}sites-enabled/inner-tunnel"; do
+      [ -f "$site" ] && sed -i 's/^\([[:space:]]*\)#[[:space:]]*sql[[:space:]]*$/\1sql/' "$site"
+    done
+
+    # 4) Hak akses (radius perlu baca config berisi password DB)
+    chgrp -h freerad "${RADDIR}mods-enabled/sql" 2>/dev/null || true
+    chown freerad:freerad "$SQLMOD" 2>/dev/null || true
+    chmod 640 "$SQLMOD" 2>/dev/null || true
+
+    # 5) Cek config & jalankan
+    if freeradius -XC >/dev/null 2>&1; then
+      systemctl enable --now freeradius >/dev/null 2>&1 || true
+      ok "FreeRADIUS aktif → DB '${DB_NAME}', NAS dibaca dari tabel 'nas'"
+    else
+      systemctl enable freeradius >/dev/null 2>&1 || true
+      info "FreeRADIUS terpasang tapi cek config gagal. Debug: ${C_B}freeradius -X${C_R}"
+    fi
+    info "Daftarkan MikroTik di menu RADIUS/NAS SimBill, lalu: systemctl restart freeradius"
+  fi
 fi
 
 IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
