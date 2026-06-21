@@ -1081,9 +1081,10 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-          <div class="card" style="display:flex;align-items:center;gap:12px">
+          <div class="card" onclick="tkdGoTiket()" title="Buka halaman Tiket" style="display:flex;align-items:center;gap:12px;cursor:pointer;transition:box-shadow .15s,transform .12s" onmouseover="this.style.boxShadow='0 8px 24px rgba(37,99,235,.18)';this.style.transform='translateY(-1px)'" onmouseout="this.style.boxShadow='';this.style.transform=''">
             <div style="width:42px;height:42px;border-radius:11px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-ticket" aria-hidden="true"></i></div>
-            <div><div style="font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--text3)">Tiket Open</div><div id="tkd-tiket-open" style="font-size:24px;font-weight:800">0</div></div>
+            <div style="flex:1"><div style="font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--text3)">Tiket Open</div><div id="tkd-tiket-open" style="font-size:24px;font-weight:800">0</div></div>
+            <i class="ti ti-chevron-right" style="color:var(--text3);font-size:16px" aria-hidden="true"></i>
           </div>
           <div class="card" style="display:flex;align-items:center;gap:12px">
             <div style="width:42px;height:42px;border-radius:11px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-message-2" aria-hidden="true"></i></div>
@@ -6900,6 +6901,7 @@ const loaders = {
 };
 
 function tkdGreeting(){ const h=new Date().getHours(); return h<11?'Selamat Pagi ☀️':h<15?'Selamat Siang 🌤️':h<19?'Selamat Sore 🌅':'Selamat Malam 🌙'; }
+function tkdGoTiket(){ goto('tiket', document.querySelector('.tk-item[onclick*="tiket"]')); }
 async function loadTkDashboard(){
   const nm = (ADMIN && ADMIN.nama) || 'Teknisi';
   const uname = (ADMIN && ADMIN.username) || (ADMIN && ADMIN.email ? ADMIN.email.split('@')[0] : 'teknisi');
