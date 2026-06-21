@@ -127,6 +127,21 @@ else
   info "schema.sql tidak ditemukan — lewati impor"
 fi
 
+# ── Set password admin default (hash bcrypt asli, bukan placeholder) ──
+ADMIN_USER="${ADMIN_USER:-admin}"
+ADMIN_PASS="${ADMIN_PASS:-admin123}"
+ADMIN_HASH="$(cd "${INSTALL_DIR}/backend" && node -e "console.log(require('bcryptjs').hashSync(process.argv[1],12))" "$ADMIN_PASS" 2>/dev/null || true)"
+if [ -n "$ADMIN_HASH" ]; then
+  mysql "${DB_NAME}" <<SQL 2>/dev/null || true
+INSERT INTO admin (username, nama, email, password, role, aktif)
+VALUES ('${ADMIN_USER}', 'Super Admin', 'admin@billing.id', '${ADMIN_HASH}', 'superadmin', 1)
+ON DUPLICATE KEY UPDATE password = VALUES(password), aktif = 1;
+SQL
+  ok "Password admin di-set"
+else
+  info "Lewati set password admin (bcryptjs belum siap) — set manual nanti"
+fi
+
 step "7/7 Jalankan dengan pm2"
 cd "${INSTALL_DIR}/backend"
 pm2 delete "$PM2_NAME" >/dev/null 2>&1 || true
@@ -156,7 +171,8 @@ echo "  Database     : ${DB_NAME}"
 echo "  DB user/pass : ${DB_USER} / ${C_WARN}${DB_PASS}${C_R}"
 echo "  ${C_WARN}↑ Simpan kredensial DB ini.${C_R}"
 echo
-echo "  Login admin default ada di dokumentasi (ubah segera setelah masuk)."
+echo "  Login admin  : ${C_OK}${ADMIN_USER}${C_R} / ${C_WARN}${ADMIN_PASS}${C_R}"
+echo "  ${C_WARN}↑ Ganti password admin segera setelah login.${C_R}"
 echo "  Update nanti :"
 echo "    wget -qO- https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/update.sh | sudo bash"
 echo "${C_B}═════════════════════════════════════════${C_R}"
