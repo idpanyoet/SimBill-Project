@@ -106,6 +106,8 @@ body.role-teknisi .sb-group-body{display:none!important}
 body.role-teknisi .sb-section.tk-section{display:block}
 body.role-teknisi .sb-item.tk-item{display:flex}
 body.role-teknisi .admin-only{display:none!important}
+body.role-teknisi .pl-tipe-hotspot{display:none!important}
+body.role-teknisi .pl-tipe-wrap{grid-template-columns:1fr!important}
 .rs-stat{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px}
 .rp-tile{position:relative;overflow:hidden;border-radius:14px;padding:16px;color:#fff;box-shadow:0 8px 22px -12px rgba(0,0,0,.45)}
 .rp-tile .ic{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:17px}
@@ -1072,7 +1074,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
               <div style="font-size:15px;font-weight:700">Dashboard Teknisi</div>
               <div style="font-size:12px;color:var(--text3);margin-top:2px">Cari berdasarkan username atau nama untuk menemukan member.</div>
             </div>
-            <button class="btn primary" onclick="openModal('m-add-pelanggan')" style="gap:6px"><i class="ti ti-plus" aria-hidden="true"></i> Tambah Member</button>
+            <button class="btn primary" onclick="if(window.pilihTipePelanggan)pilihTipePelanggan('pppoe');openModal('m-add-pelanggan')" style="gap:6px"><i class="ti ti-plus" aria-hidden="true"></i> Tambah Member</button>
           </div>
           <div style="position:relative;margin-top:14px">
             <i class="ti ti-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px" aria-hidden="true"></i>
@@ -3530,7 +3532,7 @@ Selamat menikmati! 🌐</textarea>
     <!-- Tab 1: Data Utama -->
     <div id="ap-tab-1" style="display:none;padding:14px 20px;flex-direction:column;gap:12px">
       <!-- Tipe Koneksi -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="pl-tipe-wrap" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div id="f-tipe-card-pppoe" onclick="pilihTipePelanggan('pppoe')" style="border:2px solid #BA7517;border-radius:9px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;background:rgba(186,117,23,.06);transition:all .15s">
           <div style="width:32px;height:32px;border-radius:7px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;flex-shrink:0">
             <i class="ti ti-router" style="font-size:16px;color:#185FA5" aria-hidden="true"></i>
@@ -3540,7 +3542,7 @@ Selamat menikmati! 🌐</textarea>
             <div class="td-text-sub" style="font-size:10px;margin-top:1px" data-i18n="Kabel / Fiber">Kabel / Fiber</div>
           </div>
         </div>
-        <div id="f-tipe-card-hotspot" onclick="pilihTipePelanggan('hotspot')" style="border:2px solid var(--border);border-radius:9px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .15s">
+        <div id="f-tipe-card-hotspot" class="pl-tipe-hotspot" onclick="pilihTipePelanggan('hotspot')" style="border:2px solid var(--border);border-radius:9px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .15s">
           <div style="width:32px;height:32px;border-radius:7px;background:#E1F5EE;display:flex;align-items:center;justify-content:center;flex-shrink:0">
             <i class="ti ti-wifi" style="font-size:16px;color:#0F6E56" aria-hidden="true"></i>
           </div>
