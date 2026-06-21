@@ -96,6 +96,16 @@ body.role-reseller .sb-group-body{display:none!important}
 body.role-reseller .sb-section.rs-section{display:block}
 body.role-reseller .sb-item.rs-item{display:flex}
 body.role-reseller .admin-only{display:none!important}
+/* ── Role gating teknisi ── */
+.tk-section,.tk-item{display:none}
+body.role-teknisi .sb-item:not(.tk-item){display:none}
+body.role-teknisi .sb-section:not(.tk-section){display:none}
+body.role-teknisi .sb-sub-item{display:none}
+body.role-teknisi .sb-group-hdr,
+body.role-teknisi .sb-group-body{display:none!important}
+body.role-teknisi .sb-section.tk-section{display:block}
+body.role-teknisi .sb-item.tk-item{display:flex}
+body.role-teknisi .admin-only{display:none!important}
 .rs-stat{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px}
 .rp-tile{position:relative;overflow:hidden;border-radius:14px;padding:16px;color:#fff;box-shadow:0 8px 22px -12px rgba(0,0,0,.45)}
 .rp-tile .ic{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:17px}
@@ -506,6 +516,13 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-item rs-item" onclick="goto('r-pelanggan',this)"><i class="ti ti-users icon" aria-hidden="true"></i> Pelanggan Saya</div>
     <div class="sb-item rs-item" onclick="goto('r-topup',this)"><i class="ti ti-wallet icon" aria-hidden="true"></i> Saldo &amp; Topup</div>
     <div class="sb-item rs-item" onclick="goto('r-laporan',this)"><i class="ti ti-report icon" aria-hidden="true"></i> Laporan</div>
+
+    <div class="sb-section tk-section">Teknisi</div>
+    <div class="sb-item tk-item active" onclick="goto('dashboard',this)"><i class="ti ti-layout-dashboard icon" aria-hidden="true"></i> Dashboard</div>
+    <div class="sb-item tk-item" onclick="goto('pelanggan',this)"><i class="ti ti-users icon" aria-hidden="true"></i> Pelanggan / PPPoE</div>
+    <div class="sb-item tk-item" onclick="goto('tiket',this)"><i class="ti ti-headset icon" aria-hidden="true"></i> Tiket Gangguan</div>
+    <div class="sb-item tk-item" onclick="goto('peta',this)"><i class="ti ti-map-pin icon" aria-hidden="true"></i> Peta Jaringan</div>
+    <div class="sb-item tk-item" onclick="goto('acs',this)"><i class="ti ti-router icon" aria-hidden="true"></i> Perangkat TR-069</div>
 
     <div class="sb-section">Utama</div>
     <div class="sb-item active" onclick="goto('dashboard',this)"><i class="ti ti-layout-dashboard icon" aria-hidden="true"></i> Dashboard</div>
@@ -1921,6 +1938,7 @@ Selamat menikmati! 🌐</textarea>
           <div class="metric purple"><div class="metric-ico"><i class="ti ti-shield-star"></i></div><div><div class="lbl">Super Admin</div><div class="val" id="pg-stat-superadmin">—</div></div></div>
           <div class="metric blue"><div class="metric-ico"><i class="ti ti-user-cog"></i></div><div><div class="lbl">Admin</div><div class="val" id="pg-stat-admin">—</div></div></div>
           <div class="metric teal"><div class="metric-ico"><i class="ti ti-user"></i></div><div><div class="lbl">Operator</div><div class="val" id="pg-stat-operator">—</div></div></div>
+          <div class="metric green"><div class="metric-ico"><i class="ti ti-tool"></i></div><div><div class="lbl">Teknisi</div><div class="val" id="pg-stat-teknisi">—</div></div></div>
         </div>
 
         <div class="card">
@@ -1935,6 +1953,7 @@ Selamat menikmati! 🌐</textarea>
               <option value="superadmin">Super Admin</option>
               <option value="admin">Admin</option>
               <option value="operator">Operator</option>
+              <option value="teknisi">Teknisi</option>
             </select>
             <span id="pg-count" class="td-text-sub" style="font-size:12px;white-space:nowrap"></span>
           </div>
@@ -3813,6 +3832,7 @@ Selamat menikmati! 🌐</textarea>
           <label>Peran</label>
           <select id="ap-role" style="width:100%">
             <option value="operator">Operator</option>
+            <option value="teknisi">Teknisi</option>
             <option value="admin">Admin</option>
             <option value="superadmin">Super Admin</option>
           </select>
@@ -3863,6 +3883,7 @@ Selamat menikmati! 🌐</textarea>
           <label>Peran</label>
           <select id="ep-pg-role" style="width:100%">
             <option value="operator">Operator</option>
+            <option value="teknisi">Teknisi</option>
             <option value="admin">Admin</option>
             <option value="superadmin">Super Admin</option>
           </select>
@@ -5923,7 +5944,7 @@ function topbarUpdateProfil(nama, role) {
     if (textNode && textNode.nodeType === 3) textNode.textContent = inisial;
   }
   if (namaEl && nama) namaEl.textContent = nama;
-  if (roleEl && role) roleEl.textContent = role === 'superadmin' ? 'Super Admin' : role === 'admin' ? 'Admin' : 'Operator';
+  if (roleEl && role) roleEl.textContent = role === 'superadmin' ? 'Super Admin' : role === 'admin' ? 'Admin' : role === 'teknisi' ? 'Teknisi' : 'Operator';
 }
 
 // Cek notif tiket open → badge angka di lonceng
@@ -6196,6 +6217,7 @@ async function doLogin() {
 function doLogout() {
   localStorage.clear(); TOKEN=''; ADMIN={}; ROLE=''; RESELLER={};
   document.body.classList.remove('role-reseller');
+  document.body.classList.remove('role-teknisi');
   document.getElementById('app').classList.remove('visible');
   document.getElementById('login-screen').style.display='flex';
 }
@@ -6203,12 +6225,15 @@ function doLogout() {
 function tampilApp() {
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app').classList.add('visible');
+  const isTeknisi = !!(ADMIN && ADMIN.role === 'teknisi');
+  document.body.classList.toggle('role-teknisi', isTeknisi);
   topbarUpdateProfil(ADMIN.nama, ADMIN.role);
   topbarCekNotif();
   if (typeof tkRefreshBadge === 'function') tkRefreshBadge();
   loadDashboard();
   populateDropdowns();
   if (typeof licGateCek === 'function') licGateCek();
+  if (isTeknisi) goto('dashboard', document.querySelector('.tk-item.active') || document.querySelector('.tk-item'));
 }
 
 // ── RESELLER MODE ──
@@ -11313,8 +11338,8 @@ function petaToggleGeser() {
 // ══════════════════════════════════════════════════
 let pgHalaman = 0, pgTotalHalaman = 1;
 
-const PERAN_LABEL = { superadmin:'Super Admin', admin:'Admin', operator:'Operator' };
-const PERAN_COLOR = { superadmin:'#7c3aed', admin:'#2563eb', operator:'#0891b2' };
+const PERAN_LABEL = { superadmin:'Super Admin', admin:'Admin', operator:'Operator', teknisi:'Teknisi' };
+const PERAN_COLOR = { superadmin:'#7c3aed', admin:'#2563eb', operator:'#0891b2', teknisi:'#16a34a' };
 
 async function loadPengguna() {
   const tbody = document.getElementById('tbl-pengguna');
@@ -11344,12 +11369,15 @@ async function loadPengguna() {
     const sa = rows.filter(r=>r.role==='superadmin').length;
     const ad = rows.filter(r=>r.role==='admin').length;
     const op = rows.filter(r=>r.role==='operator').length;
+    const tk = rows.filter(r=>r.role==='teknisi').length;
     const saStat = document.getElementById('pg-stat-superadmin');
     const adStat = document.getElementById('pg-stat-admin');
     const opStat = document.getElementById('pg-stat-operator');
+    const tkStat = document.getElementById('pg-stat-teknisi');
     if (saStat) saStat.textContent = sa;
     if (adStat) adStat.textContent = ad;
     if (opStat) opStat.textContent = op;
+    if (tkStat) tkStat.textContent = tk;
 
     if (!tbody) return;
     if (!rows.length) {

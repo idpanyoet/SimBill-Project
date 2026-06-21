@@ -7,11 +7,20 @@ const { tulisLog } = require('./log');
 
 router.use(authMiddleware);
 
+// Teknisi tidak boleh mengelola akun admin (cegah privilege escalation)
+router.use((req, res, next) => {
+    if (req.admin && req.admin.role === 'teknisi')
+        return res.status(403).json({ error: 'Akses ditolak untuk peran teknisi' });
+    next();
+});
+
 // Auto-migrate kolom username & no_hp jika belum ada
 async function migrateAdminTable() {
     await query(`ALTER TABLE admin ADD COLUMN IF NOT EXISTS username VARCHAR(64) NULL UNIQUE`).catch(()=>{});
     await query(`ALTER TABLE admin ADD COLUMN IF NOT EXISTS no_hp VARCHAR(20) NULL`).catch(()=>{});
     await query(`ALTER TABLE admin ADD COLUMN IF NOT EXISTS updated_at DATETIME NULL ON UPDATE CURRENT_TIMESTAMP`).catch(()=>{});
+    // Tambah peran 'teknisi' ke ENUM role (idempotent)
+    await query(`ALTER TABLE admin MODIFY COLUMN role ENUM('superadmin','admin','operator','teknisi') NOT NULL DEFAULT 'operator'`).catch(()=>{});
     // Set username default = email prefix untuk yang belum punya
     await query(`UPDATE admin SET username = SUBSTRING_INDEX(email,'@',1) WHERE username IS NULL`).catch(()=>{});
 }

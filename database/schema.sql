@@ -293,7 +293,7 @@ CREATE TABLE admin (
     nama         VARCHAR(100) NOT NULL,
     email        VARCHAR(150) NOT NULL UNIQUE,
     password     VARCHAR(255) NOT NULL,
-    role         ENUM('superadmin','admin','operator') NOT NULL DEFAULT 'operator',
+    role         ENUM('superadmin','admin','operator','teknisi') NOT NULL DEFAULT 'operator',
     aktif        TINYINT(1) NOT NULL DEFAULT 1,
     last_login   DATETIME,
     created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
