@@ -6,3 +6,10 @@ uploads/
 *.log
 backend/*.xlsx
 backend/migrate-data.js
+backend/*.xlsx
+backend/*.csv
+backend/migrate-data.js
+backend/.env
+backend/wa-session/
+backend/uploads/
+node_modules/
