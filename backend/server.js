@@ -37,6 +37,25 @@ app.set('trust proxy', 'loopback');
 async function jalankanMigration() {
     const { query } = require('./config/db');
     const migrations = [
+        // Unique key radcheck (username,attribute) — WAJIB agar ON DUPLICATE KEY
+        // UPDATE di tambahUser benar2 mencegah baris Cleartext-Password dobel.
+        // Tanpa ini, setiap operasi menambah baris baru → user bisa punya >1
+        // password → MS-CHAP/CHAP bingung → Access-Reject. Dedupe dulu baru ALTER.
+        {
+            cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='radcheck' AND INDEX_NAME='uniq_user_attr'`,
+            sql:  `DELETE r1 FROM radcheck r1 JOIN radcheck r2 ON r1.username=r2.username AND r1.attribute=r2.attribute AND r1.value=r2.value AND r1.id>r2.id`,
+            nama: 'radcheck.dedupe_identik'
+        },
+        {
+            cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='radcheck' AND INDEX_NAME='uniq_user_attr'`,
+            sql:  `DELETE r1 FROM radcheck r1 WHERE r1.attribute='Cleartext-Password' AND r1.value=r1.username AND EXISTS (SELECT 1 FROM (SELECT * FROM radcheck) r2 WHERE r2.username=r1.username AND r2.attribute='Cleartext-Password' AND r2.value<>r2.username)`,
+            nama: 'radcheck.dedupe_username'
+        },
+        {
+            cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='radcheck' AND INDEX_NAME='uniq_user_attr'`,
+            sql:  `ALTER TABLE radcheck ADD UNIQUE KEY uniq_user_attr (username, attribute)`,
+            nama: 'radcheck.unique_key'
+        },
         // Kolom IPv6 radacct — FreeRADIUS 3.2 menulis kolom ini saat accounting.
         // Tanpa kolom ini: ERROR 1054 → Accounting-Response tak terkirim → MikroTik
         // "accounting request not sent" & pemakaian tidak tercatat.
