@@ -17,7 +17,7 @@ const limitBeli = rateLimit({
 router.get('/info', async (req, res, next) => {
   try {
     const rows = await query(`SELECT kunci, nilai FROM setting WHERE kunci IN (
-      'app_name','wa_number','alamat','pg_provider',
+      'app_name','app_logo','app_url','wa_number','alamat','pg_provider',
       'pg_metode_aktif',
       'pg_metode_aktif_tripay','pg_metode_aktif_duitku',
       'pg_metode_aktif_midtrans','pg_metode_aktif_xendit'

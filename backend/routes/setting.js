@@ -11,7 +11,10 @@ router.get('/', async (req, res, next) => {
         const SENSITIVE = [
             'wa_token', 'pg_server_key', 'pg_client_key',
             'pg_secret_key', 'pg_webhook_token', 'pg_api_key', 'pg_private_key',
-            'github_token'
+            'github_token',
+            // Telegram & lisensi — sebelumnya bocor plaintext lewat GET /api/setting
+            // walau routes/telegram.js sudah memask di endpoint-nya sendiri.
+            'tg_bot_token', 'tg_webhook_secret', 'license_key'
         ];
         const safe = rows.map(r => ({
             ...r,
@@ -26,6 +29,10 @@ router.put('/', requireAdmin, async (req, res, next) => {
     try {
         const settings = req.body;
         for (const [kunci, nilai] of Object.entries(settings)) {
+            // Jangan timpa secret asli dengan nilai mask. GET mengembalikan
+            // '••••••' untuk field sensitif; bila form mengirim balik nilai itu
+            // apa adanya, artinya admin TIDAK mengubahnya → lewati.
+            if (nilai === '••••••') continue;
             // Upsert: kalau key belum ada di tabel (misal setting baru yang
             // ditambahkan lewat update kode), INSERT dulu agar tidak silently
             // gagal seperti UPDATE biasa pada baris yang belum ada.

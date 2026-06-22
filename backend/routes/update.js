@@ -39,7 +39,7 @@ async function getCfg() {
     rows.forEach(r => { m[r.kunci] = r.nilai; });
     return {
         owner: (m.github_owner || 'idpanyoet').trim(),
-        repo:  (m.github_repo  || 'netbill').trim(),
+        repo:  (m.github_repo  || 'SimBill-Project').trim(),
         token: (m.github_token || '').trim(),
         appVersionSetting: (m.app_version || '').trim(),
     };
@@ -64,6 +64,33 @@ function ghHeaders(token) {
 
 const norm = s => String(s || '').trim().replace(/^v/i, '').toLowerCase();
 
+// Agent paksa IPv4 — banyak VPS punya IPv6 rusak ke GitHub yang memicu timeout/504.
+const https = require('https');
+const ghAgent = new https.Agent({ keepAlive: true, family: 4 });
+
+// GET ke GitHub dengan retry otomatis pada 5xx / timeout (504 sering hanya sesaat).
+async function ghGet(url, cfg, extra = {}) {
+    let last;
+    for (let i = 0; i < 3; i++) {
+        try {
+            const r = await axios.get(url, {
+                headers: ghHeaders(cfg.token),
+                httpsAgent: ghAgent,
+                timeout: 20000,
+                validateStatus: () => true,
+                ...extra,
+            });
+            if (r.status < 500) return r;   // sukses / 4xx → tidak perlu retry
+            last = r;                        // 5xx (mis. 502/503/504) → coba lagi
+        } catch (e) {
+            last = e;                        // timeout / jaringan → coba lagi
+        }
+        if (i < 2) await new Promise(s => setTimeout(s, 1500 * (i + 1)));
+    }
+    if (last && typeof last.status === 'number') return last;
+    throw (last instanceof Error ? last : new Error('Gagal menghubungi GitHub'));
+}
+
 // ── GET /api/update/check ───────────────────────────────────────────────────
 router.get('/check', async (req, res) => {
     try {
@@ -71,9 +98,9 @@ router.get('/check', async (req, res) => {
         const current = versiLokal(cfg);
         let rel;
         try {
-            const r = await axios.get(
+            const r = await ghGet(
                 `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/releases/latest`,
-                { headers: ghHeaders(cfg.token), timeout: 15000, validateStatus: () => true }
+                cfg
             );
             if (r.status === 404) {
                 return res.json({
@@ -91,7 +118,7 @@ router.get('/check', async (req, res) => {
             }
             if (r.status >= 400) {
                 return res.status(200).json({ current, latest: null, update_available: false,
-                    pesan: `GitHub API status ${r.status}.` });
+                    pesan: `GitHub API status ${r.status}` + (r.status>=500 ? ' (server GitHub sedang sibuk/timeout — coba lagi sebentar lagi).' : '.') });
             }
             rel = r.data;
         } catch (e) {
@@ -154,7 +181,7 @@ router.post('/apply', requireAdmin, async (req, res) => {
         const relUrl = tag
             ? `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/releases/tags/${tag}`
             : `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/releases/latest`;
-        const relResp = await axios.get(relUrl, { headers: ghHeaders(cfg.token), timeout: 15000, validateStatus: () => true });
+        const relResp = await ghGet(relUrl, cfg);
         if (relResp.status >= 400) {
             throw new Error(`Tidak bisa ambil rilis (status ${relResp.status}). ` +
                 (cfg.token ? '' : 'Repo privat butuh github_token di Setting.'));
@@ -176,13 +203,13 @@ router.post('/apply', requireAdmin, async (req, res) => {
             // diteruskan ke S3 (akan ditolak). Ikuti redirect manual tanpa auth.
             const r1 = await axios.get(asset.url, {
                 headers: { ...ghHeaders(cfg.token), Accept: 'application/octet-stream' },
-                responseType: 'arraybuffer', timeout: 180000, maxRedirects: 0,
+                responseType: 'arraybuffer', timeout: 180000, maxRedirects: 0, httpsAgent: ghAgent,
                 validateStatus: s => s === 200 || s === 302,
             });
             let zipBuf;
             if (r1.status === 302 && r1.headers.location) {
                 const r2 = await axios.get(r1.headers.location, {
-                    responseType: 'arraybuffer', timeout: 180000, maxRedirects: 5,
+                    responseType: 'arraybuffer', timeout: 180000, maxRedirects: 5, httpsAgent: ghAgent,
                 });
                 zipBuf = Buffer.from(r2.data);
             } else {
@@ -196,7 +223,7 @@ router.post('/apply', requireAdmin, async (req, res) => {
             if (!tarball) throw new Error('Rilis tanpa asset zip & tanpa tarball_url.');
             const dl = await axios.get(tarball, {
                 headers: ghHeaders(cfg.token), responseType: 'arraybuffer',
-                timeout: 180000, maxRedirects: 5,
+                timeout: 180000, maxRedirects: 5, httpsAgent: ghAgent,
             });
             fs.writeFileSync(tarFile, Buffer.from(dl.data));
             execSync(`tar xzf "${tarFile}" -C "${exDir}"`, { stdio: 'pipe' });

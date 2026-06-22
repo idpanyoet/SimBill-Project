@@ -10,7 +10,13 @@ const { query, queryOne } = require('../config/db');
 // Cleartext-Password yang harus bisa dipulihkan saat suspend → aktif.
 // ============================================================
 function _getEncKey() {
-    const secret = process.env.JWT_SECRET || 'fallback_key_ganti_di_env';
+    // Kunci khusus enkripsi password RADIUS. Diutamakan RADIUS_ENC_KEY agar
+    // rotasi JWT_SECRET (mis. saat dicurigai token bocor) TIDAK membuat semua
+    // password tersuspend gagal didekripsi. Fallback ke JWT_SECRET supaya data
+    // yang sudah terenkripsi di deployment lama tetap bisa dibuka. Tanpa
+    // keduanya → fail-closed (jangan pakai konstanta yang bisa ditebak).
+    const secret = process.env.RADIUS_ENC_KEY || process.env.JWT_SECRET;
+    if (!secret) throw new Error('RADIUS_ENC_KEY / JWT_SECRET belum diset — kunci enkripsi password RADIUS tidak tersedia.');
     return crypto.createHash('sha256').update(secret).digest(); // 32 byte key
 }
 
@@ -262,11 +268,18 @@ async function _syncGroupPaket(paket, tipe_koneksi) {
 
     // MikroTik menggunakan Mikrotik-Rate-Limit untuk speed
     const attrs = [
-        { attribute: 'Mikrotik-Rate-Limit', op: ':=',
-          value: rateLimit },
-        { attribute: 'Framed-Pool',         op: ':=',
-          value: paket.pool_name || `pool-${paket.kecepatan_dn}mbps` },
+        { attribute: 'Mikrotik-Rate-Limit', op: ':=', value: rateLimit },
     ];
+    // Framed-Pool HANYA dikirim bila pool_name paket benar-benar diisi.
+    // Mengarang 'pool-XXmbps' membuat MikroTik mencari pool yang tak ada →
+    // PPPoE auth sukses tapi gagal dapat IP → langsung putus.
+    const poolName = (paket.pool_name || '').trim();
+    if (poolName) {
+        attrs.push({ attribute: 'Framed-Pool', op: ':=', value: poolName });
+    } else {
+        // Bersihkan Framed-Pool basi bila pool_name dikosongkan.
+        await query(`DELETE FROM radgroupreply WHERE groupname=? AND attribute='Framed-Pool'`, [groupname]);
+    }
 
     for (const a of attrs) {
         const ada = await queryOne(

@@ -256,8 +256,14 @@ router.post('/telegram', async (req, res) => {
         const tg = require('../services/telegram');
         const cfg = await tg.getCfg();
         if (cfg.tg_enabled !== '1') return;
-        // Verifikasi secret token
-        if (cfg.tg_webhook_secret && req.headers['x-telegram-bot-api-secret-token'] !== cfg.tg_webhook_secret) return;
+        // Verifikasi secret token (FAIL-CLOSED). Aktivasi webhook selalu
+        // membuat tg_webhook_secret; bila kosong, tolak — jangan proses update
+        // Telegram palsu yang bisa memicu perintah bot (mis. /redaman) tanpa auth.
+        const secret = cfg.tg_webhook_secret || '';
+        const diterima = String(req.headers['x-telegram-bot-api-secret-token'] || '');
+        if (!secret) return;
+        const a = Buffer.from(secret), b = Buffer.from(diterima);
+        if (a.length !== b.length || !require('crypto').timingSafeEqual(a, b)) return;
 
         const msg = req.body && (req.body.message || req.body.edited_message);
         if (!msg || !msg.text) return;

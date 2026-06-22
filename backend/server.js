@@ -25,10 +25,30 @@ const path      = require('path');
 
 const app = express();
 
+// ── Trust proxy ──────────────────────────────────────────────────────────────
+// SimBill berjalan di belakang Nginx (loopback). Tanpa ini, req.ip = 127.0.0.1
+// untuk SEMUA klien → rate-limiter jadi satu ember global: 50 percobaan login
+// total bisa mengunci seluruh pengguna, dan isolasi brute-force per-IP tidak
+// jalan. 'loopback' hanya mempercayai X-Forwarded-For bila berasal dari proxy
+// lokal — aman juga saat diakses langsung (XFF dari internet diabaikan).
+app.set('trust proxy', 'loopback');
+
 // ── AUTO-MIGRATION: jalankan setiap start, aman untuk kolom yang sudah ada ──
 async function jalankanMigration() {
     const { query } = require('./config/db');
     const migrations = [
+        // Kolom IPv6 radacct — FreeRADIUS 3.2 menulis kolom ini saat accounting.
+        // Tanpa kolom ini: ERROR 1054 → Accounting-Response tak terkirim → MikroTik
+        // "accounting request not sent" & pemakaian tidak tercatat.
+        {
+            cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='radacct' AND COLUMN_NAME='framedipv6address'`,
+            sql:  `ALTER TABLE radacct
+                     ADD COLUMN framedipv6address  VARCHAR(45) DEFAULT NULL AFTER framedipaddress,
+                     ADD COLUMN framedipv6prefix   VARCHAR(45) DEFAULT NULL AFTER framedipv6address,
+                     ADD COLUMN framedinterfaceid  VARCHAR(44) DEFAULT NULL AFTER framedipv6prefix,
+                     ADD COLUMN delegatedipv6prefix VARCHAR(45) DEFAULT NULL AFTER framedinterfaceid`,
+            nama: 'radacct.kolom_ipv6'
+        },
         // satuan_masa di tabel paket
         {
             cek:  `SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='paket' AND COLUMN_NAME='satuan_masa'`,
@@ -241,9 +261,10 @@ app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
 // Simpan raw body (Buffer) agar verifikasi signature webhook (mis. Tripay HMAC)
 // dihitung atas byte asli yang dikirim gateway, bukan hasil re-stringify.
 app.use(express.json({
+    limit: '12mb',
     verify: (req, _res, buf) => { req.rawBody = buf; }
 }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '12mb' }));
 
 // Rate limiting
 app.use('/api/', rateLimit({
@@ -285,6 +306,15 @@ app.get('/admin', (req, res) => {
 
 app.get('/client', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/client.html'));
+});
+// File di /uploads bisa berisi SVG yang di-upload admin. SVG = XML yang bisa
+// memuat <script> dan dieksekusi di ORIGIN yang sama dengan panel bila dibuka
+// langsung → bisa mencuri token admin. Set header agar SVG/aset tak bisa
+// menjalankan script & MIME tidak ditebak (nosniff). Tidak mengganggu <img>.
+app.use('/uploads', (req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; sandbox");
+    next();
 });
 app.use('/uploads', express.static(path.join(__dirname, '../frontend/uploads')));
 

@@ -555,8 +555,8 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 <div id="login-screen">
   <div class="login-box">
     <div class="login-logo">
-      <svg width="48" height="48" viewBox="0 0 48 48" style="margin:0 auto 8px;display:block"><rect width="48" height="48" rx="12" fill="#BA7517"/><circle cx="24" cy="31" r="4" fill="#fff"/><path d="M15 24 Q24 16 33 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M10 19 Q24 9 38 19" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2.5" stroke-linecap="round"/></svg>
-      <h2><span style="color:#BA7517">Sim</span>Bill Admin</h2>
+      <span class="js-app-logo" style="width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;margin:0 auto 8px;border-radius:12px;overflow:hidden"><svg width="48" height="48" viewBox="0 0 48 48" style="display:block"><rect width="48" height="48" rx="12" fill="#BA7517"/><circle cx="24" cy="31" r="4" fill="#fff"/><path d="M15 24 Q24 16 33 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M10 19 Q24 9 38 19" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2.5" stroke-linecap="round"/></svg></span>
+      <h2><span class="js-app-name"><span style="color:#BA7517">Sim</span>Bill</span> Admin</h2>
       <p>Masuk untuk mengelola sistem</p>
     </div>
     <div class="login-err" id="login-err"></div>
@@ -575,9 +575,9 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sb-logo">
-      <svg width="32" height="32" viewBox="0 0 32 32" style="flex-shrink:0"><rect width="32" height="32" rx="8" fill="#BA7517"/><circle cx="16" cy="21" r="2.8" fill="#fff"/><path d="M10.5 16.5 Q16 11 21.5 16.5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M7 13 Q16 6 25 13" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2" stroke-linecap="round"/></svg>
+      <span class="js-app-logo" style="width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;overflow:hidden;flex-shrink:0"><svg width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#BA7517"/><circle cx="16" cy="21" r="2.8" fill="#fff"/><path d="M10.5 16.5 Q16 11 21.5 16.5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M7 13 Q16 6 25 13" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2" stroke-linecap="round"/></svg></span>
       <div style="min-width:0">
-        <div style="font-size:16px;font-weight:700;line-height:1.1;color:#fff"><span style="color:#EF9F27">Sim</span>Bill</div>
+        <div class="js-app-name" style="font-size:16px;font-weight:700;line-height:1.1;color:#fff"><span style="color:#EF9F27">Sim</span>Bill</div>
         <small style="font-size:9px;color:rgba(255,255,255,.35);letter-spacing:.06em;text-transform:uppercase">Admin Panel</small>
       </div>
     </div>
@@ -1188,14 +1188,26 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
         </div>
         <div class="card">
           <div class="search-bar">
-            <input placeholder="Cari nama, username, HP..." id="cari-pelanggan" oninput="filterTbl('tbl-pelanggan',this.value)">
-            <select><option>Semua Status</option><option>Aktif</option><option>Suspended</option></select>
-            <select><option>Semua Tipe</option><option>PPPoE</option><option>Hotspot</option></select>
+            <input placeholder="Cari nama, username, HP..." id="cari-pelanggan" oninput="plSetCari(this.value)">
+            <select id="pl-f-status" onchange="plSetStatus(this.value)">
+              <option value="">Semua Status</option><option value="aktif">Aktif</option><option value="suspended">Suspended</option><option value="nonaktif">Nonaktif</option>
+            </select>
+            <select id="pl-f-tipe" onchange="plSetTipe(this.value)">
+              <option value="">Semua Tipe</option><option value="pppoe">PPPoE</option><option value="hotspot">Hotspot</option>
+            </select>
           </div>
-          <table><thead><tr><th>#</th><th>Nama</th><th>Username</th><th>No. HP</th><th>Paket</th><th>Tipe</th><th>Expired</th><th>Status</th><th>Aksi</th></tr></thead>
+          <div id="pl-bulk-bar" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0;padding:8px 12px;background:rgba(79,70,229,.08);border:1px solid rgba(79,70,229,.25);border-radius:10px">
+            <span style="font-weight:600"><span id="pl-sel-count">0</span> dipilih</span>
+            <button class="btn sm" onclick="plBulk('aktifkan')" style="background:rgba(37,99,235,.1);border-color:rgba(37,99,235,.3);color:#2563eb"><i class="ti ti-player-play" aria-hidden="true"></i> Aktifkan</button>
+            <button class="btn sm" onclick="plBulk('suspend')" style="background:rgba(217,119,6,.1);border-color:rgba(217,119,6,.3);color:#d97706"><i class="ti ti-player-pause" aria-hidden="true"></i> Suspend</button>
+            <button class="btn sm danger" onclick="plBulk('hapus')"><i class="ti ti-trash" aria-hidden="true"></i> Hapus</button>
+            <button class="btn sm" onclick="plClearSel()" style="margin-left:auto">Bersihkan pilihan</button>
+          </div>
+          <table><thead><tr><th style="width:34px;text-align:center"><input type="checkbox" id="pl-check-all" onchange="plToggleAll(this)" title="Pilih semua di halaman ini"></th><th>#</th><th>Nama</th><th>Username</th><th>No. HP</th><th>Paket</th><th>Tipe</th><th>Expired</th><th>Status</th><th>Aksi</th></tr></thead>
           <tbody id="tbl-pelanggan">
-            <tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">Tidak ada data</td></tr>
+            <tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">Tidak ada data</td></tr>
           </tbody></table>
+          <div id="pl-pagination" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px"></div>
         </div>
       </div>
 
@@ -4985,6 +4997,20 @@ Selamat menikmati! 🌐</textarea>
 <div id="sync-status" style="position:fixed;bottom:14px;right:14px;font-size:11px;color:var(--text3);background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;display:none;z-index:999;pointer-events:none"></div>
 
 <script>
+
+function applyBranding(d){
+  try{
+    if(d && d.app_name){ document.querySelectorAll('.js-app-name').forEach(function(e){ e.textContent=d.app_name; }); }
+    if(d && d.app_logo){
+      document.querySelectorAll('.js-app-logo').forEach(function(e){
+        e.style.background='transparent';
+        e.innerHTML='<img src="'+d.app_logo+'" alt="logo" style="width:100%;height:100%;object-fit:contain;display:block">';
+      });
+      var fav=document.querySelector('link[rel="icon"]'); if(fav){ fav.href=d.app_logo; fav.removeAttribute('type'); }
+    }
+  }catch(_){}
+}
+(function(){ fetch('/voucher/info').then(function(r){return r.json();}).then(applyBranding).catch(function(){}); })();
 // ================================================================
 // NETBILLING ADMIN — FULL API CONNECTED
 // ================================================================
@@ -7805,12 +7831,110 @@ function petaMovePin(prefix) {
 }
 // ── END MINI MAP ─────────────────────────────────────────────
 
+// ── Pelanggan: state pagination + seleksi (server-side) ──
+let plPage = 1, plLimit = 25, plTotal = 0, plRows = [];
+let plCari = '', plStatus = '', plTipe = '';
+const plSelected = new Set();   // id terpilih, persist antar halaman
+let _plCariTimer = null;
+
+function plSetCari(v)   { plCari = (v||'').trim(); plPage = 1; clearTimeout(_plCariTimer); _plCariTimer = setTimeout(loadPelanggan, 350); }
+function plSetStatus(v) { plStatus = v || ''; plPage = 1; loadPelanggan(); }
+function plSetTipe(v)   { plTipe = v || '';   plPage = 1; loadPelanggan(); }
+function plSetLimit(v)  { plLimit = parseInt(v) || 25; plPage = 1; loadPelanggan(); }
+function plGoto(p)      { const max = Math.max(1, Math.ceil(plTotal / plLimit)); plPage = Math.min(Math.max(1, p), max); loadPelanggan(); }
+
 async function loadPelanggan() {
   try {
-    const data = await apiFetch('/api/pelanggan?limit=50');
-    renderTblPelanggan(data.data || data);
+    const q = new URLSearchParams({ halaman: plPage, limit: plLimit });
+    if (plCari)   q.set('cari', plCari);
+    if (plStatus) q.set('status', plStatus);
+    if (plTipe)   q.set('tipe', plTipe);
+    const data = await apiFetch('/api/pelanggan?' + q.toString());
+    plRows  = data.data || data || [];
+    plTotal = data.total ?? plRows.length;
+    renderTblPelanggan(plRows);
+    plRenderPagination();
+    plSyncSelectAll();
+    plUpdateBulkBar();
   } catch(e) { console.warn('Pelanggan API:', e.message); }
   loadPelangganStats();
+}
+
+// ── Seleksi (checkbox) ──
+function plToggleRow(cb) {
+  const id = parseInt(cb.dataset.id);
+  if (cb.checked) plSelected.add(id); else plSelected.delete(id);
+  plSyncSelectAll(); plUpdateBulkBar();
+}
+function plToggleAll(cb) {
+  document.querySelectorAll('#tbl-pelanggan .pl-check').forEach(x => {
+    x.checked = cb.checked;
+    const id = parseInt(x.dataset.id);
+    if (cb.checked) plSelected.add(id); else plSelected.delete(id);
+  });
+  plUpdateBulkBar();
+}
+function plSyncSelectAll() {
+  const head = document.getElementById('pl-check-all'); if (!head) return;
+  const all = document.querySelectorAll('#tbl-pelanggan .pl-check');
+  const sel = [...all].filter(x => x.checked).length;
+  head.checked = all.length > 0 && sel === all.length;
+  head.indeterminate = sel > 0 && sel < all.length;
+}
+function plClearSel() {
+  plSelected.clear();
+  document.querySelectorAll('#tbl-pelanggan .pl-check').forEach(x => x.checked = false);
+  plSyncSelectAll(); plUpdateBulkBar();
+}
+function plUpdateBulkBar() {
+  const bar = document.getElementById('pl-bulk-bar'); if (!bar) return;
+  const cnt = document.getElementById('pl-sel-count');
+  if (plSelected.size > 0) { bar.style.display = 'flex'; if (cnt) cnt.textContent = plSelected.size; }
+  else bar.style.display = 'none';
+}
+async function plBulk(aksi) {
+  const ids = [...plSelected]; if (!ids.length) return;
+  const konfirm = aksi === 'hapus'
+    ? `HAPUS ${ids.length} pelanggan terpilih?\n\nAkun RADIUS ikut dihapus & tidak bisa dikembalikan.`
+    : `${aksi === 'suspend' ? 'Suspend' : 'Aktifkan'} ${ids.length} pelanggan terpilih?` +
+      (aksi === 'suspend' ? '\n\n(Notifikasi WA dikirim ke tiap pelanggan.)' : '');
+  if (!confirm(konfirm)) return;
+  let ok = 0, gagal = 0;
+  for (const id of ids) {
+    try {
+      if (aksi === 'hapus') await apiFetch('/api/pelanggan/' + id, { method: 'DELETE' });
+      else                  await apiFetch('/api/pelanggan/' + id + '/' + aksi, { method: 'POST' });
+      ok++;
+    } catch(e) { gagal++; }
+  }
+  toast(`✅ ${ok} berhasil${gagal ? `, ${gagal} gagal` : ''}`, gagal > 0);
+  plSelected.clear();
+  loadPelanggan();
+}
+
+// ── Kontrol pagination ──
+function plRenderPagination() {
+  const el = document.getElementById('pl-pagination'); if (!el) return;
+  const max = Math.max(1, Math.ceil(plTotal / plLimit));
+  if (plPage > max) plPage = max;
+  const from = plTotal === 0 ? 0 : (plPage - 1) * plLimit + 1;
+  const to   = Math.min(plPage * plLimit, plTotal);
+  const btn = (p, lbl, dis, act) =>
+    `<button class="btn sm${act ? ' primary' : ''}" ${dis ? 'disabled' : ''} onclick="plGoto(${p})" style="min-width:34px">${lbl}</button>`;
+  const dots = '<span style="padding:0 4px;color:var(--text3)">…</span>';
+  let b = btn(plPage - 1, '‹', plPage <= 1, false);
+  const start = Math.max(1, plPage - 2), end = Math.min(max, plPage + 2);
+  if (start > 1) { b += btn(1, '1', false, plPage === 1); if (start > 2) b += dots; }
+  for (let p = start; p <= end; p++) b += btn(p, String(p), false, p === plPage);
+  if (end < max) { if (end < max - 1) b += dots; b += btn(max, String(max), false, plPage === max); }
+  b += btn(plPage + 1, '›', plPage >= max, false);
+  el.innerHTML =
+    `<div style="font-size:13px;color:var(--text3)">Menampilkan ${from}–${to} dari ${plTotal}</div>` +
+    `<div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">${b}</div>` +
+    `<div style="display:flex;gap:6px;align-items:center;font-size:13px;color:var(--text3)">Per halaman:` +
+    `<select onchange="plSetLimit(this.value)" style="padding:4px 8px">` +
+    [25,50,100,200].map(n => `<option value="${n}" ${n===plLimit?'selected':''}>${n}</option>`).join('') +
+    `</select></div>`;
 }
 async function loadPelangganStats() {
   const setp=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
@@ -7830,10 +7954,12 @@ async function loadPelangganStats() {
 
 function renderTblPelanggan(rows) {
   const t = document.getElementById('tbl-pelanggan');
-  if(!rows.length) { t.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3)">Belum ada pelanggan</td></tr>'; return; }
+  if(!rows.length) { t.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text3)">Belum ada pelanggan</td></tr>'; return; }
+  const base = (plPage - 1) * plLimit;
   t.innerHTML = rows.map((p,i) => `
     <tr>
-      <td>${i+1}</td>
+      <td style="text-align:center"><input type="checkbox" class="pl-check" data-id="${p.id}" ${plSelected.has(p.id)?'checked':''} onchange="plToggleRow(this)"></td>
+      <td>${base + i + 1}</td>
       <td><div style="font-weight:500">${escapeHtml(p.nama)}</div><div style="font-size:11px;color:var(--text3)">${escapeHtml(p.email||'')}</div></td>
       <td><span style="font-family:monospace;font-size:12px">${escapeHtml(p.username)}</span></td>
       <td>${escapeHtml(p.no_hp)}</td>
@@ -11199,19 +11325,19 @@ async function apiEditNAS() {
 }
 
 async function apiTambahNAS() {
-  const nasname   = document.getElementById('fn-ip').value.trim();
-  const shortname = document.getElementById('fn-nama').value.trim();
-  const secret    = document.getElementById('fn-secret').value;
-  const type      = document.getElementById('fn-tipe').value;
-  const community = document.getElementById('fn-community').value.trim();
-  const ports     = document.getElementById('fn-ports').value.trim();
-  if (!nasname||!secret) return toast('❌ IP dan secret wajib', true);
+  const shortname   = document.getElementById('nas-nama').value.trim();
+  const nasname     = document.getElementById('nas-ip').value.trim();
+  const type        = document.getElementById('nas-tipe').value;
+  const secret      = document.getElementById('nas-secret').value;
+  const description = document.getElementById('nas-desc').value.trim();
+  if (!nasname || !secret) return toast('❌ IP dan secret wajib', true);
   try {
     await apiFetch('/api/radius/nas', {method:'POST',
-      body: JSON.stringify({nasname, shortname, type, secret, description:shortname, community, ports: ports ? parseInt(ports) : null})
+      body: JSON.stringify({ nasname, shortname, type, secret, description })
     });
     toast('✅ NAS ditambahkan');
     closeModal('m-add-nas');
+    ['nas-nama','nas-ip','nas-secret','nas-desc'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
     try {
       const nas = await apiFetch('/api/radius/nas');
       renderNAS(nas);
