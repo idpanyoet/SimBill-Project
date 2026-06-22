@@ -90,40 +90,64 @@ router.put('/:id', async (req, res, next) => {
         req.params.id
     ]);
 
-    // Sync perubahan pool dan kecepatan ke radgroupreply
-    const newPool    = pool_name !== undefined ? (pool_name || null) : existing.pool_name;
-    const newSpeedDn = kecepatan_dn ?? existing.kecepatan_dn;
-    const newSpeedUp = kecepatan_up ?? existing.kecepatan_up;
-    // Gunakan rate_limit langsung jika ada, fallback ke format lama
-    const rateLimit  = rate_limit || existing.rate_limit ||
-        (existing.burst_limit
-            ? `${newSpeedDn}M/${newSpeedUp}M ${existing.burst_limit}/${existing.burst_limit} ${existing.burst_time || '8'}`
-            : `${newSpeedUp}M/${newSpeedDn}M`);
-    const oldPool    = existing.pool_name;
+    // ── Sync kecepatan/pool ke radgroupreply ──
+    // Nilai paket setelah update (gabungan body + existing).
+    const paketBaru = {
+        ...existing,
+        kecepatan_dn: kecepatan_dn ?? existing.kecepatan_dn,
+        kecepatan_up: kecepatan_up ?? existing.kecepatan_up,
+        rate_limit:   rate_limit !== undefined ? (rate_limit || null) : (existing.rate_limit || null),
+        burst_limit:  burst_limit !== undefined ? (burst_limit || null) : existing.burst_limit,
+        burst_time:   burst_time  !== undefined ? (burst_time  || null) : existing.burst_time,
+        pool_name:    pool_name !== undefined ? (pool_name || null) : existing.pool_name,
+    };
+    const tipeKon = (tipe ?? existing.tipe) === 'hotspot' ? 'hotspot' : 'pppoe';
 
-    // Cari group yang punya Framed-Pool = pool lama
-    const affectedGroups = await query(
-        `SELECT DISTINCT groupname FROM radgroupreply WHERE attribute='Framed-Pool' AND value=?`,
-        [oldPool]
-    );
+    // Rate-limit final (sama rumus dgn service): rate_limit manual > burst > up/dn.
+    const rl = paketBaru.rate_limit ||
+        (paketBaru.burst_limit
+            ? `${paketBaru.kecepatan_dn}M/${paketBaru.kecepatan_up}M ${paketBaru.burst_limit}/${paketBaru.burst_limit} ${paketBaru.burst_time || '8'}`
+            : `${paketBaru.kecepatan_up}M/${paketBaru.kecepatan_dn}M`);
 
-    for (const g of affectedGroups) {
-        const gn = g.groupname;
-        // Update rate limit
-        await query(
-            `UPDATE radgroupreply SET value=? WHERE groupname=? AND attribute='Mikrotik-Rate-Limit'`,
-            [rateLimit, gn]
+    try {
+        const radiusService = require('../services/radius');
+        // 1) Buat/update group sesuai kecepatan BARU (mengisi Mikrotik-Rate-Limit yg benar).
+        await radiusService._syncGroupPaketPublic(paketBaru, tipeKon);
+
+        const gBaru = `${tipeKon}-${paketBaru.kecepatan_dn}mbps`;
+
+        // 2) Pindahkan HANYA pelanggan paket ini ke group baru.
+        //    Penting: jangan rename group lama secara global — beberapa paket
+        //    placeholder bisa berbagi group yg sama (mis. semua 100mbps), jadi
+        //    rename global akan ikut menyeret pelanggan paket lain.
+        const pelangganPaket = await query(
+            `SELECT username FROM pelanggan WHERE paket_id=? AND username IS NOT NULL AND username<>''`,
+            [req.params.id]
         );
-        // Update pool jika berubah
-        if (newPool && oldPool && newPool !== oldPool) {
+        for (const p of pelangganPaket) {
             await query(
-                `UPDATE radgroupreply SET value=? WHERE groupname=? AND attribute='Framed-Pool'`,
-                [newPool, gn]
+                `UPDATE radusergroup SET groupname=? WHERE username=?`,
+                [gBaru, p.username]
             );
         }
+
+        // 3) Pastikan rate-limit group baru = nilai terbaru (idempotent).
+        await query(
+            `UPDATE radgroupreply SET value=? WHERE groupname=? AND attribute='Mikrotik-Rate-Limit'`,
+            [rl, gBaru]
+        );
+        // 4) Update pool bila diisi & group punya Framed-Pool.
+        if (paketBaru.pool_name) {
+            await query(
+                `UPDATE radgroupreply SET value=? WHERE groupname=? AND attribute='Framed-Pool'`,
+                [paketBaru.pool_name, gBaru]
+            );
+        }
+    } catch (syncErr) {
+        console.warn('[paket] sync radgroupreply gagal:', syncErr.message);
     }
 
-    res.json({ pesan: 'Paket diperbarui' });
+    res.json({ pesan: 'Paket diperbarui. Pelanggan aktif perlu reconnect agar kecepatan baru berlaku.' });
   } catch (e) { next(e); }
 });
 

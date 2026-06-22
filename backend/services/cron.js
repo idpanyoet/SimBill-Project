@@ -114,6 +114,10 @@ async function _generateInvoiceBulanan() {
 
     for (const p of pelanggan) {
         try {
+            // Paket gratis (harga 0, mis. VIP) tidak ditagih sama sekali:
+            // tanpa invoice → tak pernah overdue → tak pernah auto-suspend.
+            if (!p.harga || Number(p.harga) <= 0) continue;
+
             const ada = await queryOne(`
                 SELECT id FROM invoice
                 WHERE pelanggan_id = ?

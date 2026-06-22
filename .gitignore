@@ -4,3 +4,5 @@ backend/.env
 wa-session/
 uploads/
 *.log
+backend/*.xlsx
+backend/migrate-data.js
