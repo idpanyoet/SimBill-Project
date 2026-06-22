@@ -289,6 +289,12 @@ body.dark .btn[style*="background:#7c3aed"]{background:#7c3aed!important}
 .tpl-editor-box{background:#fff;border:1px solid #e2e7ef;border-radius:10px;padding:14px}
 .tpl-placeholder-box{background:#f8fafc;border:1px solid #e2e7ef;border-radius:10px;padding:12px 14px}
 .tpl-ph-chip{display:inline-flex;align-items:center;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600;background:#FAEEDA;color:#854F0B;cursor:pointer;font-family:monospace;border:1px solid rgba(186,117,23,.2);transition:all .15s}
+.tpl-ph-refbox{background:var(--bg3,#f8fafc);border:1px solid var(--border);border-radius:12px;padding:16px}
+.tpl-ph-grouptitle{font-size:12px;font-weight:700;color:var(--text);margin-bottom:7px}
+.tpl-ph-list{display:flex;flex-wrap:wrap;gap:6px}
+.tpl-ph-chip.tpl-ph-active{background:#16a34a;color:#fff;border-color:#16a34a}
+body.dark .tpl-ph-refbox{background:#161b22;border-color:#30363d}
+body.dark .tpl-ph-chip.tpl-ph-active{background:#16a34a;color:#fff;border-color:#16a34a}
 .tpl-ph-chip:hover{background:#f5dfb0;border-color:#BA7517}
 body.dark .tpl-editor-box{background:#161b22;border-color:#30363d}
 body.dark .tpl-placeholder-box{background:#1c2128;border-color:#30363d}
@@ -1314,8 +1320,14 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
         </div>
         <div class="grid2">
           <div class="card">
-            <div class="card-title">Daftar Voucher <span class="sub">Klik untuk kirim WA</span>
-              <button class="btn sm" onclick="printVoucher()">🖨️ Print Voucher</button>
+            <div class="card-title" style="display:flex;align-items:center;flex-wrap:wrap;gap:8px">
+              <span>Daftar Voucher <span class="sub" style="margin-left:6px">Klik untuk kirim WA</span></span>
+              <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+                <input id="vcr-cari" type="text" placeholder="Cari username / password…"
+                       oninput="cariVoucherDebounce(this.value)"
+                       style="padding:6px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;width:200px;font-family:inherit">
+                <button class="btn sm" onclick="printVoucher()">🖨️ Print Voucher</button>
+              </div>
             </div>
             <table><thead><tr><th style="width:28px"><input type="checkbox" id="vcr-pilih-semua" onchange="toggleSemuaVoucher(this)"></th><th>Username</th><th>Password</th><th>Paket</th><th>Status</th><th>Aksi</th></tr></thead>
             <tbody id="tbl-voucher">
@@ -1385,6 +1397,22 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
                   <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text3)">Memuat...</td></tr>
                 </tbody>
               </table>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:10px;flex-wrap:wrap">
+                <div style="display:flex;align-items:center;gap:6px;font-size:12px">
+                  <label for="vcr-sesi-per" style="color:var(--text3)">Baris</label>
+                  <select id="vcr-sesi-per" onchange="vcrSesiUbahPer()" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit">
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                    <option value="30">30</option>
+                    <option value="100">100</option>
+                  </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                  <span id="vcr-sesi-info" style="color:var(--text3)">—</span>
+                  <button class="btn sm" id="vcr-sesi-prev" onclick="vcrSesiHalaman(-1)">‹</button>
+                  <button class="btn sm" id="vcr-sesi-next" onclick="vcrSesiHalaman(1)">›</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1519,6 +1547,19 @@ Terima kasih! Pembayaran voucher diterima ✅
 🚀 Kecepatan: *{kecepatan}*
 
 Selamat menikmati! 🌐</textarea>
+              <textarea id="wa-tpl-invoice_baru" style="display:none">Halo *[fullname]*,
+
+Tagihan internet Anda telah dibuat.
+
+📄 No. Invoice: *[no_invoice]*
+📦 Paket: *[profile]*
+💰 Tagihan: [total]
+📅 Jatuh Tempo: *[due_date]*
+
+💳 Link Pembayaran:
+[payment_url]
+
+Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
 
               <!-- Tab pills -->
               <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
@@ -1527,6 +1568,7 @@ Selamat menikmati! 🌐</textarea>
                 <button onclick="tplLoad('suspend');waActiveTpl('suspend',this)" id="wa-tpl-btn-suspend" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s">Suspend</button>
                 <button onclick="tplLoad('konfirmasi');waActiveTpl('konfirmasi',this)" id="wa-tpl-btn-konfirmasi" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s">Konfirmasi</button>
                 <button onclick="tplLoad('voucher_sukses');waActiveTpl('voucher_sukses',this)" id="wa-tpl-btn-voucher_sukses" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s">🎟️ Voucher</button>
+                <button onclick="tplLoad('invoice_baru');waActiveTpl('invoice_baru',this)" id="wa-tpl-btn-invoice_baru" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s">🧾 Invoice Baru</button>
               </div>
               <select id="wa-tpl-select" style="display:none" onchange="tplLoad(this.value)">
                 <option value="daftar">Pelanggan Baru</option>
@@ -1562,6 +1604,15 @@ Selamat menikmati! 🌐</textarea>
               <button class="btn primary" style="width:100%;justify-content:center;gap:6px" onclick="tplSave()">
                 <i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan Template
               </button>
+
+              <!-- Panel referensi placeholder lengkap -->
+              <div class="tpl-ph-refbox" style="margin-top:16px">
+                <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Placeholder yang bisa dipakai</div>
+                <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.5">
+                  Gunakan token seperti [fullname] atau [profile]. Ketersediaan placeholder bergantung pada konteks notifikasi yang mengirim template ini. Klik token untuk menyisipkan.
+                </div>
+                <div id="tpl-ph-reference"></div>
+              </div>
             </div>
 
             <!-- Card Broadcast Massal -->
@@ -4847,7 +4898,7 @@ Selamat menikmati! 🌐</textarea>
         </div>
         <div style="flex:1">
           <label class="fg-label">Prefix (opsional)</label>
-          <input type="text" id="fv-prefix" maxlength="10" placeholder="mis. WIFI" oninput="this.value=this.value.toUpperCase();gvUpdatePreview()" style="width:100%;padding:9px 11px;border:1px solid #e2e7ef;border-radius:8px;font-size:13px;font-family:inherit;text-transform:uppercase">
+          <input type="text" id="fv-prefix" maxlength="10" placeholder="mis. wifi" oninput="this.value=this.value.toLowerCase();gvUpdatePreview()" style="width:100%;padding:9px 11px;border:1px solid #e2e7ef;border-radius:8px;font-size:13px;font-family:inherit;text-transform:lowercase">
         </div>
       </div>
 
@@ -4902,12 +4953,17 @@ Selamat menikmati! 🌐</textarea>
     </div>
     <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
 
-      <!-- Pilih Pelanggan -->
-      <div class="fg">
+      <!-- Pilih Pelanggan (searchable) -->
+      <div class="fg" style="position:relative">
         <label>Pelanggan</label>
-        <select id="fi-pel" style="width:100%" onchange="invoiceOnPelSelect()">
-          <option value="">— Pilih pelanggan —</option>
-        </select>
+        <input id="fi-pel-search" type="text" autocomplete="off" placeholder="Ketik nama / username pelanggan…"
+               style="width:100%" oninput="invoicePelSearch(this.value)"
+               onfocus="invoicePelSearch(this.value)" onkeydown="invoicePelKey(event)">
+        <!-- nilai terpilih disimpan di hidden input agar kode lama (fi-pel.value) tetap jalan -->
+        <input type="hidden" id="fi-pel" onchange="invoiceOnPelangganChange()">
+        <div id="fi-pel-results" style="display:none;position:absolute;z-index:50;left:0;right:0;top:100%;
+             margin-top:4px;max-height:240px;overflow-y:auto;background:var(--bg2,#fff);
+             border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.12)"></div>
       </div>
 
       <!-- Info Pelanggan Card -->
@@ -5035,17 +5091,18 @@ const METODE_PER_PROVIDER = {
     { code:'OVO',        label:'OVO',                ico:'💜', sub:'Push notif OVO' },
   ],
   duitku: [
-    { code:'M2',   label:'QRIS',        ico:'⬛', sub:'Semua dompet digital' },
+    { code:'SP',   label:'QRIS (ShopeePay)', ico:'⬛', sub:'Scan QR semua dompet' },
+    { code:'OV',   label:'OVO',         ico:'💜', sub:'Push notif OVO' },
+    { code:'DA',   label:'DANA',        ico:'💙', sub:'DANA' },
+    { code:'SA',   label:'ShopeePay App', ico:'🟠', sub:'ShopeePay aplikasi' },
     { code:'BC',   label:'VA BCA',      ico:'🏦', sub:'ATM / m-BCA' },
-    { code:'A1',   label:'VA BRI',      ico:'🏦', sub:'ATM / BRImo' },
+    { code:'BR',   label:'VA BRI',      ico:'🏦', sub:'ATM / BRImo' },
+    { code:'BV',   label:'VA BSI',      ico:'🏦', sub:'ATM / BSI Mobile' },
     { code:'B1',   label:'VA BNI',      ico:'🏦', sub:'ATM / BNI Mobile' },
     { code:'I1',   label:'VA Mandiri',  ico:'🏦', sub:'ATM / Livin by Mandiri' },
     { code:'VA',   label:'VA Maybank',  ico:'🏦', sub:'ATM / Maybank' },
-    { code:'SA',   label:'ShopeePay',   ico:'🟠', sub:'ShopeePay' },
-    { code:'OV',   label:'OVO',         ico:'💜', sub:'Push notif OVO' },
-    { code:'DA',   label:'DANA',        ico:'💙', sub:'DANA' },
-    { code:'LA',   label:'Alfamart',    ico:'🏪', sub:'Alfamart / Alfamidi' },
-    { code:'IR',   label:'Indomaret',   ico:'🏪', sub:'Indomaret' },
+    { code:'A1',   label:'Alfamart',    ico:'🏪', sub:'Alfamart / Alfamidi' },
+    { code:'FT',   label:'Retail',      ico:'🏪', sub:'Alfamart · Pegadaian · POS' },
   ],
   midtrans: [
     { code:'snap',  label:'Midtrans Snap', ico:'💳', sub:'Semua metode Midtrans' },
@@ -6229,6 +6286,13 @@ function openModal(id) {
   document.getElementById(id).classList.add('open');
   if (id === 'm-add-pelanggan' || id === 'm-add-invoice' || id === 'm-gen-voucher') {
     populateDropdowns();
+  }
+  if (id === 'm-add-invoice') {
+    // reset field pencarian pelanggan & pilihan
+    const s = document.getElementById('fi-pel-search'); if (s) s.value = '';
+    const h = document.getElementById('fi-pel');        if (h) h.value = '';
+    const r = document.getElementById('fi-pel-results');if (r) r.style.display = 'none';
+    const c = document.getElementById('fi-pel-card');   if (c) c.style.display = 'none';
   }
   if (id === 'm-add-pelanggan') {
     loadResellerOptions('f-reseller');
@@ -8739,17 +8803,14 @@ async function populateDropdowns() {
           ).join('');
     }
 
-    // Dropdown pelanggan di form buat invoice
+    // Cache pelanggan untuk input pencarian di form buat invoice.
+    // Tanpa filter status — pelanggan suspended pun harus bisa dibuatkan invoice
+    // (justru mereka yang perlu bayar agar aktif kembali).
     try {
-      const pelList = await apiFetch('/api/pelanggan?limit=500&status=aktif');
+      const pelList = await apiFetch('/api/pelanggan?limit=2000');
       const rows = pelList.data || pelList;
       PELANGGAN_LIST_CACHE = rows;
-      const selInvPel = document.getElementById('fi-pel');
-      if (selInvPel) {
-        selInvPel.innerHTML = '<option value="">— Pilih pelanggan —</option>'
-          + rows.map(p => `<option value="${p.id}">${p.nama} (${p.username})</option>`).join('');
-      }
-    } catch(e) { console.warn('Dropdown pelanggan gagal:', e.message); }
+    } catch(e) { console.warn('Cache pelanggan gagal:', e.message); }
 
     return paketList;
   } catch(e) { console.warn('Dropdown paket gagal:', e.message); return []; }
@@ -9026,6 +9087,82 @@ function npExportCSV() {
 // ── RESELLER MODAL HELPERS END ──────────────────────────────
 
 let PELANGGAN_LIST_CACHE = [];
+let _invPelHi = -1;  // index highlight keyboard
+
+// Pencarian pelanggan di form Buat Invoice (ketik nama/username → daftar terfilter)
+function invoicePelSearch(q) {
+  const box = document.getElementById('fi-pel-results');
+  if (!box) return;
+  const term = (q || '').trim().toLowerCase();
+  // batasi hasil agar ringan; kalau kosong tampilkan 20 pertama
+  let list = PELANGGAN_LIST_CACHE;
+  if (term) {
+    list = PELANGGAN_LIST_CACHE.filter(p =>
+      (p.nama || '').toLowerCase().includes(term) ||
+      (p.username || '').toLowerCase().includes(term) ||
+      (p.no_hp || '').toLowerCase().includes(term));
+  }
+  list = list.slice(0, 30);
+  _invPelHi = -1;
+  if (!list.length) {
+    box.innerHTML = '<div style="padding:10px 12px;color:var(--text3);font-size:13px">Tidak ada pelanggan cocok</div>';
+    box.style.display = 'block';
+    return;
+  }
+  box.innerHTML = list.map((p, i) => {
+    const tipe = p.tipe_koneksi === 'hotspot' ? 'Hotspot' : 'PPPoE';
+    const safeNama = (p.nama||'').replace(/[<>&"]/g,'');
+    const safeUser = (p.username||'').replace(/[<>&"]/g,'');
+    const st = p.status || 'aktif';
+    const stWarna = st === 'aktif' ? '#16a34a' : (st === 'suspended' ? '#d97706' : '#64748b');
+    const stLabel = st === 'aktif' ? 'Aktif' : (st === 'suspended' ? 'Suspend' : 'Nonaktif');
+    return `<div class="inv-pel-item" data-id="${p.id}" data-i="${i}"
+        onmousedown="invoicePelPick('${p.id}')"
+        style="padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;display:flex;align-items:center;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;color:var(--text)">${safeNama}</div>
+          <div style="font-size:11px;color:var(--text3)">${safeUser} · ${tipe}</div>
+        </div>
+        <span style="font-size:10px;font-weight:600;color:${stWarna};background:${stWarna}1a;
+              padding:2px 8px;border-radius:20px;flex-shrink:0">${stLabel}</span>
+      </div>`;
+  }).join('');
+  box.style.display = 'block';
+}
+
+function invoicePelPick(id) {
+  const p = PELANGGAN_LIST_CACHE.find(x => String(x.id) === String(id));
+  const hidden = document.getElementById('fi-pel');
+  const search = document.getElementById('fi-pel-search');
+  const box    = document.getElementById('fi-pel-results');
+  if (hidden) hidden.value = id;
+  if (search && p) search.value = `${p.nama} (${p.username})`;
+  if (box) box.style.display = 'none';
+  invoiceOnPelangganChange();  // isi kartu info + auto harga
+}
+
+function invoicePelKey(e) {
+  const box = document.getElementById('fi-pel-results');
+  if (!box || box.style.display === 'none') return;
+  const items = [...box.querySelectorAll('.inv-pel-item')];
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') { e.preventDefault(); _invPelHi = Math.min(_invPelHi+1, items.length-1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); _invPelHi = Math.max(_invPelHi-1, 0); }
+  else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (_invPelHi >= 0 && items[_invPelHi]) invoicePelPick(items[_invPelHi].dataset.id);
+    return;
+  } else if (e.key === 'Escape') { box.style.display='none'; return; }
+  items.forEach((el,i)=> el.style.background = i===_invPelHi ? 'var(--bg3,#eef)' : '');
+  if (items[_invPelHi]) items[_invPelHi].scrollIntoView({block:'nearest'});
+}
+
+// Tutup daftar saat klik di luar
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('fi-pel-results');
+  const inp  = document.getElementById('fi-pel-search');
+  if (wrap && inp && e.target !== inp && !wrap.contains(e.target)) wrap.style.display = 'none';
+});
 
 function invoiceOnPelangganChange() {
   const pid  = document.getElementById('fi-pel').value;
@@ -9774,7 +9911,7 @@ async function loadBatchHistory() {
         <button class="btn sm" onclick="exportBatchPdf('${b.batch_id}')" title="Export PDF kartu">📄 PDF</button>
         <button class="btn sm danger" onclick="hapusBatch('${b.batch_id}',${b.jumlah})" title="Hapus batch">🗑️</button>
       </div>`;
-    }).join('') + '<div style="text-align:center;font-size:11px;color:var(--text3);padding-top:8px">Menampilkan 20 batch terakhir</div>';
+    }).join('') + '<div style="text-align:center;font-size:11px;color:var(--text3);padding-top:8px">Menampilkan 10 batch terakhir</div>';
   } catch(e) {
     el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px">❌ Gagal memuat</div>';
   }
@@ -9782,6 +9919,9 @@ async function loadBatchHistory() {
 
 // ── RIWAYAT SESI VOUCHER ─────────────────────────────────────
 let _vcrSesiRows = [];
+let _vcrSesiFiltered = null;
+let _vcrSesiPer = 10;
+let _vcrSesiHal = 1;
 
 async function loadVcrSesi() {
   const tbody = document.getElementById('tbl-vcr-sesi');
@@ -9790,7 +9930,9 @@ async function loadVcrSesi() {
     const q = document.getElementById('vcr-sesi-search')?.value || '';
     const url = '/api/radius/sesi-voucher?limit=300' + (q ? '&q='+encodeURIComponent(q) : '');
     _vcrSesiRows = await apiFetch(url);
-    renderVcrSesi(_vcrSesiRows);
+    _vcrSesiFiltered = null;
+    _vcrSesiHal = 1;
+    renderVcrSesi();
   } catch(e) {
     if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:16px;color:#dc2626">❌ ${e.message}</td></tr>`;
   }
@@ -9798,21 +9940,52 @@ async function loadVcrSesi() {
 
 function vcrSesiFilter() {
   const q = (document.getElementById('vcr-sesi-search')?.value || '').toLowerCase();
-  const filtered = q
+  _vcrSesiFiltered = q
     ? _vcrSesiRows.filter(r => (r.username||'').toLowerCase().includes(q) || (r.ip||'').includes(q))
     : _vcrSesiRows;
-  renderVcrSesi(filtered);
+  _vcrSesiHal = 1;  // reset ke halaman 1 saat filter berubah
+  renderVcrSesi();
 }
 
-function renderVcrSesi(rows) {
+function vcrSesiUbahPer() {
+  _vcrSesiPer = parseInt(document.getElementById("vcr-sesi-per").value) || 10;
+  _vcrSesiHal = 1;
+  renderVcrSesi();
+}
+
+function vcrSesiHalaman(arah) {
+  const sumber = _vcrSesiFiltered || _vcrSesiRows || [];
+  const totalHal = Math.max(Math.ceil(sumber.length / _vcrSesiPer), 1);
+  const tujuan = _vcrSesiHal + arah;
+  if (tujuan < 1 || tujuan > totalHal) return;
+  _vcrSesiHal = tujuan;
+  renderVcrSesi();
+}
+
+function renderVcrSesi() {
   const tbody = document.getElementById('tbl-vcr-sesi');
   const count = document.getElementById('vcr-sesi-count');
-  if (count) count.textContent = `${rows.length} sesi`;
+  const sumber = _vcrSesiFiltered || _vcrSesiRows || [];
+  if (count) count.textContent = `${sumber.length} sesi`;
   if (!tbody) return;
-  if (!rows.length) {
+  if (!sumber.length) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text3)">Tidak ada riwayat sesi</td></tr>';
+    const info = document.getElementById('vcr-sesi-info'); if (info) info.textContent = '0 dari 0';
     return;
   }
+  // pagination
+  const per = _vcrSesiPer || 10;
+  const totalHal = Math.max(Math.ceil(sumber.length / per), 1);
+  if (_vcrSesiHal > totalHal) _vcrSesiHal = totalHal;
+  const mulai = (_vcrSesiHal - 1) * per;
+  const rows = sumber.slice(mulai, mulai + per);
+  const info = document.getElementById('vcr-sesi-info');
+  if (info) info.textContent = `${mulai+1}–${Math.min(mulai+per, sumber.length)} dari ${sumber.length}`;
+  const btnPrev = document.getElementById('vcr-sesi-prev');
+  const btnNext = document.getElementById('vcr-sesi-next');
+  if (btnPrev) btnPrev.disabled = _vcrSesiHal <= 1;
+  if (btnNext) btnNext.disabled = _vcrSesiHal >= totalHal;
+
   const fmtDT = dt => dt ? new Date(dt).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
   tbody.innerHTML = rows.map(r => {
     const aktif   = !r.selesai;
@@ -9839,8 +10012,10 @@ async function loadVoucher() {
   loadBatchHistory();
   loadVcrSesi();
   try {
+    const cariParam = (window._vcrCari || '').trim();
+    const qsCari = cariParam ? `&cari=${encodeURIComponent(cariParam)}` : '';
     const [list, stat] = await Promise.all([
-      apiFetch(`/api/voucher?limit=${vcrLimit}&halaman=${vcrHalaman}`),
+      apiFetch(`/api/voucher?limit=${vcrLimit}&halaman=${vcrHalaman}${qsCari}`),
       apiFetch('/api/voucher/statistik')
     ]);
     vcrTotal = list.total || 0;
@@ -9854,6 +10029,15 @@ async function loadVoucher() {
     const t = document.getElementById('tbl-voucher');
     if (t) t.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#dc2626;padding:16px">❌ ${e.message}</td></tr>`;
   }
+}
+
+function cariVoucherDebounce(nilai) {
+  window._vcrCari = nilai;
+  clearTimeout(window._vcrCariTimer);
+  window._vcrCariTimer = setTimeout(function() {
+    vcrHalaman = 1;  // kembali ke halaman 1 saat mencari
+    loadVoucher();
+  }, 350);
 }
 
 function renderInfoHalamanVoucher() {
@@ -10377,6 +10561,12 @@ const TPL_META = {
     slug:  'wa_tpl_voucher_sukses',
     placeholders: ['{nama}','{username}','{paket}','{masa_aktif}','{kecepatan}'],
     default: `Halo *{nama}*,\n\nTerima kasih! Pembayaran voucher diterima ✅\n\nBerikut voucher internet Anda:\n\n🔑 Username/Password: *{username}*\n📦 Paket: *{paket}*\n⏱ Berlaku: *{masa_aktif}*\n🚀 Kecepatan: *{kecepatan}*\n\nCara pakai:\n1️⃣ Sambungkan ke WiFi hotspot\n2️⃣ Buka browser, masuk halaman login\n3️⃣ Masukkan username & password di atas\n\nSelamat menikmati! 🌐`
+  },
+  invoice_baru: {
+    title: 'Invoice Baru / Link Bayar',
+    slug:  'wa_tpl_invoice_baru',
+    placeholders: ['[fullname]','[no_invoice]','[profile]','[total]','[amount]','[due_date]','[payment_url]'],
+    default: `Halo *[fullname]*,\n\nTagihan internet Anda telah dibuat.\n\n📄 No. Invoice: *[no_invoice]*\n📦 Paket: *[profile]*\n💰 Tagihan: [total]\n📅 Jatuh Tempo: *[due_date]*\n\n💳 Link Pembayaran:\n[payment_url]\n\nSilakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏`
   }
 };
 
@@ -10393,13 +10583,39 @@ function tplLoad(key) {
   document.getElementById('tpl-editor-title').textContent = meta.title;
   document.getElementById('tpl-editor-slug').textContent  = meta.slug;
   document.getElementById('tpl-editor-body').value        = stored;
-  document.getElementById('tpl-dirty-badge').style.display = 'none';
+  const _db = document.getElementById('tpl-dirty-badge');
+  if (_db) _db.style.display = 'none';
 
-  // Render placeholder chips
+  // Render placeholder chips (yang relevan utk template ini)
   const box = document.getElementById('tpl-placeholders');
-  box.innerHTML = meta.placeholders.map(p =>
+  if (box) box.innerHTML = meta.placeholders.map(p =>
     `<span class="tpl-ph-chip" onclick="tplInsert('${p}')" title="Klik untuk sisipkan">${p}</span>`
   ).join('');
+
+  // Render panel referensi placeholder lengkap (semua token yang tersedia)
+  tplRenderRefPanel();
+}
+
+// Daftar lengkap placeholder (satu kumpulan, tanpa pemisahan grup).
+const TPL_PH_ALL = [
+  '[fullname]','[username]','[password]','[uid]','[member_id]','[profile]','[phone]','[whatsapp]','[email]','[address]','[billing_status]',
+  '[no_invoice]','[invoice_date]','[period]','[due_date]','[previous_suspend_at]','[next_suspend_at]','[items_list]','[amount]','[outstanding_amount]','[previous_balance]','[discount_percent]','[discount]','[vat_percent]','[ppn]','[total]','[payment_url]','[payment_method]','[failed_reason]','[refund_date]',
+  '[voucher_list]','[quantity]','[paket]','[masa_aktif]','[kecepatan]','[tgl_expired]','[tgl_aktif]'
+];
+
+function tplRenderRefPanel() {
+  const wrap = document.getElementById('tpl-ph-reference');
+  if (!wrap) return;
+  // token yang terdeteksi terpakai di editor saat ini (ditandai aktif)
+  const body = (document.getElementById('tpl-editor-body')?.value || '');
+  const dipakai = new Set(body.match(/\[[a-z_]+\]/g) || []);
+
+  wrap.innerHTML = `<div class="tpl-ph-list">` +
+    TPL_PH_ALL.map(p => {
+      const aktif = dipakai.has(p) ? ' tpl-ph-active' : '';
+      return `<span class="tpl-ph-chip${aktif}" onclick="tplInsert('${p}')">${p}</span>`;
+    }).join('') +
+    `</div>`;
 }
 
 function tplInsert(ph) {
@@ -10416,6 +10632,7 @@ function tplMarkDirty() {
   _tplDirty = true;
   const badge = document.getElementById('tpl-dirty-badge');
   if (badge) badge.style.display = 'flex';
+  tplRenderRefPanel();  // update bagian "Terdeteksi di template ini"
 }
 
 function tplReset() {
@@ -10438,7 +10655,8 @@ async function tplSave() {
       body: JSON.stringify({ [meta.slug]: body })
     });
     _tplDirty = false;
-    document.getElementById('tpl-dirty-badge').style.display = 'none';
+    const badge = document.getElementById('tpl-dirty-badge');
+    if (badge) badge.style.display = 'none';
     toast('✅ Template "' + meta.title + '" disimpan');
   } catch(e) { toast('❌ ' + e.message, true); }
 }
@@ -10467,6 +10685,7 @@ async function loadWALog() {
     if (map.wa_tpl_suspend)         document.getElementById('wa-tpl-suspend').value         = map.wa_tpl_suspend;
     if (map.wa_tpl_konfirmasi)      document.getElementById('wa-tpl-konfirmasi').value      = map.wa_tpl_konfirmasi;
     if (map.wa_tpl_voucher_sukses)  document.getElementById('wa-tpl-voucher_sukses').value  = map.wa_tpl_voucher_sukses;
+    if (map.wa_tpl_invoice_baru)    document.getElementById('wa-tpl-invoice_baru').value    = map.wa_tpl_invoice_baru;
     // Init template editor dengan template pertama
     tplLoad(document.getElementById('wa-tpl-select')?.value || 'daftar');
     // Tampilkan field Phone ID hanya untuk WA Business API

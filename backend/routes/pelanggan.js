@@ -256,7 +256,15 @@ router.post('/', async (req, res, next) => {
             username:   username,
             password:   password,
             nama_paket: paket.nama,
-            tgl_expired: tgl_expired
+            tgl_expired: tgl_expired,
+            member_id:  result.insertId,
+            no_hp_pel:  no_hp,
+            email:      email || null,
+            alamat:     alamat || null,
+            harga:      paket.harga,
+            total:      paket.harga,
+            kecepatan:  paket.rate_limit || (paket.kecepatan_dn ? paket.kecepatan_dn + 'M' : null),
+            masa_aktif: paket.masa_aktif
         }).catch(e => console.warn('[WA] kirimPelangganBaru gagal:', e.message));
 
         // Notif Telegram ke teknisi — pelanggan baru
@@ -331,7 +339,12 @@ router.put('/:id', async (req, res, next) => {
             // Cek duplikat
             const cek = await queryOne('SELECT id FROM pelanggan WHERE username=? AND id!=?', [usernameBaru, p.id]);
             if (cek) return res.status(400).json({ error: 'Username sudah digunakan pelanggan lain' });
-            // Update radcheck — rename username
+            // Rename username di tabel RADIUS. Hapus dulu baris milik username
+            // BARU yang mungkin sudah ada (sisa data), agar UPDATE tidak bentrok
+            // dengan UNIQUE KEY (username,attribute) di radcheck.
+            await query('DELETE FROM radcheck    WHERE username=?', [usernameBaru]);
+            await query('DELETE FROM radreply     WHERE username=?', [usernameBaru]);
+            await query('DELETE FROM radusergroup WHERE username=?', [usernameBaru]);
             await query('UPDATE radcheck SET username=? WHERE username=?', [usernameBaru, p.username]);
             await query('UPDATE radreply SET username=? WHERE username=?', [usernameBaru, p.username]);
             await query('UPDATE radusergroup SET username=? WHERE username=?', [usernameBaru, p.username]);

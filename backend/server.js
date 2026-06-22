@@ -392,6 +392,165 @@ app.use((req, res, next) => {
 });
 app.use(express.static(path.join(__dirname, '../frontend')));
 
+// --- Halaman status pembayaran (returnUrl payment gateway) ---
+// Duitku/Midtrans mengarahkan pelanggan ke sini SETELAH bayar (returnUrl).
+// Ini hanya halaman tampilan; pemrosesan pembayaran tetap lewat callback/webhook
+// server-to-server (/webhook/duitku), bukan dari halaman ini.
+app.get('/pembayaran/selesai', async (req, res) => {
+    const rc        = String(req.query.resultCode || req.query.status_code || '');
+    const orderId   = req.query.merchantOrderId || req.query.order_id || req.query.reference || '';
+    // Duitku: 00=sukses, 01=pending, lainnya gagal. Midtrans: 200/201 area sukses/pending.
+    const sukses    = rc === '00' || rc === '200';
+    const pending   = rc === '01' || rc === '201';
+
+    let appUrl = '';
+    try {
+        const { queryOne } = require('./config/db');
+        const row = await queryOne(`SELECT nilai FROM setting WHERE kunci='app_url'`);
+        appUrl = (row?.nilai || process.env.APP_URL || '').replace(/\/+$/, '');
+    } catch (e) {}
+
+    const warna = sukses ? '#16a34a' : (pending ? '#d97706' : '#dc2626');
+    const ikon  = sukses ? '✓' : (pending ? '⏳' : '✕');
+    const judul = sukses ? 'Pembayaran Berhasil'
+                 : (pending ? 'Pembayaran Diproses' : 'Pembayaran Gagal');
+    const pesan = sukses ? 'Terima kasih, pembayaran Anda telah kami terima. Layanan akan aktif otomatis dalam beberapa menit.'
+                 : (pending ? 'Pembayaran Anda sedang diproses. Status akan diperbarui otomatis setelah dikonfirmasi.'
+                            : 'Pembayaran tidak berhasil atau dibatalkan. Silakan coba lagi atau hubungi admin.');
+
+    res.set('Content-Type', 'text/html; charset=utf-8').send(`<!doctype html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${judul}</title>
+<style>
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f1f5f9;
+       display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;box-sizing:border-box}
+  .card{background:#fff;border-radius:18px;box-shadow:0 10px 40px rgba(0,0,0,.08);max-width:420px;width:100%;
+        padding:36px 28px;text-align:center}
+  .ikon{width:84px;height:84px;border-radius:50%;background:${warna}1a;color:${warna};
+        display:flex;align-items:center;justify-content:center;font-size:44px;margin:0 auto 20px;font-weight:700}
+  h1{font-size:20px;margin:0 0 10px;color:#0f172a}
+  p{color:#475569;font-size:14px;line-height:1.6;margin:0 0 22px}
+  .ref{font-size:12px;color:#94a3b8;margin-bottom:22px;word-break:break-all}
+  a.btn{display:inline-block;background:${warna};color:#fff;text-decoration:none;padding:12px 26px;
+        border-radius:10px;font-weight:600;font-size:14px}
+</style></head>
+<body><div class="card">
+  <div class="ikon">${ikon}</div>
+  <h1>${judul}</h1>
+  <p>${pesan}</p>
+  ${orderId ? `<div class="ref">No. Order: ${String(orderId).replace(/[<>&"]/g,'')}</div>` : ''}
+  <a class="btn" href="${appUrl || '/'}/client">Kembali ke Dashboard</a>
+</div></body></html>`);
+});
+
+// --- Halaman bayar tagihan (link dikirim via WA) ---
+// Pelanggan buka /bayar/INV-XXXX → pilih metode → diarahkan ke payment gateway.
+app.get('/bayar/:no_invoice', (req, res) => {
+    const noInv = String(req.params.no_invoice).replace(/[^A-Za-z0-9\-]/g, '');
+    res.set('Content-Type', 'text/html; charset=utf-8').send(`<!doctype html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bayar Tagihan</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f1f5f9;
+       display:flex;align-items:flex-start;justify-content:center;min-height:100vh;padding:18px}
+  .card{background:#fff;border-radius:18px;box-shadow:0 10px 40px rgba(0,0,0,.08);max-width:440px;width:100%;padding:24px;margin-top:18px}
+  .logo{text-align:center;margin-bottom:8px}
+  .logo img{max-height:46px}
+  h1{font-size:18px;margin:4px 0 2px;color:#0f172a;text-align:center}
+  .sub{font-size:12px;color:#64748b;text-align:center;margin-bottom:18px}
+  .row{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid #f1f5f9;color:#475569}
+  .row b{color:#0f172a}
+  .amount{font-size:26px;font-weight:800;color:#4f46e5;text-align:center;margin:14px 0 4px}
+  .lbl{font-size:12px;font-weight:700;color:#334155;margin:18px 0 8px}
+  .metode-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .mi{background:#fff;border:2px solid #e2e8f0;border-radius:12px;padding:11px 12px;cursor:pointer;display:flex;align-items:center;gap:9px;transition:.15s}
+  .mi:hover{border-color:#cbd5e1}
+  .mi.sel{border-color:#4f46e5;background:rgba(79,70,229,.07)}
+  .mi .ico{font-size:18px}
+  .mi .nm{font-size:12px;font-weight:700;color:#0f172a}
+  .mi .sb{font-size:10px;color:#94a3b8}
+  .btn{width:100%;margin-top:18px;background:#4f46e5;color:#fff;border:none;border-radius:11px;
+       padding:13px;font-size:14px;font-weight:700;cursor:pointer}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .stat{text-align:center;padding:30px 10px;color:#475569;font-size:14px}
+  .paid{color:#16a34a;font-weight:700}
+  @media(max-width:420px){.metode-grid{grid-template-columns:1fr}}
+</style></head>
+<body><div class="card" id="card"><div class="stat">Memuat tagihan…</div></div>
+<script>
+var NO_INV = ${JSON.stringify(noInv)};
+var metode = null;
+var SEMUA_METODE = {
+  'QRIS':{ico:'⬛',nm:'QRIS',sb:'Semua dompet digital'},'qris':{ico:'⬛',nm:'QRIS',sb:'Semua dompet'},
+  'M2':{ico:'⬛',nm:'QRIS',sb:'Semua dompet digital'},'NQ':{ico:'⬛',nm:'QRIS',sb:'Semua dompet'},
+  'SP':{ico:'⬛',nm:'QRIS',sb:'Scan QR semua dompet'},'SA':{ico:'⬛',nm:'QRIS',sb:'Scan QR semua dompet'},
+  'OV':{ico:'💜',nm:'OVO',sb:'Push notif OVO'},'OVO':{ico:'💜',nm:'OVO',sb:'Push notif OVO'},
+  'DA':{ico:'💙',nm:'DANA',sb:'DANA'},'DANA':{ico:'💙',nm:'DANA',sb:'DANA'},
+  'BR':{ico:'<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;background:#00529C;color:#fff;font-size:9px;font-weight:800;letter-spacing:.3px">BRI</span>',nm:'VA BRI',sb:'ATM / BRImo'},'BRIVA':{ico:'<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;background:#00529C;color:#fff;font-size:9px;font-weight:800">BRI</span>',nm:'VA BRI',sb:'ATM / BRImo'},
+  'BV':{ico:'<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;background:#00A39D;color:#fff;font-size:9px;font-weight:800;letter-spacing:.3px">BSI</span>',nm:'VA BSI',sb:'ATM / BSI Mobile'},'BSIVA':{ico:'<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;background:#00A39D;color:#fff;font-size:9px;font-weight:800">BSI</span>',nm:'VA BSI',sb:'ATM / BSI Mobile'},
+  'AG':{ico:'🏧',nm:'ATM Bersama',sb:'Semua bank ATM Bersama'},
+  'BC':{ico:'🏦',nm:'VA BCA',sb:'ATM / m-BCA'},'BCAVA':{ico:'🏦',nm:'VA BCA',sb:'ATM / m-BCA'},
+  'B1':{ico:'🏦',nm:'VA BNI',sb:'ATM / BNI Mobile'},'BNIVA':{ico:'🏦',nm:'VA BNI',sb:'ATM / BNI Mobile'},
+  'I1':{ico:'🏦',nm:'VA Mandiri',sb:'ATM / Livin'},'MANDIRIVA':{ico:'🏦',nm:'VA Mandiri',sb:'ATM / Livin'},
+  'VA':{ico:'🏦',nm:'VA Maybank',sb:'ATM / Maybank'},
+  'A1':{ico:'🏪',nm:'Alfamart',sb:'Alfamart / Alfamidi'},'LA':{ico:'🏪',nm:'Alfamart',sb:'Alfamart / Alfamidi'},'ALFAMART':{ico:'🏪',nm:'Alfamart',sb:'Alfamart / Alfamidi'},
+  'FT':{ico:'🏪',nm:'Retail',sb:'Alfamart · Pegadaian · POS'},
+  'IR':{ico:'🏪',nm:'Indomaret',sb:'Indomaret'}
+};
+function rp(n){return 'Rp '+(Number(n||0)).toLocaleString('id-ID');}
+function esc(s){return String(s||'').replace(/[<>&"]/g,'');}
+
+fetch('/voucher/invoice/'+encodeURIComponent(NO_INV)).then(function(r){return r.json();}).then(function(d){
+  var card=document.getElementById('card');
+  if(d.error){ card.innerHTML='<div class="stat">❌ '+esc(d.error)+'</div>'; return; }
+  if(d.sudah_bayar){
+    card.innerHTML='<div class="stat"><div style="font-size:40px">✅</div><div class="paid">Tagihan '+esc(d.no_invoice)+' sudah lunas.</div><div style="margin-top:8px;color:#64748b">Terima kasih.</div></div>';
+    return;
+  }
+  var logo = d.app_logo ? '<div class="logo"><img src="'+esc(d.app_logo)+'"></div>' : '';
+  var aktif = d.metode_aktif ? d.metode_aktif.split(',').map(function(x){return x.trim();}).filter(Boolean) : [];
+  if(!aktif.length) aktif=['QRIS'];
+  metode = aktif[0];
+  var grid = aktif.map(function(code,i){
+    var m = SEMUA_METODE[code] || {ico:'💳',nm:code,sb:''};
+    return '<div class="mi'+(i===0?' sel':'')+'" data-code="'+esc(code)+'" onclick="pilih(this)">'
+      +'<span class="ico">'+m.ico+'</span><div><div class="nm">'+m.nm+'</div><div class="sb">'+m.sb+'</div></div></div>';
+  }).join('');
+  card.innerHTML = logo
+    + '<h1>'+esc(d.app_name)+'</h1>'
+    + '<div class="sub">Pembayaran Tagihan Internet</div>'
+    + '<div class="amount">'+rp(d.jumlah)+'</div>'
+    + '<div class="row"><span>No. Invoice</span><b>'+esc(d.no_invoice)+'</b></div>'
+    + (d.nama_pelanggan?'<div class="row"><span>Pelanggan</span><b>'+esc(d.nama_pelanggan)+'</b></div>':'')
+    + (d.nama_paket?'<div class="row"><span>Paket</span><b>'+esc(d.nama_paket)+'</b></div>':'')
+    + '<div class="lbl">Pilih Metode Pembayaran</div>'
+    + '<div class="metode-grid">'+grid+'</div>'
+    + '<button class="btn" id="btnBayar" onclick="bayar()">🔒 Bayar Sekarang</button>';
+}).catch(function(){
+  document.getElementById('card').innerHTML='<div class="stat">❌ Gagal memuat tagihan.</div>';
+});
+
+function pilih(el){
+  document.querySelectorAll('.mi').forEach(function(x){x.classList.remove('sel');});
+  el.classList.add('sel'); metode = el.getAttribute('data-code');
+}
+function bayar(){
+  var btn=document.getElementById('btnBayar');
+  btn.disabled=true; btn.textContent='⏳ Membuat link…';
+  fetch('/voucher/invoice/'+encodeURIComponent(NO_INV)+'/bayar',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({metode:metode})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d.payment_url){ window.location.href=d.payment_url; }
+    else { alert(d.error||'Gagal membuat link'); btn.disabled=false; btn.textContent='🔒 Bayar Sekarang'; }
+  }).catch(function(){ alert('Gagal terhubung'); btn.disabled=false; btn.textContent='🔒 Bayar Sekarang'; });
+}
+</script></body></html>`);
+});
+
 // Health check
 app.get('/health', async (req, res) => {
     const { query } = require('./config/db');

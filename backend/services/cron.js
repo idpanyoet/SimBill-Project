@@ -10,6 +10,16 @@ const SUSPEND_H  = parseInt(process.env.SUSPEND_H_PLUS)   || 3;
 
 console.log(`[CRON] Scheduler aktif | Reminder H-${REMINDER_H} | Suspend H+${SUSPEND_H}`);
 
+// Tandai voucher 'used' dari radacct setiap 15 menit
+cron.schedule('*/15 * * * *', async () => {
+    try {
+        const n = await radiusService.syncStatusVoucher();
+        if (n > 0) console.log(`[CRON] ${n} voucher ditandai used`);
+    } catch (e) {
+        console.error('[CRON] Error sync status voucher:', e.message);
+    }
+});
+
 // ============================================================
 // 1. KIRIM REMINDER TAGIHAN (setiap hari jam 08:00 WIB)
 // ============================================================

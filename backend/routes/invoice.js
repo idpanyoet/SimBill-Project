@@ -221,7 +221,7 @@ router.post('/:id/bayar-tunai', async (req, res, next) => {
             return res.status(400).json({ error: 'Invoice voucher hotspot tidak bisa dikonfirmasi lewat menu ini' });
 
         const inv = await queryOne(`
-            SELECT i.*, p.nama, p.no_hp, p.id AS pid, p.paket_id, pk.masa_aktif
+            SELECT i.*, p.nama, p.no_hp, p.id AS pid, p.paket_id, pk.masa_aktif, pk.nama AS nama_paket
             FROM invoice i
             JOIN pelanggan p ON i.pelanggan_id = p.id
             JOIN paket pk ON i.paket_id = pk.id
@@ -249,7 +249,13 @@ router.post('/:id/bayar-tunai', async (req, res, next) => {
         // Kirim WA konfirmasi
         await waService.kirimKonfirmasiBayar({
             no_hp: inv.no_hp, nama: inv.nama,
-            jumlah: inv.jumlah, tgl_expired
+            jumlah: inv.jumlah, total: inv.jumlah, tgl_expired,
+            no_invoice: inv.no_invoice,
+            paket: inv.nama_paket || inv.paket,
+            metode_bayar: inv.metode_bayar || 'Tunai',
+            tgl_invoice: inv.tgl_invoice,
+            tgl_jatuh_tempo: inv.tgl_jatuh_tempo,
+            periode: inv.tgl_invoice
         });
 
         res.json({ pesan: 'Pembayaran dikonfirmasi', tgl_expired });
@@ -276,7 +282,9 @@ router.post('/:id/kirim-reminder', async (req, res, next) => {
         await waService.kirimReminder({
             no_hp: inv.no_hp, nama: inv.nama,
             no_invoice: inv.no_invoice, jumlah: inv.jumlah,
-            tgl_jatuh_tempo: inv.tgl_jatuh_tempo, payment_url: inv.payment_url
+            tgl_jatuh_tempo: inv.tgl_jatuh_tempo, tgl_invoice: inv.tgl_invoice,
+            payment_url: inv.payment_url, pelanggan_id: inv.pelanggan_id,
+            invoice_id: inv.id, metode_bayar: inv.metode_bayar
         });
 
         res.json({ pesan: 'Reminder WA terkirim' });

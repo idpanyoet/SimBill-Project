@@ -270,6 +270,20 @@ async function _syncGroupPaket(paket, tipe_koneksi) {
     const attrs = [
         { attribute: 'Mikrotik-Rate-Limit', op: ':=', value: rateLimit },
     ];
+
+    // Khusus HOTSPOT: kurangi keluhan "minta login terus" saat reconnect.
+    // - Idle-Timeout 0   = jangan logout walau HP diam lama (idle).
+    // - Mikrotik-Keepalive-Timeout besar = jangan putus saat sinyal sebentar drop.
+    // Catatan: agar reconnect WiFi tidak minta login ulang, fitur utamanya adalah
+    // mac-cookie di profil Hotspot MikroTik (bukan RADIUS). Atribut di bawah
+    // membantu menjaga sesi tetap hidup, mengurangi frekuensi diminta login.
+    if (tipe_koneksi === 'hotspot') {
+        attrs.push({ attribute: 'Idle-Timeout', op: ':=', value: '0' });
+        attrs.push({ attribute: 'Mikrotik-Keepalive-Timeout', op: ':=', value: '300' });
+    } else {
+        // Bersihkan atribut hotspot bila group ini bukan hotspot.
+        await query(`DELETE FROM radgroupreply WHERE groupname=? AND attribute IN ('Idle-Timeout','Mikrotik-Keepalive-Timeout')`, [groupname]);
+    }
     // Framed-Pool HANYA dikirim bila pool_name paket benar-benar diisi.
     // Mengarang 'pool-XXmbps' membuat MikroTik mencari pool yang tak ada →
     // PPPoE auth sukses tapi gagal dapat IP → langsung putus.
@@ -351,6 +365,33 @@ async function syncVoucher(username = null) {
     }
 }
 
+// Tandai voucher 'used' berdasarkan radacct (catatan login FreeRADIUS).
+// Voucher yang username-nya pernah muncul di radacct = sudah dipakai login,
+// jadi status diubah unused → used + isi tgl_digunakan dari login pertama.
+// Dipanggil saat buka daftar voucher & via cron.
+async function syncStatusVoucher() {
+    try {
+        const r = await query(`
+            UPDATE voucher v
+            JOIN (
+                SELECT username, MIN(acctstarttime) AS pertama
+                FROM radacct
+                WHERE username IS NOT NULL AND username != ''
+                GROUP BY username
+            ) a ON a.username = v.username
+            SET v.status = 'used',
+                v.tgl_digunakan = COALESCE(v.tgl_digunakan, a.pertama),
+                v.digunakan_oleh = COALESCE(v.digunakan_oleh, v.username)
+            WHERE v.status = 'unused'
+        `);
+        if (r.affectedRows > 0) console.log(`[voucher] ${r.affectedRows} voucher ditandai used dari radacct`);
+        return r.affectedRows;
+    } catch (e) {
+        console.warn('[voucher] syncStatusVoucher gagal:', e.message);
+        return 0;
+    }
+}
+
 module.exports = {
     tambahUser,
     updatePaket,
@@ -363,5 +404,6 @@ module.exports = {
     _syncGroupPaketPublic,
     encryptPassword,
     decryptPassword,
-    syncVoucher
+    syncVoucher,
+    syncStatusVoucher
 };

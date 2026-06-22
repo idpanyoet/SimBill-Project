@@ -296,8 +296,14 @@ router.post('/beli/voucher', resellerAuth, async (req, res, next) => {
         // Kirim via WA jika hanya 1 voucher (di luar transaksi — gagal kirim WA tidak boleh rollback pembelian)
         if (jumlah === 1) {
             const re = await queryOne('SELECT no_hp, nama FROM reseller WHERE id=?', [req.reseller.id]);
-            waService.kirimVoucher(re.no_hp, re.nama, hasil.kodes[0], `${paket.masa_aktif * 24} jam`)
-                .catch(err => console.warn('[RESELLER] Kirim WA voucher gagal:', err.message));
+            waService.kirimVoucher({
+                no_hp: re.no_hp, nama: re.nama,
+                username: hasil.kodes[0], password: hasil.kodes[0],
+                paket: paket.nama,
+                masa_aktif: `${paket.masa_aktif} ${paket.satuan_masa || 'hari'}`,
+                kecepatan: paket.kecepatan_dn ? `${paket.kecepatan_dn} Mbps` : '-',
+                voucher_list: hasil.kodes.join(', '), quantity: hasil.kodes.length
+            }).catch(err => console.warn('[RESELLER] Kirim WA voucher gagal:', err.message));
         }
 
         res.json({

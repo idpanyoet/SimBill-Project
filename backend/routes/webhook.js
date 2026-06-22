@@ -145,7 +145,7 @@ async function _prosesKonfirmasiBayar(order_id, payment_type, sukses, cancelled,
 
     // Cari invoice berdasarkan no_invoice
     const inv = await queryOne(`
-        SELECT i.*, p.nama, p.no_hp, p.username, pk.masa_aktif
+        SELECT i.*, p.nama, p.no_hp, p.username, pk.masa_aktif, pk.nama AS nama_paket
         FROM invoice i
         JOIN pelanggan p ON i.pelanggan_id = p.id
         JOIN paket pk ON i.paket_id = pk.id
@@ -233,10 +233,17 @@ async function _prosesKonfirmasiBayar(order_id, payment_type, sukses, cancelled,
 
         // Kirim WA konfirmasi
         await waService.kirimKonfirmasiBayar({
-            no_hp:       inv.no_hp,
-            nama:        inv.nama,
-            jumlah:      inv.jumlah,
-            tgl_expired
+            no_hp:           inv.no_hp,
+            nama:            inv.nama,
+            jumlah:          inv.jumlah,
+            total:           inv.jumlah,
+            tgl_expired,
+            no_invoice:      inv.no_invoice,
+            paket:           inv.nama_paket || inv.paket,
+            metode_bayar:    inv.metode_bayar,
+            tgl_invoice:     inv.tgl_invoice,
+            tgl_jatuh_tempo: inv.tgl_jatuh_tempo,
+            periode:         inv.tgl_invoice
         });
 
         console.log(`[WEBHOOK] ✅ Bayar lunas: ${order_id} — ${inv.nama}`);
