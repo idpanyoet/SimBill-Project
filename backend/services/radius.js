@@ -104,33 +104,97 @@ async function updatePaket(username, paketBaru, tipe_koneksi) {
     await _syncGroupPaket(paketBaru, tipe_koneksi);
     const groupname = _namaGroup(paketBaru, tipe_koneksi);
     await _setGroup(username, groupname);
+    // Putus sesi aktif supaya pelanggan reconnect & paket/kecepatan baru langsung berlaku
+    try { await _putusSesilAktif(username); } catch (e) { console.warn('[RADIUS] putus sesi updatePaket:', e.message); }
     console.log(`[RADIUS] Update paket ${username} → ${groupname}`);
 }
 
 // ============================================================
-// SUSPEND USER (tolak koneksi)
-// ============================================================
+// SUSPEND USER → mode ISOLIR (bukan tolak total).
+// User TETAP bisa login PPPoE, tapi diberi Framed-Pool isolir sehingga dapat IP
+// dari pool isolir di MikroTik (diarahkan ke halaman tagihan). Nama pool diambil
+// dari setting 'isolir_pool' (default 'isolir').
 async function suspendUser(username) {
-    // Hapus password → user tidak bisa auth
-    await query(`DELETE FROM radcheck WHERE username = ? AND attribute = 'Cleartext-Password'`, [username]);
+    // Ambil nama pool isolir dari setting (fallback 'isolir')
+    let poolIsolir = 'isolir';
+    try {
+        const s = await queryOne(`SELECT nilai FROM setting WHERE kunci='isolir_pool'`);
+        if (s && s.nilai && String(s.nilai).trim()) poolIsolir = String(s.nilai).trim();
+    } catch (_) {}
 
-    // Tambah attribute Auth-Type := Reject
-    await query(`
-        INSERT INTO radcheck (username, attribute, op, value)
-        VALUES (?, 'Auth-Type', ':=', 'Reject')
-        ON DUPLICATE KEY UPDATE value = 'Reject'
-    `, [username]);
+    // Mode isolir berbasis Framed-Pool? cek setting 'isolir_mode' (default 'pool').
+    // Jika 'reject', pakai perilaku lama (tolak total).
+    let mode = 'pool';
+    try {
+        const m = await queryOne(`SELECT nilai FROM setting WHERE kunci='isolir_mode'`);
+        if (m && m.nilai && String(m.nilai).trim()) mode = String(m.nilai).trim();
+    } catch (_) {}
 
-    // Putus sesi aktif (kirim CoA/Disconnect via mikrotik API atau RADIUS CoA)
+    if (mode === 'reject') {
+        // Perilaku lama: tolak total
+        await query(`DELETE FROM radcheck WHERE username = ? AND attribute = 'Cleartext-Password'`, [username]);
+        await query(`
+            INSERT INTO radcheck (username, attribute, op, value)
+            VALUES (?, 'Auth-Type', ':=', 'Reject')
+            ON DUPLICATE KEY UPDATE value = 'Reject'
+        `, [username]);
+    } else {
+        // Mode ISOLIR: user tetap bisa login, tapi diberi Framed-Pool isolir.
+        // Pastikan tidak ada reject attribute yang menghalangi login.
+        await _hapusReject(username);
+        // Pastikan password masih ada (kalau hilang, pulihkan dari enkripsi)
+        await _pastikanPassword(username);
+        // Set Framed-Pool = isolir di radreply (timpa jika sudah ada)
+        await query(`
+            INSERT INTO radreply (username, attribute, op, value)
+            VALUES (?, 'Framed-Pool', ':=', ?)
+            ON DUPLICATE KEY UPDATE value = ?
+        `, [username, poolIsolir, poolIsolir]);
+    }
+
+    // Putus sesi aktif via CoA → pelanggan reconnect → dapat IP isolir / ditolak
     await _putusSesilAktif(username);
 
-    console.log(`[RADIUS] Suspend: ${username}`);
+    console.log(`[RADIUS] Suspend (${mode}): ${username}` + (mode !== 'reject' ? ` → pool ${poolIsolir}` : ''));
+}
+
+// Pastikan Cleartext-Password ada (pulihkan dari enkripsi jika hilang)
+async function _pastikanPassword(username) {
+    const ada = await queryOne(
+        `SELECT id FROM radcheck WHERE username=? AND attribute='Cleartext-Password'`, [username]);
+    if (ada) return;
+    const p = await queryOne('SELECT radius_password_enc FROM pelanggan WHERE username = ?', [username]);
+    const plaintext = p?.radius_password_enc ? decryptPassword(p.radius_password_enc) : null;
+    if (plaintext) {
+        await query(`
+            INSERT INTO radcheck (username, attribute, op, value)
+            VALUES (?, 'Cleartext-Password', ':=', ?)
+            ON DUPLICATE KEY UPDATE value = ?
+        `, [username, plaintext, plaintext]);
+    }
 }
 
 // ============================================================
 // AKTIFKAN KEMBALI USER
 // ============================================================
 async function aktifkanUser(username) {
+    // Hapus reject attribute
+    await _hapusReject(username);
+
+    // Hapus Framed-Pool isolir agar pelanggan dapat IP normal lagi
+    await query(`DELETE FROM radreply WHERE username = ? AND attribute = 'Framed-Pool'`, [username]);
+
+    // Pulihkan password jika hilang
+    await _pastikanPassword(username);
+
+    // Putus sesi isolir aktif → pelanggan reconnect → dapat IP normal
+    try { await _putusSesilAktif(username); } catch (e) { console.warn('[RADIUS] putus sesi aktifkan:', e.message); }
+
+    console.log(`[RADIUS] Aktifkan: ${username}`);
+}
+
+// (versi lama aktifkanUser di bawah dipertahankan sbg referensi, tidak dipakai)
+async function _aktifkanUserLama(username) {
     // Hapus reject attribute
     await _hapusReject(username);
 
@@ -314,17 +378,77 @@ async function _syncGroupPaket(paket, tipe_koneksi) {
     }
 }
 
-// Putus sesi aktif via RADIUS Disconnect-Message (CoA)
-// Memerlukan NAS support RFC 3576 / CoA
+// Putus sesi aktif via RADIUS CoA / Disconnect-Message (RFC 5176) memakai
+// `radclient` (bawaan FreeRADIUS). Mengirim PoD ke NAS:3799 dengan secret NAS.
+// Tidak perlu library/user API — cukup secret RADIUS yang sudah ada.
 async function _putusSesilAktif(username) {
-    // Implementasi CoA tergantung NAS — MikroTik mendukung CoA via port 3799
-    // Untuk sekarang: cukup hapus dari radacct (sesi akan putus saat NAS re-auth)
-    await query(
-        `UPDATE radacct SET acctstoptime=NOW(), acctterminatecause='Admin-Reset'
-         WHERE username=? AND acctstoptime IS NULL`,
-        [username]
-    );
-    // TODO: Implementasi kirim CoA packet ke NAS menggunakan library node-radius
+    const { exec } = require('child_process');
+    const { promisify } = require('util');
+    const execAsync = promisify(exec);
+
+    const tandaiStop = async () => {
+        await query(
+            `UPDATE radacct SET acctstoptime=NOW(), acctterminatecause='Admin-Reset'
+             WHERE username=? AND acctstoptime IS NULL`,
+            [username]
+        );
+    };
+
+    try {
+        // Ambil sesi aktif user: butuh NAS IP + Acct-Session-Id untuk disconnect presisi
+        const sesi = await query(
+            `SELECT nasipaddress, acctsessionid FROM radacct
+             WHERE username=? AND acctstoptime IS NULL`, [username]);
+
+        if (!sesi.length) {
+            // Tidak ada sesi aktif tercatat — tidak ada yang perlu diputus
+            return;
+        }
+
+        // Ambil secret per NAS
+        const ips = [...new Set(sesi.map(s => s.nasipaddress).filter(Boolean))];
+        const nasRows = ips.length ? await query(
+            `SELECT nasname, secret FROM nas WHERE nasname IN (${ips.map(()=>'?').join(',')})`, ips) : [];
+        const secretMap = {};
+        nasRows.forEach(n => { secretMap[n.nasname] = n.secret; });
+
+        for (const s of sesi) {
+            const nasIp = s.nasipaddress;
+            const secret = secretMap[nasIp];
+            if (!nasIp || !secret) {
+                console.warn(`[CoA] Lewati ${username}: secret/NAS tidak ditemukan untuk ${nasIp}`);
+                continue;
+            }
+            // Bangun atribut disconnect. MikroTik butuh User-Name + Acct-Session-Id
+            // (atau NAS-IP-Address). Kirim keduanya untuk presisi.
+            const attrs = [
+                `User-Name=${username}`,
+                `NAS-IP-Address=${nasIp}`
+            ];
+            if (s.acctsessionid) attrs.push(`Acct-Session-Id=${s.acctsessionid}`);
+            const payload = attrs.join(',');
+
+            // radclient: kirim disconnect ke port 3799 NAS
+            // -x verbose, timeout 5 detik, retry 1
+            const cmd = `printf '%s' ${JSON.stringify(payload)} | radclient -t 5 -r 1 ${JSON.stringify(nasIp + ':3799')} disconnect ${JSON.stringify(secret)}`;
+            try {
+                const { stdout } = await execAsync(cmd, { timeout: 8000 });
+                if (/Disconnect-ACK/i.test(stdout)) {
+                    console.log(`[CoA] Sesi ${username} diputus di ${nasIp} (ACK)`);
+                } else if (/Disconnect-NAK/i.test(stdout)) {
+                    console.warn(`[CoA] ${username} di ${nasIp}: Disconnect-NAK (atribut tidak cocok)`);
+                } else {
+                    console.log(`[CoA] ${username} di ${nasIp}: terkirim`);
+                }
+            } catch (e) {
+                console.warn(`[CoA] Gagal kirim disconnect ${username} ke ${nasIp}: ${e.message}`);
+            }
+        }
+    } catch (e) {
+        console.warn(`[CoA] _putusSesilAktif error: ${e.message}`);
+    } finally {
+        await tandaiStop();
+    }
 }
 
 async function _syncGroupPaketPublic(paket, tipe_koneksi) {

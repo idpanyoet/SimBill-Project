@@ -355,6 +355,7 @@ router.put('/:id', async (req, res, next) => {
                 paket_id=?, tipe_koneksi=?, notes=?, username=?,
                 latitude=?, longitude=?, odc=?, odp=?,
                 no_ktp=?, tgl_lahir=?, reseller_id=?
+                ${req.body.tgl_expired ? ', tgl_expired=?' : ''}
                 ${req.body.ktp_url ? ', ktp_url=?' : ''}
             WHERE id = ?
         `, [nama, no_hp, email || null, alamat || null, paketIdBaru, tipeBaru,
@@ -363,6 +364,7 @@ router.put('/:id', async (req, res, next) => {
             req.body.odc || null, req.body.odp || null,
             req.body.no_ktp || null, req.body.tgl_lahir || null,
             (req.body.reseller_id === '' || req.body.reseller_id == null) ? null : req.body.reseller_id,
+            ...(req.body.tgl_expired ? [req.body.tgl_expired] : []),
             ...(req.body.ktp_url ? [req.body.ktp_url] : []),
             req.params.id]);
 

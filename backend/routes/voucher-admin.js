@@ -125,8 +125,8 @@ router.post('/generate', async (req, res, next) => {
       const password = mode === 'sama' ? username : _acak(charset, panjangAcak);
 
       await query(`
-        INSERT INTO voucher (username, password, paket_id, tgl_expired, batch_id)
-        VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 365 DAY), ?)
+        INSERT INTO voucher (username, password, paket_id, status, tgl_expired, batch_id)
+        VALUES (?, ?, ?, 'unused', DATE_ADD(NOW(), INTERVAL 365 DAY), ?)
       `, [username, password, paket_id, batchId]);
 
       hasil.push({ username, password });

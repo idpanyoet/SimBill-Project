@@ -439,13 +439,146 @@ app.get('/pembayaran/selesai', async (req, res) => {
   <div class="ikon">${ikon}</div>
   <h1>${judul}</h1>
   <p>${pesan}</p>
+  ${sukses && String(orderId).startsWith('VCR') ? `<div id="vcr-box" style="margin:0 0 20px"></div>` : ''}
   ${orderId ? `<div class="ref">No. Order: ${String(orderId).replace(/[<>&"]/g,'')}</div>` : ''}
-  <a class="btn" href="${appUrl || '/'}/client">Kembali ke Dashboard</a>
-</div></body></html>`);
+  <a class="btn" href="${appUrl || ''}/${String(orderId).startsWith('VCR') ? '' : 'client'}">${String(orderId).startsWith('VCR') ? 'Kembali ke Beranda Voucher' : 'Kembali ke Dashboard'}</a>
+</div>
+${sukses && String(orderId).startsWith('VCR') ? `<script>
+(function(){
+  var order = ${JSON.stringify(String(orderId).replace(/[^A-Za-z0-9]/g,''))};
+  var box = document.getElementById('vcr-box');
+  var coba = 0, maks = 15;  // poll ~30 detik (voucher dibuat oleh webhook)
+  var _vcrKode = '';
+  function tampil(v){
+    _vcrKode = v.username;
+    box.innerHTML =
+      '<div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:14px;padding:16px;text-align:center">'
+      + '<div style="font-size:11px;color:#16a34a;font-weight:700;letter-spacing:.5px;margin-bottom:8px">VOUCHER ANDA</div>'
+      + (v.nama_paket ? '<div style="font-size:12px;color:#64748b;margin-bottom:8px">'+v.nama_paket+'</div>' : '')
+      + '<div style="font-family:monospace;font-size:26px;font-weight:800;color:#0f172a;letter-spacing:1px">'+v.username+'</div>'
+      + (v.password && v.password!==v.username ? '<div style="font-size:12px;color:#64748b;margin-top:6px">Password: <b style="font-family:monospace">'+v.password+'</b></div>' : '<div style="font-size:11px;color:#94a3b8;margin-top:6px">Username = Password</div>')
+      + '<button id="vcr-salin" style="margin-top:12px;background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer">📋 Salin Kode</button>'
+      + '<div style="font-size:11px;color:#94a3b8;margin-top:10px">Kode juga dikirim ke WhatsApp Anda</div>'
+      + '</div>';
+    var btn = document.getElementById('vcr-salin');
+    if(btn) btn.addEventListener('click', function(){
+      if(navigator.clipboard) navigator.clipboard.writeText(_vcrKode);
+      btn.textContent = '✓ Tersalin';
+    });
+  }
+  function memuat(){
+    box.innerHTML = '<div style="color:#64748b;font-size:13px;padding:8px">⏳ Menyiapkan voucher Anda…</div>';
+  }
+  function cek(){
+    fetch('/voucher/hasil/'+encodeURIComponent(order)).then(function(r){return r.json();}).then(function(d){
+      if(d && d.ada){ tampil(d); return; }
+      coba++;
+      if(coba<maks){ setTimeout(cek, 2000); }
+      else { box.innerHTML='<div style="color:#94a3b8;font-size:12px;padding:8px">Voucher sedang diproses. Kode akan dikirim ke WhatsApp Anda dalam beberapa menit.</div>'; }
+    }).catch(function(){
+      coba++;
+      if(coba<maks) setTimeout(cek, 2000);
+    });
+  }
+  memuat(); cek();
+})();
+</script>` : ''}
+</body></html>`);
 });
 
 // --- Halaman bayar tagihan (link dikirim via WA) ---
 // Pelanggan buka /bayar/INV-XXXX → pilih metode → diarahkan ke payment gateway.
+app.get('/isolir', (req, res) => {
+    res.set('Content-Type', 'text/html; charset=utf-8').send(`<!doctype html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Layanan Terisolir</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+       background:linear-gradient(135deg,#fef2f2,#fff7ed);
+       display:flex;align-items:flex-start;justify-content:center;min-height:100vh;padding:18px}
+  .card{background:#fff;border-radius:18px;box-shadow:0 10px 40px rgba(0,0,0,.08);max-width:460px;width:100%;padding:26px;margin-top:24px}
+  .logo{text-align:center;margin-bottom:10px}
+  .logo img{max-height:48px}
+  .icon-warn{width:64px;height:64px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:32px}
+  h1{font-size:20px;margin:4px 0 4px;color:#0f172a;text-align:center}
+  .sub{font-size:13px;color:#64748b;text-align:center;margin-bottom:20px;line-height:1.5}
+  .info{background:#f8fafc;border-radius:12px;padding:14px 16px;margin-bottom:16px}
+  .row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;color:#475569}
+  .row b{color:#0f172a}
+  .tagihan-item{border:1px solid #fecaca;background:#fef2f2;border-radius:12px;padding:14px 16px;margin-bottom:10px}
+  .tagihan-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .inv-no{font-family:monospace;font-size:12px;color:#dc2626;font-weight:700}
+  .amount{font-size:20px;font-weight:800;color:#0f172a}
+  .btn{display:block;width:100%;text-align:center;text-decoration:none;background:linear-gradient(135deg,#16a34a,#15803d);
+       color:#fff;font-weight:700;font-size:15px;padding:13px;border-radius:12px;margin-top:8px;border:none;cursor:pointer;
+       box-shadow:0 6px 16px -6px rgba(22,163,74,.5)}
+  .muted{font-size:12px;color:#94a3b8;text-align:center;margin-top:16px;line-height:1.5}
+  .loading{text-align:center;color:#94a3b8;padding:30px;font-size:14px}
+  .cari-box{display:flex;gap:8px;margin-top:8px}
+  .cari-box input{flex:1;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;font-family:inherit;font-size:13px}
+  .cari-box button{padding:10px 16px;border:none;background:#4f46e5;color:#fff;border-radius:10px;font-weight:600;cursor:pointer}
+</style></head>
+<body>
+  <div class="card" id="card">
+    <div class="loading" id="loading">Memuat informasi layanan…</div>
+    <div id="konten" style="display:none"></div>
+  </div>
+<script>
+  async function muat(username) {
+    const url = '/voucher/isolir-info' + (username ? '?username=' + encodeURIComponent(username) : '');
+    let d;
+    try { d = await (await fetch(url)).json(); }
+    catch(e){ document.getElementById('loading').textContent = 'Gagal memuat. Coba muat ulang halaman.'; return; }
+
+    document.getElementById('loading').style.display = 'none';
+    const k = document.getElementById('konten');
+    k.style.display = 'block';
+
+    const logo = d.app_logo ? '<div class="logo"><img src="'+d.app_logo+'" alt=""></div>' : '';
+
+    if (!d.ditemukan) {
+      k.innerHTML = logo +
+        '<div class="icon-warn">🔒</div>' +
+        '<h1>Layanan Terisolir</h1>' +
+        '<div class="sub">Layanan internet Anda sedang dinonaktifkan karena tagihan belum dibayar. Masukkan nama atau username Anda untuk melihat tagihan.</div>' +
+        '<div class="cari-box"><input id="u" placeholder="Nama atau Username Anda"><button onclick="cari()">Cek</button></div>';
+      return;
+    }
+
+    const p = d.pelanggan;
+    let tagihanHtml = '';
+    if (d.tagihan && d.tagihan.length) {
+      tagihanHtml = d.tagihan.map(function(t){
+        return '<div class="tagihan-item">' +
+          '<div class="tagihan-top"><span class="inv-no">'+t.no_invoice+'</span><span style="font-size:11px;color:#94a3b8">'+(t.nama_paket||'')+'</span></div>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center">' +
+            '<span class="amount">Rp '+Number(t.jumlah).toLocaleString('id-ID')+'</span>' +
+            '<a class="btn" style="width:auto;padding:9px 18px;margin:0" href="/bayar/'+encodeURIComponent(t.no_invoice)+'">Bayar</a>' +
+          '</div></div>';
+      }).join('');
+    } else {
+      tagihanHtml = '<div class="sub" style="color:#16a34a">Tidak ada tagihan tertunggak. Jika layanan masih terisolir, hubungi admin.</div>';
+    }
+
+    k.innerHTML = logo +
+      '<div class="icon-warn">🔒</div>' +
+      '<h1>Layanan Terisolir</h1>' +
+      '<div class="sub">Halo <b>'+p.nama+'</b>, layanan internet Anda dinonaktifkan karena ada tagihan yang belum dibayar. Silakan lakukan pembayaran untuk mengaktifkan kembali.</div>' +
+      '<div class="info"><div class="row"><span>Nama</span><b>'+p.nama+'</b></div>' +
+      '<div class="row"><span>Username</span><b>'+p.username+'</b></div></div>' +
+      '<div style="font-size:12px;font-weight:700;color:#334155;margin-bottom:8px">Tagihan Anda</div>' +
+      tagihanHtml +
+      '<div class="muted">Setelah pembayaran berhasil, layanan akan aktif kembali otomatis dalam beberapa menit. Jika ada kendala, hubungi admin.</div>';
+  }
+  function cari(){ var u=document.getElementById('u').value.trim(); if(u) muat(u); }
+  document.addEventListener('keydown', function(e){ if(e.key==='Enter'){ var el=document.getElementById('u'); if(el && document.activeElement===el) cari(); } });
+  muat();
+</script>
+</body></html>`);
+});
+
 app.get('/bayar/:no_invoice', (req, res) => {
     const noInv = String(req.params.no_invoice).replace(/[^A-Za-z0-9\-]/g, '');
     res.set('Content-Type', 'text/html; charset=utf-8').send(`<!doctype html>

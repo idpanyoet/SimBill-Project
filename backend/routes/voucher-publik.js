@@ -100,17 +100,16 @@ router.post('/beli', limitBeli, async (req, res, next) => {
 
     // Buat HANYA invoice (tanpa voucher) — invoice menampung info pembeli
     // di kolom keterangan agar webhook bisa buat voucher setelah lunas.
+    // PENTING: no_invoice = order_id (VCR...) supaya webhook bisa menemukan
+    // invoice ini saat Duitku callback (Duitku mengirim balik order_id).
     const ket = `Voucher PENDING — WA: ${noHpNormal} — Nama: ${nama} — Paket: ${paket.id}`;
-    const noInv = await withTransaction(async (db) =>
-      generateUniqueInvoiceNo(db, INVOICE_PREFIX, tahun, (noInvoice) =>
-        db.query(`
-          INSERT INTO invoice
-            (no_invoice, pelanggan_id, paket_id, jumlah, tgl_invoice,
-             tgl_jatuh_tempo, keterangan, status)
-          VALUES (?, NULL, ?, ?, CURDATE(), ?, ?, 'unpaid')
-        `, [noInvoice, paket.id, paket.harga, tglJatuh, ket])
-      )
-    ).then(r => r.no_invoice);
+    const noInv = order_id;
+    await query(`
+      INSERT INTO invoice
+        (no_invoice, pelanggan_id, paket_id, jumlah, tgl_invoice,
+         tgl_jatuh_tempo, keterangan, status)
+      VALUES (?, NULL, ?, ?, CURDATE(), ?, ?, 'unpaid')
+    `, [noInv, paket.id, paket.harga, tglJatuh, ket]);
 
     // Buat transaksi payment gateway
     const pg = await paymentService.buatTransaksi({
@@ -193,23 +192,26 @@ router.get('/stats', async (req, res, next) => {
 });
 
 function _acakUsername() {
+  // Format voucher pembelian online: 'VX' + 8 karakter acak (huruf besar + angka)
+  // Total 10 digit. Contoh: VXA7K2M9P3
+  // Charset tanpa karakter ambigu (tanpa I,O,0,1) agar mudah dibaca.
   const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  return Array.from({ length: 10 }, () => c[require('crypto').randomInt(c.length)]).join('');
+  const acak = Array.from({ length: 8 }, () => c[require('crypto').randomInt(c.length)]).join('');
+  return 'VX' + acak;
 }
 
 async function _aktivasiVoucher(username, noHp, nama, paket) {
   const existing = await queryOne('SELECT id FROM voucher WHERE username = ?', [username]);
   if (!existing) {
+    // Voucher hasil pembelian dibuat berstatus 'unused'.
+    // Status berubah 'used' otomatis saat pelanggan login (via syncStatusVoucher
+    // yang membaca radacct).
     await query(`
-      INSERT INTO voucher (username, password, paket_id, status, tgl_digunakan, digunakan_oleh)
-      VALUES (?, ?, ?, 'used', NOW(), ?)
-    `, [username, username, paket.id, noHp]);
-  } else {
-    await query(`
-      UPDATE voucher SET status='used', digunakan_oleh=?, tgl_digunakan=NOW()
-      WHERE username=?
-    `, [noHp, username]);
+      INSERT INTO voucher (username, password, paket_id, status)
+      VALUES (?, ?, ?, 'unused')
+    `, [username, username, paket.id]);
   }
+  // Jika voucher sudah ada, JANGAN paksa jadi used — biarkan status apa adanya.
 
   radiusService.syncVoucher(username).catch(e => console.warn('[sync]', e.message));
 
@@ -229,6 +231,77 @@ async function _aktivasiVoucher(username, noHp, nama, paket) {
     voucher_list: username, quantity: 1
   });
 }
+
+// ── GET /voucher/isolir-info ── info tagihan untuk halaman isolir ──────
+// Deteksi pelanggan dari IP isolir (radacct framedipaddress) atau ?username=
+router.get('/isolir-info', async (req, res, next) => {
+  try {
+    const brand = await query(`SELECT kunci,nilai FROM setting WHERE kunci IN ('app_name','app_logo')`);
+    const bmap = {}; brand.forEach(r => bmap[r.kunci] = r.nilai);
+
+    let pelanggan = null;
+    const username = (req.query.username || '').trim();
+
+    if (username) {
+      // Cari berdasarkan username ATAU nama (LIKE, ambil yang paling cocok)
+      pelanggan = await queryOne(
+        `SELECT id, nama, username, no_hp, status, tgl_expired FROM pelanggan
+         WHERE username = ? OR nama = ?
+         ORDER BY (username = ?) DESC LIMIT 1`,
+        [username, username, username]);
+      // Kalau tidak ada yang persis, coba pencarian LIKE (nama/username)
+      if (!pelanggan) {
+        const like = `%${username}%`;
+        pelanggan = await queryOne(
+          `SELECT id, nama, username, no_hp, status, tgl_expired FROM pelanggan
+           WHERE username LIKE ? OR nama LIKE ?
+           ORDER BY (status='suspended') DESC LIMIT 1`,
+          [like, like]);
+      }
+    } else {
+      // Deteksi dari IP klien (yang dilihat server) — cocokkan ke sesi radacct aktif
+      let ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+      if (ip.startsWith('::ffff:')) ip = ip.slice(7);
+      if (ip) {
+        pelanggan = await queryOne(`
+          SELECT p.id, p.nama, p.username, p.no_hp, p.status, p.tgl_expired
+          FROM radacct r
+          JOIN pelanggan p ON p.username = r.username
+          WHERE r.framedipaddress = ? AND r.acctstoptime IS NULL
+          ORDER BY r.radacctid DESC LIMIT 1`, [ip]);
+      }
+    }
+
+    if (!pelanggan) {
+      return res.json({
+        ditemukan: false,
+        app_name: bmap.app_name || 'SimBill',
+        app_logo: bmap.app_logo || ''
+      });
+    }
+
+    // Cari invoice tertunggak (unpaid/pending) milik pelanggan ini
+    const tagihan = await query(`
+      SELECT i.no_invoice, i.jumlah, i.status, i.tgl_jatuh_tempo, pk.nama AS nama_paket
+      FROM invoice i
+      LEFT JOIN paket pk ON i.paket_id = pk.id
+      WHERE i.pelanggan_id = ? AND i.status IN ('unpaid','pending')
+      ORDER BY i.tgl_jatuh_tempo ASC`, [pelanggan.id]);
+
+    res.json({
+      ditemukan: true,
+      app_name: bmap.app_name || 'SimBill',
+      app_logo: bmap.app_logo || '',
+      pelanggan: {
+        nama: pelanggan.nama,
+        username: pelanggan.username,
+        status: pelanggan.status,
+        tgl_expired: pelanggan.tgl_expired
+      },
+      tagihan
+    });
+  } catch (e) { next(e); }
+});
 
 // ── GET /voucher/invoice/:no ── info tagihan untuk halaman bayar ──────
 // Publik (tanpa login) — dipakai halaman /bayar/:no_invoice yang link-nya
@@ -303,6 +376,64 @@ router.post('/invoice/:no/bayar', limitBayar, async (req, res, next) => {
       return res.json({ payment_url: pg.payment_url });
     }
     return res.status(502).json({ error: 'Gagal membuat link pembayaran. Coba metode lain atau hubungi admin.' });
+  } catch (e) { next(e); }
+});
+
+// ── GET /voucher/hasil/:order ── ambil voucher hasil pembelian ──────
+// Dipakai halaman /pembayaran/selesai untuk menampilkan kode voucher.
+// order = no_invoice voucher (mis. VCRMQPAWMOJ). Voucher dibuat di webhook,
+// username-nya disimpan di keterangan invoice "— VoucherDibuat: XXXX".
+router.get('/hasil/:order', async (req, res, next) => {
+  try {
+    const inv = await queryOne(
+      `SELECT keterangan, status FROM invoice WHERE no_invoice=? AND pelanggan_id IS NULL`,
+      [req.params.order]
+    );
+    if (!inv) return res.json({ ada: false });
+    if (inv.status !== 'paid') return res.json({ ada: false, pending: true });
+
+    const m = (inv.keterangan || '').match(/VoucherDibuat:\s*([A-Za-z0-9]+)/);
+    if (m) {
+      const v = await queryOne(
+        `SELECT v.username, v.password, p.nama AS nama_paket
+         FROM voucher v LEFT JOIN paket p ON v.paket_id=p.id
+         WHERE v.username=?`, [m[1]]
+      );
+      if (v) {
+        return res.json({
+          ada: true,
+          username: v.username,
+          password: (v.password && v.password !== v.username) ? v.password : v.username,
+          nama_paket: v.nama_paket || ''
+        });
+      }
+    }
+
+    // FALLBACK (order lama tanpa tag): cari voucher dari nomor WA pembeli.
+    // Keterangan format "Voucher PENDING — WA: 628xxx — Nama: ... — Paket: N"
+    const waMatch    = (inv.keterangan || '').match(/WA:\s*(\d+)/);
+    const paketMatch = (inv.keterangan || '').match(/Paket:\s*(\d+)/);
+    if (waMatch) {
+      const noHp = waMatch[1];
+      // voucher 'used' dgn digunakan_oleh = WA pembeli, paket cocok, dibuat dekat waktu invoice
+      const params = [noHp];
+      let sql = `SELECT v.username, v.password, p.nama AS nama_paket
+                 FROM voucher v LEFT JOIN paket p ON v.paket_id=p.id
+                 WHERE v.digunakan_oleh = ?`;
+      if (paketMatch) { sql += ` AND v.paket_id = ?`; params.push(parseInt(paketMatch[1])); }
+      sql += ` ORDER BY v.tgl_digunakan DESC LIMIT 1`;
+      const v = await queryOne(sql, params);
+      if (v) {
+        return res.json({
+          ada: true,
+          username: v.username,
+          password: (v.password && v.password !== v.username) ? v.password : v.username,
+          nama_paket: v.nama_paket || ''
+        });
+      }
+    }
+
+    return res.json({ ada: false, pending: true });
   } catch (e) { next(e); }
 });
 

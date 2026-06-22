@@ -201,6 +201,9 @@ async function _prosesKonfirmasiBayar(order_id, payment_type, sukses, cancelled,
             if (paket) {
                 const { _aktivasiVoucher } = require('./voucher-publik');
                 await _aktivasiVoucher(username, noHp, namaBeli, paket);
+                // Simpan username voucher ke invoice agar halaman sukses bisa menampilkannya
+                await query(`UPDATE invoice SET keterangan = CONCAT(COALESCE(keterangan,''), ' — VoucherDibuat: ', ?) WHERE id=?`,
+                    [username, invVoucher.id]).catch(()=>{});
             }
         }
         console.log(`[WEBHOOK] ✅ Voucher lunas & dibuat: ${order_id} → ${username || '?'}`);

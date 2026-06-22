@@ -618,6 +618,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-section">Sistem</div>
     <div class="sb-item" onclick="goto('radius',this)"><i class="ti ti-server icon" aria-hidden="true"></i> RADIUS / NAS</div>
     <div class="sb-item" onclick="goto('sesi',this)"><i class="ti ti-activity icon" aria-hidden="true"></i> Sesi Aktif</div>
+    <div class="sb-item" onclick="goto('isolir',this)"><i class="ti ti-lock-access icon" aria-hidden="true"></i> Isolir</div>
     <div class="sb-item" onclick="goto('peta',this)"><i class="ti ti-map-pin icon" aria-hidden="true"></i> Peta Jaringan</div>
 
     <!-- Finance Report Group -->
@@ -780,14 +781,33 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
           </div>
         </div>
 
+        <!-- Statistik Reseller -->
+        <div class="card" style="padding:0;margin-bottom:16px">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-weight:600;display:flex;align-items:center;gap:8px"><i class="ti ti-chart-bar"></i> Statistik Reseller</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:10px;color:var(--text2)"><i class="ti ti-users"></i> Total Member</div>
+            <div style="font-size:18px;font-weight:700;color:var(--text)" id="rs-stat-member">0</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px">
+            <div style="display:flex;align-items:center;gap:10px;color:var(--text2)"><i class="ti ti-ticket"></i> Total Voucher</div>
+            <div style="font-size:18px;font-weight:700;color:var(--text)" id="rs-stat-voucher">0</div>
+          </div>
+        </div>
+
+        <!-- Cari Invoice -->
+        <div class="card" style="padding:14px 16px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:8px;font-weight:600;margin-bottom:10px"><i class="ti ti-search" style="color:var(--accent)"></i> Cari Invoice</div>
+          <input id="rs-cari-trx" type="text" placeholder="Cari nomor invoice, paket, atau jenis…" oninput="rsFilterTransaksi(this.value)" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--bg2);color:var(--text)">
+        </div>
+
         <div class="card" style="padding:0">
           <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-weight:600">Transaksi Terbaru</div>
           <div style="overflow-x:auto">
             <table style="width:100%;border-collapse:collapse">
               <thead><tr style="text-align:left;font-size:12px;color:var(--text2)">
-                <th style="padding:10px 16px">Tanggal</th><th style="padding:10px 16px">Jenis</th><th style="padding:10px 16px">Paket</th><th style="padding:10px 16px">Qty</th><th style="padding:10px 16px;text-align:right">Total</th>
+                <th style="padding:10px 16px">Tanggal</th><th style="padding:10px 16px">Jenis</th><th style="padding:10px 16px">Paket</th><th style="padding:10px 16px">Qty</th><th style="padding:10px 16px;text-align:right">Total</th><th style="padding:10px 16px;text-align:right">Aksi</th>
               </tr></thead>
-              <tbody id="rs-tbl-transaksi"><tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text3)">Memuat…</td></tr></tbody>
+              <tbody id="rs-tbl-transaksi"><tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3)">Memuat…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -1209,7 +1229,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
             <button class="btn sm danger" onclick="plBulk('hapus')"><i class="ti ti-trash" aria-hidden="true"></i> Hapus</button>
             <button class="btn sm" onclick="plClearSel()" style="margin-left:auto">Bersihkan pilihan</button>
           </div>
-          <table><thead><tr><th style="width:34px;text-align:center"><input type="checkbox" id="pl-check-all" onchange="plToggleAll(this)" title="Pilih semua di halaman ini"></th><th>#</th><th>Nama</th><th>Username</th><th>No. HP</th><th>Paket</th><th>Tipe</th><th>Expired</th><th>Status</th><th>Aksi</th></tr></thead>
+          <table><thead><tr><th style="width:60px;text-align:center"><input type="checkbox" id="pl-check-all" onchange="plToggleAll(this)" title="Pilih semua" style="width:18px;height:18px;accent-color:#4f46e5;cursor:pointer;vertical-align:middle;border:2px solid #4f46e5;border-radius:3px"></th><th>#</th><th>Nama</th><th>Username</th><th>No. HP</th><th>Paket</th><th>Tipe</th><th>Expired</th><th>Status</th><th>Aksi</th></tr></thead>
           <tbody id="tbl-pelanggan">
             <tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">Tidak ada data</td></tr>
           </tbody></table>
@@ -2476,6 +2496,67 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
           </div>
         </div>
       </div>
+      <!-- ══ ISOLIR ══ -->
+      <div class="page" id="p-isolir">
+        <div style="margin-bottom:20px">
+          <h2 style="font-size:18px;font-weight:700;color:var(--text);margin:0">Pengaturan Isolir</h2>
+          <div class="td-text-sub" style="font-size:12px;margin-top:3px">Atur pengalihan pelanggan suspend/expired ke IP pool isolir (halaman tagihan)</div>
+        </div>
+
+        <div style="max-width:680px;display:flex;flex-direction:column;gap:16px">
+          <!-- Mode isolir -->
+          <div class="card" style="padding:18px 20px">
+            <div style="font-weight:700;font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:8px"><i class="ti ti-toggle-right" style="color:#7c3aed"></i> Mode Suspend</div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Pilih apa yang terjadi saat pelanggan disuspend atau expired.</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div id="iso-mode-pool" onclick="isoSetMode('pool')" style="cursor:pointer;border:2px solid #7c3aed;background:linear-gradient(135deg,#faf5ff,#f5f3ff);border-radius:12px;padding:14px;transition:all .15s">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><i class="ti ti-arrow-guide" style="font-size:18px;color:#7c3aed"></i><span style="font-weight:700;font-size:13px;color:#6d28d9">Isolir (Pool)</span></div>
+                <div style="font-size:11px;color:var(--text3)">Pelanggan tetap konek tapi diarahkan ke IP isolir & halaman tagihan</div>
+              </div>
+              <div id="iso-mode-reject" onclick="isoSetMode('reject')" style="cursor:pointer;border:2px solid var(--border);background:var(--bg2);border-radius:12px;padding:14px;transition:all .15s">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><i class="ti ti-ban" style="font-size:18px;color:#64748b"></i><span style="font-weight:700;font-size:13px;color:var(--text2)">Tolak Total</span></div>
+                <div style="font-size:11px;color:var(--text3)">Pelanggan tidak bisa konek sama sekali (putus total)</div>
+              </div>
+            </div>
+            <input type="hidden" id="iso-mode" value="pool">
+          </div>
+
+          <!-- Nama pool isolir -->
+          <div class="card" style="padding:18px 20px" id="iso-pool-box">
+            <div style="font-weight:700;font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:8px"><i class="ti ti-network" style="color:#7c3aed"></i> Nama IP Pool Isolir</div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Harus sama persis dengan nama pool yang dibuat di MikroTik (<code>/ip pool</code>).</div>
+            <input id="iso-pool" placeholder="isolir" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:9px;font-family:monospace;background:var(--bg2);color:var(--text)">
+          </div>
+
+          <button class="btn primary" style="align-self:flex-start;padding:11px 22px;font-weight:600" onclick="isoSimpan()"><i class="ti ti-device-floppy"></i> Simpan Pengaturan</button>
+
+          <!-- Panduan setup MikroTik (ROS6 & ROS7) -->
+          <div class="card" style="padding:18px 20px;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #bbf7d0">
+            <div style="font-weight:700;font-size:13px;margin-bottom:6px;display:flex;align-items:center;gap:8px;color:#15803d"><i class="ti ti-info-circle"></i> Panduan Setup di MikroTik</div>
+            <div style="font-size:12px;color:#166534;line-height:1.6;margin-bottom:12px">
+              Pilih versi RouterOS, lalu copy &amp; jalankan di MikroTik. Sesuaikan IP server SimBill bila perlu.
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+              <label style="font-size:12px;color:#166534;font-weight:600">IP Server SimBill:</label>
+              <input id="iso-srv-ip" value="43.134.20.125" oninput="isoUpdateScript()" style="padding:7px 10px;border:1px solid #bbf7d0;border-radius:8px;font-family:monospace;font-size:12px;width:150px">
+              <label style="font-size:12px;color:#166534;font-weight:600;margin-left:8px">Pool Range:</label>
+              <input id="iso-range" value="10.99.99.2-10.99.99.254" oninput="isoUpdateScript()" style="padding:7px 10px;border:1px solid #bbf7d0;border-radius:8px;font-family:monospace;font-size:12px;width:180px">
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:10px">
+              <button id="iso-ros7-tab" onclick="isoRosTab('ros7')" style="padding:7px 16px;border-radius:8px;border:2px solid #16a34a;background:#16a34a;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">RouterOS 7</button>
+              <button id="iso-ros6-tab" onclick="isoRosTab('ros6')" style="padding:7px 16px;border-radius:8px;border:2px solid #bbf7d0;background:#fff;color:#15803d;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">RouterOS 6</button>
+            </div>
+            <div style="position:relative">
+              <button onclick="isoCopyScript()" style="position:absolute;top:8px;right:8px;z-index:2;padding:5px 11px;border:none;background:#16a34a;color:#fff;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer">Copy</button>
+              <pre id="iso-script" style="background:#052e16;color:#bbf7d0;padding:14px;border-radius:9px;font-size:11px;overflow-x:auto;margin:0;line-height:1.65;white-space:pre"></pre>
+            </div>
+            <div style="font-size:11px;color:#15803d;margin-top:10px;line-height:1.6">
+              <b>Catatan:</b> Pelanggan isolir hanya bisa akses server SimBill (untuk bayar). Situs HTTPS lain akan gagal (terisolir). RADIUS CoA (port 3799) wajib aktif agar suspend langsung memutus sesi.
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ══ SESI AKTIF ══ -->
       <div class="page" id="p-sesi">
 
@@ -3888,6 +3969,11 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
         <label class="fg-label">Reseller Pemilik</label>
         <select id="ep-reseller" style="width:100%;margin-top:4px"><option value="">— Tanpa reseller —</option></select>
       </div>
+      <div>
+        <label class="fg-label" style="display:flex;align-items:center;gap:6px"><i class="ti ti-calendar-event" style="font-size:13px;color:#BA7517"></i> Tanggal Expired</label>
+        <input id="ep-expired" type="date" style="width:100%;margin-top:4px">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Atur tanggal kedaluwarsa langganan. Kosongkan jika tidak ingin mengubah.</div>
+      </div>
       <div class="nas-snmp-box">
         <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px;display:flex;align-items:center;gap:6px">
           <i class="ti ti-lock" style="font-size:13px" aria-hidden="true"></i> Kredensial RADIUS
@@ -4352,6 +4438,67 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
 
 <!-- SIDEBAR OVERLAY (mobile) -->
 <div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- MODAL PILIH BAYAR INVOICE (reseller) -->
+<div class="overlay" id="m-rs-bayar">
+  <div class="modal" style="max-width:440px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px">
+      <div style="display:flex;align-items:center;gap:11px">
+        <div style="width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#7c3aed,#2563eb);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 6px 16px -6px rgba(124,58,237,.6)">
+          <i class="ti ti-credit-card" style="font-size:21px;color:#fff"></i>
+        </div>
+        <div>
+          <div style="font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.3px">Bayar Invoice</div>
+          <div style="font-size:12px;color:var(--text3)">Pilih metode pembayaran</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-rs-bayar')">✕</button>
+    </div>
+
+    <div style="padding:0 20px 8px">
+      <div style="background:linear-gradient(135deg,#faf5ff,#eff6ff);border:1px solid #e9d5ff;border-radius:13px;padding:13px 15px;margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:12px;color:var(--text3)">No. Invoice</span>
+          <span id="rsby-inv" style="font-size:12px;font-family:monospace;font-weight:700;color:#7c3aed">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:12px;color:var(--text3)">Pelanggan</span>
+          <span id="rsby-nama" style="font-size:13px;font-weight:600;color:var(--text)">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px dashed #e9d5ff">
+          <span style="font-size:12px;color:var(--text3)">Total Tagihan</span>
+          <span id="rsby-jumlah" style="font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.3px">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:0 20px 20px;display:flex;flex-direction:column;gap:11px">
+      <!-- Kartu Saldo -->
+      <button onclick="rsBayarVia('saldo')" class="rs-pay-card" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:13px;padding:15px;border-radius:14px;border:2px solid #d1fae5;background:linear-gradient(135deg,#ecfdf5,#f0fdfa);transition:all .15s" onmouseover="this.style.borderColor='#10b981';this.style.transform='translateY(-1px)';this.style.boxShadow='0 8px 20px -8px rgba(16,185,129,.45)'" onmouseout="this.style.borderColor='#d1fae5';this.style.transform='';this.style.boxShadow=''">
+        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 6px 14px -6px rgba(16,185,129,.6)">
+          <i class="ti ti-wallet" style="font-size:22px;color:#fff"></i>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:#065f46">Pakai Saldo Reseller</div>
+          <div style="font-size:12px;color:#059669;margin-top:1px">Potong saldo · invoice langsung lunas</div>
+        </div>
+        <i class="ti ti-chevron-right" style="font-size:18px;color:#10b981"></i>
+      </button>
+
+      <!-- Kartu Gateway -->
+      <button onclick="rsBayarVia('gateway')" class="rs-pay-card" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:13px;padding:15px;border-radius:14px;border:2px solid #dbeafe;background:linear-gradient(135deg,#eff6ff,#faf5ff);transition:all .15s" onmouseover="this.style.borderColor='#3b82f6';this.style.transform='translateY(-1px)';this.style.boxShadow='0 8px 20px -8px rgba(59,130,246,.45)'" onmouseout="this.style.borderColor='#dbeafe';this.style.transform='';this.style.boxShadow=''">
+        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#3b82f6,#7c3aed);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 6px 14px -6px rgba(59,130,246,.6)">
+          <i class="ti ti-qrcode" style="font-size:22px;color:#fff"></i>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:#1e40af">Lewat Gateway</div>
+          <div style="font-size:12px;color:#3b82f6;margin-top:1px">QRIS / VA</div>
+        </div>
+        <i class="ti ti-chevron-right" style="font-size:18px;color:#3b82f6"></i>
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL MIKROTIK SCRIPT -->
 <!-- MODAL ACS DETAIL -->
@@ -6493,19 +6640,112 @@ async function loadResellerDashboard() {
     set('rs-bulan-jml', d.bulan_ini?.jml || 0);
     set('rs-total-item', d.total_item_terjual || 0);
     set('rs-jml-pelanggan', d.jml_pelanggan || 0);
-    const tb = document.getElementById('rs-tbl-transaksi');
-    const rows = d.transaksi_terbaru || [];
-    if (tb) tb.innerHTML = rows.length ? rows.map(t => `
-      <tr style="border-top:1px solid var(--border)">
-        <td style="padding:10px 16px;font-size:13px">${fmtDate ? fmtDate(t.created_at) : (t.created_at||'').slice(0,10)}</td>
-        <td style="padding:10px 16px"><span class="tag">${t.tipe}</span></td>
-        <td style="padding:10px 16px;font-size:13px">${t.nama_paket || '—'}</td>
-        <td style="padding:10px 16px;font-size:13px">${t.jumlah_item}</td>
-        <td style="padding:10px 16px;font-size:13px;text-align:right;font-weight:600">${rsRp(t.total_bayar)}</td>
-      </tr>`).join('') : '<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text3)">Belum ada transaksi</td></tr>';
+    set('rs-stat-member', d.jml_pelanggan || 0);
+    set('rs-stat-voucher', d.total_voucher || 0);
+    _rsTrxRows = d.transaksi_terbaru || [];
+    rsRenderTransaksi(_rsTrxRows);
   } catch (e) {
     if (typeof toast === 'function') toast('❌ ' + e.message, true);
   }
+}
+
+let _rsTrxRows = [];
+const RS_TIPE_LABEL = { voucher:'Beli Voucher', user:'Tambah Pelanggan', topup:'Top Up Saldo', pembelian:'Pembelian', settlement:'Pembayaran' };
+function rsRenderTransaksi(rows) {
+  const tb = document.getElementById('rs-tbl-transaksi');
+  if (!tb) return;
+  if (!rows.length) {
+    tb.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3)">Belum ada transaksi</td></tr>';
+    return;
+  }
+  tb.innerHTML = rows.map(t => {
+    const tgl = (typeof fmtDate === 'function') ? fmtDate(t.created_at) : (t.created_at||'').slice(0,10);
+    const tipe = RS_TIPE_LABEL[t.tipe] || (t.tipe ? t.tipe.charAt(0).toUpperCase()+t.tipe.slice(1) : '—');
+    return `<tr style="border-top:1px solid var(--border)">
+      <td style="padding:10px 16px;font-size:13px">${tgl}</td>
+      <td style="padding:10px 16px"><span class="tag">${tipe}</span></td>
+      <td style="padding:10px 16px;font-size:13px">${t.nama_paket || '—'}</td>
+      <td style="padding:10px 16px;font-size:13px">${t.jumlah_item || 0}</td>
+      <td style="padding:10px 16px;font-size:13px;text-align:right;font-weight:600">${rsRp(t.total_bayar)}</td>
+      <td style="padding:10px 16px"></td>
+    </tr>`;
+  }).join('');
+}
+// Pilihan bayar invoice: tampilkan modal modern (saldo / gateway)
+function rsPilihBayar(noInvoice, jumlah, namaPelanggan) {
+  window._rsBayarCtx = { noInvoice, jumlah, namaPelanggan };
+  document.getElementById('rsby-inv').textContent = noInvoice;
+  document.getElementById('rsby-nama').textContent = namaPelanggan;
+  document.getElementById('rsby-jumlah').textContent = rsRp(jumlah);
+  document.getElementById('m-rs-bayar').classList.add('open');
+}
+
+function rsBayarVia(metode) {
+  const ctx = window._rsBayarCtx;
+  if (!ctx) return;
+  document.getElementById('m-rs-bayar').classList.remove('open');
+  if (metode === 'saldo') {
+    rsBayarSaldo(ctx.noInvoice, ctx.namaPelanggan);
+  } else {
+    window.open('/bayar/' + encodeURIComponent(ctx.noInvoice), '_blank');
+  }
+}
+
+async function rsBayarSaldo(noInvoice, namaPelanggan) {
+  try {
+    const d = await apiFetch('/api/reseller/invoice/' + encodeURIComponent(noInvoice) + '/bayar-saldo', { method: 'POST' });
+    toast('✅ ' + (d.pesan || 'Invoice lunas') + ' · Saldo: ' + rsRp(d.saldo_sisa));
+    if (typeof loadResellerDashboard === 'function') loadResellerDashboard();
+    const cari = document.getElementById('rs-cari-trx');
+    if (cari && cari.value.trim()) rsFilterTransaksi(cari.value);
+  } catch (e) {
+    toast('❌ ' + e.message, true);
+  }
+}
+
+function rsFilterTransaksi(q) {
+  q = (q||'').trim();
+  clearTimeout(window._rsCariTimer);
+  if (!q) { rsRenderTransaksi(_rsTrxRows); return; }
+  window._rsCariTimer = setTimeout(async function() {
+    try {
+      const hasil = await apiFetch('/api/reseller/cari-transaksi?q=' + encodeURIComponent(q));
+      rsRenderInvoiceCari(hasil || []);
+    } catch (e) {
+      const tb = document.getElementById('rs-tbl-transaksi');
+      if (tb) tb.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:#dc2626">' + e.message + '</td></tr>';
+    }
+  }, 350);
+}
+
+// Render hasil pencarian INVOICE pelanggan reseller
+function rsRenderInvoiceCari(rows) {
+  const tb = document.getElementById('rs-tbl-transaksi');
+  if (!tb) return;
+  if (!rows.length) {
+    tb.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3)">Tidak ada invoice ditemukan</td></tr>';
+    return;
+  }
+  const stBadge = s => {
+    if (s==='paid') return '<span class="tag" style="background:#dcfce7;color:#16a34a">Lunas</span>';
+    if (s==='unpaid'||s==='pending') return '<span class="tag" style="background:#fef3c7;color:#d97706">Belum bayar</span>';
+    return '<span class="tag">'+(s||'-')+'</span>';
+  };
+  tb.innerHTML = rows.map(r => {
+    const tgl = (typeof fmtDate === 'function') ? fmtDate(r.tgl_jatuh_tempo||r.created_at) : String(r.tgl_jatuh_tempo||'').slice(0,10);
+    const belumBayar = r.status==='unpaid' || r.status==='pending';
+    const aksi = belumBayar
+      ? `<button class="btn sm" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;font-weight:600" onclick="rsPilihBayar('${jsAttr(r.no_invoice)}',${Number(r.jumlah)||0},'${jsAttr(r.nama_pelanggan||r.username||'')}')"><i class="ti ti-credit-card"></i> Bayar</button>`
+      : `<button class="btn sm" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;font-weight:600" onclick="rpPerpanjang(${r.pelanggan_id||0},'${jsAttr(r.username||'')}')"><i class="ti ti-refresh"></i> Perpanjang</button>`;
+    return `<tr style="border-top:1px solid var(--border)">
+      <td style="padding:10px 16px;font-size:12px;font-family:monospace">${r.no_invoice||'—'}</td>
+      <td style="padding:10px 16px;font-size:13px">${escapeHtml(r.nama_pelanggan||r.username||'—')}</td>
+      <td style="padding:10px 16px;font-size:13px">${escapeHtml(r.nama_paket||'—')}</td>
+      <td style="padding:10px 16px">${stBadge(r.status)}</td>
+      <td style="padding:10px 16px;font-size:13px;text-align:right;font-weight:600">${rsRp(r.jumlah)}</td>
+      <td style="padding:10px 16px;text-align:right">${aksi}</td>
+    </tr>`;
+  }).join('');
 }
 
 // ── RESELLER: BELI VOUCHER ──
@@ -7064,6 +7304,7 @@ const loaders = {
   payment: loadPayment, radius: loadRadius,
   laporan: loadLaporan, 'income-report': loadIncomeReport, 'net-profit': loadNetProfit, reseller: loadReseller,
   sesi: loadSesi,
+  isolir: loadIsolir,
   log:  loadLog,
   pengguna: loadPengguna,
   tiket: loadTiket,
@@ -8022,7 +8263,7 @@ function renderTblPelanggan(rows) {
   const base = (plPage - 1) * plLimit;
   t.innerHTML = rows.map((p,i) => `
     <tr>
-      <td style="text-align:center"><input type="checkbox" class="pl-check" data-id="${p.id}" ${plSelected.has(p.id)?'checked':''} onchange="plToggleRow(this)"></td>
+      <td style="text-align:center"><input type="checkbox" class="pl-check" data-id="${p.id}" ${plSelected.has(p.id)?'checked':''} onchange="plToggleRow(this)" style="width:16px;height:16px;accent-color:#4f46e5;cursor:pointer;vertical-align:middle"></td>
       <td>${base + i + 1}</td>
       <td><div style="font-weight:500">${escapeHtml(p.nama)}</div><div style="font-size:11px;color:var(--text3)">${escapeHtml(p.email||'')}</div></td>
       <td><span style="font-family:monospace;font-size:12px">${escapeHtml(p.username)}</span></td>
@@ -8131,6 +8372,9 @@ async function bukaModalEdit(id) {
     document.getElementById('ep-notes').value    = p.notes || '';
     document.getElementById('ep-username').value = p.username || '';
     document.getElementById('ep-password').value = '';
+    // Tanggal expired (format YYYY-MM-DD untuk input date)
+    const expEl = document.getElementById('ep-expired');
+    if (expEl) expEl.value = p.tgl_expired ? String(p.tgl_expired).slice(0,10) : '';
 
     // Lokasi & Jaringan
     document.getElementById('ep-latitude').value  = p.latitude  || '';
@@ -8222,6 +8466,8 @@ async function apiUpdatePelanggan() {
       no_ktp: no_ktp || null, tgl_lahir: tgl_lahir || null,
       reseller_id: document.getElementById('ep-reseller')?.value || null,
     };
+    const expVal = document.getElementById('ep-expired')?.value || '';
+    if (expVal) body.tgl_expired = expVal;
     if (ktp_url) body.ktp_url = ktp_url;
     if (password) body.password = password;
 
@@ -12228,6 +12474,113 @@ async function logBersihkan() {
 // SESI AKTIF
 // ══════════════════════════════════════════════════
 let _sesiTab  = 'pppoe';
+// ── ISOLIR ──
+let _isoRos = 'ros7';
+function isoGenScript(ros) {
+  const srv = (document.getElementById('iso-srv-ip')?.value || '43.134.20.125').trim();
+  const range = (document.getElementById('iso-range')?.value || '10.99.99.2-10.99.99.254').trim();
+  const pool = (document.getElementById('iso-pool')?.value || 'isolir').trim();
+  // ROS6 & ROS7 untuk isolir praktis sama; bedakan komentar versi.
+  const ver = ros === 'ros6' ? 'RouterOS 6' : 'RouterOS 7';
+  return `# ===== SETUP ISOLIR (${ver}) =====
+# 1. IP Pool isolir
+/ip pool add name=${pool} ranges=${range}
+
+# 2. Profile PPP isolir (gateway untuk pelanggan isolir)
+/ppp profile add name=${pool} local-address=10.99.99.1 remote-address=${pool} dns-server=10.99.99.1
+
+# 3. Address-list subnet isolir
+/ip firewall address-list add list=ISOLIR address=10.99.99.0/24
+
+# 4. Redirect HTTP pelanggan isolir ke server SimBill (halaman /isolir)
+/ip firewall nat add chain=dstnat src-address=10.99.99.0/24 protocol=tcp dst-port=80 \\
+  action=dst-nat to-addresses=${srv} to-ports=80 comment="Isolir redirect HTTP"
+
+# 5. Izinkan HANYA akses ke server SimBill + DNS, blok internet lain
+/ip firewall filter add chain=forward src-address=10.99.99.0/24 dst-address=${srv} \\
+  action=accept comment="Isolir allow SimBill"
+/ip firewall filter add chain=forward src-address=10.99.99.0/24 protocol=udp dst-port=53 \\
+  action=accept comment="Isolir allow DNS UDP"
+/ip firewall filter add chain=forward src-address=10.99.99.0/24 protocol=tcp dst-port=53 \\
+  action=accept comment="Isolir allow DNS TCP"
+/ip firewall filter add chain=forward src-address=10.99.99.0/24 \\
+  action=drop comment="Isolir block all internet"
+
+# 6. Aktifkan RADIUS incoming (CoA) — wajib agar suspend langsung putus
+/radius incoming set accept=yes port=3799`;
+}
+function isoUpdateScript() {
+  const el = document.getElementById('iso-script');
+  if (el) el.textContent = isoGenScript(_isoRos);
+}
+function isoRosTab(ros) {
+  _isoRos = ros;
+  const t7 = document.getElementById('iso-ros7-tab');
+  const t6 = document.getElementById('iso-ros6-tab');
+  if (ros === 'ros7') {
+    t7.style.background = '#16a34a'; t7.style.color = '#fff'; t7.style.borderColor = '#16a34a';
+    t6.style.background = '#fff'; t6.style.color = '#15803d'; t6.style.borderColor = '#bbf7d0';
+  } else {
+    t6.style.background = '#16a34a'; t6.style.color = '#fff'; t6.style.borderColor = '#16a34a';
+    t7.style.background = '#fff'; t7.style.color = '#15803d'; t7.style.borderColor = '#bbf7d0';
+  }
+  isoUpdateScript();
+}
+function isoCopyScript() {
+  const txt = isoGenScript(_isoRos);
+  navigator.clipboard.writeText(txt).then(
+    () => toast('✅ Script disalin'),
+    () => toast('❌ Gagal menyalin', true)
+  );
+}
+
+function isoSetMode(mode) {
+  document.getElementById('iso-mode').value = mode;
+  const pool = document.getElementById('iso-mode-pool');
+  const rej  = document.getElementById('iso-mode-reject');
+  const box  = document.getElementById('iso-pool-box');
+  if (mode === 'pool') {
+    pool.style.borderColor = '#7c3aed'; pool.style.background = 'linear-gradient(135deg,#faf5ff,#f5f3ff)';
+    rej.style.borderColor = 'var(--border)'; rej.style.background = 'var(--bg2)';
+    if (box) box.style.display = '';
+  } else {
+    rej.style.borderColor = '#7c3aed'; rej.style.background = 'linear-gradient(135deg,#faf5ff,#f5f3ff)';
+    pool.style.borderColor = 'var(--border)'; pool.style.background = 'var(--bg2)';
+    if (box) box.style.display = 'none';
+  }
+}
+
+async function loadIsolir() {
+  try {
+    const d = await apiFetch('/api/setting');
+    const get = (k, def) => {
+      const row = Array.isArray(d) ? d.find(x => x.kunci === k) : (d[k] !== undefined ? { nilai: d[k] } : null);
+      return row && row.nilai != null && row.nilai !== '' ? row.nilai : def;
+    };
+    const mode = get('isolir_mode', 'pool');
+    const pool = get('isolir_pool', 'isolir');
+    document.getElementById('iso-pool').value = pool;
+    isoSetMode(mode);
+    isoRosTab('ros7');
+  } catch (e) {
+    // default kalau gagal load
+    isoSetMode('pool');
+    document.getElementById('iso-pool').value = 'isolir';
+    isoRosTab('ros7');
+  }
+}
+
+async function isoSimpan() {
+  const mode = document.getElementById('iso-mode').value;
+  const pool = document.getElementById('iso-pool').value.trim() || 'isolir';
+  try {
+    await apiFetch('/api/setting', { method: 'PUT', body: JSON.stringify({ isolir_mode: mode, isolir_pool: pool }) });
+    toast('✅ Pengaturan isolir disimpan');
+  } catch (e) {
+    toast('❌ ' + e.message, true);
+  }
+}
+
 let _sesiRows = [];
 
 async function loadSesi() {
