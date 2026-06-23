@@ -469,9 +469,14 @@ async function _syncGroupPaketPublic(paket, tipe_koneksi) {
 async function syncVoucher(username = null) {
     try {
         if (username) {
-            // Sync satu user voucher spesifik
-            const v = await queryOne(`SELECT username, password FROM voucher WHERE username = ?`, [username]);
+            // Sync satu user voucher spesifik (kecuali yang sudah expired)
+            const v = await queryOne(`SELECT username, password, status FROM voucher WHERE username = ?`, [username]);
             if (!v || !v.username) return;
+            if (v.status === 'expired') {
+                // Voucher expired → pastikan TIDAK ada di radcheck
+                await query(`DELETE FROM radcheck WHERE username = ?`, [v.username]);
+                return;
+            }
             await query(`
                 INSERT INTO radcheck (username, attribute, op, value)
                 VALUES (?, 'Cleartext-Password', ':=', ?)
@@ -479,15 +484,22 @@ async function syncVoucher(username = null) {
             `, [v.username, v.password]);
             console.log(`[radcheck] Synced voucher: ${username}`);
         } else {
-            // Sync semua voucher sekaligus
+            // Sync semua voucher sekaligus (KECUALI yang expired)
             const result = await query(`
                 INSERT INTO radcheck (username, attribute, op, value)
                 SELECT username, 'Cleartext-Password', ':=', password
                 FROM voucher
                 WHERE username IS NOT NULL AND username != ''
+                AND status != 'expired'
                 ON DUPLICATE KEY UPDATE value = VALUES(value)
             `);
             console.log(`[radcheck] Synced ${result.affectedRows} voucher(s) to radcheck`);
+            // Bersihkan voucher expired dari radcheck (kalau masih ada)
+            await query(`
+                DELETE rc FROM radcheck rc
+                JOIN voucher v ON v.username = rc.username
+                WHERE v.status = 'expired'
+            `);
         }
     } catch(e) {
         console.warn('[radcheck] Sync gagal:', e.message);
@@ -513,10 +525,70 @@ async function syncStatusVoucher() {
                 v.digunakan_oleh = COALESCE(v.digunakan_oleh, v.username)
             WHERE v.status = 'unused'
         `);
+        // Backfill: voucher yang SUDAH 'used' tapi tgl_digunakan NULL
+        // (mis. di-set used dari tempat lain tanpa isi tgl) — penting agar
+        // perhitungan expiry (login pertama + masa_aktif) bisa jalan.
+        await query(`
+            UPDATE voucher v
+            JOIN (
+                SELECT username, MIN(acctstarttime) AS pertama
+                FROM radacct
+                WHERE username IS NOT NULL AND username != ''
+                GROUP BY username
+            ) a ON a.username = v.username
+            SET v.tgl_digunakan = a.pertama
+            WHERE v.status = 'used' AND v.tgl_digunakan IS NULL
+        `);
         if (r.affectedRows > 0) console.log(`[voucher] ${r.affectedRows} voucher ditandai used dari radacct`);
         return r.affectedRows;
     } catch (e) {
         console.warn('[voucher] syncStatusVoucher gagal:', e.message);
+        return 0;
+    }
+}
+
+// ============================================================
+// EXPIRE VOUCHER yang masa berlakunya habis (dihitung dari LOGIN PERTAMA).
+// voucher.tgl_digunakan = login pertama; paket.masa_aktif + satuan_masa = durasi.
+// Voucher yang (tgl_digunakan + durasi) < NOW() → expired:
+//   - status voucher → 'expired'
+//   - hapus dari radcheck (tidak bisa login lagi)
+//   - putus sesi aktif (CoA)
+// ============================================================
+async function expireVoucherHabis() {
+    try {
+        // Cari voucher used yang sudah lewat masa aktif (dari login pertama)
+        const habis = await query(`
+            SELECT v.username, v.tgl_digunakan, pk.masa_aktif, pk.satuan_masa
+            FROM voucher v
+            JOIN paket pk ON v.paket_id = pk.id
+            WHERE v.status = 'used'
+              AND v.tgl_digunakan IS NOT NULL
+              AND (
+                    (pk.satuan_masa = 'jam'   AND v.tgl_digunakan + INTERVAL pk.masa_aktif HOUR  < NOW())
+                 OR (pk.satuan_masa = 'bulan' AND v.tgl_digunakan + INTERVAL pk.masa_aktif MONTH < NOW())
+                 OR (pk.satuan_masa NOT IN ('jam','bulan') AND v.tgl_digunakan + INTERVAL pk.masa_aktif DAY < NOW())
+              )
+        `);
+
+        let n = 0;
+        for (const v of habis) {
+            try {
+                // tandai expired
+                await query(`UPDATE voucher SET status='expired' WHERE username=?`, [v.username]);
+                // hapus dari radcheck → tidak bisa login lagi
+                await query(`DELETE FROM radcheck WHERE username=?`, [v.username]);
+                // putus sesi aktif (CoA)
+                await _putusSesilAktif(v.username);
+                n++;
+            } catch (e) {
+                console.warn(`[voucher] gagal expire ${v.username}: ${e.message}`);
+            }
+        }
+        if (n > 0) console.log(`[voucher] ${n} voucher expired (masa aktif habis dari login pertama)`);
+        return n;
+    } catch (e) {
+        console.warn('[voucher] expireVoucherHabis gagal:', e.message);
         return 0;
     }
 }
@@ -534,5 +606,6 @@ module.exports = {
     encryptPassword,
     decryptPassword,
     syncVoucher,
-    syncStatusVoucher
+    syncStatusVoucher,
+    expireVoucherHabis
 };

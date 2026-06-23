@@ -10,6 +10,19 @@ const SUSPEND_H  = parseInt(process.env.SUSPEND_H_PLUS)   || 3;
 
 console.log(`[CRON] Scheduler aktif | Reminder H-${REMINDER_H} | Suspend H+${SUSPEND_H}`);
 
+// Tandai voucher 'used' dari radacct + expire voucher habis, setiap 15 menit
+cron.schedule('*/15 * * * *', async () => {
+    try {
+        const n = await radiusService.syncStatusVoucher();
+        if (n > 0) console.log(`[CRON] ${n} voucher ditandai used`);
+        // Expire voucher yang masa aktifnya habis (dihitung dari login pertama)
+        const e = await radiusService.expireVoucherHabis();
+        if (e > 0) console.log(`[CRON] ${e} voucher expired (masa aktif habis)`);
+    } catch (e) {
+        console.error('[CRON] Error sync/expire voucher:', e.message);
+    }
+});
+
 // ============================================================
 // 1. KIRIM REMINDER TAGIHAN (setiap hari jam 08:00 WIB)
 // ============================================================
@@ -84,6 +97,41 @@ cron.schedule('0 9 * * *', async () => {
 }, { timezone: 'Asia/Jakarta' });
 
 // ============================================================
+// 1b. AUTO-SUSPEND BERDASARKAN MASA AKTIF (tgl_expired lewat)
+//     Setiap jam — pelanggan yang tgl_expired-nya sudah lewat → suspend/isolir,
+//     tidak peduli ada invoice atau tidak. Ini enforcement masa aktif.
+// ============================================================
+cron.schedule('5 * * * *', async () => {
+    console.log('[CRON] Cek masa aktif (tgl_expired)...');
+    try {
+        // Pelanggan AKTIF yang tgl_expired sudah lewat (< hari ini)
+        const expired = await query(`
+            SELECT id, username, nama, no_hp
+            FROM pelanggan
+            WHERE status = 'aktif'
+            AND tgl_expired IS NOT NULL
+            AND tgl_expired < CURDATE()
+        `);
+
+        let n = 0;
+        for (const p of expired) {
+            try {
+                await query(`UPDATE pelanggan SET status='suspended' WHERE id=?`, [p.id]);
+                await radiusService.suspendUser(p.username);
+                try { await waService.kirimSuspend(p); } catch (_) {}
+                n++;
+                await _delay(1500);
+            } catch (err) {
+                console.error(`[CRON] Gagal suspend (expired) ${p.username}:`, err.message);
+            }
+        }
+        if (n > 0) console.log(`[CRON] Suspend masa aktif lewat: ${n} pelanggan`);
+    } catch (e) {
+        console.error('[CRON] Error cek masa aktif:', e.message);
+    }
+}, { timezone: 'Asia/Jakarta' });
+
+// ============================================================
 // 3. GENERATE INVOICE BULANAN (tanggal 1 setiap bulan jam 07:00)
 // ============================================================
 cron.schedule('0 7 1 * *', async () => {
@@ -114,6 +162,10 @@ async function _generateInvoiceBulanan() {
 
     for (const p of pelanggan) {
         try {
+            // Paket gratis (harga 0, mis. VIP) tidak ditagih sama sekali:
+            // tanpa invoice → tak pernah overdue → tak pernah auto-suspend.
+            if (!p.harga || Number(p.harga) <= 0) continue;
+
             const ada = await queryOne(`
                 SELECT id FROM invoice
                 WHERE pelanggan_id = ?
