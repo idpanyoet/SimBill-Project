@@ -17,3 +17,11 @@ masa_aktif_*.sql
 sync_masa_aktif.js
 *_clean.csv
 *_update.sql
+
+node_modules/
+.env
+*.bak
+*.bak-*
+*.bak3
+_backup/
+frontend/uploads/

@@ -134,6 +134,8 @@ router.post('/generate', async (req, res, next) => {
 
     // Sync semua voucher baru ke radcheck agar langsung bisa autentikasi
     radiusService.syncVoucher().catch(e => console.warn('[sync]', e.message));
+    // Terapkan batas Shared Users paket ini ke voucher batch baru (targeted).
+    radiusService.syncSimultaneousUsePaket(paket_id).catch(e => console.warn('[sync share]', e.message));
 
     res.status(201).json({
       pesan:    `${hasil.length} voucher berhasil dibuat`,

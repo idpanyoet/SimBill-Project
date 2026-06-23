@@ -89,6 +89,10 @@ async function tambahUser(username, password, paket, tipe_koneksi, ip_tetap = nu
     // 4. Pastikan group radreply ada
     await _syncGroupPaket(paket, tipe_koneksi);
 
+    // 4b. Terapkan batas Shared Users (Simultaneous-Use) sesuai paket.
+    try { await syncSimultaneousUse(username); }
+    catch (e) { console.warn(`[RADIUS] sync share ${username}:`, e.message); }
+
     // 5. IP tetap jika ada
     if (ip_tetap) {
         await _setIpTetap(username, ip_tetap, tipe_koneksi);
@@ -104,6 +108,9 @@ async function updatePaket(username, paketBaru, tipe_koneksi) {
     await _syncGroupPaket(paketBaru, tipe_koneksi);
     const groupname = _namaGroup(paketBaru, tipe_koneksi);
     await _setGroup(username, groupname);
+    // Paket berganti → batas Shared Users mungkin berubah, terapkan ulang.
+    try { await syncSimultaneousUse(username); }
+    catch (e) { console.warn(`[RADIUS] sync share ${username}:`, e.message); }
     // Putus sesi aktif supaya pelanggan reconnect & paket/kecepatan baru langsung berlaku
     try { await _putusSesilAktif(username); } catch (e) { console.warn('[RADIUS] putus sesi updatePaket:', e.message); }
     console.log(`[RADIUS] Update paket ${username} → ${groupname}`);
@@ -186,6 +193,10 @@ async function aktifkanUser(username) {
 
     // Pulihkan password jika hilang
     await _pastikanPassword(username);
+
+    // Terapkan ulang batas Shared Users (Simultaneous-Use) sesuai paket.
+    try { await syncSimultaneousUse(username); }
+    catch (e) { console.warn(`[RADIUS] sync share ${username}:`, e.message); }
 
     // Putus sesi isolir aktif → pelanggan reconnect → dapat IP normal
     try { await _putusSesilAktif(username); } catch (e) { console.warn('[RADIUS] putus sesi aktifkan:', e.message); }
@@ -385,9 +396,21 @@ async function _syncGroupPaket(paket, tipe_koneksi) {
 // `radclient` (bawaan FreeRADIUS). Mengirim PoD ke NAS:3799 dengan secret NAS.
 // Tidak perlu library/user API — cukup secret RADIUS yang sudah ada.
 async function _putusSesilAktif(username) {
-    const { exec } = require('child_process');
-    const { promisify } = require('util');
-    const execAsync = promisify(exec);
+    const { execFile } = require('child_process');
+
+    // Jalankan radclient TANPA shell (execFile + argumen array) dan kirim atribut
+    // lewat stdin. Ini menutup command-injection: nilai username/secret/nasIp tidak
+    // pernah masuk ke shell, jadi `$()`, backtick, `;`, `|`, dst. tidak dieksekusi.
+    const radclientDisconnect = (nasIp, secret, payload) => new Promise((resolve, reject) => {
+        const child = execFile(
+            'radclient',
+            ['-t', '5', '-r', '1', `${nasIp}:3799`, 'disconnect', secret],
+            { timeout: 8000 },
+            (err, stdout) => err ? reject(new Error(err.stderr || err.message)) : resolve(stdout || '')
+        );
+        // radclient membaca atribut request dari stdin (satu request per blok).
+        child.stdin.end(payload + '\n');
+    });
 
     const tandaiStop = async () => {
         await query(
@@ -398,9 +421,12 @@ async function _putusSesilAktif(username) {
     };
 
     try {
-        // Ambil sesi aktif user: butuh NAS IP + Acct-Session-Id untuk disconnect presisi
+        // Ambil sesi aktif user: butuh NAS IP (untuk target & secret) + Framed-IP
+        // (atribut yang diterima MikroTik untuk disconnect). Acct-Session-Id MikroTik
+        // ditolak sebagai Acct-Session-Id radclient (Error-Cause Unsupported-Extension),
+        // jadi tidak dipakai.
         const sesi = await query(
-            `SELECT nasipaddress, acctsessionid FROM radacct
+            `SELECT nasipaddress, framedipaddress, acctsessionid FROM radacct
              WHERE username=? AND acctstoptime IS NULL`, [username]);
 
         if (!sesi.length) {
@@ -424,20 +450,29 @@ async function _putusSesilAktif(username) {
                 console.warn(`[CoA] Lewati ${username}: secret/NAS tidak ditemukan untuk ${nasIp}`);
                 continue;
             }
-            // Bangun atribut disconnect. MikroTik butuh User-Name + Acct-Session-Id
-            // (atau NAS-IP-Address). Kirim keduanya untuk presisi.
-            const attrs = [
-                `User-Name=${username}`,
-                `NAS-IP-Address=${nasIp}`
-            ];
-            if (s.acctsessionid) attrs.push(`Acct-Session-Id=${s.acctsessionid}`);
+            // Tolak nilai yang bisa memecah parsing atribut radclient (newline =
+            // request tambahan, koma = atribut tambahan). Username/sessionid sah
+            // tidak memuat karakter ini; bila ada, lewati disconnect (tetap di-stop).
+            const aman = v => typeof v === 'string' && !/[\r\n,]/.test(v);
+            if (!aman(username) || !/^\d{1,3}(\.\d{1,3}){3}$/.test(String(nasIp))) {
+                console.warn(`[CoA] Lewati ${username}@${nasIp}: nilai atribut tidak valid`);
+                continue;
+            }
+
+            // Bangun atribut disconnect.
+            // MikroTik menerima disconnect via User-Name + Framed-IP-Address.
+            // (Acct-Session-Id MikroTik & NAS-IP-Address DITOLAK → Error-Cause
+            // Unsupported-Extension / NAK, jadi sengaja tidak dikirim.)
+            const attrs = [`User-Name=${username}`];
+            const fip = s.framedipaddress;
+            if (fip && /^\d{1,3}(\.\d{1,3}){3}$/.test(String(fip)))
+                attrs.push(`Framed-IP-Address=${fip}`);
             const payload = attrs.join(',');
 
-            // radclient: kirim disconnect ke port 3799 NAS
-            // -x verbose, timeout 5 detik, retry 1
-            const cmd = `printf '%s' ${JSON.stringify(payload)} | radclient -t 5 -r 1 ${JSON.stringify(nasIp + ':3799')} disconnect ${JSON.stringify(secret)}`;
+            // radclient: kirim disconnect ke port 3799 NAS (TANPA shell — lihat
+            // radclientDisconnect di atas). timeout 8 detik, retry 1.
             try {
-                const { stdout } = await execAsync(cmd, { timeout: 8000 });
+                const stdout = await radclientDisconnect(nasIp, secret, payload);
                 if (/Disconnect-ACK/i.test(stdout)) {
                     console.log(`[CoA] Sesi ${username} diputus di ${nasIp} (ACK)`);
                 } else if (/Disconnect-NAK/i.test(stdout)) {
@@ -482,6 +517,9 @@ async function syncVoucher(username = null) {
                 VALUES (?, 'Cleartext-Password', ':=', ?)
                 ON DUPLICATE KEY UPDATE value = VALUES(value)
             `, [v.username, v.password]);
+            // Terapkan batas Shared Users (Simultaneous-Use) sesuai paket voucher.
+            try { await syncSimultaneousUse(v.username); }
+            catch (e) { console.warn(`[radcheck] sync share voucher ${v.username}:`, e.message); }
             console.log(`[radcheck] Synced voucher: ${username}`);
         } else {
             // Sync semua voucher sekaligus (KECUALI yang expired)
@@ -593,6 +631,78 @@ async function expireVoucherHabis() {
     }
 }
 
+// ============================================================
+// SIMULTANEOUS-USE (Shared Users) — batas jumlah HP per akun.
+// Ditulis per-user di radcheck (`Simultaneous-Use := N`) berdasarkan
+// kolom paket.share_users. FreeRADIUS menolak login ke-(N+1) selama N sesi
+// masih aktif (butuh pengecekan simultaneous-use SQL aktif di server —
+// mekanisme yang sama dipakai fitur single-session). radcheck TIDAK punya
+// unique key (username,attribute) → selalu DELETE dulu baru INSERT.
+// ============================================================
+function _clampShare(v) { return Math.max(1, parseInt(v, 10) || 1); }
+
+// Sinkron satu username (cek voucher dulu, lalu pelanggan).
+async function syncSimultaneousUse(username) {
+    if (!username) return;
+    let share = null;
+    const v = await queryOne(
+        `SELECT pk.share_users FROM voucher v JOIN paket pk ON pk.id = v.paket_id WHERE v.username = ?`,
+        [username]);
+    if (v && v.share_users != null) share = v.share_users;
+    else {
+        const p = await queryOne(
+            `SELECT pk.share_users FROM pelanggan pl JOIN paket pk ON pk.id = pl.paket_id WHERE pl.username = ?`,
+            [username]);
+        if (p && p.share_users != null) share = p.share_users;
+    }
+    await query(`DELETE FROM radcheck WHERE username=? AND attribute='Simultaneous-Use'`, [username]);
+    if (share == null) return; // paket user tak diketahui → jangan paksa batas
+    await query(
+        `INSERT INTO radcheck (username, attribute, op, value) VALUES (?, 'Simultaneous-Use', ':=', ?)
+         ON DUPLICATE KEY UPDATE value=VALUES(value)`,
+        [username, String(_clampShare(share))]);
+}
+
+// Sinkron seluruh user pada satu paket (dipakai saat share_users paket diubah).
+async function syncSimultaneousUsePaket(paketId) {
+    const pk = await queryOne(`SELECT share_users FROM paket WHERE id=?`, [paketId]);
+    if (!pk) return;
+    const n = String(_clampShare(pk.share_users));
+    // Bersihkan atribut lama untuk user paket ini (voucher + pelanggan)
+    await query(`DELETE rc FROM radcheck rc JOIN voucher v   ON v.username=rc.username
+                 WHERE rc.attribute='Simultaneous-Use' AND v.paket_id=?`, [paketId]);
+    await query(`DELETE rc FROM radcheck rc JOIN pelanggan pl ON pl.username=rc.username
+                 WHERE rc.attribute='Simultaneous-Use' AND pl.paket_id=?`, [paketId]);
+    // Tulis ulang sesuai share_users terbaru
+    await query(`INSERT INTO radcheck (username, attribute, op, value)
+                 SELECT username, 'Simultaneous-Use', ':=', ?
+                 FROM voucher WHERE paket_id=? AND status<>'expired'
+                   AND username IS NOT NULL AND username<>''
+                 ON DUPLICATE KEY UPDATE value=VALUES(value)`, [n, paketId]);
+    await query(`INSERT INTO radcheck (username, attribute, op, value)
+                 SELECT username, 'Simultaneous-Use', ':=', ?
+                 FROM pelanggan WHERE paket_id=? AND status='aktif'
+                   AND username IS NOT NULL AND username<>''
+                 ON DUPLICATE KEY UPDATE value=VALUES(value)`, [n, paketId]);
+}
+
+// Sinkron SEMUA user (voucher non-expired + pelanggan aktif) sesuai paketnya.
+// Dipakai untuk resync massal & saat single-session dimatikan (kembalikan ke
+// batas per-paket, bukan tanpa batas).
+async function syncSimultaneousUseSemua() {
+    await query(`DELETE FROM radcheck WHERE attribute='Simultaneous-Use'`);
+    await query(`INSERT INTO radcheck (username, attribute, op, value)
+                 SELECT v.username, 'Simultaneous-Use', ':=', GREATEST(1, pk.share_users)
+                 FROM voucher v JOIN paket pk ON pk.id=v.paket_id
+                 WHERE v.status<>'expired' AND v.username IS NOT NULL AND v.username<>''
+                 ON DUPLICATE KEY UPDATE value=VALUES(value)`);
+    await query(`INSERT INTO radcheck (username, attribute, op, value)
+                 SELECT pl.username, 'Simultaneous-Use', ':=', GREATEST(1, pk.share_users)
+                 FROM pelanggan pl JOIN paket pk ON pk.id=pl.paket_id
+                 WHERE pl.status='aktif' AND pl.username IS NOT NULL AND pl.username<>''
+                 ON DUPLICATE KEY UPDATE value=VALUES(value)`);
+}
+
 module.exports = {
     tambahUser,
     updatePaket,
@@ -607,5 +717,8 @@ module.exports = {
     decryptPassword,
     syncVoucher,
     syncStatusVoucher,
+    syncSimultaneousUse,
+    syncSimultaneousUsePaket,
+    syncSimultaneousUseSemua,
     expireVoucherHabis
 };

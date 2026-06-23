@@ -13,7 +13,7 @@ const INVOICE_PREFIX = process.env.INVOICE_PREFIX || 'INV';
 // GET /api/invoice
 router.get('/', async (req, res, next) => {
     try {
-        const { status, pelanggan_id, dari, sampai, tipe_koneksi, halaman = 1, limit = 20 } = req.query;
+        const { status, pelanggan_id, dari, sampai, tipe_koneksi, q, halaman = 1, limit = 20 } = req.query;
         const offset = (parseInt(halaman) - 1) * parseInt(limit);
 
         let where = ['1=1'];
@@ -23,6 +23,13 @@ router.get('/', async (req, res, next) => {
         if (pelanggan_id) { where.push('i.pelanggan_id = ?'); params.push(pelanggan_id); }
         if (dari)         { where.push('i.tgl_invoice >= ?'); params.push(dari); }
         if (sampai)       { where.push('i.tgl_invoice <= ?'); params.push(sampai); }
+
+        // Pencarian teks: no_invoice / nama pelanggan / no_hp (server-side, parameterized).
+        if (q && String(q).trim()) {
+            const like = '%' + String(q).trim() + '%';
+            where.push('(i.no_invoice LIKE ? OR p.nama LIKE ? OR p.no_hp LIKE ?)');
+            params.push(like, like, like);
+        }
 
         // Filter tab: pppoe, hotspot, atau voucher (pelanggan_id IS NULL)
         if (tipe_koneksi === 'voucher') {
@@ -221,7 +228,7 @@ router.post('/:id/bayar-tunai', async (req, res, next) => {
             return res.status(400).json({ error: 'Invoice voucher hotspot tidak bisa dikonfirmasi lewat menu ini' });
 
         const inv = await queryOne(`
-            SELECT i.*, p.nama, p.no_hp, p.id AS pid, p.paket_id, pk.masa_aktif
+            SELECT i.*, p.nama, p.no_hp, p.id AS pid, p.paket_id, pk.masa_aktif, pk.nama AS nama_paket
             FROM invoice i
             JOIN pelanggan p ON i.pelanggan_id = p.id
             JOIN paket pk ON i.paket_id = pk.id
@@ -249,7 +256,13 @@ router.post('/:id/bayar-tunai', async (req, res, next) => {
         // Kirim WA konfirmasi
         await waService.kirimKonfirmasiBayar({
             no_hp: inv.no_hp, nama: inv.nama,
-            jumlah: inv.jumlah, tgl_expired
+            jumlah: inv.jumlah, total: inv.jumlah, tgl_expired,
+            no_invoice: inv.no_invoice,
+            paket: inv.nama_paket || inv.paket,
+            metode_bayar: inv.metode_bayar || 'Tunai',
+            tgl_invoice: inv.tgl_invoice,
+            tgl_jatuh_tempo: inv.tgl_jatuh_tempo,
+            periode: inv.tgl_invoice
         });
 
         res.json({ pesan: 'Pembayaran dikonfirmasi', tgl_expired });
@@ -276,7 +289,9 @@ router.post('/:id/kirim-reminder', async (req, res, next) => {
         await waService.kirimReminder({
             no_hp: inv.no_hp, nama: inv.nama,
             no_invoice: inv.no_invoice, jumlah: inv.jumlah,
-            tgl_jatuh_tempo: inv.tgl_jatuh_tempo, payment_url: inv.payment_url
+            tgl_jatuh_tempo: inv.tgl_jatuh_tempo, tgl_invoice: inv.tgl_invoice,
+            payment_url: inv.payment_url, pelanggan_id: inv.pelanggan_id,
+            invoice_id: inv.id, metode_bayar: inv.metode_bayar
         });
 
         res.json({ pesan: 'Reminder WA terkirim' });
@@ -289,14 +304,27 @@ router.delete('/:id', async (req, res, next) => {
         const inv = await queryOne('SELECT id, no_invoice, status, pelanggan_id FROM invoice WHERE id = ?', [req.params.id]);
         if (!inv) return res.status(404).json({ error: 'Invoice tidak ditemukan' });
 
-        // Invoice yang sudah lunas TIDAK BOLEH dihapus — ini melindungi jejak
-        // akuntansi (riwayat pembayaran, laporan keuangan, dsb). Admin yang
-        // ingin "membatalkan" invoice lunas sebaiknya menggunakan koreksi
-        // pembukuan terpisah, bukan menghapus jejaknya.
+        // Invoice yang sudah lunas hanya boleh dihapus oleh SUPERADMIN.
+        // Ini melindungi jejak akuntansi: admin/operator/teknisi tetap diblokir,
+        // hanya superadmin yang boleh menghapus (mis. untuk membersihkan invoice
+        // hasil testing). Penghapusan dicatat ke admin_log untuk audit.
         if (inv.status === 'paid') {
-            return res.status(400).json({
-                error: 'Invoice yang sudah lunas tidak bisa dihapus untuk menjaga jejak akuntansi.'
-            });
+            if (req.admin?.role !== 'superadmin') {
+                return res.status(403).json({
+                    error: 'Invoice lunas hanya bisa dihapus oleh Super Admin (untuk menjaga jejak akuntansi).'
+                });
+            }
+            // Catat ke audit log (best-effort, jangan gagalkan operasi kalau log error)
+            try {
+                require('./log').tulisLog({
+                    kategori: 'Billing',
+                    pelaku: req.admin?.nama || 'Superadmin',
+                    aksi: 'HAPUS_INVOICE_LUNAS',
+                    target: inv.no_invoice,
+                    detail: `Superadmin menghapus invoice LUNAS ${inv.no_invoice}`,
+                    ip: req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || req.ip
+                });
+            } catch (e) { console.warn('[invoice] gagal catat admin_log:', e.message); }
         }
 
         // Jika invoice ini terhubung dengan voucher hotspot yang belum

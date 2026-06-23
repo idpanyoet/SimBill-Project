@@ -96,6 +96,9 @@ body.role-reseller .sb-group-body{display:none!important}
 body.role-reseller .sb-section.rs-section{display:block}
 body.role-reseller .sb-item.rs-item{display:flex}
 body.role-reseller .admin-only{display:none!important}
+/* ── Superadmin-only: sembunyi by default, tampil hanya untuk superadmin ── */
+.superadmin-only{display:none!important}
+body.role-superadmin .superadmin-only{display:inline-flex!important}
 /* ── Role gating teknisi ── */
 .tk-section,.tk-item{display:none}
 body.role-teknisi .sb-item:not(.tk-item){display:none}
@@ -276,6 +279,7 @@ body.dark .toggle-thumb{left:14px}
 .plan-card .price{font-size:13px;color:#64748b}
 .pagination-bar{display:flex;align-items:center;justify-content:space-between;margin-top:14px;gap:10px;flex-wrap:wrap;font-size:13px}
 .pagination-bar select{padding:5px 10px;border:1px solid #e2e7ef;border-radius:7px;background:#fff;color:#0f172a;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
 /* ── RESELLER MODAL ── */
 .rs-info-box{background:#f3e8ff;border:1px solid #e9d5ff;border-radius:8px;padding:9px 12px;font-size:11px;color:#6d28d9;display:flex;align-items:flex-start;gap:7px}
 body.dark .rs-info-box{background:rgba(124,58,237,.12);border-color:rgba(124,58,237,.25);color:#c4b5fd}
@@ -583,7 +587,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-logo">
       <span class="js-app-logo" style="width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;overflow:hidden;flex-shrink:0"><svg width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#BA7517"/><circle cx="16" cy="21" r="2.8" fill="#fff"/><path d="M10.5 16.5 Q16 11 21.5 16.5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M7 13 Q16 6 25 13" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2" stroke-linecap="round"/></svg></span>
       <div style="min-width:0">
-        <div class="js-app-name" style="font-size:16px;font-weight:700;line-height:1.1;color:#fff"><span style="color:#EF9F27">Sim</span>Bill</div>
+        <div class="js-app-name" style="font-size:14px;font-weight:700;line-height:1.15;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span style="color:#EF9F27">Sim</span>Bill</div>
         <small style="font-size:9px;color:rgba(255,255,255,.35);letter-spacing:.06em;text-transform:uppercase">Admin Panel</small>
       </div>
     </div>
@@ -1256,7 +1260,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
                 <th>Harga</th>
                 <th>Tipe</th>
                 <th>Pool</th>
-                <th>Pelanggan</th>
+                <th>Pelanggan / Voucher</th>
                 <th>e-Voucher</th>
                 <th>Aksi</th>
               </tr>
@@ -1265,6 +1269,22 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
               <tr><td colspan="9" style="text-align:center;color:var(--text3);padding:30px">Tidak ada data</td></tr>
             </tbody>
           </table>
+          <div id="pk-pagination" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 16px;border-top:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)">
+              <span>Tampil</span>
+              <select id="pk-per-halaman" onchange="pkGantiPerHalaman()" style="padding:5px 8px;border:1px solid var(--border);border-radius:7px;font-family:inherit;background:var(--bg);color:var(--text)">
+                <option value="10">10</option>
+                <option value="20" selected>20</option>
+                <option value="50">50</option>
+              </select>
+              <span id="pk-info-range">—</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <button class="btn sm" id="pk-prev" onclick="pkGantiHalaman(-1)">‹ Sebelumnya</button>
+              <span id="pk-info-halaman" style="font-size:12px;color:var(--text2);min-width:90px;text-align:center">Halaman 1</span>
+              <button class="btn sm" id="pk-next" onclick="pkGantiHalaman(1)">Berikutnya ›</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1288,8 +1308,8 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 
         <div class="card">
           <div class="search-bar">
-            <input id="inv-search" placeholder="Cari no. invoice atau pelanggan..." oninput="filterTbl('tbl-invoice',this.value)">
-            <select id="inv-filter-status" onchange="loadInvoice()">
+            <input id="inv-search" placeholder="Cari no. invoice atau pelanggan..." oninput="invSearchDebounce()">
+            <select id="inv-filter-status" onchange="_invPage=1;loadInvoice()">
               <option value="">Semua Status</option>
               <option value="unpaid">Unpaid</option>
               <option value="paid">Paid</option>
@@ -1303,6 +1323,24 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
           <tbody id="tbl-invoice">
             <tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">Tidak ada data</td></tr>
           </tbody></table>
+
+          <div class="pagination-bar" id="inv-pagination">
+            <div style="display:flex;align-items:center;gap:6px">
+              <label for="inv-per-halaman" style="color:var(--text3)">Baris per halaman</label>
+              <select id="inv-per-halaman" onchange="invGantiPerHalaman()">
+                <option value="20">20</option>
+                <option value="30">30</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+              <span id="inv-info-rentang" style="color:var(--text3);margin-left:6px"></span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button class="btn sm" id="inv-btn-prev" onclick="invGantiHalaman(-1)">‹ Sebelumnya</button>
+              <span id="inv-info-halaman" style="color:var(--text3)">Halaman 1</span>
+              <button class="btn sm" id="inv-btn-next" onclick="invGantiHalaman(1)">Berikutnya ›</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -2057,17 +2095,20 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
               <div>
                 <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px">Single Session</div>
                 <select id="single-session-select" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
-                  <option value="1">✅ Enabled — 1 login per user</option>
-                  <option value="0">❌ Disabled — multi login</option>
+                  <option value="1">✅ Enabled — paksa 1 login per user</option>
+                  <option value="0">❌ Disabled — pakai batas Shared Users per paket</option>
                 </select>
               </div>
             </div>
-            <div style="display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+            <div style="display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);flex-wrap:wrap">
               <button class="btn primary" onclick="apiSimpanAuthMode()" style="gap:6px">
                 <i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan Konfigurasi
               </button>
               <button class="btn" onclick="apiTestRADIUS()" style="gap:6px">
                 <i class="ti ti-plug" style="font-size:13px" aria-hidden="true"></i> Test Koneksi RADIUS
+              </button>
+              <button class="btn" onclick="apiSyncShare()" style="gap:6px" title="Terapkan kolom Shared Users tiap paket ke semua voucher & pelanggan aktif">
+                <i class="ti ti-users" style="font-size:13px" aria-hidden="true"></i> Terapkan Shared Users
               </button>
             </div>
           </div>
@@ -4717,6 +4758,16 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
         <div class="fg"><label>Deskripsi</label><input id="fp-deskripsi" placeholder="Keterangan singkat"></div>
       </div>
 
+      <!-- Shared User (HP per akun) -->
+      <div class="fg-row">
+        <div class="fg">
+          <label>Shared User <span class="td-text-sub" style="font-size:10px">(HP per akun)</span></label>
+          <input id="fp-share-users" type="number" min="1" step="1" value="1" placeholder="1">
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">Jumlah HP/perangkat yang boleh login bersamaan dengan 1 akun (cocok untuk paket hotspot share). Default 1 = 1 perangkat.</div>
+        </div>
+        <div class="fg"></div>
+      </div>
+
       <!-- Izin Voucher -->
       <div id="fp-vcr-wrap">
         <label for="fp-izin-voucher" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
@@ -4799,6 +4850,15 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
       <div class="fg-row">
         <div class="fg"><label>Pool RADIUS</label><input id="ep2-pool" placeholder="pool-default"></div>
         <div class="fg"><label>Deskripsi</label><input id="ep2-deskripsi" placeholder="Keterangan singkat"></div>
+      </div>
+
+      <div class="fg-row">
+        <div class="fg">
+          <label>Shared User <span class="td-text-sub" style="font-size:10px">(HP per akun)</span></label>
+          <input id="ep2-share-users" type="number" min="1" step="1" value="1" placeholder="1">
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">Jumlah HP/perangkat simultan per 1 akun. Default 1.</div>
+        </div>
+        <div class="fg"></div>
       </div>
 
       <div id="ep2-vcr-wrap">
@@ -5389,7 +5449,7 @@ async function loadVoucherTemplate() {
     _vtList = await apiFetch('/api/voucher-template');
     const sel = document.getElementById('vt-select');
     sel.innerHTML = _vtList.map(t =>
-      `<option value="${t.id}">${t.nama}${t.is_default?' (Default)':''}</option>`
+      `<option value="${t.id}">${escapeHtml(t.nama)}${t.is_default?' (Default)':''}</option>`
     ).join('');
     if (_vtList.length) vtLoad(_vtList.find(t=>t.is_default)?.id || _vtList[0].id);
   } catch(e) { toast('❌ Gagal load template: '+e.message, true); }
@@ -5686,7 +5746,7 @@ function acsRenderRow(d) {
     <td>${stBadge}</td>
     <td style="font-size:11px;color:var(--text2);white-space:nowrap">${fmtInform(d.last_inform)}</td>
     <td>
-      <button class="btn sm" onclick="bukaACSDetail('${d.genie_id}')" style="padding:5px 10px;border-radius:7px;gap:4px">
+      <button class="btn sm" onclick="bukaACSDetail('${jsAttr(d.genie_id)}')" style="padding:5px 10px;border-radius:7px;gap:4px">
         <i class="ti ti-info-circle" style="font-size:12px" aria-hidden="true"></i>
       </button>
     </td>
@@ -5806,7 +5866,7 @@ async function loadACSDevices_OLD() {
         <td>${stBadge}</td>
         <td style="font-size:11px;color:var(--text2);white-space:nowrap">${fmtInform(d.last_inform)}</td>
         <td>
-          <button class="btn sm" onclick="bukaACSDetail('${d.genie_id}')" style="padding:5px 10px;border-radius:7px;gap:4px">
+          <button class="btn sm" onclick="bukaACSDetail('${jsAttr(d.genie_id)}')" style="padding:5px 10px;border-radius:7px;gap:4px">
             <i class="ti ti-info-circle" style="font-size:12px" aria-hidden="true"></i>
           </button>
         </td>
@@ -5947,7 +6007,7 @@ async function acsCariPelanggan(q) {
     return;
   }
   box.innerHTML = list.map(p =>
-    `<div onclick="acsPilihPelanggan(${p.id}, '${(p.nama||'').replace(/'/g,"\\'")}', '${(p.username||'').replace(/'/g,"\\'")}')"
+    `<div onclick="acsPilihPelanggan(${p.id}, '${jsAttr(p.nama||'')}', '${jsAttr(p.username||'')}')"
        style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)"
        onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
        <span style="font-weight:600;color:var(--text)">${p.nama||'—'}</span>
@@ -6368,6 +6428,9 @@ function applyLang() {
 
   // 7. Table headers
   document.querySelectorAll('th').forEach(el => {
+    // Lewati <th> yang berisi elemen anak (mis. checkbox select-all, label,
+    // input) — menimpa textContent akan MENGHAPUS elemen di dalamnya.
+    if (el.children.length > 0) return;
     if (!el.dataset.orig) el.dataset.orig = el.textContent.trim();
     el.textContent = tx(el.dataset.orig);
   });
@@ -6603,14 +6666,21 @@ async function cekStatusSistem() {
   let syncTimer;
 
   function tampilSync(msg, warna) {
+    if (!syncEl) return; // panel status lama tidak ada → skip diam-diam
     syncEl.textContent = msg;
     syncEl.style.color = warna || 'var(--text3)';
     syncEl.style.display = '';
     clearTimeout(syncTimer);
     // Sembunyikan otomatis setelah 4 detik
     if (warna !== 'var(--red, #ef4444)') {
-      syncTimer = setTimeout(() => { syncEl.style.display = 'none'; }, 4000);
+      syncTimer = setTimeout(() => { if (syncEl) syncEl.style.display = 'none'; }, 4000);
     }
+  }
+  function setBadge(id, cls, txt) {
+    const el = document.getElementById(id);
+    if (!el) return; // badge tidak ada di layout ini → skip
+    el.className = cls;
+    el.textContent = txt;
   }
 
   tampilSync('🔄 Memeriksa status...', 'var(--text3)');
@@ -6621,19 +6691,15 @@ async function cekStatusSistem() {
   try {
     const resp = await fetch('/api/radius/status', { headers });
     const r = await resp.json();
-    const el = document.getElementById('badge-radius');
     if (resp.ok && r.online) {
-      el.className = 'badge green';
-      el.textContent = `● RADIUS Online (${r.sesi_aktif} sesi)`;
+      setBadge('badge-radius', 'badge green', `● RADIUS Online (${r.sesi_aktif} sesi)`);
       radiusOk = true;
     } else {
-      el.className = 'badge red';
-      el.textContent = '● RADIUS Offline';
+      setBadge('badge-radius', 'badge red', '● RADIUS Offline');
       console.warn('[Status] RADIUS:', r);
     }
   } catch(e) {
-    document.getElementById('badge-radius').className = 'badge red';
-    document.getElementById('badge-radius').textContent = '● RADIUS Offline';
+    setBadge('badge-radius', 'badge red', '● RADIUS Offline');
     console.warn('[Status] RADIUS error:', e.message);
   }
 
@@ -6641,19 +6707,15 @@ async function cekStatusSistem() {
   try {
     const resp = await fetch('/api/whatsapp/status', { headers });
     const w = await resp.json();
-    const el = document.getElementById('badge-wa');
     if (resp.ok && w.aktif) {
-      el.className = 'badge blue';
-      el.textContent = `💬 WA Aktif (${w.provider})`;
+      setBadge('badge-wa', 'badge blue', `💬 WA Aktif (${w.provider})`);
       waOk = true;
     } else {
-      el.className = 'badge amber';
-      el.textContent = '💬 WA Belum Dikonfigurasi';
+      setBadge('badge-wa', 'badge amber', '💬 WA Belum Dikonfigurasi');
       console.warn('[Status] WA:', w);
     }
   } catch(e) {
-    document.getElementById('badge-wa').className = 'badge amber';
-    document.getElementById('badge-wa').textContent = '💬 WA Tidak Terhubung';
+    setBadge('badge-wa', 'badge amber', '💬 WA Tidak Terhubung');
     console.warn('[Status] WA error:', e.message);
   }
 
@@ -6858,6 +6920,7 @@ function tampilApp() {
   document.getElementById('app').classList.add('visible');
   const isTeknisi = !!(ADMIN && ADMIN.role === 'teknisi');
   document.body.classList.toggle('role-teknisi', isTeknisi);
+  document.body.classList.toggle('role-superadmin', !!(ADMIN && ADMIN.role === 'superadmin'));
   topbarUpdateProfil(ADMIN.nama, ADMIN.role);
   topbarCekNotif();
   if (typeof tkRefreshBadge === 'function') tkRefreshBadge();
@@ -7024,7 +7087,7 @@ async function loadResellerVoucher() {
     if (!vp.length) { box.innerHTML = '<div style="color:var(--text3);font-size:13px">Belum ada paket voucher tersedia. Hubungi admin.</div>'; return; }
     box.innerHTML = vp.map(p => `
       <div class="rv-card" data-id="${p.id}" onclick="rvPilih(${p.id})" style="border:1.5px solid var(--border);border-radius:10px;padding:11px;cursor:pointer;transition:all .12s">
-        <div style="font-weight:700;font-size:14px">${p.nama}</div>
+        <div style="font-weight:700;font-size:14px">${escapeHtml(p.nama)}</div>
         <div style="font-size:11px;color:var(--text3);margin:2px 0 6px">${p.kecepatan_dn||'-'} Mbps · ${p.masa_aktif} ${p.satuan_masa||'hari'}</div>
         <div style="font-size:15px;font-weight:800;color:#BA7517">${rsRp(p.harga_jual)}</div>
         ${Number(p.harga)>Number(p.harga_jual)?`<div style="font-size:11px;color:var(--text3);text-decoration:line-through">${rsRp(p.harga)}</div>`:''}
@@ -7259,7 +7322,7 @@ async function rpBukaTambah() {
     RP_PAKET = await apiFetch('/api/reseller/paket');
     const sel = document.getElementById('rp-paket');
     const pp = RP_PAKET.filter(p => p.tipe === 'pppoe' || p.tipe === 'keduanya' || p.tipe === 'hotspot');
-    sel.innerHTML = pp.map(p => `<option value="${p.id}">${p.nama} — ${rsRp(p.harga_jual)}</option>`).join('');
+    sel.innerHTML = pp.map(p => `<option value="${p.id}">${escapeHtml(p.nama)} — ${rsRp(p.harga_jual)}</option>`).join('');
     ['rp-username','rp-password','rp-nama','rp-hp'].forEach(id => { const e=document.getElementById(id); if(e) e.value=''; });
     rpHargaInfo();
     openModal('m-rp-tambah');
@@ -7490,7 +7553,7 @@ async function tkBuka(id){
     if (tekSel) {
       const assigned = (t.teknisi || []).map(x => String(x.id));
       tekSel.innerHTML = (TK_TEKNISI || []).map(a =>
-        `<option value="${a.id}"${assigned.includes(String(a.id))?' selected':''}>${a.nama} — ${a.email} [${a.role}]</option>`
+        `<option value="${a.id}"${assigned.includes(String(a.id))?' selected':''}>${escapeHtml(a.nama)} — ${escapeHtml(a.email)} [${a.role}]</option>`
       ).join('') || '<option disabled>Tidak ada admin/teknisi</option>';
     }
     document.getElementById('tk-balas').value='';
@@ -7772,7 +7835,7 @@ function dwRenderBayar(rows){
   const el=document.getElementById('dw-bayar'); if(!el) return;
   if(!rows.length){ el.innerHTML='<div style="color:var(--text3);font-size:12px;text-align:center;padding:24px">Belum ada pembayaran lunas</div>'; return; }
   el.innerHTML=rows.map(p=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 2px;border-bottom:1px solid var(--border)">
-    <div style="min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nama}</div>
+    <div style="min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(p.nama)}</div>
       <div style="font-size:11px;color:var(--text3)">${p.no_invoice||''} · ${fmtDate?fmtDate(p.tgl_bayar):String(p.tgl_bayar||'').slice(0,10)}</div></div>
     <div style="font-size:13px;font-weight:700;color:#16a34a;white-space:nowrap">${dwRp(p.jumlah)}</div>
   </div>`).join('');
@@ -7784,8 +7847,8 @@ function dwRenderExpired(rows){
     const s=Number(p.sisa); const col=s<=0?'#dc2626':s<=1?'#d97706':'#16a34a';
     const txt=s<=0?'Hari ini':(s+' hari lagi');
     return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 2px;border-bottom:1px solid var(--border)">
-      <div style="min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nama}</div>
-        <div style="font-size:11px;color:var(--text3);font-family:monospace">@${p.username}</div></div>
+      <div style="min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(p.nama)}</div>
+        <div style="font-size:11px;color:var(--text3);font-family:monospace">@${escapeHtml(p.username)}</div></div>
       <span style="font-size:11px;font-weight:700;color:${col};background:${col}1f;padding:3px 10px;border-radius:20px;white-space:nowrap">${txt}</span>
     </div>`;
   }).join('');
@@ -7889,7 +7952,7 @@ function renderSesiAktifPage(page) {
   } else {
     t.innerHTML = slice.map(s => `
       <tr>
-        <td><span class="status-dot dot-green"></span>${s.username}</td>
+        <td><span class="status-dot dot-green"></span>${escapeHtml(s.username)}</td>
         <td style="font-size:12px">${s.ip||'—'}</td>
         <td style="font-size:12px">${s.durasi_menit||0} mnt</td>
       </tr>`).join('');
@@ -7931,10 +7994,10 @@ function renderPppoePage(page) {
     } else {
       t.innerHTML = slice.map(s => `
         <tr>
-          <td><span class="status-dot dot-green"></span>${s.username}</td>
+          <td><span class="status-dot dot-green"></span>${escapeHtml(s.username)}</td>
           <td>${s.ip||'—'}</td>
           <td>${s.durasi_menit||0} mnt</td>
-          <td><button class="btn sm danger" onclick="apiPutusKoneksi('${s.username}')">Putus</button></td>
+          <td><button class="btn sm danger" onclick="apiPutusKoneksi('${jsAttr(s.username)}')">Putus</button></td>
         </tr>`).join('');
     }
   }
@@ -7978,10 +8041,10 @@ function renderHotspotPage(page) {
     } else {
       tHotspot.innerHTML = slice.map(s => `
         <tr>
-          <td><span class="status-dot dot-green"></span>${s.username}</td>
+          <td><span class="status-dot dot-green"></span>${escapeHtml(s.username)}</td>
           <td>${s.ip||'—'}</td>
           <td>${s.durasi_menit||0} mnt</td>
-          <td><button class="btn sm danger" onclick="apiPutusKoneksi('${s.username}')">Putus</button></td>
+          <td><button class="btn sm danger" onclick="apiPutusKoneksi('${jsAttr(s.username)}')">Putus</button></td>
         </tr>`).join('');
     }
   }
@@ -8066,8 +8129,8 @@ async function loadServiceInfo() {
       apiFetch('/api/laporan/dashboard').catch(()=>({}))
     ]);
     const nasCount = Array.isArray(nas) ? nas.length : 0;
-    const custTotal = (dash.pppoe_total || 0) + (dash.hotspot_total || 0);
-    const voucherCount = dash.vcr_jumlah ?? 0;
+    const custTotal = dash.total_pelanggan ?? ((dash.pppoe_total || 0) + (dash.hotspot_online || 0));
+    const voucherCount = dash.hotspot_total ?? 0;
     const badge = (txt, ok) => `<span style="font-size:11px;font-weight:700;color:#fff;background:${ok?'#16a34a':'#dc2626'};padding:3px 12px;border-radius:20px">${txt}</span>`;
     const row = (i, ic, label, valHtml) => `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;border-radius:9px;background:${i%2?'transparent':'var(--bg2)'}">
       <div style="display:flex;align-items:center;gap:9px;font-size:12px;font-weight:700;letter-spacing:.4px;color:var(--text2)"><span style="font-size:15px">${ic}</span>${label}</div>
@@ -8910,6 +8973,31 @@ async function loadPaket() {
   }
 }
 
+// ── Pagination Paket Internet ──
+let _pkPage = 1;
+let _pkPerPage = 20;
+function pkRenderPagination(total, mulai, jmlTampil) {
+  const info = document.getElementById('pk-info-range');
+  const hal  = document.getElementById('pk-info-halaman');
+  const prev = document.getElementById('pk-prev');
+  const next = document.getElementById('pk-next');
+  const totalHal = Math.max(1, Math.ceil(total / _pkPerPage));
+  if (info) info.textContent = total ? `${mulai + 1}–${mulai + jmlTampil} dari ${total} paket` : '0 paket';
+  if (hal)  hal.textContent  = `Halaman ${_pkPage} / ${totalHal}`;
+  if (prev) prev.disabled = (_pkPage <= 1);
+  if (next) next.disabled = (_pkPage >= totalHal);
+}
+function pkGantiHalaman(arah) {
+  _pkPage += arah;
+  if (LAST_PAKET_LIST) renderPaket(LAST_PAKET_LIST);
+}
+function pkGantiPerHalaman() {
+  const sel = document.getElementById('pk-per-halaman');
+  _pkPerPage = parseInt(sel?.value, 10) || 20;
+  _pkPage = 1;
+  if (LAST_PAKET_LIST) renderPaket(LAST_PAKET_LIST);
+}
+
 function renderPaket(rows) {
   const setp=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   setp('pk-st-total', rows.length);
@@ -8920,13 +9008,23 @@ function renderPaket(rows) {
   if (!tbody) return;
 
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8">
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:#94a3b8">
       Belum ada paket. Klik <b>+ Tambah Paket</b> untuk membuat paket pertama.
     </td></tr>`;
+    pkRenderPagination(0, 0, 0);
     return;
   }
 
-  tbody.innerHTML = rows.map(p => {
+  // Pagination: potong baris sesuai halaman & per-halaman
+  const total = rows.length;
+  const totalHal = Math.max(1, Math.ceil(total / _pkPerPage));
+  if (_pkPage > totalHal) _pkPage = totalHal;
+  if (_pkPage < 1) _pkPage = 1;
+  const mulai = (_pkPage - 1) * _pkPerPage;
+  const pageRows = rows.slice(mulai, mulai + _pkPerPage);
+  pkRenderPagination(total, mulai, pageRows.length);
+
+  tbody.innerHTML = pageRows.map(p => {
     const satuan = p.satuan_masa || 'hari';
     const satuanLabel = satuan === 'jam' ? 'Jam' : satuan === 'bulan' ? 'Bulan' : 'Hari';
     const masaLabel   = `${p.masa_aktif || 30} ${satuanLabel}`;
@@ -8949,9 +9047,9 @@ function renderPaket(rows) {
       <td><span class="td-accent-bold td-mono" style="font-size:11px">${speedLabel}</span></td>
       <td><span class="td-text">${masaLabel}</span></td>
       <td><span class="td-text-bold">${fmt(p.harga)}</span></td>
-      <td><span class="tag ${tipeBadge}">${tipeBadgeLabel}</span></td>
+      <td><span class="tag ${tipeBadge}">${tipeBadgeLabel}</span>${(p.share_users > 1) ? ` <span class="tag" style="background:rgba(79,70,229,.12);color:#4f46e5" title="Shared User: ${p.share_users} HP per akun">👥 ${p.share_users}</span>` : ''}</td>
       <td><span class="td-text-sub td-mono">${p.pool_name || '—'}</span></td>
-      <td><span class="badge blue">${p.jumlah_pelanggan || 0}</span></td>
+      <td><span class="badge blue" title="${p.tipe === 'hotspot' ? 'Jumlah voucher' : 'Jumlah pelanggan'}">${p.tipe === 'hotspot' ? (p.jumlah_voucher || 0) : (p.jumlah_pelanggan || 0)}</span></td>
       <td>
         ${p.tipe === 'pppoe' ? '<span class="td-text-sub">—</span>' : `
         <label for="vcr-chk-${p.id}" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
@@ -8982,7 +9080,7 @@ function filterEditPaketByTipe() {
   });
   sel.innerHTML = '<option value="">-- pilih paket --</option>' +
     filtered.map(function(p) {
-      return `<option value="${p.id}" ${p.id == curVal ? 'selected' : ''}>${p.nama} — ${fmt(p.harga)}</option>`;
+      return `<option value="${p.id}" ${p.id == curVal ? 'selected' : ''}>${escapeHtml(p.nama)} — ${fmt(p.harga)}</option>`;
     }).join('');
 }
 
@@ -9015,7 +9113,7 @@ function filterPaketByTipe() {
     filtered.map(function(p) {
       const satuan = p.satuan_masa === 'jam' ? 'Jam' : p.satuan_masa === 'bulan' ? 'Bln' : 'Hari';
       const speed  = p.rate_limit || (p.kecepatan_dn + ' Mbps');
-      return `<option value="${p.id}" ${p.id == curVal ? 'selected' : ''}>${p.nama} — ${fmt(p.harga)} · ${speed} · ${p.masa_aktif||30} ${satuan}</option>`;
+      return `<option value="${p.id}" ${p.id == curVal ? 'selected' : ''}>${escapeHtml(p.nama)} — ${fmt(p.harga)} · ${speed} · ${p.masa_aktif||30} ${satuan}</option>`;
     }).join('');
 }
 
@@ -9050,6 +9148,8 @@ function bukaEditPaket(id) {
   document.getElementById('ep2-satuan').value    = p.satuan_masa || 'hari';
   const descEl = document.getElementById('ep2-deskripsi');
   if (descEl) descEl.value = p.deskripsi || '';
+  const shareEl = document.getElementById('ep2-share-users');
+  if (shareEl) shareEl.value = (p.share_users != null ? p.share_users : 1);
   const titleEl = document.getElementById('ep2-title');
   if (titleEl) titleEl.textContent = 'Edit: ' + p.nama;
   ep2SetTipe(p.tipe || 'pppoe');
@@ -9116,11 +9216,12 @@ async function apiTambahPaket() {
   const satuan_masa= document.getElementById('fp-satuan').value;
   const deskripsi  = document.getElementById('fp-deskripsi')?.value.trim() || '';
   const izin_voucher = document.getElementById('fp-izin-voucher')?.checked ? 1 : 0;
+  const share_users  = Math.max(1, parseInt(document.getElementById('fp-share-users')?.value, 10) || 1);
   if (!nama || !rate_limit || !harga) return toast('❌ Nama, kecepatan, dan harga wajib diisi', true);
   const { kecepatan_up, kecepatan_dn } = _parseRateLimit(rate_limit);
   try {
     await apiFetch('/api/paket', { method:'POST',
-      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, rate_limit, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi, izin_voucher, harga_reseller: (document.getElementById('fp-harga-reseller')?.value || '')})
+      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, rate_limit, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi, izin_voucher, share_users, harga_reseller: (document.getElementById('fp-harga-reseller')?.value || '')})
     });
     toast('✅ Paket berhasil ditambahkan');
     closeModal('m-add-paket');
@@ -9152,9 +9253,10 @@ async function apiUpdatePaketGrid() {
   if (!nama || !rate_limit || !harga) return toast('❌ Nama, kecepatan, harga wajib diisi', true);
   const { kecepatan_up, kecepatan_dn } = _parseRateLimit(rate_limit);
   const izin_voucher = document.getElementById('ep2-izin-voucher')?.checked ? 1 : 0;
+  const share_users  = Math.max(1, parseInt(document.getElementById('ep2-share-users')?.value, 10) || 1);
   try {
     await apiFetch('/api/paket/'+id, {method:'PUT',
-      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, rate_limit, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi, izin_voucher, harga_reseller: (document.getElementById('ep2-harga-reseller')?.value || '')})
+      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, rate_limit, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi, izin_voucher, share_users, harga_reseller: (document.getElementById('ep2-harga-reseller')?.value || '')})
     });
     toast('✅ Paket diperbarui');
     closeModal('m-edit-paket');
@@ -9172,6 +9274,8 @@ function bukaTambahPaket() {
   if (masa) masa.value = '30';
   const satuan = document.getElementById('fp-satuan');
   if (satuan) satuan.value = 'hari';
+  const fpShare = document.getElementById('fp-share-users');
+  if (fpShare) fpShare.value = '1';
   // Reset tipe ke pppoe
   pilihTipePaket('pppoe');
   // Reset preview
@@ -9277,9 +9381,10 @@ async function apiSimpanPaket() {
   const izin_voucher = document.getElementById('fp-izin-voucher')?.checked ? 1 : 0;
   if (!nama || !rate_limit || !harga) return toast('❌ Nama, kecepatan, harga wajib diisi', true);
   const { kecepatan_up, kecepatan_dn } = _parseRateLimit(rate_limit);
+  const share_users = Math.max(1, parseInt(document.getElementById('fp-share-users')?.value, 10) || 1);
   try {
     await apiFetch('/api/paket', {method:'POST',
-      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, rate_limit, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi, izin_voucher})
+      body: JSON.stringify({nama, kecepatan_up, kecepatan_dn, rate_limit, harga, pool_name, tipe, masa_aktif, satuan_masa, deskripsi, izin_voucher, share_users})
     });
     toast('✅ Paket ditambahkan');
     closeModal('m-add-paket');
@@ -9306,7 +9411,7 @@ async function populateDropdowns() {
     if (selVcrPaket) {
       selVcrPaket.innerHTML = '<option value="">-- pilih paket --</option>'
         + paketList.filter(p => p.tipe !== 'pppoe').map(p =>
-            `<option value="${p.id}">${p.nama} — ${fmt(p.harga)}</option>`
+            `<option value="${p.id}">${escapeHtml(p.nama)} — ${fmt(p.harga)}</option>`
           ).join('');
     }
 
@@ -9720,9 +9825,15 @@ function invoiceSetDueEOM() {
 // ── INVOICE MODAL HELPERS END ─────────────────────────────────
 
 let _invTab = 'pppoe';
+// State pagination + pencarian invoice (server-side)
+let _invPage    = 1;
+let _invPerPage = 20;
+let _invTotal   = 0;
+let _invSearchTimer = null;
 
 function switchInvTab(tab) {
   _invTab = tab;
+  _invPage = 1;
   // Reset checkbox
   const chkAll = document.getElementById('inv-chk-all');
   if (chkAll) chkAll.checked = false;
@@ -9743,17 +9854,72 @@ function switchInvTab(tab) {
 
 async function loadInvoice() {
   const t = document.getElementById('tbl-invoice');
-  if (t) t.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">Memuat...</td></tr>';
+  if (t) t.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">Memuat...</td></tr>';
   try {
     const status = document.getElementById('inv-filter-status')?.value || '';
-    const params = new URLSearchParams({ limit: 100, tipe_koneksi: _invTab });
+    const q      = document.getElementById('inv-search')?.value.trim() || '';
+    const per    = parseInt(document.getElementById('inv-per-halaman')?.value || _invPerPage) || 20;
+    _invPerPage  = per;
+    const params = new URLSearchParams({ limit: per, halaman: _invPage, tipe_koneksi: _invTab });
     if (status) params.append('status', status);
+    if (q)      params.append('q', q);
     const data = await apiFetch('/api/invoice?' + params.toString());
-    renderTblInvoice(data.data || data);
+    const rows = data.data || data;
+    _invTotal  = (typeof data.total === 'number') ? data.total : rows.length;
+    // Jika halaman kini kosong (mis. setelah hapus baris terakhir), mundur ke
+    // halaman valid lalu muat ulang sekali. Aman dari loop: halaman 1 tak memicu.
+    if (rows.length === 0 && _invPage > 1) {
+      _invPage = Math.max(1, Math.ceil(_invTotal / _invPerPage));
+      return loadInvoice();
+    }
+    renderTblInvoice(rows);
+    invRenderPagination();
   } catch(e) {
     console.warn('Invoice API:', e.message);
-    if (t) t.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">Gagal memuat data</td></tr>';
+    if (t) t.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">Gagal memuat data</td></tr>';
   }
+}
+
+// Pencarian invoice: debounce 350ms, selalu kembali ke halaman 1.
+function invSearchDebounce() {
+  clearTimeout(_invSearchTimer);
+  _invSearchTimer = setTimeout(() => { _invPage = 1; loadInvoice(); }, 350);
+}
+
+// Ganti jumlah baris per halaman → reset ke halaman 1.
+function invGantiPerHalaman() {
+  _invPage = 1;
+  loadInvoice();
+}
+
+// Pindah halaman (delta -1 / +1) dengan batas aman.
+function invGantiHalaman(delta) {
+  const totalPage = Math.max(1, Math.ceil(_invTotal / _invPerPage));
+  const baru = Math.min(totalPage, Math.max(1, _invPage + delta));
+  if (baru === _invPage) return;
+  _invPage = baru;
+  loadInvoice();
+}
+
+// Render kontrol pagination (info rentang, nomor halaman, enable/disable tombol).
+function invRenderPagination() {
+  const totalPage = Math.max(1, Math.ceil(_invTotal / _invPerPage));
+  if (_invPage > totalPage) _invPage = totalPage;
+  const infoH = document.getElementById('inv-info-halaman');
+  const infoR = document.getElementById('inv-info-rentang');
+  const prev  = document.getElementById('inv-btn-prev');
+  const next  = document.getElementById('inv-btn-next');
+  if (infoH) infoH.textContent = `Halaman ${_invPage} / ${totalPage}`;
+  if (infoR) {
+    if (_invTotal === 0) { infoR.textContent = '0 invoice'; }
+    else {
+      const mulai = (_invPage - 1) * _invPerPage + 1;
+      const akhir = Math.min(_invTotal, _invPage * _invPerPage);
+      infoR.textContent = `${mulai}–${akhir} dari ${_invTotal}`;
+    }
+  }
+  if (prev) prev.disabled = _invPage <= 1;
+  if (next) next.disabled = _invPage >= totalPage;
 }
 
 function renderTblInvoice(rows) {
@@ -9778,7 +9944,7 @@ function renderTblInvoice(rows) {
         <button class="btn sm" onclick="cetakInvoice(${i.id},'thermal')" title="Print Thermal 58mm"><i class="ti ti-receipt" style="font-size:12px" aria-hidden="true"></i> Thermal</button>
         <button class="btn sm" onclick="unduhInvoicePDF(${i.id},'${i.no_invoice}')" title="Download PDF"><i class="ti ti-file-type-pdf" style="font-size:12px" aria-hidden="true"></i> PDF</button>
         <button class="btn sm" onclick="kirimInvoicePDFwa(${i.id},'${i.no_invoice}')" title="Kirim PDF ke WhatsApp"><i class="ti ti-send" style="font-size:12px" aria-hidden="true"></i> PDF→WA</button>
-        ${i.status!=='paid' ? `<button class="btn sm danger" onclick="apiHapusInvoice(${i.id}, '${i.no_invoice}')" title="Hapus invoice"><i class="ti ti-trash" aria-hidden="true"></i></button>` : ''}
+        ${i.status!=='paid' ? `<button class="btn sm danger" onclick="apiHapusInvoice(${i.id}, '${i.no_invoice}')" title="Hapus invoice"><i class="ti ti-trash" aria-hidden="true"></i></button>` : `<button class="btn sm danger superadmin-only" onclick="apiHapusInvoiceLunas(${i.id}, '${jsAttr(i.no_invoice)}')" title="Hapus invoice lunas (khusus Super Admin)"><i class="ti ti-trash" aria-hidden="true"></i></button>`}
       </td>
     </tr>`).join('');
 }
@@ -10017,8 +10183,8 @@ body{font-family:'Courier New',monospace;font-size:9pt;color:#000;background:#ff
   <div class="row"><span>Jatuh Tempo</span><span>${tglTempo}</span></div>
 
   <div class="line"></div>
-  <div class="bold" style="font-size:9pt">${inv.nama_pelanggan}</div>
-  ${inv.no_hp ? `<div style="font-size:8pt">${inv.no_hp}</div>` : ''}
+  <div class="bold" style="font-size:9pt">${escapeHtml(inv.nama_pelanggan)}</div>
+  ${inv.no_hp ? `<div style="font-size:8pt">${escapeHtml(inv.no_hp)}</div>` : ''}
 
   <div class="line"></div>
   <div class="row bold"><span>Item</span><span>Total</span></div>
@@ -10232,6 +10398,7 @@ async function kirimInvoicePDFwa(id, noInv) {
 }
 
 function invToggleAll(checked) {
+  document.querySelectorAll('.inv-chk').forEach(function(c) { c.checked = checked; });
   invUpdateSelBtn();
 }
 
@@ -10253,20 +10420,28 @@ async function apiHapusInvoiceTerpilih() {
   const sel = document.querySelectorAll('.inv-chk:checked');
   if (!sel.length) return;
 
-  // Pisahkan yang bisa dihapus (non-paid) dan yang tidak
+  const isSuper = (ROLE === 'superadmin');
+  // Superadmin boleh hapus invoice lunas; role lain hanya non-paid.
   const bisa   = [];
   const tidakBisa = [];
+  let jmlLunas = 0;
   sel.forEach(function(c) {
-    if (c.dataset.status !== 'paid') bisa.push({ id: c.value, no: c.dataset.no });
-    else tidakBisa.push(c.dataset.no);
+    const lunas = (c.dataset.status === 'paid');
+    if (!lunas || isSuper) {
+      bisa.push({ id: c.value, no: c.dataset.no });
+      if (lunas) jmlLunas++;
+    } else {
+      tidakBisa.push(c.dataset.no);
+    }
   });
 
   if (!bisa.length) {
-    return toast('❌ Invoice lunas tidak bisa dihapus', true);
+    return toast('❌ Invoice lunas hanya bisa dihapus oleh Super Admin', true);
   }
 
   let pesan = `Hapus ${bisa.length} invoice terpilih?`;
-  if (tidakBisa.length) pesan += `\n(${tidakBisa.length} invoice lunas dilewati)`;
+  if (jmlLunas)         pesan += `\n⚠️ Termasuk ${jmlLunas} invoice LUNAS (masuk laporan keuangan).`;
+  if (tidakBisa.length) pesan += `\n(${tidakBisa.length} invoice lunas dilewati — bukan Super Admin)`;
   if (!confirm(pesan)) return;
 
   let sukses = 0, gagal = 0;
@@ -10298,6 +10473,16 @@ async function apiHapusInvoice(id, noInvoice) {
   } catch(e) { toast('❌ '+e.message, true); }
 }
 
+async function apiHapusInvoiceLunas(id, noInvoice) {
+  if (ROLE !== 'superadmin') { toast('❌ Hanya Super Admin yang bisa menghapus invoice lunas', true); return; }
+  if (!confirm(`⚠️ Invoice ${noInvoice} sudah LUNAS dan masuk laporan keuangan.\n\nMenghapusnya akan menghilangkan jejaknya dari daftar invoice (riwayat pembayaran tetap tersimpan di log audit).\n\nLanjutkan hapus?`)) return;
+  try {
+    await apiFetch(`/api/invoice/${id}`, {method:'DELETE'});
+    toast('✅ Invoice lunas dihapus');
+    loadInvoice();
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+
 async function apiKirimReminder(id) {
   try {
     await apiFetch(`/api/invoice/${id}/kirim-reminder`, {method:'POST'});
@@ -10309,7 +10494,19 @@ async function apiBayarTunai(id) {
   try {
     await apiFetch(`/api/invoice/${id}/bayar-tunai`, {method:'POST'});
     toast('✅ Pembayaran dikonfirmasi & internet aktif');
-    loadInvoice();
+    // Ubah baris langsung tanpa reload penuh: badge → Lunas, tombol Lunasi/reminder/
+    // suspend/hapus hilang. (Reconnect pelanggan sudah ditangani backend via aktifkanUser.)
+    const chk = document.querySelector(`.inv-chk[value="${id}"]`);
+    const tr  = chk ? chk.closest('tr') : null;
+    if (tr) {
+      const badge = tr.querySelector('.tag');
+      if (badge) { badge.className = 'tag paid'; badge.textContent = 'Lunas'; }
+      if (chk) { chk.setAttribute('data-status', 'paid'); chk.checked = false; }
+      tr.querySelectorAll('[onclick^="apiKirimReminder"],[onclick^="apiBayarTunai"],[onclick^="apiSuspendDariInvoice"],[onclick^="apiHapusInvoice"]').forEach(b => b.remove());
+      if (typeof invUpdateSelBtn === 'function') invUpdateSelBtn();
+    } else {
+      loadInvoice();
+    }
   } catch(e) { toast('❌ '+e.message, true); }
 }
 
@@ -10410,7 +10607,7 @@ async function loadBatchHistory() {
       const sisaAktif = b.jumlah - b.terpakai;
       return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px">
         <div style="flex:1;min-width:0">
-          <div style="font-weight:500;color:var(--text)">${b.nama_paket}</div>
+          <div style="font-weight:500;color:var(--text)">${escapeHtml(b.nama_paket)}</div>
           <div style="color:var(--text3);margin-top:1px">${tgl} &nbsp;·&nbsp; ${b.jumlah} voucher &nbsp;·&nbsp; <span style="color:var(--green)">${sisaAktif} aktif</span></div>
         </div>
         <button class="btn sm primary" onclick="printBatch('${b.batch_id}',${b.jumlah})">🖨️ Print</button>
@@ -10503,7 +10700,7 @@ function renderVcrSesi() {
       ? '<span class="tag aktif" style="font-size:10px">Online</span>'
       : '<span class="tag" style="background:#f1f5f9;color:#64748b;font-size:10px">' + (r.sebab || 'Selesai') + '</span>';
     return `<tr>
-      <td class="td-text-main" style="font-weight:600">${r.username}</td>
+      <td class="td-text-main" style="font-weight:600">${escapeHtml(r.username)}</td>
       <td class="td-text-sub" style="font-size:11px">${fmtDT(r.mulai)}</td>
       <td class="td-text-sub" style="font-size:11px">${aktif ? '<span style="color:#16a34a;font-size:11px">● Aktif</span>' : fmtDT(r.selesai)}</td>
       <td class="td-text-bold" style="font-size:12px">${durasi}</td>
@@ -10575,15 +10772,15 @@ function renderTblVoucher(rows) {
   if(!rows.length) { t.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3)">Belum ada voucher</td></tr>'; return; }
   t.innerHTML = rows.map(v=>`
     <tr>
-      <td><input type="checkbox" class="vcr-chk" value="${v.username}"></td>
-      <td style="font-family:monospace;font-weight:600;font-size:13px">${v.username}</td>
+      <td><input type="checkbox" class="vcr-chk" value="${escapeHtml(v.username)}"></td>
+      <td style="font-family:monospace;font-weight:600;font-size:13px">${escapeHtml(v.username)}</td>
       <td style="font-family:monospace;font-size:13px">${v.username===v.password ? '<span style="color:var(--text3)">(sama)</span>' : v.password}</td>
       <td>${v.nama_paket||'—'}</td>
       <td><span class="tag ${v.status==='used'?'paid':v.status==='expired'?'overdue':'aktif'}">${v.status==='used'?'used':v.status==='expired'?'disabled':'unused'}</span></td>
       <td>
         ${v.status==='unused'
-          ? `<button class="btn sm" onclick="bukaKirimVoucher('${v.username}')">💬 Kirim</button>
-             <button class="btn sm danger" onclick="apiHapusVoucher('${v.username}')">✕</button>`
+          ? `<button class="btn sm" onclick="bukaKirimVoucher('${jsAttr(v.username)}')">💬 Kirim</button>
+             <button class="btn sm danger" onclick="apiHapusVoucher('${jsAttr(v.username)}')">✕</button>`
           : `<span style="font-size:11px;color:var(--text3)">${fmtDate(v.tgl_digunakan)}</span>`}
       </td>
     </tr>`).join('');
@@ -10960,7 +11157,7 @@ ${vouchers.map(function(v) {
   </div>
   <div class="vcr-body">
     <div class="vcr-lbl">Kode Voucher</div>
-    <div class="vcr-kode">${v.username}</div>
+    <div class="vcr-kode">${escapeHtml(v.username)}</div>
     <div class="vcr-footer">📶 Sambung WiFi → Login → Masukkan kode</div>
   </div>
 </div>`;
@@ -11541,11 +11738,12 @@ async function loadVPN() {
 function toggleVpnDropdown(e) {
   e.stopPropagation();
   const dd = document.getElementById('vpn-dropdown');
-  dd.style.display = dd.style.display === 'none' ? '' : 'none';
+  if (dd) dd.style.display = dd.style.display === 'none' ? '' : 'none';
 }
 
 function closeVpnDropdown() {
-  document.getElementById('vpn-dropdown').style.display = 'none';
+  const dd = document.getElementById('vpn-dropdown');
+  if (dd) dd.style.display = 'none';
 }
 
 // Tutup dropdown kalau klik di luar
@@ -12269,7 +12467,7 @@ async function apiIncomeReport() {
           <td class="td-mono" style="font-size:11px">${r.no_invoice}</td>
           <td class="td-text-main">${escapeHtml(r.nama)}</td>
           <td>${tipe}</td>
-          <td class="td-text-sub" style="font-size:11px">${r.nama_paket}</td>
+          <td class="td-text-sub" style="font-size:11px">${escapeHtml(r.nama_paket)}</td>
           <td><span class="badge blue" style="font-size:10px;text-transform:capitalize">${metode}</span></td>
           <td class="td-text-bold">${fmt(r.jumlah)}</td>
           <td><span class="tag paid">Lunas</span></td>
@@ -12411,8 +12609,8 @@ function petaFilter() {
       <div style="min-width:180px;font-family:inherit">
         <div style="font-weight:700;font-size:13px;margin-bottom:6px">${escapeHtml(r.nama)}</div>
         <div style="font-size:11px;color:#64748b;line-height:1.8">
-          👤 ${r.username}<br>
-          📦 ${r.nama_paket}<br>
+          👤 ${escapeHtml(r.username)}<br>
+          📦 ${escapeHtml(r.nama_paket)}<br>
           📍 ${escapeHtml(r.alamat || '—')}<br>
           ${r.odc ? `🔌 ODC: ${r.odc}<br>` : ''}
           ${r.odp ? `🔌 ODP: ${r.odp}<br>` : ''}
@@ -12961,7 +13159,7 @@ function renderSesi(rows) {
             <i class="ti ${tipeIcon}" style="font-size:14px;color:${tipeColor}" aria-hidden="true"></i>
           </div>
           <div>
-            <div class="td-text-main" style="font-weight:600;font-size:13px">${r.username}</div>
+            <div class="td-text-main" style="font-weight:600;font-size:13px">${escapeHtml(r.username)}</div>
             <div class="td-mono" style="font-size:10px;color:var(--text3)">${(r.mac||'').toUpperCase()||'—'}</div>
           </div>
         </div>
@@ -12973,7 +13171,7 @@ function renderSesi(rows) {
       <td style="font-size:12px;color:#2563eb;font-weight:500">${fmtBytes(r.mb_in)}</td>
       <td style="font-size:12px;color:#64748b">${fmtBytes(r.mb_out)}</td>
       <td>
-        <button class="btn sm danger" onclick="apiPutusSesi('${r.username}')" title="Putus sesi" style="padding:4px 8px;border-radius:7px">
+        <button class="btn sm danger" onclick="apiPutusSesi('${jsAttr(r.username)}')" title="Putus sesi" style="padding:4px 8px;border-radius:7px">
           <i class="ti ti-plug-x" style="font-size:13px" aria-hidden="true"></i>
         </button>
       </td>
@@ -13036,7 +13234,7 @@ function renderTblLaporan(rows) {
   }
   t.innerHTML = rows.map(r=>`
     <tr>
-      <td>${r.nama_paket}</td>
+      <td>${escapeHtml(r.nama_paket)}</td>
       <td>${r.jumlah_pelanggan}</td>
       <td>${fmt(r.pendapatan)}</td>
       <td>${r.lunas||0} <span class="tag paid">${r.jumlah_pelanggan>0?Math.round((r.lunas||0)/r.jumlah_pelanggan*100):0}%</span></td>
@@ -13491,6 +13689,15 @@ async function apiSyncRadcheck() {
   } catch(e) { toast('❌ '+e.message, true); }
 }
 
+async function apiSyncShare() {
+  if (!confirm('Terapkan batas Shared Users tiap paket ke semua voucher & pelanggan aktif?\n\nIni menulis ulang Simultaneous-Use di radcheck sesuai kolom Shared Users masing-masing paket.')) return;
+  try {
+    toast('⏳ Menerapkan Shared Users...');
+    const d = await apiFetch('/api/radius/sync-share', {method:'POST'});
+    toast('✅ ' + d.pesan);
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+
 async function apiRestartRadius() {
   if (!confirm('Restart FreeRADIUS sekarang?\nSemua sesi aktif akan terputus sementara.')) return;
   try {
@@ -13541,7 +13748,7 @@ async function loadReseller() {
         return `<tr>
           <td>${i+1}</td>
           <td><div style="font-weight:500">${escapeHtml(r.nama)}</div><div style="font-size:11px;color:var(--text3)">${escapeHtml(r.email||r.no_hp)}</div></td>
-          <td style="font-family:monospace;font-size:12px">${r.username}</td>
+          <td style="font-family:monospace;font-size:12px">${escapeHtml(r.username)}</td>
           <td><span class="badge ${r.level==='platinum'?'amber':r.level==='gold'?'blue':'green'}">${r.level}</span></td>
           <td><strong>${fmt(r.saldo)}</strong></td>
           <td><span class="badge ${r.status==='aktif'?'green':r.status==='nonaktif'?'amber':'red'}">${r.status}</span></td>
@@ -13819,7 +14026,7 @@ function rsRenderPaketList(containerId, checkedIds = [], semapaChkId) {
     return `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 2px;border-radius:6px" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background=''">
       <input type="checkbox" class="rs-paket-chk" value="${p.id}" ${checked?'checked':''} style="width:14px;height:14px;accent-color:#7c3aed;cursor:pointer;flex-shrink:0">
       <div style="flex:1;min-width:0">
-        <div class="td-text-main" style="font-size:12px;font-weight:600">${p.nama}</div>
+        <div class="td-text-main" style="font-size:12px;font-weight:600">${escapeHtml(p.nama)}</div>
         <div class="td-text-sub" style="font-size:10px">${tipe} · ${speed} · ${fmt(p.harga)}</div>
       </div>
     </label>`;

@@ -171,6 +171,21 @@ router.post('/apply', requireAdmin, async (req, res) => {
         // terkontrol daripada unduh tarball + rsync di Node.
         // URL script mengikuti repo di konfigurasi.
         const branch = cfg.branch || 'master';
+
+        // Validasi ketat tiap komponen URL SEBELUM dipakai. owner/repo/branch
+        // berasal dari tabel `setting` (bisa diubah admin), lalu masuk ke perintah
+        // shell `wget -qO- "${scriptUrl}" | bash`. Tanpa validasi, branch yang
+        // memuat `"`/`;`/`$(...)` bisa breakout dari quote → command injection,
+        // dan `..` bisa dipakai path-traversal. Fail-closed bila tidak cocok.
+        const RX_GH_SEG    = /^[A-Za-z0-9._-]+$/;          // owner & repo
+        const RX_GH_BRANCH = /^[A-Za-z0-9._/-]+$/;         // branch boleh ada '/'
+        if (!RX_GH_SEG.test(cfg.owner) || !RX_GH_SEG.test(cfg.repo) ||
+            !RX_GH_BRANCH.test(branch) || branch.includes('..') ||
+            cfg.owner.includes('..') || cfg.repo.includes('..')) {
+            sedangUpdate = false;
+            return res.status(400).json({ error: 'Konfigurasi owner/repo/branch GitHub tidak valid.' });
+        }
+
         const scriptUrl = `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${branch}/update.sh`;
 
         // Validasi URL aman (hanya raw.githubusercontent.com + repo yang dikenal)

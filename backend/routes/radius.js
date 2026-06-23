@@ -118,11 +118,13 @@ router.get('/sesi-voucher', async (req, res, next) => {
 
 router.post('/sesi/bersihkan-stale', async (req, res, next) => {
     try {
-        // Hapus sesi yang tidak update lebih dari 30 menit (stale)
+        // Hapus sesi yang tidak update lebih dari 15 menit (stale)
+        // Ambang 15 menit = sama dengan cron otomatis; sesi aktif kirim
+        // interim-update tiap ~5 menit, jadi 15 menit tanpa update = mati.
         const result = await query(`
             UPDATE radacct SET acctstoptime = NOW(), acctterminatecause = 'Stale-Cleaned'
             WHERE acctstoptime IS NULL
-              AND acctupdatetime < DATE_SUB(NOW(), INTERVAL 30 MINUTE)
+              AND acctupdatetime < DATE_SUB(NOW(), INTERVAL 15 MINUTE)
         `);
         res.json({ pesan: `${result.affectedRows} sesi stale dibersihkan`, jumlah: result.affectedRows });
     } catch(e) { next(e); }
@@ -819,10 +821,24 @@ router.post('/single-session', authMiddleware, async (req, res, next) => {
             const [{ total }] = await query(`SELECT COUNT(*) AS total FROM radcheck WHERE attribute = 'Simultaneous-Use'`);
             res.json({ pesan: `Single session enabled — ${total} user diterapkan`, total });
         } else {
+            // Dimatikan = kembalikan ke batas per-paket (Shared Users), BUKAN tanpa batas.
+            const radiusSvc = require('../services/radius');
+            await radiusSvc.syncSimultaneousUseSemua();
             const [{ total }] = await query(`SELECT COUNT(*) AS total FROM radcheck WHERE attribute = 'Simultaneous-Use'`);
-            await query(`DELETE FROM radcheck WHERE attribute = 'Simultaneous-Use'`);
-            res.json({ pesan: `Single session disabled — ${total} entry dihapus`, total });
+            res.json({ pesan: `Single session disabled — batas dikembalikan ke Shared Users tiap paket (${total} user)`, total });
         }
+    } catch (e) { next(e); }
+});
+
+// POST /api/radius/sync-share — terapkan ulang batas Shared Users (Simultaneous-Use)
+// ke seluruh voucher non-expired + pelanggan aktif sesuai paketnya. Berguna untuk
+// menerapkan ke data lama setelah kolom share_users ditambahkan/diubah.
+router.post('/sync-share', authMiddleware, async (req, res, next) => {
+    try {
+        const radiusSvc = require('../services/radius');
+        await radiusSvc.syncSimultaneousUseSemua();
+        const [{ total }] = await query(`SELECT COUNT(*) AS total FROM radcheck WHERE attribute = 'Simultaneous-Use'`);
+        res.json({ pesan: `Shared Users diterapkan ke ${total} user`, total });
     } catch (e) { next(e); }
 });
 

@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS radcheck (
     op           CHAR(2)     NOT NULL DEFAULT '==',
     value        VARCHAR(253) NOT NULL DEFAULT '',
     PRIMARY KEY (id),
-    KEY radcheck_username (username(32))
+    KEY radcheck_username (username(32)),
+    UNIQUE KEY uniq_user_attr (username, attribute)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS radreply (
@@ -148,6 +149,7 @@ CREATE TABLE paket (
     satuan_masa  ENUM('jam','hari','bulan') NOT NULL DEFAULT 'hari' COMMENT 'satuan masa berlaku',
     pool_name    VARCHAR(64) COMMENT 'RADIUS IP Pool',
     tipe         ENUM('pppoe','hotspot','keduanya') NOT NULL DEFAULT 'keduanya',
+    share_users  INT UNSIGNED NOT NULL DEFAULT 1 COMMENT 'Max HP/perangkat simultan per akun (Simultaneous-Use)',
     burst_limit  VARCHAR(32) COMMENT 'MikroTik burst limit',
     burst_time   VARCHAR(32) COMMENT 'MikroTik burst time',
     aktif        TINYINT(1) NOT NULL DEFAULT 1,
