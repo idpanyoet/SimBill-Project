@@ -289,6 +289,12 @@ body.dark .btn[style*="background:#7c3aed"]{background:#7c3aed!important}
 .tpl-editor-box{background:#fff;border:1px solid #e2e7ef;border-radius:10px;padding:14px}
 .tpl-placeholder-box{background:#f8fafc;border:1px solid #e2e7ef;border-radius:10px;padding:12px 14px}
 .tpl-ph-chip{display:inline-flex;align-items:center;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600;background:#FAEEDA;color:#854F0B;cursor:pointer;font-family:monospace;border:1px solid rgba(186,117,23,.2);transition:all .15s}
+.tpl-ph-refbox{background:var(--bg3,#f8fafc);border:1px solid var(--border);border-radius:12px;padding:16px}
+.tpl-ph-grouptitle{font-size:12px;font-weight:700;color:var(--text);margin-bottom:7px}
+.tpl-ph-list{display:flex;flex-wrap:wrap;gap:6px}
+.tpl-ph-chip.tpl-ph-active{background:#16a34a;color:#fff;border-color:#16a34a}
+body.dark .tpl-ph-refbox{background:#161b22;border-color:#30363d}
+body.dark .tpl-ph-chip.tpl-ph-active{background:#16a34a;color:#fff;border-color:#16a34a}
 .tpl-ph-chip:hover{background:#f5dfb0;border-color:#BA7517}
 body.dark .tpl-editor-box{background:#161b22;border-color:#30363d}
 body.dark .tpl-placeholder-box{background:#1c2128;border-color:#30363d}
@@ -555,8 +561,8 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 <div id="login-screen">
   <div class="login-box">
     <div class="login-logo">
-      <svg width="48" height="48" viewBox="0 0 48 48" style="margin:0 auto 8px;display:block"><rect width="48" height="48" rx="12" fill="#BA7517"/><circle cx="24" cy="31" r="4" fill="#fff"/><path d="M15 24 Q24 16 33 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M10 19 Q24 9 38 19" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2.5" stroke-linecap="round"/></svg>
-      <h2><span style="color:#BA7517">Sim</span>Bill Admin</h2>
+      <span class="js-app-logo" style="width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;margin:0 auto 8px;border-radius:12px;overflow:hidden"><svg width="48" height="48" viewBox="0 0 48 48" style="display:block"><rect width="48" height="48" rx="12" fill="#BA7517"/><circle cx="24" cy="31" r="4" fill="#fff"/><path d="M15 24 Q24 16 33 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><path d="M10 19 Q24 9 38 19" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2.5" stroke-linecap="round"/></svg></span>
+      <h2><span class="js-app-name"><span style="color:#BA7517">Sim</span>Bill</span> Admin</h2>
       <p>Masuk untuk mengelola sistem</p>
     </div>
     <div class="login-err" id="login-err"></div>
@@ -575,9 +581,9 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sb-logo">
-      <svg width="32" height="32" viewBox="0 0 32 32" style="flex-shrink:0"><rect width="32" height="32" rx="8" fill="#BA7517"/><circle cx="16" cy="21" r="2.8" fill="#fff"/><path d="M10.5 16.5 Q16 11 21.5 16.5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M7 13 Q16 6 25 13" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2" stroke-linecap="round"/></svg>
+      <span class="js-app-logo" style="width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;overflow:hidden;flex-shrink:0"><svg width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#BA7517"/><circle cx="16" cy="21" r="2.8" fill="#fff"/><path d="M10.5 16.5 Q16 11 21.5 16.5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M7 13 Q16 6 25 13" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2" stroke-linecap="round"/></svg></span>
       <div style="min-width:0">
-        <div style="font-size:16px;font-weight:700;line-height:1.1;color:#fff"><span style="color:#EF9F27">Sim</span>Bill</div>
+        <div class="js-app-name" style="font-size:16px;font-weight:700;line-height:1.1;color:#fff"><span style="color:#EF9F27">Sim</span>Bill</div>
         <small style="font-size:9px;color:rgba(255,255,255,.35);letter-spacing:.06em;text-transform:uppercase">Admin Panel</small>
       </div>
     </div>
@@ -612,6 +618,7 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-section">Sistem</div>
     <div class="sb-item" onclick="goto('radius',this)"><i class="ti ti-server icon" aria-hidden="true"></i> RADIUS / NAS</div>
     <div class="sb-item" onclick="goto('sesi',this)"><i class="ti ti-activity icon" aria-hidden="true"></i> Sesi Aktif</div>
+    <div class="sb-item" onclick="goto('isolir',this)"><i class="ti ti-lock-access icon" aria-hidden="true"></i> Isolir</div>
     <div class="sb-item" onclick="goto('peta',this)"><i class="ti ti-map-pin icon" aria-hidden="true"></i> Peta Jaringan</div>
 
     <!-- Finance Report Group -->
@@ -774,14 +781,33 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
           </div>
         </div>
 
+        <!-- Statistik Reseller -->
+        <div class="card" style="padding:0;margin-bottom:16px">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-weight:600;display:flex;align-items:center;gap:8px"><i class="ti ti-chart-bar"></i> Statistik Reseller</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:10px;color:var(--text2)"><i class="ti ti-users"></i> Total Member</div>
+            <div style="font-size:18px;font-weight:700;color:var(--text)" id="rs-stat-member">0</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px">
+            <div style="display:flex;align-items:center;gap:10px;color:var(--text2)"><i class="ti ti-ticket"></i> Total Voucher</div>
+            <div style="font-size:18px;font-weight:700;color:var(--text)" id="rs-stat-voucher">0</div>
+          </div>
+        </div>
+
+        <!-- Cari Invoice -->
+        <div class="card" style="padding:14px 16px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:8px;font-weight:600;margin-bottom:10px"><i class="ti ti-search" style="color:var(--accent)"></i> Cari Invoice</div>
+          <input id="rs-cari-trx" type="text" placeholder="Cari nomor invoice, paket, atau jenis…" oninput="rsFilterTransaksi(this.value)" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--bg2);color:var(--text)">
+        </div>
+
         <div class="card" style="padding:0">
           <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-weight:600">Transaksi Terbaru</div>
           <div style="overflow-x:auto">
             <table style="width:100%;border-collapse:collapse">
               <thead><tr style="text-align:left;font-size:12px;color:var(--text2)">
-                <th style="padding:10px 16px">Tanggal</th><th style="padding:10px 16px">Jenis</th><th style="padding:10px 16px">Paket</th><th style="padding:10px 16px">Qty</th><th style="padding:10px 16px;text-align:right">Total</th>
+                <th style="padding:10px 16px">Tanggal</th><th style="padding:10px 16px">Jenis</th><th style="padding:10px 16px">Paket</th><th style="padding:10px 16px">Qty</th><th style="padding:10px 16px;text-align:right">Total</th><th style="padding:10px 16px;text-align:right">Aksi</th>
               </tr></thead>
-              <tbody id="rs-tbl-transaksi"><tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text3)">Memuat…</td></tr></tbody>
+              <tbody id="rs-tbl-transaksi"><tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3)">Memuat…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -1188,14 +1214,26 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
         </div>
         <div class="card">
           <div class="search-bar">
-            <input placeholder="Cari nama, username, HP..." id="cari-pelanggan" oninput="filterTbl('tbl-pelanggan',this.value)">
-            <select><option>Semua Status</option><option>Aktif</option><option>Suspended</option></select>
-            <select><option>Semua Tipe</option><option>PPPoE</option><option>Hotspot</option></select>
+            <input placeholder="Cari nama, username, HP..." id="cari-pelanggan" oninput="plSetCari(this.value)">
+            <select id="pl-f-status" onchange="plSetStatus(this.value)">
+              <option value="">Semua Status</option><option value="aktif">Aktif</option><option value="suspended">Suspended</option><option value="nonaktif">Nonaktif</option>
+            </select>
+            <select id="pl-f-tipe" onchange="plSetTipe(this.value)">
+              <option value="">Semua Tipe</option><option value="pppoe">PPPoE</option><option value="hotspot">Hotspot</option>
+            </select>
           </div>
-          <table><thead><tr><th>#</th><th>Nama</th><th>Username</th><th>No. HP</th><th>Paket</th><th>Tipe</th><th>Expired</th><th>Status</th><th>Aksi</th></tr></thead>
+          <div id="pl-bulk-bar" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0;padding:8px 12px;background:rgba(79,70,229,.08);border:1px solid rgba(79,70,229,.25);border-radius:10px">
+            <span style="font-weight:600"><span id="pl-sel-count">0</span> dipilih</span>
+            <button class="btn sm" onclick="plBulk('aktifkan')" style="background:rgba(37,99,235,.1);border-color:rgba(37,99,235,.3);color:#2563eb"><i class="ti ti-player-play" aria-hidden="true"></i> Aktifkan</button>
+            <button class="btn sm" onclick="plBulk('suspend')" style="background:rgba(217,119,6,.1);border-color:rgba(217,119,6,.3);color:#d97706"><i class="ti ti-player-pause" aria-hidden="true"></i> Suspend</button>
+            <button class="btn sm danger" onclick="plBulk('hapus')"><i class="ti ti-trash" aria-hidden="true"></i> Hapus</button>
+            <button class="btn sm" onclick="plClearSel()" style="margin-left:auto">Bersihkan pilihan</button>
+          </div>
+          <table><thead><tr><th style="width:70px;text-align:center"><label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;justify-content:center"><input type="checkbox" id="pl-check-all" onchange="plToggleAll(this)" style="width:18px;height:18px;accent-color:#4f46e5;cursor:pointer;margin:0"><span style="font-size:10px;color:#4f46e5;font-weight:700">All</span></label></th><th>#</th><th>Nama</th><th>Username</th><th>No. HP</th><th>Paket</th><th>Tipe</th><th>Expired</th><th>Status</th><th>Aksi</th></tr></thead>
           <tbody id="tbl-pelanggan">
-            <tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">Tidak ada data</td></tr>
+            <tr><td colspan="10" style="text-align:center;color:var(--text3);padding:20px">Tidak ada data</td></tr>
           </tbody></table>
+          <div id="pl-pagination" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px"></div>
         </div>
       </div>
 
@@ -1302,8 +1340,14 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
         </div>
         <div class="grid2">
           <div class="card">
-            <div class="card-title">Daftar Voucher <span class="sub">Klik untuk kirim WA</span>
-              <button class="btn sm" onclick="printVoucher()">🖨️ Print Voucher</button>
+            <div class="card-title" style="display:flex;align-items:center;flex-wrap:wrap;gap:8px">
+              <span>Daftar Voucher <span class="sub" style="margin-left:6px">Klik untuk kirim WA</span></span>
+              <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+                <input id="vcr-cari" type="text" placeholder="Cari username / password…"
+                       oninput="cariVoucherDebounce(this.value)"
+                       style="padding:6px 10px;border:1px solid var(--border);border-radius:7px;font-size:13px;width:200px;font-family:inherit">
+                <button class="btn sm" onclick="printVoucher()">🖨️ Print Voucher</button>
+              </div>
             </div>
             <table><thead><tr><th style="width:28px"><input type="checkbox" id="vcr-pilih-semua" onchange="toggleSemuaVoucher(this)"></th><th>Username</th><th>Password</th><th>Paket</th><th>Status</th><th>Aksi</th></tr></thead>
             <tbody id="tbl-voucher">
@@ -1373,6 +1417,22 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
                   <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text3)">Memuat...</td></tr>
                 </tbody>
               </table>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:10px;flex-wrap:wrap">
+                <div style="display:flex;align-items:center;gap:6px;font-size:12px">
+                  <label for="vcr-sesi-per" style="color:var(--text3)">Baris</label>
+                  <select id="vcr-sesi-per" onchange="vcrSesiUbahPer()" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit">
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                    <option value="30">30</option>
+                    <option value="100">100</option>
+                  </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                  <span id="vcr-sesi-info" style="color:var(--text3)">—</span>
+                  <button class="btn sm" id="vcr-sesi-prev" onclick="vcrSesiHalaman(-1)">‹</button>
+                  <button class="btn sm" id="vcr-sesi-next" onclick="vcrSesiHalaman(1)">›</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1443,6 +1503,20 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
                 <label>Nomor Pengirim</label>
                 <input id="wa-sender" placeholder="6281234567890">
               </div>
+              <div style="border-top:1px solid var(--border);margin:6px 0 12px;padding-top:12px">
+                <label style="font-size:12px;font-weight:600;color:var(--text);display:block;margin-bottom:3px">Delay Antrian Pesan</label>
+                <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Semua notifikasi WA otomatis (bayar, pelanggan baru, suspend, dll) dikirim bertahap dengan jeda acak antara min–max detik agar tidak terblokir. OTP dikecualikan (tetap instan).</div>
+                <div style="display:flex;gap:10px">
+                  <div class="fg" style="margin-bottom:0;flex:1">
+                    <label>Delay min (detik)</label>
+                    <input id="wa-delay-min" type="number" value="30" min="0" max="600" style="width:100%;text-align:center;font-weight:700;font-size:16px">
+                  </div>
+                  <div class="fg" style="margin-bottom:0;flex:1">
+                    <label>Delay max (detik)</label>
+                    <input id="wa-delay-max" type="number" value="60" min="0" max="600" style="width:100%;text-align:center;font-weight:700;font-size:16px">
+                  </div>
+                </div>
+              </div>
               <div class="fg" id="wa-phoneid-wrap" style="display:none">
                 <label>Phone Number ID <span style="font-size:10px;color:var(--text3)">(khusus WA Business API)</span></label>
                 <input id="wa-phone-id" placeholder="Phone Number ID dari Meta">
@@ -1507,6 +1581,19 @@ Terima kasih! Pembayaran voucher diterima ✅
 🚀 Kecepatan: *{kecepatan}*
 
 Selamat menikmati! 🌐</textarea>
+              <textarea id="wa-tpl-invoice_baru" style="display:none">Halo *[fullname]*,
+
+Tagihan internet Anda telah dibuat.
+
+📄 No. Invoice: *[no_invoice]*
+📦 Paket: *[profile]*
+💰 Tagihan: [total]
+📅 Jatuh Tempo: *[due_date]*
+
+💳 Link Pembayaran:
+[payment_url]
+
+Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
 
               <!-- Tab pills -->
               <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
@@ -1515,6 +1602,7 @@ Selamat menikmati! 🌐</textarea>
                 <button onclick="tplLoad('suspend');waActiveTpl('suspend',this)" id="wa-tpl-btn-suspend" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s">Suspend</button>
                 <button onclick="tplLoad('konfirmasi');waActiveTpl('konfirmasi',this)" id="wa-tpl-btn-konfirmasi" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s">Konfirmasi</button>
                 <button onclick="tplLoad('voucher_sukses');waActiveTpl('voucher_sukses',this)" id="wa-tpl-btn-voucher_sukses" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s">🎟️ Voucher</button>
+                <button onclick="tplLoad('invoice_baru');waActiveTpl('invoice_baru',this)" id="wa-tpl-btn-invoice_baru" style="font-size:11px;font-weight:600;padding:5px 11px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s">🧾 Invoice Baru</button>
               </div>
               <select id="wa-tpl-select" style="display:none" onchange="tplLoad(this.value)">
                 <option value="daftar">Pelanggan Baru</option>
@@ -1550,6 +1638,15 @@ Selamat menikmati! 🌐</textarea>
               <button class="btn primary" style="width:100%;justify-content:center;gap:6px" onclick="tplSave()">
                 <i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan Template
               </button>
+
+              <!-- Panel referensi placeholder lengkap -->
+              <div class="tpl-ph-refbox" style="margin-top:16px">
+                <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">Placeholder yang bisa dipakai</div>
+                <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.5">
+                  Gunakan token seperti [fullname] atau [profile]. Ketersediaan placeholder bergantung pada konteks notifikasi yang mengirim template ini. Klik token untuk menyisipkan.
+                </div>
+                <div id="tpl-ph-reference"></div>
+              </div>
             </div>
 
             <!-- Card Broadcast Massal -->
@@ -1573,14 +1670,18 @@ Selamat menikmati! 🌐</textarea>
                 </select>
               </div>
 
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-                <div class="fg" style="margin-bottom:0;flex:none;width:100px">
-                  <label>Delay (detik)</label>
-                  <input id="wa-broadcast-delay" type="number" value="3" min="1" max="60" style="width:100%;text-align:center;font-weight:700;font-size:16px">
+              <div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:14px">
+                <div class="fg" style="margin-bottom:0;flex:1">
+                  <label>Delay min (detik)</label>
+                  <input id="wa-broadcast-delay-min" type="number" value="30" min="1" max="300" style="width:100%;text-align:center;font-weight:700;font-size:16px">
                 </div>
-                <div style="font-size:11px;color:var(--text2);margin-top:18px;flex:1">
-                  Disarankan <b>3–5 detik</b> antar pesan agar tidak terkena blokir WhatsApp
+                <div class="fg" style="margin-bottom:0;flex:1">
+                  <label>Delay max (detik)</label>
+                  <input id="wa-broadcast-delay-max" type="number" value="60" min="1" max="600" style="width:100%;text-align:center;font-weight:700;font-size:16px">
                 </div>
+              </div>
+              <div style="font-size:11px;color:var(--text2);margin-bottom:14px">
+                Jeda antar pesan akan diacak antara <b>min</b> dan <b>max</b> detik agar lebih natural dan tidak terkena blokir WhatsApp. Disarankan <b>30–60 detik</b> untuk broadcast banyak.
               </div>
 
               <div style="background:rgba(220,38,38,.05);border:1px solid rgba(220,38,38,.15);border-radius:9px;padding:10px 13px;font-size:11px;color:#b91c1c;margin-bottom:14px;display:flex;gap:8px">
@@ -2413,6 +2514,67 @@ Selamat menikmati! 🌐</textarea>
           </div>
         </div>
       </div>
+      <!-- ══ ISOLIR ══ -->
+      <div class="page" id="p-isolir">
+        <div style="margin-bottom:20px">
+          <h2 style="font-size:18px;font-weight:700;color:var(--text);margin:0">Pengaturan Isolir</h2>
+          <div class="td-text-sub" style="font-size:12px;margin-top:3px">Atur pengalihan pelanggan suspend/expired ke IP pool isolir (halaman tagihan)</div>
+        </div>
+
+        <div style="max-width:680px;display:flex;flex-direction:column;gap:16px">
+          <!-- Mode isolir -->
+          <div class="card" style="padding:18px 20px">
+            <div style="font-weight:700;font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:8px"><i class="ti ti-toggle-right" style="color:#7c3aed"></i> Mode Suspend</div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Pilih apa yang terjadi saat pelanggan disuspend atau expired.</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div id="iso-mode-pool" onclick="isoSetMode('pool')" style="cursor:pointer;border:2px solid #7c3aed;background:linear-gradient(135deg,#faf5ff,#f5f3ff);border-radius:12px;padding:14px;transition:all .15s">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><i class="ti ti-arrow-guide" style="font-size:18px;color:#7c3aed"></i><span style="font-weight:700;font-size:13px;color:#6d28d9">Isolir (Pool)</span></div>
+                <div style="font-size:11px;color:var(--text3)">Pelanggan tetap konek tapi diarahkan ke IP isolir & halaman tagihan</div>
+              </div>
+              <div id="iso-mode-reject" onclick="isoSetMode('reject')" style="cursor:pointer;border:2px solid var(--border);background:var(--bg2);border-radius:12px;padding:14px;transition:all .15s">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><i class="ti ti-ban" style="font-size:18px;color:#64748b"></i><span style="font-weight:700;font-size:13px;color:var(--text2)">Tolak Total</span></div>
+                <div style="font-size:11px;color:var(--text3)">Pelanggan tidak bisa konek sama sekali (putus total)</div>
+              </div>
+            </div>
+            <input type="hidden" id="iso-mode" value="pool">
+          </div>
+
+          <!-- Nama pool isolir -->
+          <div class="card" style="padding:18px 20px" id="iso-pool-box">
+            <div style="font-weight:700;font-size:14px;margin-bottom:4px;display:flex;align-items:center;gap:8px"><i class="ti ti-network" style="color:#7c3aed"></i> Nama IP Pool Isolir</div>
+            <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Harus sama persis dengan nama pool yang dibuat di MikroTik (<code>/ip pool</code>).</div>
+            <input id="iso-pool" placeholder="isolir" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:9px;font-family:monospace;background:var(--bg2);color:var(--text)">
+          </div>
+
+          <button class="btn primary" style="align-self:flex-start;padding:11px 22px;font-weight:600" onclick="isoSimpan()"><i class="ti ti-device-floppy"></i> Simpan Pengaturan</button>
+
+          <!-- Panduan setup MikroTik (ROS6 & ROS7) -->
+          <div class="card" style="padding:18px 20px;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #bbf7d0">
+            <div style="font-weight:700;font-size:13px;margin-bottom:6px;display:flex;align-items:center;gap:8px;color:#15803d"><i class="ti ti-info-circle"></i> Panduan Setup di MikroTik</div>
+            <div style="font-size:12px;color:#166534;line-height:1.6;margin-bottom:12px">
+              Pilih versi RouterOS, lalu copy &amp; jalankan di MikroTik. Sesuaikan IP server SimBill bila perlu.
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+              <label style="font-size:12px;color:#166534;font-weight:600">IP Server SimBill:</label>
+              <input id="iso-srv-ip" value="43.134.20.125" oninput="isoUpdateScript()" style="padding:7px 10px;border:1px solid #bbf7d0;border-radius:8px;font-family:monospace;font-size:12px;width:150px">
+              <label style="font-size:12px;color:#166534;font-weight:600;margin-left:8px">Pool Range:</label>
+              <input id="iso-range" value="10.99.99.2-10.99.99.254" oninput="isoUpdateScript()" style="padding:7px 10px;border:1px solid #bbf7d0;border-radius:8px;font-family:monospace;font-size:12px;width:180px">
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:10px">
+              <button id="iso-ros7-tab" onclick="isoRosTab('ros7')" style="padding:7px 16px;border-radius:8px;border:2px solid #16a34a;background:#16a34a;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">RouterOS 7</button>
+              <button id="iso-ros6-tab" onclick="isoRosTab('ros6')" style="padding:7px 16px;border-radius:8px;border:2px solid #bbf7d0;background:#fff;color:#15803d;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">RouterOS 6</button>
+            </div>
+            <div style="position:relative">
+              <button onclick="isoCopyScript()" style="position:absolute;top:8px;right:8px;z-index:2;padding:5px 11px;border:none;background:#16a34a;color:#fff;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer">Copy</button>
+              <pre id="iso-script" style="background:#052e16;color:#bbf7d0;padding:14px;border-radius:9px;font-size:11px;overflow-x:auto;margin:0;line-height:1.65;white-space:pre"></pre>
+            </div>
+            <div style="font-size:11px;color:#15803d;margin-top:10px;line-height:1.6">
+              <b>Catatan:</b> Pelanggan isolir hanya bisa akses server SimBill (untuk bayar). Situs HTTPS lain akan gagal (terisolir). RADIUS CoA (port 3799) wajib aktif agar suspend langsung memutus sesi.
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ══ SESI AKTIF ══ -->
       <div class="page" id="p-sesi">
 
@@ -3825,6 +3987,11 @@ Selamat menikmati! 🌐</textarea>
         <label class="fg-label">Reseller Pemilik</label>
         <select id="ep-reseller" style="width:100%;margin-top:4px"><option value="">— Tanpa reseller —</option></select>
       </div>
+      <div>
+        <label class="fg-label" style="display:flex;align-items:center;gap:6px"><i class="ti ti-calendar-event" style="font-size:13px;color:#BA7517"></i> Tanggal Expired</label>
+        <input id="ep-expired" type="date" style="width:100%;margin-top:4px">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Atur tanggal kedaluwarsa langganan. Kosongkan jika tidak ingin mengubah.</div>
+      </div>
       <div class="nas-snmp-box">
         <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px;display:flex;align-items:center;gap:6px">
           <i class="ti ti-lock" style="font-size:13px" aria-hidden="true"></i> Kredensial RADIUS
@@ -4289,6 +4456,67 @@ Selamat menikmati! 🌐</textarea>
 
 <!-- SIDEBAR OVERLAY (mobile) -->
 <div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- MODAL PILIH BAYAR INVOICE (reseller) -->
+<div class="overlay" id="m-rs-bayar">
+  <div class="modal" style="max-width:440px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px">
+      <div style="display:flex;align-items:center;gap:11px">
+        <div style="width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#7c3aed,#2563eb);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 6px 16px -6px rgba(124,58,237,.6)">
+          <i class="ti ti-credit-card" style="font-size:21px;color:#fff"></i>
+        </div>
+        <div>
+          <div style="font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.3px">Bayar Invoice</div>
+          <div style="font-size:12px;color:var(--text3)">Pilih metode pembayaran</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-rs-bayar')">✕</button>
+    </div>
+
+    <div style="padding:0 20px 8px">
+      <div style="background:linear-gradient(135deg,#faf5ff,#eff6ff);border:1px solid #e9d5ff;border-radius:13px;padding:13px 15px;margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:12px;color:var(--text3)">No. Invoice</span>
+          <span id="rsby-inv" style="font-size:12px;font-family:monospace;font-weight:700;color:#7c3aed">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:12px;color:var(--text3)">Pelanggan</span>
+          <span id="rsby-nama" style="font-size:13px;font-weight:600;color:var(--text)">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px dashed #e9d5ff">
+          <span style="font-size:12px;color:var(--text3)">Total Tagihan</span>
+          <span id="rsby-jumlah" style="font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.3px">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:0 20px 20px;display:flex;flex-direction:column;gap:11px">
+      <!-- Kartu Saldo -->
+      <button onclick="rsBayarVia('saldo')" class="rs-pay-card" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:13px;padding:15px;border-radius:14px;border:2px solid #d1fae5;background:linear-gradient(135deg,#ecfdf5,#f0fdfa);transition:all .15s" onmouseover="this.style.borderColor='#10b981';this.style.transform='translateY(-1px)';this.style.boxShadow='0 8px 20px -8px rgba(16,185,129,.45)'" onmouseout="this.style.borderColor='#d1fae5';this.style.transform='';this.style.boxShadow=''">
+        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 6px 14px -6px rgba(16,185,129,.6)">
+          <i class="ti ti-wallet" style="font-size:22px;color:#fff"></i>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:#065f46">Pakai Saldo Reseller</div>
+          <div style="font-size:12px;color:#059669;margin-top:1px">Potong saldo · invoice langsung lunas</div>
+        </div>
+        <i class="ti ti-chevron-right" style="font-size:18px;color:#10b981"></i>
+      </button>
+
+      <!-- Kartu Gateway -->
+      <button onclick="rsBayarVia('gateway')" class="rs-pay-card" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:13px;padding:15px;border-radius:14px;border:2px solid #dbeafe;background:linear-gradient(135deg,#eff6ff,#faf5ff);transition:all .15s" onmouseover="this.style.borderColor='#3b82f6';this.style.transform='translateY(-1px)';this.style.boxShadow='0 8px 20px -8px rgba(59,130,246,.45)'" onmouseout="this.style.borderColor='#dbeafe';this.style.transform='';this.style.boxShadow=''">
+        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#3b82f6,#7c3aed);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 6px 14px -6px rgba(59,130,246,.6)">
+          <i class="ti ti-qrcode" style="font-size:22px;color:#fff"></i>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:#1e40af">Lewat Gateway</div>
+          <div style="font-size:12px;color:#3b82f6;margin-top:1px">QRIS / VA</div>
+        </div>
+        <i class="ti ti-chevron-right" style="font-size:18px;color:#3b82f6"></i>
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL MIKROTIK SCRIPT -->
 <!-- MODAL ACS DETAIL -->
@@ -4835,7 +5063,7 @@ Selamat menikmati! 🌐</textarea>
         </div>
         <div style="flex:1">
           <label class="fg-label">Prefix (opsional)</label>
-          <input type="text" id="fv-prefix" maxlength="10" placeholder="mis. WIFI" oninput="this.value=this.value.toUpperCase();gvUpdatePreview()" style="width:100%;padding:9px 11px;border:1px solid #e2e7ef;border-radius:8px;font-size:13px;font-family:inherit;text-transform:uppercase">
+          <input type="text" id="fv-prefix" maxlength="10" placeholder="mis. wifi" oninput="this.value=this.value.toLowerCase();gvUpdatePreview()" style="width:100%;padding:9px 11px;border:1px solid #e2e7ef;border-radius:8px;font-size:13px;font-family:inherit;text-transform:lowercase">
         </div>
       </div>
 
@@ -4890,12 +5118,17 @@ Selamat menikmati! 🌐</textarea>
     </div>
     <div class="modal-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
 
-      <!-- Pilih Pelanggan -->
-      <div class="fg">
+      <!-- Pilih Pelanggan (searchable) -->
+      <div class="fg" style="position:relative">
         <label>Pelanggan</label>
-        <select id="fi-pel" style="width:100%" onchange="invoiceOnPelSelect()">
-          <option value="">— Pilih pelanggan —</option>
-        </select>
+        <input id="fi-pel-search" type="text" autocomplete="off" placeholder="Ketik nama / username pelanggan…"
+               style="width:100%" oninput="invoicePelSearch(this.value)"
+               onfocus="invoicePelSearch(this.value)" onkeydown="invoicePelKey(event)">
+        <!-- nilai terpilih disimpan di hidden input agar kode lama (fi-pel.value) tetap jalan -->
+        <input type="hidden" id="fi-pel" onchange="invoiceOnPelangganChange()">
+        <div id="fi-pel-results" style="display:none;position:absolute;z-index:50;left:0;right:0;top:100%;
+             margin-top:4px;max-height:240px;overflow-y:auto;background:var(--bg2,#fff);
+             border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.12)"></div>
       </div>
 
       <!-- Info Pelanggan Card -->
@@ -4985,6 +5218,20 @@ Selamat menikmati! 🌐</textarea>
 <div id="sync-status" style="position:fixed;bottom:14px;right:14px;font-size:11px;color:var(--text3);background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;display:none;z-index:999;pointer-events:none"></div>
 
 <script>
+
+function applyBranding(d){
+  try{
+    if(d && d.app_name){ document.querySelectorAll('.js-app-name').forEach(function(e){ e.textContent=d.app_name; }); }
+    if(d && d.app_logo){
+      document.querySelectorAll('.js-app-logo').forEach(function(e){
+        e.style.background='transparent';
+        e.innerHTML='<img src="'+d.app_logo+'" alt="logo" style="width:100%;height:100%;object-fit:contain;display:block">';
+      });
+      var fav=document.querySelector('link[rel="icon"]'); if(fav){ fav.href=d.app_logo; fav.removeAttribute('type'); }
+    }
+  }catch(_){}
+}
+(function(){ fetch('/voucher/info').then(function(r){return r.json();}).then(applyBranding).catch(function(){}); })();
 // ================================================================
 // NETBILLING ADMIN — FULL API CONNECTED
 // ================================================================
@@ -5009,17 +5256,18 @@ const METODE_PER_PROVIDER = {
     { code:'OVO',        label:'OVO',                ico:'💜', sub:'Push notif OVO' },
   ],
   duitku: [
-    { code:'M2',   label:'QRIS',        ico:'⬛', sub:'Semua dompet digital' },
+    { code:'SP',   label:'QRIS (ShopeePay)', ico:'⬛', sub:'Scan QR semua dompet' },
+    { code:'OV',   label:'OVO',         ico:'💜', sub:'Push notif OVO' },
+    { code:'DA',   label:'DANA',        ico:'💙', sub:'DANA' },
+    { code:'SA',   label:'ShopeePay App', ico:'🟠', sub:'ShopeePay aplikasi' },
     { code:'BC',   label:'VA BCA',      ico:'🏦', sub:'ATM / m-BCA' },
-    { code:'A1',   label:'VA BRI',      ico:'🏦', sub:'ATM / BRImo' },
+    { code:'BR',   label:'VA BRI',      ico:'🏦', sub:'ATM / BRImo' },
+    { code:'BV',   label:'VA BSI',      ico:'🏦', sub:'ATM / BSI Mobile' },
     { code:'B1',   label:'VA BNI',      ico:'🏦', sub:'ATM / BNI Mobile' },
     { code:'I1',   label:'VA Mandiri',  ico:'🏦', sub:'ATM / Livin by Mandiri' },
     { code:'VA',   label:'VA Maybank',  ico:'🏦', sub:'ATM / Maybank' },
-    { code:'SA',   label:'ShopeePay',   ico:'🟠', sub:'ShopeePay' },
-    { code:'OV',   label:'OVO',         ico:'💜', sub:'Push notif OVO' },
-    { code:'DA',   label:'DANA',        ico:'💙', sub:'DANA' },
-    { code:'LA',   label:'Alfamart',    ico:'🏪', sub:'Alfamart / Alfamidi' },
-    { code:'IR',   label:'Indomaret',   ico:'🏪', sub:'Indomaret' },
+    { code:'A1',   label:'Alfamart',    ico:'🏪', sub:'Alfamart / Alfamidi' },
+    { code:'FT',   label:'Retail',      ico:'🏪', sub:'Alfamart · Pegadaian · POS' },
   ],
   midtrans: [
     { code:'snap',  label:'Midtrans Snap', ico:'💳', sub:'Semua metode Midtrans' },
@@ -6204,6 +6452,13 @@ function openModal(id) {
   if (id === 'm-add-pelanggan' || id === 'm-add-invoice' || id === 'm-gen-voucher') {
     populateDropdowns();
   }
+  if (id === 'm-add-invoice') {
+    // reset field pencarian pelanggan & pilihan
+    const s = document.getElementById('fi-pel-search'); if (s) s.value = '';
+    const h = document.getElementById('fi-pel');        if (h) h.value = '';
+    const r = document.getElementById('fi-pel-results');if (r) r.style.display = 'none';
+    const c = document.getElementById('fi-pel-card');   if (c) c.style.display = 'none';
+  }
   if (id === 'm-add-pelanggan') {
     loadResellerOptions('f-reseller');
     // Reset koordinat & init mini map
@@ -6403,19 +6658,112 @@ async function loadResellerDashboard() {
     set('rs-bulan-jml', d.bulan_ini?.jml || 0);
     set('rs-total-item', d.total_item_terjual || 0);
     set('rs-jml-pelanggan', d.jml_pelanggan || 0);
-    const tb = document.getElementById('rs-tbl-transaksi');
-    const rows = d.transaksi_terbaru || [];
-    if (tb) tb.innerHTML = rows.length ? rows.map(t => `
-      <tr style="border-top:1px solid var(--border)">
-        <td style="padding:10px 16px;font-size:13px">${fmtDate ? fmtDate(t.created_at) : (t.created_at||'').slice(0,10)}</td>
-        <td style="padding:10px 16px"><span class="tag">${t.tipe}</span></td>
-        <td style="padding:10px 16px;font-size:13px">${t.nama_paket || '—'}</td>
-        <td style="padding:10px 16px;font-size:13px">${t.jumlah_item}</td>
-        <td style="padding:10px 16px;font-size:13px;text-align:right;font-weight:600">${rsRp(t.total_bayar)}</td>
-      </tr>`).join('') : '<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text3)">Belum ada transaksi</td></tr>';
+    set('rs-stat-member', d.jml_pelanggan || 0);
+    set('rs-stat-voucher', d.total_voucher || 0);
+    _rsTrxRows = d.transaksi_terbaru || [];
+    rsRenderTransaksi(_rsTrxRows);
   } catch (e) {
     if (typeof toast === 'function') toast('❌ ' + e.message, true);
   }
+}
+
+let _rsTrxRows = [];
+const RS_TIPE_LABEL = { voucher:'Beli Voucher', user:'Tambah Pelanggan', topup:'Top Up Saldo', pembelian:'Pembelian', settlement:'Pembayaran' };
+function rsRenderTransaksi(rows) {
+  const tb = document.getElementById('rs-tbl-transaksi');
+  if (!tb) return;
+  if (!rows.length) {
+    tb.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3)">Belum ada transaksi</td></tr>';
+    return;
+  }
+  tb.innerHTML = rows.map(t => {
+    const tgl = (typeof fmtDate === 'function') ? fmtDate(t.created_at) : (t.created_at||'').slice(0,10);
+    const tipe = RS_TIPE_LABEL[t.tipe] || (t.tipe ? t.tipe.charAt(0).toUpperCase()+t.tipe.slice(1) : '—');
+    return `<tr style="border-top:1px solid var(--border)">
+      <td style="padding:10px 16px;font-size:13px">${tgl}</td>
+      <td style="padding:10px 16px"><span class="tag">${tipe}</span></td>
+      <td style="padding:10px 16px;font-size:13px">${t.nama_paket || '—'}</td>
+      <td style="padding:10px 16px;font-size:13px">${t.jumlah_item || 0}</td>
+      <td style="padding:10px 16px;font-size:13px;text-align:right;font-weight:600">${rsRp(t.total_bayar)}</td>
+      <td style="padding:10px 16px"></td>
+    </tr>`;
+  }).join('');
+}
+// Pilihan bayar invoice: tampilkan modal modern (saldo / gateway)
+function rsPilihBayar(noInvoice, jumlah, namaPelanggan) {
+  window._rsBayarCtx = { noInvoice, jumlah, namaPelanggan };
+  document.getElementById('rsby-inv').textContent = noInvoice;
+  document.getElementById('rsby-nama').textContent = namaPelanggan;
+  document.getElementById('rsby-jumlah').textContent = rsRp(jumlah);
+  document.getElementById('m-rs-bayar').classList.add('open');
+}
+
+function rsBayarVia(metode) {
+  const ctx = window._rsBayarCtx;
+  if (!ctx) return;
+  document.getElementById('m-rs-bayar').classList.remove('open');
+  if (metode === 'saldo') {
+    rsBayarSaldo(ctx.noInvoice, ctx.namaPelanggan);
+  } else {
+    window.open('/bayar/' + encodeURIComponent(ctx.noInvoice), '_blank');
+  }
+}
+
+async function rsBayarSaldo(noInvoice, namaPelanggan) {
+  try {
+    const d = await apiFetch('/api/reseller/invoice/' + encodeURIComponent(noInvoice) + '/bayar-saldo', { method: 'POST' });
+    toast('✅ ' + (d.pesan || 'Invoice lunas') + ' · Saldo: ' + rsRp(d.saldo_sisa));
+    if (typeof loadResellerDashboard === 'function') loadResellerDashboard();
+    const cari = document.getElementById('rs-cari-trx');
+    if (cari && cari.value.trim()) rsFilterTransaksi(cari.value);
+  } catch (e) {
+    toast('❌ ' + e.message, true);
+  }
+}
+
+function rsFilterTransaksi(q) {
+  q = (q||'').trim();
+  clearTimeout(window._rsCariTimer);
+  if (!q) { rsRenderTransaksi(_rsTrxRows); return; }
+  window._rsCariTimer = setTimeout(async function() {
+    try {
+      const hasil = await apiFetch('/api/reseller/cari-transaksi?q=' + encodeURIComponent(q));
+      rsRenderInvoiceCari(hasil || []);
+    } catch (e) {
+      const tb = document.getElementById('rs-tbl-transaksi');
+      if (tb) tb.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:#dc2626">' + e.message + '</td></tr>';
+    }
+  }, 350);
+}
+
+// Render hasil pencarian INVOICE pelanggan reseller
+function rsRenderInvoiceCari(rows) {
+  const tb = document.getElementById('rs-tbl-transaksi');
+  if (!tb) return;
+  if (!rows.length) {
+    tb.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text3)">Tidak ada invoice ditemukan</td></tr>';
+    return;
+  }
+  const stBadge = s => {
+    if (s==='paid') return '<span class="tag" style="background:#dcfce7;color:#16a34a">Lunas</span>';
+    if (s==='unpaid'||s==='pending') return '<span class="tag" style="background:#fef3c7;color:#d97706">Belum bayar</span>';
+    return '<span class="tag">'+(s||'-')+'</span>';
+  };
+  tb.innerHTML = rows.map(r => {
+    const tgl = (typeof fmtDate === 'function') ? fmtDate(r.tgl_jatuh_tempo||r.created_at) : String(r.tgl_jatuh_tempo||'').slice(0,10);
+    const belumBayar = r.status==='unpaid' || r.status==='pending';
+    const aksi = belumBayar
+      ? `<button class="btn sm" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;font-weight:600" onclick="rsPilihBayar('${jsAttr(r.no_invoice)}',${Number(r.jumlah)||0},'${jsAttr(r.nama_pelanggan||r.username||'')}')"><i class="ti ti-credit-card"></i> Bayar</button>`
+      : `<button class="btn sm" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;font-weight:600" onclick="rpPerpanjang(${r.pelanggan_id||0},'${jsAttr(r.username||'')}')"><i class="ti ti-refresh"></i> Perpanjang</button>`;
+    return `<tr style="border-top:1px solid var(--border)">
+      <td style="padding:10px 16px;font-size:12px;font-family:monospace">${r.no_invoice||'—'}</td>
+      <td style="padding:10px 16px;font-size:13px">${escapeHtml(r.nama_pelanggan||r.username||'—')}</td>
+      <td style="padding:10px 16px;font-size:13px">${escapeHtml(r.nama_paket||'—')}</td>
+      <td style="padding:10px 16px">${stBadge(r.status)}</td>
+      <td style="padding:10px 16px;font-size:13px;text-align:right;font-weight:600">${rsRp(r.jumlah)}</td>
+      <td style="padding:10px 16px;text-align:right">${aksi}</td>
+    </tr>`;
+  }).join('');
 }
 
 // ── RESELLER: BELI VOUCHER ──
@@ -6974,6 +7322,7 @@ const loaders = {
   payment: loadPayment, radius: loadRadius,
   laporan: loadLaporan, 'income-report': loadIncomeReport, 'net-profit': loadNetProfit, reseller: loadReseller,
   sesi: loadSesi,
+  isolir: loadIsolir,
   log:  loadLog,
   pengguna: loadPengguna,
   tiket: loadTiket,
@@ -7805,12 +8154,110 @@ function petaMovePin(prefix) {
 }
 // ── END MINI MAP ─────────────────────────────────────────────
 
+// ── Pelanggan: state pagination + seleksi (server-side) ──
+let plPage = 1, plLimit = 25, plTotal = 0, plRows = [];
+let plCari = '', plStatus = '', plTipe = '';
+const plSelected = new Set();   // id terpilih, persist antar halaman
+let _plCariTimer = null;
+
+function plSetCari(v)   { plCari = (v||'').trim(); plPage = 1; clearTimeout(_plCariTimer); _plCariTimer = setTimeout(loadPelanggan, 350); }
+function plSetStatus(v) { plStatus = v || ''; plPage = 1; loadPelanggan(); }
+function plSetTipe(v)   { plTipe = v || '';   plPage = 1; loadPelanggan(); }
+function plSetLimit(v)  { plLimit = parseInt(v) || 25; plPage = 1; loadPelanggan(); }
+function plGoto(p)      { const max = Math.max(1, Math.ceil(plTotal / plLimit)); plPage = Math.min(Math.max(1, p), max); loadPelanggan(); }
+
 async function loadPelanggan() {
   try {
-    const data = await apiFetch('/api/pelanggan?limit=50');
-    renderTblPelanggan(data.data || data);
+    const q = new URLSearchParams({ halaman: plPage, limit: plLimit });
+    if (plCari)   q.set('cari', plCari);
+    if (plStatus) q.set('status', plStatus);
+    if (plTipe)   q.set('tipe', plTipe);
+    const data = await apiFetch('/api/pelanggan?' + q.toString());
+    plRows  = data.data || data || [];
+    plTotal = data.total ?? plRows.length;
+    renderTblPelanggan(plRows);
+    plRenderPagination();
+    plSyncSelectAll();
+    plUpdateBulkBar();
   } catch(e) { console.warn('Pelanggan API:', e.message); }
   loadPelangganStats();
+}
+
+// ── Seleksi (checkbox) ──
+function plToggleRow(cb) {
+  const id = parseInt(cb.dataset.id);
+  if (cb.checked) plSelected.add(id); else plSelected.delete(id);
+  plSyncSelectAll(); plUpdateBulkBar();
+}
+function plToggleAll(cb) {
+  document.querySelectorAll('#tbl-pelanggan .pl-check').forEach(x => {
+    x.checked = cb.checked;
+    const id = parseInt(x.dataset.id);
+    if (cb.checked) plSelected.add(id); else plSelected.delete(id);
+  });
+  plUpdateBulkBar();
+}
+function plSyncSelectAll() {
+  const head = document.getElementById('pl-check-all'); if (!head) return;
+  const all = document.querySelectorAll('#tbl-pelanggan .pl-check');
+  const sel = [...all].filter(x => x.checked).length;
+  head.checked = all.length > 0 && sel === all.length;
+  head.indeterminate = sel > 0 && sel < all.length;
+}
+function plClearSel() {
+  plSelected.clear();
+  document.querySelectorAll('#tbl-pelanggan .pl-check').forEach(x => x.checked = false);
+  plSyncSelectAll(); plUpdateBulkBar();
+}
+function plUpdateBulkBar() {
+  const bar = document.getElementById('pl-bulk-bar'); if (!bar) return;
+  const cnt = document.getElementById('pl-sel-count');
+  if (plSelected.size > 0) { bar.style.display = 'flex'; if (cnt) cnt.textContent = plSelected.size; }
+  else bar.style.display = 'none';
+}
+async function plBulk(aksi) {
+  const ids = [...plSelected]; if (!ids.length) return;
+  const konfirm = aksi === 'hapus'
+    ? `HAPUS ${ids.length} pelanggan terpilih?\n\nAkun RADIUS ikut dihapus & tidak bisa dikembalikan.`
+    : `${aksi === 'suspend' ? 'Suspend' : 'Aktifkan'} ${ids.length} pelanggan terpilih?` +
+      (aksi === 'suspend' ? '\n\n(Notifikasi WA dikirim ke tiap pelanggan.)' : '');
+  if (!confirm(konfirm)) return;
+  let ok = 0, gagal = 0;
+  for (const id of ids) {
+    try {
+      if (aksi === 'hapus') await apiFetch('/api/pelanggan/' + id, { method: 'DELETE' });
+      else                  await apiFetch('/api/pelanggan/' + id + '/' + aksi, { method: 'POST' });
+      ok++;
+    } catch(e) { gagal++; }
+  }
+  toast(`✅ ${ok} berhasil${gagal ? `, ${gagal} gagal` : ''}`, gagal > 0);
+  plSelected.clear();
+  loadPelanggan();
+}
+
+// ── Kontrol pagination ──
+function plRenderPagination() {
+  const el = document.getElementById('pl-pagination'); if (!el) return;
+  const max = Math.max(1, Math.ceil(plTotal / plLimit));
+  if (plPage > max) plPage = max;
+  const from = plTotal === 0 ? 0 : (plPage - 1) * plLimit + 1;
+  const to   = Math.min(plPage * plLimit, plTotal);
+  const btn = (p, lbl, dis, act) =>
+    `<button class="btn sm${act ? ' primary' : ''}" ${dis ? 'disabled' : ''} onclick="plGoto(${p})" style="min-width:34px">${lbl}</button>`;
+  const dots = '<span style="padding:0 4px;color:var(--text3)">…</span>';
+  let b = btn(plPage - 1, '‹', plPage <= 1, false);
+  const start = Math.max(1, plPage - 2), end = Math.min(max, plPage + 2);
+  if (start > 1) { b += btn(1, '1', false, plPage === 1); if (start > 2) b += dots; }
+  for (let p = start; p <= end; p++) b += btn(p, String(p), false, p === plPage);
+  if (end < max) { if (end < max - 1) b += dots; b += btn(max, String(max), false, plPage === max); }
+  b += btn(plPage + 1, '›', plPage >= max, false);
+  el.innerHTML =
+    `<div style="font-size:13px;color:var(--text3)">Menampilkan ${from}–${to} dari ${plTotal}</div>` +
+    `<div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">${b}</div>` +
+    `<div style="display:flex;gap:6px;align-items:center;font-size:13px;color:var(--text3)">Per halaman:` +
+    `<select onchange="plSetLimit(this.value)" style="padding:4px 8px">` +
+    [25,50,100,200].map(n => `<option value="${n}" ${n===plLimit?'selected':''}>${n}</option>`).join('') +
+    `</select></div>`;
 }
 async function loadPelangganStats() {
   const setp=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
@@ -7830,10 +8277,12 @@ async function loadPelangganStats() {
 
 function renderTblPelanggan(rows) {
   const t = document.getElementById('tbl-pelanggan');
-  if(!rows.length) { t.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--text3)">Belum ada pelanggan</td></tr>'; return; }
+  if(!rows.length) { t.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--text3)">Belum ada pelanggan</td></tr>'; return; }
+  const base = (plPage - 1) * plLimit;
   t.innerHTML = rows.map((p,i) => `
     <tr>
-      <td>${i+1}</td>
+      <td style="text-align:center"><input type="checkbox" class="pl-check" data-id="${p.id}" ${plSelected.has(p.id)?'checked':''} onchange="plToggleRow(this)" style="width:16px;height:16px;accent-color:#4f46e5;cursor:pointer;vertical-align:middle"></td>
+      <td>${base + i + 1}</td>
       <td><div style="font-weight:500">${escapeHtml(p.nama)}</div><div style="font-size:11px;color:var(--text3)">${escapeHtml(p.email||'')}</div></td>
       <td><span style="font-family:monospace;font-size:12px">${escapeHtml(p.username)}</span></td>
       <td>${escapeHtml(p.no_hp)}</td>
@@ -7941,6 +8390,9 @@ async function bukaModalEdit(id) {
     document.getElementById('ep-notes').value    = p.notes || '';
     document.getElementById('ep-username').value = p.username || '';
     document.getElementById('ep-password').value = '';
+    // Tanggal expired (format YYYY-MM-DD untuk input date)
+    const expEl = document.getElementById('ep-expired');
+    if (expEl) expEl.value = p.tgl_expired ? String(p.tgl_expired).slice(0,10) : '';
 
     // Lokasi & Jaringan
     document.getElementById('ep-latitude').value  = p.latitude  || '';
@@ -8032,6 +8484,8 @@ async function apiUpdatePelanggan() {
       no_ktp: no_ktp || null, tgl_lahir: tgl_lahir || null,
       reseller_id: document.getElementById('ep-reseller')?.value || null,
     };
+    const expVal = document.getElementById('ep-expired')?.value || '';
+    if (expVal) body.tgl_expired = expVal;
     if (ktp_url) body.ktp_url = ktp_url;
     if (password) body.password = password;
 
@@ -8613,17 +9067,14 @@ async function populateDropdowns() {
           ).join('');
     }
 
-    // Dropdown pelanggan di form buat invoice
+    // Cache pelanggan untuk input pencarian di form buat invoice.
+    // Tanpa filter status — pelanggan suspended pun harus bisa dibuatkan invoice
+    // (justru mereka yang perlu bayar agar aktif kembali).
     try {
-      const pelList = await apiFetch('/api/pelanggan?limit=500&status=aktif');
+      const pelList = await apiFetch('/api/pelanggan?limit=2000');
       const rows = pelList.data || pelList;
       PELANGGAN_LIST_CACHE = rows;
-      const selInvPel = document.getElementById('fi-pel');
-      if (selInvPel) {
-        selInvPel.innerHTML = '<option value="">— Pilih pelanggan —</option>'
-          + rows.map(p => `<option value="${p.id}">${p.nama} (${p.username})</option>`).join('');
-      }
-    } catch(e) { console.warn('Dropdown pelanggan gagal:', e.message); }
+    } catch(e) { console.warn('Cache pelanggan gagal:', e.message); }
 
     return paketList;
   } catch(e) { console.warn('Dropdown paket gagal:', e.message); return []; }
@@ -8900,6 +9351,82 @@ function npExportCSV() {
 // ── RESELLER MODAL HELPERS END ──────────────────────────────
 
 let PELANGGAN_LIST_CACHE = [];
+let _invPelHi = -1;  // index highlight keyboard
+
+// Pencarian pelanggan di form Buat Invoice (ketik nama/username → daftar terfilter)
+function invoicePelSearch(q) {
+  const box = document.getElementById('fi-pel-results');
+  if (!box) return;
+  const term = (q || '').trim().toLowerCase();
+  // batasi hasil agar ringan; kalau kosong tampilkan 20 pertama
+  let list = PELANGGAN_LIST_CACHE;
+  if (term) {
+    list = PELANGGAN_LIST_CACHE.filter(p =>
+      (p.nama || '').toLowerCase().includes(term) ||
+      (p.username || '').toLowerCase().includes(term) ||
+      (p.no_hp || '').toLowerCase().includes(term));
+  }
+  list = list.slice(0, 30);
+  _invPelHi = -1;
+  if (!list.length) {
+    box.innerHTML = '<div style="padding:10px 12px;color:var(--text3);font-size:13px">Tidak ada pelanggan cocok</div>';
+    box.style.display = 'block';
+    return;
+  }
+  box.innerHTML = list.map((p, i) => {
+    const tipe = p.tipe_koneksi === 'hotspot' ? 'Hotspot' : 'PPPoE';
+    const safeNama = (p.nama||'').replace(/[<>&"]/g,'');
+    const safeUser = (p.username||'').replace(/[<>&"]/g,'');
+    const st = p.status || 'aktif';
+    const stWarna = st === 'aktif' ? '#16a34a' : (st === 'suspended' ? '#d97706' : '#64748b');
+    const stLabel = st === 'aktif' ? 'Aktif' : (st === 'suspended' ? 'Suspend' : 'Nonaktif');
+    return `<div class="inv-pel-item" data-id="${p.id}" data-i="${i}"
+        onmousedown="invoicePelPick('${p.id}')"
+        style="padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;display:flex;align-items:center;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;color:var(--text)">${safeNama}</div>
+          <div style="font-size:11px;color:var(--text3)">${safeUser} · ${tipe}</div>
+        </div>
+        <span style="font-size:10px;font-weight:600;color:${stWarna};background:${stWarna}1a;
+              padding:2px 8px;border-radius:20px;flex-shrink:0">${stLabel}</span>
+      </div>`;
+  }).join('');
+  box.style.display = 'block';
+}
+
+function invoicePelPick(id) {
+  const p = PELANGGAN_LIST_CACHE.find(x => String(x.id) === String(id));
+  const hidden = document.getElementById('fi-pel');
+  const search = document.getElementById('fi-pel-search');
+  const box    = document.getElementById('fi-pel-results');
+  if (hidden) hidden.value = id;
+  if (search && p) search.value = `${p.nama} (${p.username})`;
+  if (box) box.style.display = 'none';
+  invoiceOnPelangganChange();  // isi kartu info + auto harga
+}
+
+function invoicePelKey(e) {
+  const box = document.getElementById('fi-pel-results');
+  if (!box || box.style.display === 'none') return;
+  const items = [...box.querySelectorAll('.inv-pel-item')];
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') { e.preventDefault(); _invPelHi = Math.min(_invPelHi+1, items.length-1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); _invPelHi = Math.max(_invPelHi-1, 0); }
+  else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (_invPelHi >= 0 && items[_invPelHi]) invoicePelPick(items[_invPelHi].dataset.id);
+    return;
+  } else if (e.key === 'Escape') { box.style.display='none'; return; }
+  items.forEach((el,i)=> el.style.background = i===_invPelHi ? 'var(--bg3,#eef)' : '');
+  if (items[_invPelHi]) items[_invPelHi].scrollIntoView({block:'nearest'});
+}
+
+// Tutup daftar saat klik di luar
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('fi-pel-results');
+  const inp  = document.getElementById('fi-pel-search');
+  if (wrap && inp && e.target !== inp && !wrap.contains(e.target)) wrap.style.display = 'none';
+});
 
 function invoiceOnPelangganChange() {
   const pid  = document.getElementById('fi-pel').value;
@@ -9648,7 +10175,7 @@ async function loadBatchHistory() {
         <button class="btn sm" onclick="exportBatchPdf('${b.batch_id}')" title="Export PDF kartu">📄 PDF</button>
         <button class="btn sm danger" onclick="hapusBatch('${b.batch_id}',${b.jumlah})" title="Hapus batch">🗑️</button>
       </div>`;
-    }).join('') + '<div style="text-align:center;font-size:11px;color:var(--text3);padding-top:8px">Menampilkan 20 batch terakhir</div>';
+    }).join('') + '<div style="text-align:center;font-size:11px;color:var(--text3);padding-top:8px">Menampilkan 10 batch terakhir</div>';
   } catch(e) {
     el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px">❌ Gagal memuat</div>';
   }
@@ -9656,6 +10183,9 @@ async function loadBatchHistory() {
 
 // ── RIWAYAT SESI VOUCHER ─────────────────────────────────────
 let _vcrSesiRows = [];
+let _vcrSesiFiltered = null;
+let _vcrSesiPer = 10;
+let _vcrSesiHal = 1;
 
 async function loadVcrSesi() {
   const tbody = document.getElementById('tbl-vcr-sesi');
@@ -9664,7 +10194,9 @@ async function loadVcrSesi() {
     const q = document.getElementById('vcr-sesi-search')?.value || '';
     const url = '/api/radius/sesi-voucher?limit=300' + (q ? '&q='+encodeURIComponent(q) : '');
     _vcrSesiRows = await apiFetch(url);
-    renderVcrSesi(_vcrSesiRows);
+    _vcrSesiFiltered = null;
+    _vcrSesiHal = 1;
+    renderVcrSesi();
   } catch(e) {
     if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:16px;color:#dc2626">❌ ${e.message}</td></tr>`;
   }
@@ -9672,21 +10204,52 @@ async function loadVcrSesi() {
 
 function vcrSesiFilter() {
   const q = (document.getElementById('vcr-sesi-search')?.value || '').toLowerCase();
-  const filtered = q
+  _vcrSesiFiltered = q
     ? _vcrSesiRows.filter(r => (r.username||'').toLowerCase().includes(q) || (r.ip||'').includes(q))
     : _vcrSesiRows;
-  renderVcrSesi(filtered);
+  _vcrSesiHal = 1;  // reset ke halaman 1 saat filter berubah
+  renderVcrSesi();
 }
 
-function renderVcrSesi(rows) {
+function vcrSesiUbahPer() {
+  _vcrSesiPer = parseInt(document.getElementById("vcr-sesi-per").value) || 10;
+  _vcrSesiHal = 1;
+  renderVcrSesi();
+}
+
+function vcrSesiHalaman(arah) {
+  const sumber = _vcrSesiFiltered || _vcrSesiRows || [];
+  const totalHal = Math.max(Math.ceil(sumber.length / _vcrSesiPer), 1);
+  const tujuan = _vcrSesiHal + arah;
+  if (tujuan < 1 || tujuan > totalHal) return;
+  _vcrSesiHal = tujuan;
+  renderVcrSesi();
+}
+
+function renderVcrSesi() {
   const tbody = document.getElementById('tbl-vcr-sesi');
   const count = document.getElementById('vcr-sesi-count');
-  if (count) count.textContent = `${rows.length} sesi`;
+  const sumber = _vcrSesiFiltered || _vcrSesiRows || [];
+  if (count) count.textContent = `${sumber.length} sesi`;
   if (!tbody) return;
-  if (!rows.length) {
+  if (!sumber.length) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text3)">Tidak ada riwayat sesi</td></tr>';
+    const info = document.getElementById('vcr-sesi-info'); if (info) info.textContent = '0 dari 0';
     return;
   }
+  // pagination
+  const per = _vcrSesiPer || 10;
+  const totalHal = Math.max(Math.ceil(sumber.length / per), 1);
+  if (_vcrSesiHal > totalHal) _vcrSesiHal = totalHal;
+  const mulai = (_vcrSesiHal - 1) * per;
+  const rows = sumber.slice(mulai, mulai + per);
+  const info = document.getElementById('vcr-sesi-info');
+  if (info) info.textContent = `${mulai+1}–${Math.min(mulai+per, sumber.length)} dari ${sumber.length}`;
+  const btnPrev = document.getElementById('vcr-sesi-prev');
+  const btnNext = document.getElementById('vcr-sesi-next');
+  if (btnPrev) btnPrev.disabled = _vcrSesiHal <= 1;
+  if (btnNext) btnNext.disabled = _vcrSesiHal >= totalHal;
+
   const fmtDT = dt => dt ? new Date(dt).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
   tbody.innerHTML = rows.map(r => {
     const aktif   = !r.selesai;
@@ -9713,8 +10276,10 @@ async function loadVoucher() {
   loadBatchHistory();
   loadVcrSesi();
   try {
+    const cariParam = (window._vcrCari || '').trim();
+    const qsCari = cariParam ? `&cari=${encodeURIComponent(cariParam)}` : '';
     const [list, stat] = await Promise.all([
-      apiFetch(`/api/voucher?limit=${vcrLimit}&halaman=${vcrHalaman}`),
+      apiFetch(`/api/voucher?limit=${vcrLimit}&halaman=${vcrHalaman}${qsCari}`),
       apiFetch('/api/voucher/statistik')
     ]);
     vcrTotal = list.total || 0;
@@ -9728,6 +10293,15 @@ async function loadVoucher() {
     const t = document.getElementById('tbl-voucher');
     if (t) t.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#dc2626;padding:16px">❌ ${e.message}</td></tr>`;
   }
+}
+
+function cariVoucherDebounce(nilai) {
+  window._vcrCari = nilai;
+  clearTimeout(window._vcrCariTimer);
+  window._vcrCariTimer = setTimeout(function() {
+    vcrHalaman = 1;  // kembali ke halaman 1 saat mencari
+    loadVoucher();
+  }, 350);
 }
 
 function renderInfoHalamanVoucher() {
@@ -10251,6 +10825,12 @@ const TPL_META = {
     slug:  'wa_tpl_voucher_sukses',
     placeholders: ['{nama}','{username}','{paket}','{masa_aktif}','{kecepatan}'],
     default: `Halo *{nama}*,\n\nTerima kasih! Pembayaran voucher diterima ✅\n\nBerikut voucher internet Anda:\n\n🔑 Username/Password: *{username}*\n📦 Paket: *{paket}*\n⏱ Berlaku: *{masa_aktif}*\n🚀 Kecepatan: *{kecepatan}*\n\nCara pakai:\n1️⃣ Sambungkan ke WiFi hotspot\n2️⃣ Buka browser, masuk halaman login\n3️⃣ Masukkan username & password di atas\n\nSelamat menikmati! 🌐`
+  },
+  invoice_baru: {
+    title: 'Invoice Baru / Link Bayar',
+    slug:  'wa_tpl_invoice_baru',
+    placeholders: ['[fullname]','[no_invoice]','[profile]','[total]','[amount]','[due_date]','[payment_url]'],
+    default: `Halo *[fullname]*,\n\nTagihan internet Anda telah dibuat.\n\n📄 No. Invoice: *[no_invoice]*\n📦 Paket: *[profile]*\n💰 Tagihan: [total]\n📅 Jatuh Tempo: *[due_date]*\n\n💳 Link Pembayaran:\n[payment_url]\n\nSilakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏`
   }
 };
 
@@ -10267,13 +10847,39 @@ function tplLoad(key) {
   document.getElementById('tpl-editor-title').textContent = meta.title;
   document.getElementById('tpl-editor-slug').textContent  = meta.slug;
   document.getElementById('tpl-editor-body').value        = stored;
-  document.getElementById('tpl-dirty-badge').style.display = 'none';
+  const _db = document.getElementById('tpl-dirty-badge');
+  if (_db) _db.style.display = 'none';
 
-  // Render placeholder chips
+  // Render placeholder chips (yang relevan utk template ini)
   const box = document.getElementById('tpl-placeholders');
-  box.innerHTML = meta.placeholders.map(p =>
+  if (box) box.innerHTML = meta.placeholders.map(p =>
     `<span class="tpl-ph-chip" onclick="tplInsert('${p}')" title="Klik untuk sisipkan">${p}</span>`
   ).join('');
+
+  // Render panel referensi placeholder lengkap (semua token yang tersedia)
+  tplRenderRefPanel();
+}
+
+// Daftar lengkap placeholder (satu kumpulan, tanpa pemisahan grup).
+const TPL_PH_ALL = [
+  '[fullname]','[username]','[password]','[uid]','[member_id]','[profile]','[phone]','[whatsapp]','[email]','[address]','[billing_status]',
+  '[no_invoice]','[invoice_date]','[period]','[due_date]','[previous_suspend_at]','[next_suspend_at]','[items_list]','[amount]','[outstanding_amount]','[previous_balance]','[discount_percent]','[discount]','[vat_percent]','[ppn]','[total]','[payment_url]','[payment_method]','[failed_reason]','[refund_date]',
+  '[voucher_list]','[quantity]','[paket]','[masa_aktif]','[kecepatan]','[tgl_expired]','[tgl_aktif]'
+];
+
+function tplRenderRefPanel() {
+  const wrap = document.getElementById('tpl-ph-reference');
+  if (!wrap) return;
+  // token yang terdeteksi terpakai di editor saat ini (ditandai aktif)
+  const body = (document.getElementById('tpl-editor-body')?.value || '');
+  const dipakai = new Set(body.match(/\[[a-z_]+\]/g) || []);
+
+  wrap.innerHTML = `<div class="tpl-ph-list">` +
+    TPL_PH_ALL.map(p => {
+      const aktif = dipakai.has(p) ? ' tpl-ph-active' : '';
+      return `<span class="tpl-ph-chip${aktif}" onclick="tplInsert('${p}')">${p}</span>`;
+    }).join('') +
+    `</div>`;
 }
 
 function tplInsert(ph) {
@@ -10290,6 +10896,7 @@ function tplMarkDirty() {
   _tplDirty = true;
   const badge = document.getElementById('tpl-dirty-badge');
   if (badge) badge.style.display = 'flex';
+  tplRenderRefPanel();  // update bagian "Terdeteksi di template ini"
 }
 
 function tplReset() {
@@ -10312,7 +10919,8 @@ async function tplSave() {
       body: JSON.stringify({ [meta.slug]: body })
     });
     _tplDirty = false;
-    document.getElementById('tpl-dirty-badge').style.display = 'none';
+    const badge = document.getElementById('tpl-dirty-badge');
+    if (badge) badge.style.display = 'none';
     toast('✅ Template "' + meta.title + '" disimpan');
   } catch(e) { toast('❌ ' + e.message, true); }
 }
@@ -10330,6 +10938,11 @@ async function loadWALog() {
     }
     if (map.wa_sender)   document.getElementById('wa-sender').value   = map.wa_sender;
     if (map.wa_phone_id) document.getElementById('wa-phone-id').value = map.wa_phone_id;
+    // Delay antrian
+    const dMin = document.getElementById('wa-delay-min');
+    const dMax = document.getElementById('wa-delay-max');
+    if (dMin) dMin.value = (map.wa_delay_min != null && map.wa_delay_min !== '') ? map.wa_delay_min : 30;
+    if (dMax) dMax.value = (map.wa_delay_max != null && map.wa_delay_max !== '') ? map.wa_delay_max : 60;
     // Tampilkan token tersimpan (sebagai placeholder agar user tahu sudah terisi)
     const tokenEl = document.getElementById('wa-token');
     if (tokenEl && map.wa_token) {
@@ -10341,6 +10954,7 @@ async function loadWALog() {
     if (map.wa_tpl_suspend)         document.getElementById('wa-tpl-suspend').value         = map.wa_tpl_suspend;
     if (map.wa_tpl_konfirmasi)      document.getElementById('wa-tpl-konfirmasi').value      = map.wa_tpl_konfirmasi;
     if (map.wa_tpl_voucher_sukses)  document.getElementById('wa-tpl-voucher_sukses').value  = map.wa_tpl_voucher_sukses;
+    if (map.wa_tpl_invoice_baru)    document.getElementById('wa-tpl-invoice_baru').value    = map.wa_tpl_invoice_baru;
     // Init template editor dengan template pertama
     tplLoad(document.getElementById('wa-tpl-select')?.value || 'daftar');
     // Tampilkan field Phone ID hanya untuk WA Business API
@@ -10429,6 +11043,14 @@ async function apiSimpanConfigWA() {
   try {
     const body = { wa_provider: provider, wa_sender: sender, wa_token: token };
     if (provider === 'wa_business') body.wa_phone_id = phoneId;
+    // Delay antrian (min/max detik)
+    let dMin = parseInt(document.getElementById('wa-delay-min')?.value);
+    let dMax = parseInt(document.getElementById('wa-delay-max')?.value);
+    if (isNaN(dMin)) dMin = 30;
+    if (isNaN(dMax)) dMax = 60;
+    if (dMin > dMax) { const t = dMin; dMin = dMax; dMax = t; }
+    body.wa_delay_min = String(dMin);
+    body.wa_delay_max = String(dMax);
     // Simpan template pesan
     const tplDaftar    = document.getElementById('wa-tpl-daftar')?.value.trim();
     const tplReminder  = document.getElementById('wa-tpl-reminder')?.value.trim();
@@ -10470,10 +11092,13 @@ async function apiKirimWATest() {
 
 async function apiBroadcastWA() {
   const target = document.getElementById('wa-broadcast-target').value;
-  const delay  = parseInt(document.getElementById('wa-broadcast-delay').value) || 3;
+  let delayMin = parseInt(document.getElementById('wa-broadcast-delay-min').value) || 30;
+  let delayMax = parseInt(document.getElementById('wa-broadcast-delay-max').value) || 60;
+  // pastikan min <= max
+  if (delayMin > delayMax) { const t = delayMin; delayMin = delayMax; delayMax = t; }
   try {
     const d = await apiFetch('/api/whatsapp/broadcast', {method:'POST',
-      body: JSON.stringify({target, delay,
+      body: JSON.stringify({target, delay_min: delayMin, delay_max: delayMax,
         pesan_template:'Halo {nama}, tagihan *{jumlah}* jatuh tempo *{tgl_jatuh_tempo}*. Bayar: {link_pembayaran}'
       })
     });
@@ -11199,19 +11824,19 @@ async function apiEditNAS() {
 }
 
 async function apiTambahNAS() {
-  const nasname   = document.getElementById('fn-ip').value.trim();
-  const shortname = document.getElementById('fn-nama').value.trim();
-  const secret    = document.getElementById('fn-secret').value;
-  const type      = document.getElementById('fn-tipe').value;
-  const community = document.getElementById('fn-community').value.trim();
-  const ports     = document.getElementById('fn-ports').value.trim();
-  if (!nasname||!secret) return toast('❌ IP dan secret wajib', true);
+  const shortname   = document.getElementById('nas-nama').value.trim();
+  const nasname     = document.getElementById('nas-ip').value.trim();
+  const type        = document.getElementById('nas-tipe').value;
+  const secret      = document.getElementById('nas-secret').value;
+  const description = document.getElementById('nas-desc').value.trim();
+  if (!nasname || !secret) return toast('❌ IP dan secret wajib', true);
   try {
     await apiFetch('/api/radius/nas', {method:'POST',
-      body: JSON.stringify({nasname, shortname, type, secret, description:shortname, community, ports: ports ? parseInt(ports) : null})
+      body: JSON.stringify({ nasname, shortname, type, secret, description })
     });
     toast('✅ NAS ditambahkan');
     closeModal('m-add-nas');
+    ['nas-nama','nas-ip','nas-secret','nas-desc'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
     try {
       const nas = await apiFetch('/api/radius/nas');
       renderNAS(nas);
@@ -11883,6 +12508,113 @@ async function logBersihkan() {
 // SESI AKTIF
 // ══════════════════════════════════════════════════
 let _sesiTab  = 'pppoe';
+// ── ISOLIR ──
+let _isoRos = 'ros7';
+function isoGenScript(ros) {
+  const srv = (document.getElementById('iso-srv-ip')?.value || '43.134.20.125').trim();
+  const range = (document.getElementById('iso-range')?.value || '10.99.99.2-10.99.99.254').trim();
+  const pool = (document.getElementById('iso-pool')?.value || 'isolir').trim();
+  // ROS6 & ROS7 untuk isolir praktis sama; bedakan komentar versi.
+  const ver = ros === 'ros6' ? 'RouterOS 6' : 'RouterOS 7';
+  return `# ===== SETUP ISOLIR (${ver}) =====
+# 1. IP Pool isolir
+/ip pool add name=${pool} ranges=${range}
+
+# 2. Profile PPP isolir (gateway untuk pelanggan isolir)
+/ppp profile add name=${pool} local-address=10.99.99.1 remote-address=${pool} dns-server=10.99.99.1
+
+# 3. Address-list subnet isolir
+/ip firewall address-list add list=ISOLIR address=10.99.99.0/24
+
+# 4. Redirect HTTP pelanggan isolir ke server SimBill (halaman /isolir)
+/ip firewall nat add chain=dstnat src-address=10.99.99.0/24 protocol=tcp dst-port=80 \\
+  action=dst-nat to-addresses=${srv} to-ports=80 comment="Isolir redirect HTTP"
+
+# 5. Izinkan HANYA akses ke server SimBill + DNS, blok internet lain
+/ip firewall filter add chain=forward src-address=10.99.99.0/24 dst-address=${srv} \\
+  action=accept comment="Isolir allow SimBill"
+/ip firewall filter add chain=forward src-address=10.99.99.0/24 protocol=udp dst-port=53 \\
+  action=accept comment="Isolir allow DNS UDP"
+/ip firewall filter add chain=forward src-address=10.99.99.0/24 protocol=tcp dst-port=53 \\
+  action=accept comment="Isolir allow DNS TCP"
+/ip firewall filter add chain=forward src-address=10.99.99.0/24 \\
+  action=drop comment="Isolir block all internet"
+
+# 6. Aktifkan RADIUS incoming (CoA) — wajib agar suspend langsung putus
+/radius incoming set accept=yes port=3799`;
+}
+function isoUpdateScript() {
+  const el = document.getElementById('iso-script');
+  if (el) el.textContent = isoGenScript(_isoRos);
+}
+function isoRosTab(ros) {
+  _isoRos = ros;
+  const t7 = document.getElementById('iso-ros7-tab');
+  const t6 = document.getElementById('iso-ros6-tab');
+  if (ros === 'ros7') {
+    t7.style.background = '#16a34a'; t7.style.color = '#fff'; t7.style.borderColor = '#16a34a';
+    t6.style.background = '#fff'; t6.style.color = '#15803d'; t6.style.borderColor = '#bbf7d0';
+  } else {
+    t6.style.background = '#16a34a'; t6.style.color = '#fff'; t6.style.borderColor = '#16a34a';
+    t7.style.background = '#fff'; t7.style.color = '#15803d'; t7.style.borderColor = '#bbf7d0';
+  }
+  isoUpdateScript();
+}
+function isoCopyScript() {
+  const txt = isoGenScript(_isoRos);
+  navigator.clipboard.writeText(txt).then(
+    () => toast('✅ Script disalin'),
+    () => toast('❌ Gagal menyalin', true)
+  );
+}
+
+function isoSetMode(mode) {
+  document.getElementById('iso-mode').value = mode;
+  const pool = document.getElementById('iso-mode-pool');
+  const rej  = document.getElementById('iso-mode-reject');
+  const box  = document.getElementById('iso-pool-box');
+  if (mode === 'pool') {
+    pool.style.borderColor = '#7c3aed'; pool.style.background = 'linear-gradient(135deg,#faf5ff,#f5f3ff)';
+    rej.style.borderColor = 'var(--border)'; rej.style.background = 'var(--bg2)';
+    if (box) box.style.display = '';
+  } else {
+    rej.style.borderColor = '#7c3aed'; rej.style.background = 'linear-gradient(135deg,#faf5ff,#f5f3ff)';
+    pool.style.borderColor = 'var(--border)'; pool.style.background = 'var(--bg2)';
+    if (box) box.style.display = 'none';
+  }
+}
+
+async function loadIsolir() {
+  try {
+    const d = await apiFetch('/api/setting');
+    const get = (k, def) => {
+      const row = Array.isArray(d) ? d.find(x => x.kunci === k) : (d[k] !== undefined ? { nilai: d[k] } : null);
+      return row && row.nilai != null && row.nilai !== '' ? row.nilai : def;
+    };
+    const mode = get('isolir_mode', 'pool');
+    const pool = get('isolir_pool', 'isolir');
+    document.getElementById('iso-pool').value = pool;
+    isoSetMode(mode);
+    isoRosTab('ros7');
+  } catch (e) {
+    // default kalau gagal load
+    isoSetMode('pool');
+    document.getElementById('iso-pool').value = 'isolir';
+    isoRosTab('ros7');
+  }
+}
+
+async function isoSimpan() {
+  const mode = document.getElementById('iso-mode').value;
+  const pool = document.getElementById('iso-pool').value.trim() || 'isolir';
+  try {
+    await apiFetch('/api/setting', { method: 'PUT', body: JSON.stringify({ isolir_mode: mode, isolir_pool: pool }) });
+    toast('✅ Pengaturan isolir disimpan');
+  } catch (e) {
+    toast('❌ ' + e.message, true);
+  }
+}
+
 let _sesiRows = [];
 
 async function loadSesi() {
@@ -13127,11 +13859,15 @@ function nasChartMulai(nasIp, nasId, ifIdx) {
     } catch(e) {
       console.warn('[NAS chart SNMP]', e.message);
       setTxt('mt-dl', '—'); setTxt('mt-ul', '—');
+      // Kalau kena rate-limit (429), perlambat polling sementara agar tidak terus menabrak
+      if (/429|terlalu banyak|too many/i.test(e.message || '')) {
+        if (_nasTimer) { clearInterval(_nasTimer); _nasTimer = setInterval(poll, 30000); }
+      }
     }
   }
 
   poll();
-  _nasTimer = setInterval(poll, 3000);
+  _nasTimer = setInterval(poll, 10000);  // 10 dtk (diperlama dari 3s agar tidak kena rate-limit 429)
 }
 </script>
 </body>

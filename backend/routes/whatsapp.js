@@ -68,8 +68,22 @@ router.post('/kirim', async (req, res, next) => {
 router.post('/broadcast', async (req, res, next) => {
     try {
         const { target, pesan_template } = req.body;
-        // Delay antar pesan dalam milidetik — default 3 detik, min 1, max 60
-        const delayMs = Math.min(Math.max(parseInt(req.body.delay) || 3, 1), 60) * 1000;
+        // Delay antar pesan (detik) — acak antara min & max agar natural.
+        // Backward-compat: kalau ada 'delay' lama, pakai itu sbg min & max.
+        let dMin = parseInt(req.body.delay_min);
+        let dMax = parseInt(req.body.delay_max);
+        if (isNaN(dMin) && isNaN(dMax)) {
+            const legacy = parseInt(req.body.delay) || 3;
+            dMin = legacy; dMax = legacy;
+        }
+        if (isNaN(dMin)) dMin = 30;
+        if (isNaN(dMax)) dMax = 60;
+        // Batasi 1..600 detik, pastikan min <= max
+        dMin = Math.min(Math.max(dMin, 1), 600);
+        dMax = Math.min(Math.max(dMax, 1), 600);
+        if (dMin > dMax) { const t = dMin; dMin = dMax; dMax = t; }
+        const delayMinMs = dMin * 1000;
+        const delayMaxMs = dMax * 1000;
         let daftar = [];
 
         if (target === 'unpaid' || target === 'overdue') {
@@ -86,7 +100,7 @@ router.post('/broadcast', async (req, res, next) => {
             );
         }
 
-        const hasil = await waService.broadcast(daftar, pesan_template, 'broadcast', delayMs);
+        const hasil = await waService.broadcast(daftar, pesan_template, 'broadcast', delayMinMs, delayMaxMs);
         res.json({ total: daftar.length, hasil });
     } catch (e) { next(e); }
 });

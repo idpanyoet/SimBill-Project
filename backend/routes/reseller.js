@@ -217,14 +217,34 @@ router.get('/topup', resellerAuth, async (req, res, next) => {
 // GET /reseller/paket
 router.get('/paket', resellerAuth, async (req, res, next) => {
     try {
+        // Cek apakah reseller punya daftar izin paket.
+        // - Ada baris izin → tampilkan HANYA paket yang diizinkan.
+        // - Tidak ada baris izin → tampilkan semua (sesuai aturan "kosongkan = semua").
+        let izinRows = [];
+        try {
+            izinRows = await query(
+                `SELECT paket_id FROM reseller_izin_paket WHERE reseller_id=?`,
+                [req.reseller.id]
+            );
+        } catch (_) { izinRows = []; }
+
+        let filterIzin = '';
+        const params = [req.reseller.id];
+        if (izinRows.length) {
+            const ids = izinRows.map(r => parseInt(r.paket_id)).filter(Number.isInteger);
+            const ph = ids.map(() => '?').join(', ');
+            filterIzin = ` AND p.id IN (${ph})`;
+            params.push(...ids);
+        }
+
         const paket = await query(`
             SELECT p.*,
                 COALESCE(rh.harga_reseller, p.harga_reseller, p.harga) AS harga_jual
             FROM paket p
             LEFT JOIN reseller_harga rh ON rh.paket_id=p.id AND rh.reseller_id=?
-            WHERE p.aktif=1
+            WHERE p.aktif=1${filterIzin}
             ORDER BY p.harga
-        `, [req.reseller.id]);
+        `, params);
         res.json(paket);
     } catch (e) { next(e); }
 });
@@ -243,6 +263,15 @@ router.post('/beli/voucher', resellerAuth, async (req, res, next) => {
 
         const paket = await queryOne('SELECT * FROM paket WHERE id=? AND aktif=1', [paket_id]);
         if (!paket) return res.status(404).json({ error: 'Paket tidak ditemukan' });
+
+        // Validasi izin paket: jika reseller punya daftar izin, paket harus termasuk.
+        try {
+            const izin = await query(`SELECT 1 FROM reseller_izin_paket WHERE reseller_id=?`, [req.reseller.id]);
+            if (izin.length) {
+                const boleh = await queryOne(`SELECT 1 FROM reseller_izin_paket WHERE reseller_id=? AND paket_id=?`, [req.reseller.id, paket_id]);
+                if (!boleh) return res.status(403).json({ error: 'Paket ini tidak diizinkan untuk akun Anda' });
+            }
+        } catch (_) { /* tabel belum ada = izinkan semua */ }
 
         const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         const genKode = () => {
@@ -296,8 +325,14 @@ router.post('/beli/voucher', resellerAuth, async (req, res, next) => {
         // Kirim via WA jika hanya 1 voucher (di luar transaksi — gagal kirim WA tidak boleh rollback pembelian)
         if (jumlah === 1) {
             const re = await queryOne('SELECT no_hp, nama FROM reseller WHERE id=?', [req.reseller.id]);
-            waService.kirimVoucher(re.no_hp, re.nama, hasil.kodes[0], `${paket.masa_aktif * 24} jam`)
-                .catch(err => console.warn('[RESELLER] Kirim WA voucher gagal:', err.message));
+            waService.kirimVoucher({
+                no_hp: re.no_hp, nama: re.nama,
+                username: hasil.kodes[0], password: hasil.kodes[0],
+                paket: paket.nama,
+                masa_aktif: `${paket.masa_aktif} ${paket.satuan_masa || 'hari'}`,
+                kecepatan: paket.kecepatan_dn ? `${paket.kecepatan_dn} Mbps` : '-',
+                voucher_list: hasil.kodes.join(', '), quantity: hasil.kodes.length
+            }).catch(err => console.warn('[RESELLER] Kirim WA voucher gagal:', err.message));
         }
 
         res.json({
@@ -425,14 +460,22 @@ router.post('/beli/user', resellerAuth, async (req, res, next) => {
 // GET /reseller/pelanggan — daftar pelanggan milik reseller ini
 router.get('/pelanggan', resellerAuth, async (req, res, next) => {
     try {
+        const cari = (req.query.cari || '').trim();
+        const params = [req.reseller.id];
+        let filter = '';
+        if (cari) {
+            filter = ` AND (p.nama LIKE ? OR p.username LIKE ? OR p.no_hp LIKE ?)`;
+            const like = `%${cari}%`;
+            params.push(like, like, like);
+        }
         const rows = await query(`
             SELECT p.id, p.nama, p.username, p.no_hp, p.tipe_koneksi, p.status,
                    p.tgl_aktif, p.tgl_expired, pk.nama AS nama_paket, pk.id AS paket_id
             FROM pelanggan p
             LEFT JOIN paket pk ON p.paket_id = pk.id
-            WHERE p.reseller_id = ?
+            WHERE p.reseller_id = ?${filter}
             ORDER BY p.id DESC
-        `, [req.reseller.id]);
+        `, params);
         res.json(rows);
     } catch (e) { next(e); }
 });
@@ -559,6 +602,96 @@ router.get('/transaksi', resellerAuth, async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// POST /reseller/invoice/:no/bayar-saldo — bayar invoice pelanggan pakai saldo reseller
+router.post('/invoice/:no/bayar-saldo', resellerAuth, async (req, res, next) => {
+    try {
+        // Invoice harus milik pelanggan reseller ini
+        const inv = await queryOne(`
+            SELECT i.*, p.username, p.reseller_id, p.tgl_expired, p.paket_id AS pel_paket_id,
+                   p.tipe_koneksi, pk.masa_aktif, pk.nama AS nama_paket
+            FROM invoice i
+            JOIN pelanggan p ON i.pelanggan_id = p.id
+            LEFT JOIN paket pk ON i.paket_id = pk.id
+            WHERE i.no_invoice = ? AND p.reseller_id = ?`,
+            [req.params.no, req.reseller.id]);
+        if (!inv) return res.status(404).json({ error: 'Invoice tidak ditemukan atau bukan milik pelanggan Anda' });
+        if (inv.status === 'paid') return res.status(400).json({ error: 'Invoice sudah dibayar' });
+
+        const hasil = await withTransaction(async (db) => {
+            const jumlah = Number(inv.jumlah);
+            const refId = `INV-${inv.no_invoice}`;
+            // Potong saldo reseller (throw 'Saldo tidak mencukupi' jika kurang)
+            const saldoSisa = await catatMutasi(db, req.reseller.id, 'pembelian', jumlah,
+                `Bayar invoice ${inv.no_invoice} (${inv.username})`, refId);
+
+            // Tandai invoice lunas
+            await db.query(
+                `UPDATE invoice SET status='paid', tgl_bayar=NOW(), metode_bayar='saldo_reseller' WHERE id=?`,
+                [inv.id]);
+
+            // Perpanjang masa aktif pelanggan
+            let tglBaru = null;
+            if (inv.masa_aktif) {
+                const mulai = (inv.tgl_expired && dayjs(inv.tgl_expired).isAfter(dayjs())) ? dayjs(inv.tgl_expired) : dayjs();
+                tglBaru = mulai.add(inv.masa_aktif, 'day').format('YYYY-MM-DD');
+                await db.query("UPDATE pelanggan SET tgl_expired=?, status='aktif' WHERE id=?", [tglBaru, inv.pelanggan_id]);
+            }
+
+            // Catat transaksi reseller
+            await db.query(`
+                INSERT INTO reseller_transaksi
+                  (reseller_id, tipe, paket_id, jumlah_item, harga_normal, harga_reseller, total_bayar, detail)
+                VALUES (?,?,?,?,?,?,?,?)
+            `, [req.reseller.id, inv.tipe_koneksi || 'pppoe', inv.paket_id, 1, jumlah, jumlah, jumlah,
+                JSON.stringify({ bayar_invoice: inv.no_invoice, pelanggan: inv.username, tgl_expired: tglBaru })]);
+
+            return { saldoSisa, tglBaru, jumlah };
+        });
+
+        try { await radiusService.aktifkanUser(inv.username); } catch (e) {}
+        res.json({
+            sukses: true,
+            pesan: `Invoice ${inv.no_invoice} lunas` + (hasil.tglBaru ? `, aktif s/d ${hasil.tglBaru}` : ''),
+            saldo_sisa: hasil.saldoSisa,
+            jumlah: hasil.jumlah
+        });
+    } catch (e) {
+        if (e.message === 'Saldo tidak mencukupi')
+            return res.status(400).json({ error: 'Saldo tidak mencukupi untuk membayar invoice ini' });
+        next(e);
+    }
+});
+
+// GET /reseller/cari-transaksi?q= — cari INVOICE pelanggan milik reseller sendiri
+router.get('/cari-transaksi', resellerAuth, async (req, res, next) => {
+    try {
+        const id = req.reseller.id;
+        const q = (req.query.q || '').trim();
+        if (!q) return res.json([]);
+        const like = `%${q}%`;
+        // Cari invoice dari pelanggan yang reseller_id-nya = reseller ini.
+        // Bisa cari: no_invoice, nama pelanggan, username, atau nama paket.
+        const rows = await query(`
+            SELECT i.no_invoice, i.jumlah, i.status, i.tgl_jatuh_tempo, i.tgl_bayar,
+                   i.created_at, i.pelanggan_id, p.nama AS nama_pelanggan, p.username,
+                   pk.nama AS nama_paket
+            FROM invoice i
+            JOIN pelanggan p ON i.pelanggan_id = p.id
+            LEFT JOIN paket pk ON i.paket_id = pk.id
+            WHERE p.reseller_id = ?
+              AND (
+                i.no_invoice LIKE ?
+                OR p.nama LIKE ?
+                OR p.username LIKE ?
+                OR pk.nama LIKE ?
+              )
+            ORDER BY i.created_at DESC
+            LIMIT 50
+        `, [id, like, like, like, like]);
+        res.json(rows);
+    } catch (e) { next(e); }
+});
+
 // GET /reseller/dashboard — ringkasan untuk dashboard reseller
 router.get('/dashboard', resellerAuth, async (req, res, next) => {
     try {
@@ -575,15 +708,20 @@ router.get('/dashboard', resellerAuth, async (req, res, next) => {
             `SELECT COALESCE(SUM(jumlah_item),0) AS total FROM reseller_transaksi WHERE reseller_id=? AND status='success'`, [id]);
         const [pelangganku] = await query(
             `SELECT COUNT(*) AS jml FROM pelanggan WHERE reseller_id=?`, [id]);
+        // Total voucher yang pernah dijual/dibuat reseller (jumlah item dari transaksi voucher)
+        const [voucherku] = await query(
+            `SELECT COALESCE(SUM(jumlah_item),0) AS jml FROM reseller_transaksi
+             WHERE reseller_id=? AND status='success' AND tipe='voucher'`, [id]);
         const terbaru = await query(
             `SELECT rt.tipe, rt.jumlah_item, rt.total_bayar, rt.created_at, p.nama AS nama_paket
              FROM reseller_transaksi rt LEFT JOIN paket p ON rt.paket_id=p.id
-             WHERE rt.reseller_id=? ORDER BY rt.created_at DESC LIMIT 5`, [id]);
+             WHERE rt.reseller_id=? ORDER BY rt.created_at DESC LIMIT 8`, [id]);
         res.json({
             reseller: r,
             hari_ini: hariIni, bulan_ini: bulanIni,
             total_item_terjual: totalItem.total,
             jml_pelanggan: pelangganku.jml,
+            total_voucher: voucherku.jml,
             transaksi_terbaru: terbaru
         });
     } catch (e) { next(e); }
@@ -805,11 +943,18 @@ router.put('/admin/:id/izin-paket', authMiddleware, requireAdmin, async (req, re
         const rid = parseInt(req.params.id);
         // Hapus semua izin lama lalu insert baru
         await query(`DELETE FROM reseller_izin_paket WHERE reseller_id = ?`, [rid]);
-        if (paket_ids.length) {
-            const vals = paket_ids.map(pid => [rid, parseInt(pid)]);
-            await query(`INSERT INTO reseller_izin_paket (reseller_id, paket_id) VALUES ?`, [vals]);
+        const ids = (paket_ids || []).map(p => parseInt(p)).filter(n => Number.isInteger(n));
+        if (ids.length) {
+            // Bangun placeholder eksplisit: (?,?),(?,?),...
+            const placeholders = ids.map(() => '(?, ?)').join(', ');
+            const params = [];
+            ids.forEach(pid => { params.push(rid, pid); });
+            await query(
+                `INSERT INTO reseller_izin_paket (reseller_id, paket_id) VALUES ${placeholders}`,
+                params
+            );
         }
-        res.json({ pesan: `${paket_ids.length} paket diizinkan` });
+        res.json({ pesan: `${ids.length} paket diizinkan` });
     } catch(e) { next(e); }
 });
 

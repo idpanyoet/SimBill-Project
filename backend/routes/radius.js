@@ -367,14 +367,38 @@ function isRunning(service) {
     } catch { return false; }
 }
 
+// Deteksi IP publik server (untuk connect-to / endpoint di script MikroTik).
+// Prioritas: env VPS_PUBLIC_IP → setting server_ip/vps_public_ip → auto-deteksi
+// dari route default (source IP keluar) → row.server (jika bukan loopback).
+function _deteksiIpPublikLokal() {
+    try {
+        const out = execSync('ip -4 route get 1.1.1.1 2>/dev/null', { stdio: 'pipe' }).toString();
+        const m = out.match(/src\s+(\d+\.\d+\.\d+\.\d+)/);
+        if (m && m[1] && !m[1].startsWith('127.')) return m[1];
+    } catch (_) {}
+    return null;
+}
+async function serverPublicIp(rowServer) {
+    if (process.env.VPS_PUBLIC_IP) return process.env.VPS_PUBLIC_IP.trim();
+    try {
+        const s = await queryOne(
+            "SELECT nilai FROM setting WHERE kunci IN ('server_ip','vps_public_ip') AND nilai<>'' LIMIT 1");
+        if (s && s.nilai) return String(s.nilai).trim();
+    } catch (_) {}
+    const auto = _deteksiIpPublikLokal();
+    if (auto) return auto;
+    if (rowServer && rowServer !== '127.0.0.1' && rowServer !== 'localhost') return rowServer;
+    return null;
+}
+
 // GET /api/radius/vpn/mikrotik-script/:id — generate RouterOS script
 router.get('/vpn/mikrotik-script/:id', authMiddleware, async (req, res, next) => {
     try {
         const row = await queryOne('SELECT * FROM vpn_account WHERE id=?', [req.params.id]);
         if (!row) return res.status(404).json({ error: 'VPN tidak ditemukan' });
 
-        // Ambil IP server VPS (dari env atau otomatis)
-        const serverIp = process.env.VPS_PUBLIC_IP || row.server || '(IP-SERVER-VPS)';
+        // Ambil IP server VPS (env → setting → auto-deteksi → row.server non-loopback)
+        const serverIp = (await serverPublicIp(row.server)) || '(IP-SERVER-VPS)';
         let script = '';
 
         if (row.protokol === 'l2tp') {
@@ -611,12 +635,27 @@ router.post('/vpn/l2tp/install', authMiddleware, async (req, res, next) => {
                 fs.mkdirSync('/etc/xl2tpd', {recursive:true});
                 fs.writeFileSync('/etc/xl2tpd/xl2tpd.conf', xl2tpConf);
                 console.log('[L2TP] xl2tpd.conf ditulis ulang');
-                // Buat file options PPP
-                const pppOpts = `ipcp-accept-local\nipcp-accept-remote\nms-dns 8.8.8.8\nms-dns 8.8.4.4\nnoccp\nauth\ncrtscts\nidle 1800\nmtu 1410\nmru 1410\nnodefaultroute\ndebug\nlock\nproxyarp\nconnect-delay 5000\n`;
-                if (!fs.existsSync('/etc/ppp/options.l2tpd.lns')) {
-                    fs.writeFileSync('/etc/ppp/options.l2tpd.lns', pppOpts);
-                    console.log('[L2TP] File options.l2tpd.lns dibuat');
-                }
+                // Buat file options PPP — opsi modem (crtscts/lock/idle) DIBUANG
+                // karena tidak valid untuk L2TP dan membuat pppd keluar (exit 2)
+                // tiap tunnel terbentuk. mtu/mru 1400 penting di VPS ber-NAT.
+                const pppOpts = `ipcp-accept-local\nipcp-accept-remote\nrequire-chap\nrefuse-pap\nauth\nname l2tpd\nms-dns 8.8.8.8\nms-dns 1.1.1.1\nasyncmap 0\nnoccp\nnodefaultroute\nproxyarp\nmtu 1400\nmru 1400\nlcp-echo-interval 30\nlcp-echo-failure 4\nconnect-delay 5000\n`;
+                // Selalu timpa agar file lama yang berisi opsi rusak ikut diperbaiki.
+                fs.writeFileSync('/etc/ppp/options.l2tpd.lns', pppOpts);
+                console.log('[L2TP] File options.l2tpd.lns ditulis ulang (bersih)');
+                // Prasyarat jaringan untuk L2TP:
+                // 1) IP forwarding (tanpa ini, trafik via tunnel tidak diteruskan)
+                try {
+                    execSync('sysctl -w net.ipv4.ip_forward=1', { stdio: 'pipe' });
+                    fs.writeFileSync('/etc/sysctl.d/99-simbill-l2tp.conf', 'net.ipv4.ip_forward=1\n');
+                } catch (e) { console.warn('[L2TP] set ip_forward gagal:', e.message); }
+                // 2) Buka UDP 1701 di firewall lokal (idempotent) + balasan PPP.
+                //    Banyak VPS punya INPUT policy DROP → SCCRQ dari MikroTik diblok.
+                try {
+                    execSync("iptables -C INPUT -p udp --dport 1701 -j ACCEPT 2>/dev/null || iptables -I INPUT -p udp --dport 1701 -j ACCEPT", { stdio: 'pipe' });
+                    execSync("iptables -C INPUT -i ppp+ -j ACCEPT 2>/dev/null || iptables -I INPUT -i ppp+ -j ACCEPT", { stdio: 'pipe' });
+                    execSync("command -v netfilter-persistent >/dev/null 2>&1 && netfilter-persistent save 2>/dev/null || true", { stdio: 'pipe' });
+                } catch (e) { console.warn('[L2TP] buka UDP 1701 gagal:', e.message); }
+
                 // Enable & start — deteksi nama service strongswan
                 const swanSvc = (() => {
                     try { execSync('systemctl list-unit-files strongswan-starter.service 2>/dev/null | grep enabled', {stdio:'pipe'}); return 'strongswan-starter'; }
@@ -696,9 +735,10 @@ router.post('/vpn/l2tp/user', authMiddleware, async (req, res, next) => {
             .catch(e => console.warn('[L2TP] Reload gagal:', e.message));
 
         // Simpan ke DB
+        const srvIp = (await serverPublicIp(null)) || '127.0.0.1';
         try {
             await query(`INSERT INTO vpn_account (nama,protokol,server,port,username,password,status) VALUES (?,?,?,?,?,?,'aktif')`,
-                [username, 'l2tp', '127.0.0.1', 1701, username, password]);
+                [username, 'l2tp', srvIp, 1701, username, password]);
         } catch (dbErr) {
             if (dbErr.message && dbErr.message.includes('vpn_account')) {
                 await query(`CREATE TABLE IF NOT EXISTS vpn_account (
@@ -718,7 +758,7 @@ router.post('/vpn/l2tp/user', authMiddleware, async (req, res, next) => {
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 ) ENGINE=InnoDB`);
                 await query(`INSERT INTO vpn_account (nama,protokol,server,port,username,password,status) VALUES (?,?,?,?,?,?,'aktif')`,
-                    [username, 'l2tp', '127.0.0.1', 1701, username, password]);
+                    [username, 'l2tp', srvIp, 1701, username, password]);
             } else { throw dbErr; }
         }
 

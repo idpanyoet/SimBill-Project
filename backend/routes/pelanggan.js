@@ -256,7 +256,15 @@ router.post('/', async (req, res, next) => {
             username:   username,
             password:   password,
             nama_paket: paket.nama,
-            tgl_expired: tgl_expired
+            tgl_expired: tgl_expired,
+            member_id:  result.insertId,
+            no_hp_pel:  no_hp,
+            email:      email || null,
+            alamat:     alamat || null,
+            harga:      paket.harga,
+            total:      paket.harga,
+            kecepatan:  paket.rate_limit || (paket.kecepatan_dn ? paket.kecepatan_dn + 'M' : null),
+            masa_aktif: paket.masa_aktif
         }).catch(e => console.warn('[WA] kirimPelangganBaru gagal:', e.message));
 
         // Notif Telegram ke teknisi — pelanggan baru
@@ -297,7 +305,7 @@ router.post('/', async (req, res, next) => {
 // PUT /api/pelanggan/:id — edit pelanggan
 router.put('/:id', async (req, res, next) => {
     try {
-        const { nama, no_hp, email, alamat, paket_id, tipe_koneksi, notes, username, password } = req.body;
+        const { nama, no_hp, email, alamat, paket_id, tipe_koneksi, notes, username, password, status } = req.body;
         if (!nama || !no_hp)
             return res.status(400).json({ error: 'nama dan no_hp wajib diisi' });
 
@@ -331,25 +339,35 @@ router.put('/:id', async (req, res, next) => {
             // Cek duplikat
             const cek = await queryOne('SELECT id FROM pelanggan WHERE username=? AND id!=?', [usernameBaru, p.id]);
             if (cek) return res.status(400).json({ error: 'Username sudah digunakan pelanggan lain' });
-            // Update radcheck — rename username
+            // Rename username di tabel RADIUS. Hapus dulu baris milik username
+            // BARU yang mungkin sudah ada (sisa data), agar UPDATE tidak bentrok
+            // dengan UNIQUE KEY (username,attribute) di radcheck.
+            await query('DELETE FROM radcheck    WHERE username=?', [usernameBaru]);
+            await query('DELETE FROM radreply     WHERE username=?', [usernameBaru]);
+            await query('DELETE FROM radusergroup WHERE username=?', [usernameBaru]);
             await query('UPDATE radcheck SET username=? WHERE username=?', [usernameBaru, p.username]);
             await query('UPDATE radreply SET username=? WHERE username=?', [usernameBaru, p.username]);
             await query('UPDATE radusergroup SET username=? WHERE username=?', [usernameBaru, p.username]);
         }
 
+        // Status baru (kalau dikirim); fallback ke status lama
+        const statusBaru = (status && ['aktif','suspended','nonaktif'].includes(status)) ? status : p.status;
+
         await query(`
             UPDATE pelanggan SET nama=?, no_hp=?, email=?, alamat=?,
-                paket_id=?, tipe_koneksi=?, notes=?, username=?,
+                paket_id=?, tipe_koneksi=?, notes=?, username=?, status=?,
                 latitude=?, longitude=?, odc=?, odp=?,
                 no_ktp=?, tgl_lahir=?, reseller_id=?
+                ${req.body.tgl_expired ? ', tgl_expired=?' : ''}
                 ${req.body.ktp_url ? ', ktp_url=?' : ''}
             WHERE id = ?
         `, [nama, no_hp, email || null, alamat || null, paketIdBaru, tipeBaru,
-            notes || null, usernameBaru,
+            notes || null, usernameBaru, statusBaru,
             req.body.latitude || null, req.body.longitude || null,
             req.body.odc || null, req.body.odp || null,
             req.body.no_ktp || null, req.body.tgl_lahir || null,
             (req.body.reseller_id === '' || req.body.reseller_id == null) ? null : req.body.reseller_id,
+            ...(req.body.tgl_expired ? [req.body.tgl_expired] : []),
             ...(req.body.ktp_url ? [req.body.ktp_url] : []),
             req.params.id]);
 
@@ -358,6 +376,23 @@ router.put('/:id', async (req, res, next) => {
             const paket = await queryOne('SELECT * FROM paket WHERE id = ?', [paketIdBaru]);
             if (!paket) return res.status(400).json({ error: 'Paket baru tidak ditemukan' });
             await radiusService.updatePaket(usernameBaru, paket, tipeBaru);
+        }
+
+        // Tangani perubahan STATUS → sinkronkan ke RADIUS (isolir/aktivasi/putus sesi)
+        if (statusBaru !== p.status) {
+            try {
+                if (statusBaru === 'aktif') {
+                    await radiusService.aktifkanUser(usernameBaru);
+                } else if (statusBaru === 'suspended') {
+                    await radiusService.suspendUser(usernameBaru);
+                } else if (statusBaru === 'nonaktif') {
+                    // Nonaktif = tolak total (hapus dari RADIUS auth) + putus sesi
+                    await radiusService.suspendUser(usernameBaru);
+                }
+                console.log(`[RADIUS] Status ${usernameBaru}: ${p.status} → ${statusBaru}`);
+            } catch (e) {
+                console.warn(`[RADIUS] Gagal sinkron status ${usernameBaru}: ${e.message}`);
+            }
         }
 
         res.json({ pesan: 'Data pelanggan diperbarui' });

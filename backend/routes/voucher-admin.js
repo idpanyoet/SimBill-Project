@@ -18,13 +18,17 @@ router.get('/', async (req, res, next) => {
     // Auto-migrate kolom batch_id jika belum ada
     await query(`ALTER TABLE voucher ADD COLUMN IF NOT EXISTS batch_id VARCHAR(30) DEFAULT NULL`).catch(()=>{});
 
-    const { status, paket_id, batch_id, halaman = 1, limit = 30 } = req.query;
+    // Tandai voucher yang sudah dipakai (dari radacct) jadi 'used'
+    await radiusService.syncStatusVoucher().catch(()=>{});
+
+    const { status, paket_id, batch_id, cari, halaman = 1, limit = 30 } = req.query;
     const offset = (parseInt(halaman)-1) * parseInt(limit);
 
     let where = ['1=1'], params = [];
     if (status)   { where.push('v.status=?');   params.push(status); }
     if (paket_id) { where.push('v.paket_id=?'); params.push(paket_id); }
     if (batch_id) { where.push('v.batch_id=?'); params.push(batch_id); }
+    if (cari)     { where.push('(v.username LIKE ? OR v.password LIKE ?)'); params.push(`%${cari}%`, `%${cari}%`); }
 
     const rows = await query(`
       SELECT v.*, p.nama AS nama_paket, p.kecepatan_dn, p.harga
@@ -42,6 +46,7 @@ router.get('/', async (req, res, next) => {
     if (status)   { countWhere.push('status=?');   countParams.push(status); }
     if (paket_id) { countWhere.push('paket_id=?'); countParams.push(paket_id); }
     if (batch_id) { countWhere.push('batch_id=?'); countParams.push(batch_id); }
+    if (cari)     { countWhere.push('(username LIKE ? OR password LIKE ?)'); countParams.push(`%${cari}%`, `%${cari}%`); }
     const [{ total }] = await query(
       `SELECT COUNT(*) AS total FROM voucher WHERE ${countWhere.join(' AND ')}`, countParams
     );
@@ -63,7 +68,7 @@ router.get('/batch', async (req, res, next) => {
       WHERE v.batch_id IS NOT NULL
       GROUP BY v.batch_id, p.nama
       ORDER BY MIN(v.created_at) DESC
-      LIMIT 20
+      LIMIT 10
     `);
     res.json(rows);
   } catch(e) { next(e); }
@@ -76,7 +81,7 @@ router.post('/generate', async (req, res, next) => {
     const jumlah   = parseInt(req.body.jumlah, 10) || 10;
     const mode     = req.body.mode === 'beda' ? 'beda' : 'sama'; // 'sama' = username=password, 'beda' = username+password terpisah
     const panjang  = Math.min(Math.max(parseInt(req.body.panjang, 10) || 6, 4), 20);
-    const prefix   = (req.body.prefix || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
+    const prefix   = (req.body.prefix || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 10);
     const charsetKey = req.body.charset || 'angka';
 
     if (!paket_id) return res.status(400).json({ error: 'paket_id wajib diisi' });
@@ -120,8 +125,8 @@ router.post('/generate', async (req, res, next) => {
       const password = mode === 'sama' ? username : _acak(charset, panjangAcak);
 
       await query(`
-        INSERT INTO voucher (username, password, paket_id, tgl_expired, batch_id)
-        VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 365 DAY), ?)
+        INSERT INTO voucher (username, password, paket_id, status, tgl_expired, batch_id)
+        VALUES (?, ?, ?, 'unused', DATE_ADD(NOW(), INTERVAL 365 DAY), ?)
       `, [username, password, paket_id, batchId]);
 
       hasil.push({ username, password });
@@ -155,8 +160,13 @@ router.post('/:username/kirim-wa', async (req, res, next) => {
     if (v.status !== 'unused')
       return res.status(400).json({ error: `Voucher sudah berstatus ${v.status}, tidak bisa dikirim ulang` });
 
-    await waService.kirimVoucher(no_hp, nama, v.username, v.password,
-      `${v.masa_aktif * 24} jam (${v.masa_aktif} hari)`);
+    await waService.kirimVoucher({
+      no_hp, nama, username: v.username, password: v.password,
+      paket: v.nama_paket,
+      masa_aktif: `${v.masa_aktif} hari`,
+      kecepatan: v.kecepatan_dn ? `${v.kecepatan_dn} Mbps` : '-',
+      voucher_list: v.username, quantity: 1
+    });
 
     res.json({ pesan: `Voucher ${v.username} terkirim ke ${no_hp}` });
   } catch (e) { next(e); }

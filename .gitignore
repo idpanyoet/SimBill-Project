@@ -10,3 +10,5 @@ backend/Payment
 backend/migrate-data.js
 backend/restore-radcheck.js
 backend/test-duitku.js
+*.zip
+BACA-DULU.txt
