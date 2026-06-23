@@ -33,14 +33,15 @@ let sedangUpdate = false; // kunci sederhana cegah apply ganda
 // ── Ambil konfigurasi GitHub dari tabel setting ─────────────────────────────
 async function getCfg() {
     const rows = await query(
-        "SELECT kunci, nilai FROM setting WHERE kunci IN ('github_owner','github_repo','github_token','app_version')"
+        "SELECT kunci, nilai FROM setting WHERE kunci IN ('github_owner','github_repo','github_token','github_branch','app_version')"
     ).catch(() => []);
     const m = {};
     rows.forEach(r => { m[r.kunci] = r.nilai; });
     return {
         owner: (m.github_owner || 'idpanyoet').trim(),
-        repo:  (m.github_repo  || 'netbill').trim(),
+        repo:  (m.github_repo  || 'SimBill-Project').trim(),
         token: (m.github_token || '').trim(),
+        branch: (m.github_branch || 'master').trim(),
         appVersionSetting: (m.app_version || '').trim(),
     };
 }
@@ -64,6 +65,33 @@ function ghHeaders(token) {
 
 const norm = s => String(s || '').trim().replace(/^v/i, '').toLowerCase();
 
+// Agent paksa IPv4 — banyak VPS punya IPv6 rusak ke GitHub yang memicu timeout/504.
+const https = require('https');
+const ghAgent = new https.Agent({ keepAlive: true, family: 4 });
+
+// GET ke GitHub dengan retry otomatis pada 5xx / timeout (504 sering hanya sesaat).
+async function ghGet(url, cfg, extra = {}) {
+    let last;
+    for (let i = 0; i < 3; i++) {
+        try {
+            const r = await axios.get(url, {
+                headers: ghHeaders(cfg.token),
+                httpsAgent: ghAgent,
+                timeout: 20000,
+                validateStatus: () => true,
+                ...extra,
+            });
+            if (r.status < 500) return r;   // sukses / 4xx → tidak perlu retry
+            last = r;                        // 5xx (mis. 502/503/504) → coba lagi
+        } catch (e) {
+            last = e;                        // timeout / jaringan → coba lagi
+        }
+        if (i < 2) await new Promise(s => setTimeout(s, 1500 * (i + 1)));
+    }
+    if (last && typeof last.status === 'number') return last;
+    throw (last instanceof Error ? last : new Error('Gagal menghubungi GitHub'));
+}
+
 // ── GET /api/update/check ───────────────────────────────────────────────────
 router.get('/check', async (req, res) => {
     try {
@@ -71,9 +99,9 @@ router.get('/check', async (req, res) => {
         const current = versiLokal(cfg);
         let rel;
         try {
-            const r = await axios.get(
+            const r = await ghGet(
                 `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/releases/latest`,
-                { headers: ghHeaders(cfg.token), timeout: 15000, validateStatus: () => true }
+                cfg
             );
             if (r.status === 404) {
                 return res.json({
@@ -91,7 +119,7 @@ router.get('/check', async (req, res) => {
             }
             if (r.status >= 400) {
                 return res.status(200).json({ current, latest: null, update_available: false,
-                    pesan: `GitHub API status ${r.status}.` });
+                    pesan: `GitHub API status ${r.status}` + (r.status>=500 ? ' (server GitHub sedang sibuk/timeout — coba lagi sebentar lagi).' : '.') });
             }
             rel = r.data;
         } catch (e) {
@@ -132,136 +160,48 @@ function jadwalkanRestart() {
 // ── POST /api/update/apply ──────────────────────────────────────────────────
 router.post('/apply', requireAdmin, async (req, res) => {
     if (sedangUpdate) return res.status(409).json({ error: 'Update lain sedang berjalan.' });
-    if (!adaPerintah('tar') || !adaPerintah('rsync')) {
-        return res.status(503).json({ error: "Perintah 'tar'/'rsync' belum terpasang di server. Jalankan: apt-get install -y rsync tar" });
-    }
 
     sedangUpdate = true;
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'simbill-upd-'));
-    const tarFile = path.join(tmpDir, 'release.tar.gz');
     try {
         const cfg = await getCfg();
         const current = versiLokal(cfg);
 
-        // Validasi tag bila dikirim manual (cegah path/URL aneh)
-        let tag = (req.body && req.body.tag ? String(req.body.tag) : '').trim();
-        if (tag && !/^[A-Za-z0-9._-]{1,80}$/.test(tag)) {
+        // Jalankan update.sh dari GitHub (git pull + npm install + restart).
+        // Script ini yang memegang seluruh logika update — lebih sederhana &
+        // terkontrol daripada unduh tarball + rsync di Node.
+        // URL script mengikuti repo di konfigurasi.
+        const branch = cfg.branch || 'master';
+        const scriptUrl = `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${branch}/update.sh`;
+
+        // Validasi URL aman (hanya raw.githubusercontent.com + repo yang dikenal)
+        if (!/^https:\/\/raw\.githubusercontent\.com\/[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+\//.test(scriptUrl)) {
             sedangUpdate = false;
-            return res.status(400).json({ error: 'Tag rilis tidak valid.' });
+            return res.status(400).json({ error: 'URL script update tidak valid.' });
         }
 
-        // Ambil metadata rilis (latest atau by tag) → pakai tarball_url dari GitHub
-        const relUrl = tag
-            ? `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/releases/tags/${tag}`
-            : `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/releases/latest`;
-        const relResp = await axios.get(relUrl, { headers: ghHeaders(cfg.token), timeout: 15000, validateStatus: () => true });
-        if (relResp.status >= 400) {
-            throw new Error(`Tidak bisa ambil rilis (status ${relResp.status}). ` +
-                (cfg.token ? '' : 'Repo privat butuh github_token di Setting.'));
-        }
-        const rel = relResp.data;
-        const newTag = rel.tag_name || rel.name || tag || 'unknown';
-
-        // Pilih sumber: ZIP asset rilis (jika dilampirkan) > source tarball commit.
-        // Asset zip = artefak yang KAMU upload ke rilis (mis. dari deploy.sh) →
-        // persis itu yang terpasang. Tanpa asset, pakai source code di tag commit.
-        const asset = (rel.assets || []).find(a => /\.zip$/i.test(a.name || ''));
-        const exDir = path.join(tmpDir, 'extract');
-        fs.mkdirSync(exDir, { recursive: true });
-
-        if (asset) {
-            if (!adaPerintah('unzip'))
-                throw new Error("Perlu 'unzip' untuk asset zip. Jalankan: apt-get install -y unzip");
-            // GitHub asset API → 302 ke S3 ber-signature. Authorization JANGAN
-            // diteruskan ke S3 (akan ditolak). Ikuti redirect manual tanpa auth.
-            const r1 = await axios.get(asset.url, {
-                headers: { ...ghHeaders(cfg.token), Accept: 'application/octet-stream' },
-                responseType: 'arraybuffer', timeout: 180000, maxRedirects: 0,
-                validateStatus: s => s === 200 || s === 302,
-            });
-            let zipBuf;
-            if (r1.status === 302 && r1.headers.location) {
-                const r2 = await axios.get(r1.headers.location, {
-                    responseType: 'arraybuffer', timeout: 180000, maxRedirects: 5,
-                });
-                zipBuf = Buffer.from(r2.data);
-            } else {
-                zipBuf = Buffer.from(r1.data);
-            }
-            const zipFile = path.join(tmpDir, 'release.zip');
-            fs.writeFileSync(zipFile, zipBuf);
-            execSync(`unzip -q -o "${zipFile}" -d "${exDir}"`, { stdio: 'pipe' });
-        } else {
-            const tarball = rel.tarball_url;
-            if (!tarball) throw new Error('Rilis tanpa asset zip & tanpa tarball_url.');
-            const dl = await axios.get(tarball, {
-                headers: ghHeaders(cfg.token), responseType: 'arraybuffer',
-                timeout: 180000, maxRedirects: 5,
-            });
-            fs.writeFileSync(tarFile, Buffer.from(dl.data));
-            execSync(`tar xzf "${tarFile}" -C "${exDir}"`, { stdio: 'pipe' });
-        }
-
-        // 3) Cari root kode di dalam arsip (folder berisi backend/server.js)
-        let srcRoot = execSync(
-            `find "${exDir}" -maxdepth 4 -name server.js -path '*backend*' -printf '%h\\n' | head -1`,
-            { stdio: 'pipe' }
-        ).toString().trim();
-        srcRoot = srcRoot ? path.resolve(srcRoot, '..') : '';
-        if (!srcRoot || !fs.existsSync(path.join(srcRoot, 'backend', 'package.json'))) {
-            // fallback: wrapper tunggal hasil ekstrak GitHub
-            const inner = fs.readdirSync(exDir).map(n => path.join(exDir, n)).filter(p => fs.statSync(p).isDirectory());
-            if (inner.length === 1) srcRoot = inner[0];
-        }
-        if (!srcRoot || !fs.existsSync(path.join(srcRoot, 'backend'))) {
-            throw new Error('Struktur arsip rilis tidak dikenali (folder backend/ tidak ditemukan).');
-        }
-
-        // 4) Backup kode lama + .env (untuk rollback)
-        fs.mkdirSync(BACKUP_DIR, { recursive: true });
-        const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const backupFile = path.join(BACKUP_DIR, `backup-${norm(current) || 'lama'}-${stamp}.tar.gz`);
-        try {
-            execSync(
-                `tar czf "${backupFile}" --exclude=node_modules --exclude=.git -C "${APP_ROOT}" .`,
-                { stdio: 'pipe' }
-            );
-        } catch (e) { /* backup best-effort; jangan batalkan update */ }
-
-        // 5) Sinkronkan file baru ke APP_ROOT — JAGA .env, uploads, node_modules
-        execSync(
-            `rsync -a --delete `
-            + `--exclude='.env' --exclude='backend/.env' `
-            + `--exclude='node_modules' --exclude='backend/node_modules' `
-            + `--exclude='frontend/uploads' --exclude='.git' --exclude='VERSION' `
-            + `"${srcRoot}/" "${APP_ROOT}/"`,
-            { stdio: 'pipe' }
-        );
-
-        // 6) Install dependensi (cegah MODULE_NOT_FOUND akibat package.json baru)
-        execSync('npm install --no-audit --no-fund', { cwd: BACKEND_DIR, stdio: 'pipe', timeout: 600000 });
-
-        // 7) Tulis versi baru
-        fs.writeFileSync(VERSION_FILE, newTag + '\n');
-        await query(
-            "INSERT INTO setting (kunci, nilai) VALUES ('app_version', ?) ON DUPLICATE KEY UPDATE nilai = ?",
-            [newTag, newTag]
-        ).catch(() => {});
-
-        // 8) Balas dulu, lalu restart (detached)
+        // Balas dulu ke UI (proses update jalan di background, app akan restart).
         res.json({
             sukses: true,
             dari: current,
-            ke: newTag,
-            backup: backupFile,
-            pesan: `Update ke ${newTag} berhasil. Aplikasi akan restart dalam beberapa detik.`,
+            pesan: 'Update dimulai (menjalankan update.sh). Aplikasi akan restart beberapa saat lagi. ' +
+                   'Cek log di /tmp/simbill-update.log bila perlu.',
+            log: '/tmp/simbill-update.log',
         });
-        jadwalkanRestart();
+
+        // Jalankan detached: wget script → bash. Output ke log.
+        // Pakai 'set -o pipefail' agar gagal-unduh terdeteksi.
+        const cmd = `sleep 1; `
+            + `set -o pipefail; `
+            + `wget -qO- "${scriptUrl}" | bash `
+            + `> /tmp/simbill-update.log 2>&1`;
+        const child = spawn('bash', ['-lc', cmd], { detached: true, stdio: 'ignore' });
+        child.unref();
     } catch (e) {
-        res.status(500).json({ error: 'Update gagal: ' + e.message });
-    } finally {
         sedangUpdate = false;
-        try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (e) {}
+        if (!res.headersSent) res.status(500).json({ error: 'Update gagal: ' + e.message });
+    } finally {
+        // sedangUpdate akan ter-reset saat proses restart (proses Node baru).
+        // Tidak di-set false di sini agar tidak ada update dobel sebelum restart.
     }
 });
 

@@ -1,50 +1,95 @@
 #!/usr/bin/env bash
 # =============================================================================
-#  SimBill — Update (tarik versi terbaru dari GitHub, lalu restart)
-#  Pakai (one-liner):
-#     wget -qO- https://raw.githubusercontent.com/idpanyoet/SimBill-Project/master/update.sh | sudo bash
+#  SimBill — Update Script
+#  Jalankan: wget -qO- https://raw.githubusercontent.com/idpanyoet/SimBill-Project/master/update.sh | sudo bash
+#
+#  Update aman berbasis git:
+#   - backup kode + .env dulu (untuk rollback)
+#   - git pull versi terbaru dari master (JAGA .env, uploads, node_modules)
+#   - npm install dependensi baru
+#   - restart pm2
 # =============================================================================
-set -euo pipefail
+set -e
 
-GITHUB_BRANCH="${GITHUB_BRANCH:-master}"
-INSTALL_DIR="${INSTALL_DIR:-/opt/simbill}"
-PM2_NAME="${PM2_NAME:-billing-radius}"
+APP_DIR="/opt/simbill"
+BACKEND_DIR="${APP_DIR}/backend"
+BACKUP_DIR="${APP_DIR}/_backup"
+PM2_NAME="billing-radius"
+BRANCH="master"
 
-C_OK=$'\e[32m'; C_WARN=$'\e[33m'; C_ERR=$'\e[31m'; C_B=$'\e[1m'; C_R=$'\e[0m'
-ok(){ echo "${C_OK}✔${C_R} $*"; }
-step(){ echo; echo "${C_B}── $* ──${C_R}"; }
-die(){ echo "${C_ERR}✘ $*${C_R}" >&2; exit 1; }
+c_ok()   { echo -e "\033[32m✓\033[0m $1"; }
+c_info() { echo -e "\033[36mℹ\033[0m $1"; }
+c_err()  { echo -e "\033[31m✗\033[0m $1"; }
 
-[ "$(id -u)" = "0" ] || die "Jalankan sebagai root (pakai sudo)."
-[ -d "${INSTALL_DIR}/.git" ] || die "Folder ${INSTALL_DIR} bukan repo git. Jalankan install.sh dulu."
+echo "============================================================"
+echo "  SimBill — Update"
+echo "============================================================"
 
-cd "$INSTALL_DIR"
+# 0) Pastikan berjalan di folder app + ada git
+if [ ! -d "$APP_DIR/.git" ]; then
+    c_err "Folder $APP_DIR bukan repo git. Update via git tidak bisa dijalankan."
+    c_info "Pastikan SimBill di-clone dari GitHub (ada folder .git)."
+    exit 1
+fi
+cd "$APP_DIR"
 
-step "Backup .env"
-[ -f backend/.env ] && cp backend/.env "/root/.simbill-env-backup-$(date +%F_%H%M%S)" && ok "backend/.env dibackup ke /root/"
+# 1) Backup kode + .env (untuk rollback)
+mkdir -p "$BACKUP_DIR"
+STAMP=$(date +%Y%m%d-%H%M%S)
+BACKUP_FILE="${BACKUP_DIR}/backup-${STAMP}.tar.gz"
+c_info "Membuat backup ke ${BACKUP_FILE} ..."
+tar czf "$BACKUP_FILE" \
+    --exclude=node_modules \
+    --exclude=_backup \
+    --exclude=.git \
+    -C "$APP_DIR" . 2>/dev/null && c_ok "Backup dibuat" \
+    || c_info "Backup best-effort (lanjut)"
 
-step "Tarik versi terbaru (${GITHUB_BRANCH})"
-git fetch --depth 1 origin "$GITHUB_BRANCH" -q
-OLD="$(git rev-parse --short HEAD 2>/dev/null || echo '-')"
-git reset --hard "origin/${GITHUB_BRANCH}" -q
-NEW="$(git rev-parse --short HEAD)"
-ok "Kode diperbarui (${OLD} → ${NEW})"
-# .env & node_modules & uploads tetap aman (untracked, tidak dihapus reset --hard)
+# 2) Simpan .env (jaga-jaga) + pastikan tidak ke-overwrite git
+if [ -f "${BACKEND_DIR}/.env" ]; then
+    cp "${BACKEND_DIR}/.env" "${BACKUP_DIR}/.env.${STAMP}"
+    c_ok ".env diamankan"
+fi
 
-step "Update dependency"
-( cd backend && npm install --omit=dev --no-audit --no-fund >/dev/null 2>&1 ) \
-  || ( cd backend && npm install --production )
-ok "Dependency backend up-to-date"
+# 3) Pastikan perubahan lokal (selain .env/uploads) tidak menghalangi pull
+#    .env & uploads sudah di .gitignore, jadi aman. Reset file kode lokal
+#    agar git pull mulus (file kode = ikut versi GitHub).
+git config --global --add safe.directory "$APP_DIR" 2>/dev/null || true
+VERSI_LAMA=$(git rev-parse --short HEAD 2>/dev/null || echo "?")
+c_info "Versi saat ini: ${VERSI_LAMA}"
 
-step "Restart aplikasi"
-cd backend
-pm2 restart "$PM2_NAME" --update-env >/dev/null 2>&1 || pm2 start server.js --name "$PM2_NAME"
-pm2 save >/dev/null
-ok "Aplikasi di-restart (pm2: ${PM2_NAME})"
+# Stash perubahan lokal yang tidak perlu (kalau ada), lalu pull
+git fetch origin "$BRANCH" 2>&1 | tail -1
+# buang perubahan lokal pada file yang dilacak (kode), JANGAN sentuh untracked (.env, uploads)
+git checkout -- . 2>/dev/null || true
+git reset --hard "origin/${BRANCH}" 2>&1 | tail -1
+c_ok "Kode diperbarui ke versi terbaru"
 
-VER="$(cat "${INSTALL_DIR}/VERSION" 2>/dev/null || echo '?')"
-echo
-echo "${C_B}════════ UPDATE SELESAI ════════${C_R}"
-echo "  Versi sekarang : ${C_OK}${VER}${C_R}"
-echo "  Cek log        : pm2 logs ${PM2_NAME}"
-echo "${C_B}════════════════════════════════${C_R}"
+VERSI_BARU=$(git rev-parse --short HEAD 2>/dev/null || echo "?")
+c_info "Versi baru: ${VERSI_BARU}"
+
+# 4) Install dependensi (kalau package.json berubah)
+if [ -f "${BACKEND_DIR}/package.json" ]; then
+    c_info "Menginstal dependensi (npm install) ..."
+    cd "$BACKEND_DIR"
+    npm install --no-audit --no-fund 2>&1 | tail -3 && c_ok "Dependensi siap" \
+        || { c_err "npm install gagal"; exit 1; }
+else
+    c_err "package.json tidak ditemukan di ${BACKEND_DIR} — lewati npm install"
+fi
+
+# 5) Restart pm2
+c_info "Restart aplikasi (pm2: ${PM2_NAME}) ..."
+if command -v pm2 >/dev/null 2>&1; then
+    pm2 restart "$PM2_NAME" 2>&1 | tail -2 && c_ok "Aplikasi di-restart" \
+        || c_info "pm2 restart gagal — restart manual: pm2 restart ${PM2_NAME}"
+else
+    c_err "pm2 tidak ditemukan — restart manual aplikasi."
+fi
+
+echo "============================================================"
+c_ok "UPDATE SELESAI: ${VERSI_LAMA} → ${VERSI_BARU}"
+echo "  Backup: ${BACKUP_FILE}"
+echo "  Rollback bila perlu:"
+echo "    cd ${APP_DIR} && tar xzf ${BACKUP_FILE} && pm2 restart ${PM2_NAME}"
+echo "============================================================"
