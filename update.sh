@@ -78,6 +78,20 @@ else
     c_err "package.json tidak ditemukan di ${BACKEND_DIR} — lewati npm install"
 fi
 
+# 4b) Selaraskan versi yang ditampilkan panel dengan rilis GitHub terbaru.
+#     Panel baca file VERSION (prioritas pertama). Ambil tag rilis terbaru;
+#     jika belum ada rilis, pakai short commit sebagai versi.
+REPO_OWNER="idpanyoet"
+REPO_NAME="SimBill-Project"
+c_info "Menyelaraskan versi ..."
+LATEST_TAG=$(wget -qO- "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/latest" 2>/dev/null \
+    | grep -m1 '"tag_name"' | sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')
+if [ -z "$LATEST_TAG" ]; then
+    LATEST_TAG="git-${VERSI_BARU}"
+fi
+echo "$LATEST_TAG" > "${APP_DIR}/VERSION"
+c_ok "Versi di-set ke ${LATEST_TAG}"
+
 # 5) Restart pm2
 c_info "Restart aplikasi (pm2: ${PM2_NAME}) ..."
 if command -v pm2 >/dev/null 2>&1; then
