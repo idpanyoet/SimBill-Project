@@ -3228,37 +3228,42 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
 
         <!-- ACS URL Card -->
         <div class="card" style="margin-bottom:14px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
-            <div style="display:flex;align-items:center;gap:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">
               <div style="width:34px;height:34px;border-radius:9px;background:rgba(37,99,235,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
                 <i class="ti ti-settings" style="font-size:17px;color:#2563eb" aria-hidden="true"></i>
               </div>
-              <div>
-                <div style="font-size:13px;font-weight:700;color:var(--text)">Konfigurasi Router ke ACS</div>
-                <div class="td-text-sub" style="font-size:11px">Set URL ini di menu TR-069/CWMP router pelanggan</div>
+              <div style="min-width:0">
+                <div style="font-size:13px;font-weight:700;color:var(--text)">Konfigurasi GenieACS</div>
+                <div class="td-text-sub" style="font-size:11px">URL GenieACS NBI API (port 7557)</div>
               </div>
             </div>
-            <button class="btn primary" onclick="simpanACSUrl()" style="gap:6px">
-              <i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan
-            </button>
+            <div style="display:flex;gap:8px;flex-shrink:0">
+              <button class="btn" onclick="ujiKoneksiGenie()" style="gap:6px">
+                <i class="ti ti-plug-connected" style="font-size:13px" aria-hidden="true"></i> Uji Koneksi
+              </button>
+              <button class="btn primary" onclick="simpanACSUrl()" style="gap:6px">
+                <i class="ti ti-device-floppy" style="font-size:13px" aria-hidden="true"></i> Simpan
+              </button>
+            </div>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
             <i class="ti ti-link" style="font-size:14px;color:var(--text3);flex-shrink:0" aria-hidden="true"></i>
-            <input id="acs-url-input" type="text" placeholder="http://IP-VPS:7547/" style="flex:1;font-family:monospace;font-size:13px">
+            <input id="acs-url-input" type="text" placeholder="http://103.193.145.255:7557" style="flex:1;font-family:monospace;font-size:13px">
             <button onclick="navigator.clipboard.writeText(document.getElementById('acs-url-input').value).then(()=>toast('✅ URL disalin'))" class="btn sm" style="flex-shrink:0" title="Salin URL">
               <i class="ti ti-copy" style="font-size:13px" aria-hidden="true"></i>
             </button>
           </div>
           <div style="margin-top:10px;display:flex;align-items:flex-start;gap:8px;padding:9px 12px;background:rgba(37,99,235,.05);border:1px solid rgba(37,99,235,.15);border-radius:8px;font-size:11px;color:var(--text2)">
             <i class="ti ti-info-circle" style="font-size:14px;flex-shrink:0;margin-top:1px;color:#2563eb" aria-hidden="true"></i>
-            Arahkan URL ACS di menu TR-069/CWMP router pelanggan ke URL di atas. Username & password bisa dikosongkan.
+            URL GenieACS NBI (mis. http://103.193.145.255:7557). SimBill membaca device & mengirim perintah (Ambil Status, Ganti WiFi, Reboot) ke GenieACS ini. Klik "Uji Koneksi" untuk memastikan terhubung.
           </div>
         </div>
 
         <!-- Daftar Device -->
         <div class="card" style="margin-bottom:14px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
-            <div style="display:flex;align-items:center;gap:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px;min-width:0">
               <div style="width:34px;height:34px;border-radius:9px;background:rgba(124,58,237,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
                 <i class="ti ti-devices" style="font-size:17px;color:#7c3aed" aria-hidden="true"></i>
               </div>
@@ -3267,26 +3272,48 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
                 <div class="td-text-sub" style="font-size:11px">CPE yang terdaftar dan terhubung ke ACS</div>
               </div>
             </div>
+            <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:200px;justify-content:flex-end;flex-wrap:wrap">
+              <input id="acs-search" type="text" placeholder="Cari serial, username, SSID, IP..." oninput="acsRenderPage(1)" style="font-size:12px;padding:6px 10px;flex:1;min-width:140px;max-width:280px">
+              <select id="acs-perpage" onchange="acsRenderPage(1)" style="font-size:12px;padding:6px 8px;flex-shrink:0">
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="30">30</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+              <button class="btn sm" onclick="loadACSDevices()" style="gap:5px;flex-shrink:0" title="Muat ulang">
+                <i class="ti ti-refresh" style="font-size:13px" aria-hidden="true"></i>
+              </button>
+            </div>
           </div>
-          <table>
+          <div class="tbl-scroll">
+          <table style="min-width:900px">
             <thead>
               <tr>
                 <th>Serial / Vendor</th>
-                <th style="width:120px">IP Address</th>
-                <th style="width:90px">SW Version</th>
+                <th>Username</th>
+                <th>SSID</th>
+                <th style="width:110px">Model</th>
+                <th style="width:110px">IP Address</th>
+                <th style="width:90px">RX Power</th>
                 <th>Pelanggan</th>
-                <th style="width:130px">Last Inform</th>
                 <th style="width:80px">Status</th>
+                <th style="width:120px">Last Inform</th>
                 <th style="width:60px">Aksi</th>
               </tr>
             </thead>
             <tbody id="tbl-acs-device">
-              <tr><td colspan="7" style="text-align:center;color:var(--text3);padding:28px">
+              <tr><td colspan="10" style="text-align:center;color:var(--text3);padding:28px">
                 <i class="ti ti-router-off" style="font-size:28px;display:block;margin-bottom:8px;opacity:.4" aria-hidden="true"></i>
-                Belum ada device terdaftar. Arahkan router ke ACS URL di atas.
+                Memuat device dari GenieACS...
               </td></tr>
             </tbody>
           </table>
+          </div>
+          <div id="acs-pagination" style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--text2);flex-wrap:wrap;gap:8px">
+            <div id="acs-page-info">—</div>
+            <div id="acs-page-nav" style="display:flex;align-items:center;gap:4px"></div>
+          </div>
         </div>
 
         <!-- Log Task -->
@@ -4536,17 +4563,22 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
       <!-- Info grid -->
       <div id="acs-detail-info" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
 
-      <!-- Link pelanggan -->
+      <!-- Link pelanggan (search) -->
       <div>
         <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Tautkan ke Pelanggan</label>
-        <div style="display:flex;gap:8px">
-          <select id="acs-pel-select" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
-            <option value="">— Tidak ditautkan —</option>
-          </select>
-          <button class="btn primary" onclick="acsLinkPelanggan()" style="gap:6px">
+        <div style="display:flex;gap:8px;position:relative">
+          <div style="flex:1;position:relative">
+            <input id="acs-pel-search" type="text" autocomplete="off" placeholder="Ketik nama / username pelanggan..."
+              oninput="acsCariPelanggan(this.value)" onfocus="acsCariPelanggan(this.value)"
+              style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit">
+            <input type="hidden" id="acs-pel-id" value="">
+            <div id="acs-pel-results" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;max-height:220px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:50"></div>
+          </div>
+          <button class="btn primary" onclick="acsLinkPelanggan()" style="gap:6px;flex-shrink:0">
             <i class="ti ti-link" style="font-size:13px" aria-hidden="true"></i> Simpan
           </button>
         </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px">Kosongkan & Simpan untuk melepas tautan. Auto-match by username PPPoE jika tidak ditautkan manual.</div>
       </div>
 
       <!-- Param cache -->
@@ -5536,21 +5568,24 @@ async function printBatchDenganTemplate(vouchers, autoPrint) {
 
 // ── END VOUCHER TEMPLATE ────────────────────────────────────
 let _acsDeviceId = null;
+let _acsSerial = '';
+let _acsManufacturer = '';
+let _acsDevices = [];
+let _acsPage = 1;
 
 async function loadACS() {
   await Promise.all([loadACSStats(), loadACSDevices(), loadACSTask()]);
-  // Load ACS URL dari setting
+  // Load URL GenieACS dari setting
   try {
     const s = await apiFetch('/api/setting');
     const map = {};
     (Array.isArray(s) ? s : []).forEach(function(row){ map[row.kunci] = row.nilai; });
-    // ACS server selalu HTTP (port 7547 tidak pakai SSL)
-    const url = map.acs_url || ('http://' + window.location.hostname + ':7547/');
+    const url = map.genieacs_url || 'http://103.193.145.255:7557';
     const inp = document.getElementById('acs-url-input');
     if (inp) inp.value = url;
   } catch(e) {
     const inp = document.getElementById('acs-url-input');
-    if (inp) inp.value = 'http://' + window.location.hostname + ':7547/';
+    if (inp) inp.value = 'http://103.193.145.255:7557';
   }
 }
 
@@ -5560,19 +5595,38 @@ async function simpanACSUrl() {
   try {
     await apiFetch('/api/setting', {
       method: 'PUT',
-      body: JSON.stringify({ acs_url: url })
+      body: JSON.stringify({ genieacs_url: url })
     });
-    toast('✅ ACS URL disimpan');
+    toast('✅ URL GenieACS disimpan');
   } catch(e) { toast('❌ ' + e.message, true); }
+}
+
+async function ujiKoneksiGenie() {
+  // simpan dulu URL yang sedang diketik agar uji pakai nilai terbaru
+  const url = document.getElementById('acs-url-input').value.trim();
+  try {
+    if (url) {
+      await apiFetch('/api/setting', { method: 'PUT', body: JSON.stringify({ genieacs_url: url }) });
+    }
+    toast('⏳ Menguji koneksi GenieACS...');
+    const r = await apiFetch('/api/acs/test');
+    if (r && r.ok) {
+      toast('✅ Terhubung ke GenieACS (' + (r.url || url) + ')');
+      loadACS();
+    } else {
+      toast('❌ Gagal: ' + ((r && r.error) || 'tidak terhubung'), true);
+    }
+  } catch(e) { toast('❌ Gagal konek GenieACS: ' + e.message, true); }
 }
 
 async function loadACSStats() {
   try {
     const d = await apiFetch('/api/acs/stats');
-    document.getElementById('acs-total').textContent   = d.total;
-    document.getElementById('acs-online').textContent  = d.online;
-    document.getElementById('acs-offline').textContent = d.offline;
-    document.getElementById('acs-pending').textContent = d.pending_tasks;
+    document.getElementById('acs-total').textContent   = d.total ?? '—';
+    document.getElementById('acs-online').textContent  = d.online ?? '—';
+    document.getElementById('acs-offline').textContent = d.offline ?? '—';
+    const pend = document.getElementById('acs-pending');
+    if (pend) pend.textContent = '—';
   } catch(e) {}
 }
 
@@ -5580,8 +5634,135 @@ async function loadACSDevices() {
   const t = document.getElementById('tbl-acs-device');
   try {
     const rows = await apiFetch('/api/acs/devices');
+    _acsDevices = Array.isArray(rows) ? rows : [];
+    _acsPage = 1;
+    acsRenderPage(1);
+  } catch(e) {
+    t.innerHTML = `<tr><td colspan="10" style="text-align:center;color:#dc2626;padding:20px">❌ ${e.message}</td></tr>`;
+    const info = document.getElementById('acs-page-info'); if (info) info.textContent = '';
+    const nav = document.getElementById('acs-page-nav'); if (nav) nav.innerHTML = '';
+  }
+}
+
+// Render satu baris device (dipakai acsRenderPage)
+function acsRenderRow(d) {
+  const fmtInform = dt => {
+    if (!dt) return '—';
+    const x = new Date(dt);
+    return x.toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+  };
+  const online = d.status === 'online';
+  const stBadge  = online
+    ? `<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(22,163,74,.12);color:#16a34a;font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px"><span style="width:6px;height:6px;border-radius:50%;background:#22c55e"></span>Online</span>`
+    : `<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(220,38,38,.12);color:#dc2626;font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px"><span style="width:6px;height:6px;border-radius:50%;background:#ef4444"></span>Offline</span>`;
+  const vendor = [d.manufacturer, d.product_class].filter(Boolean).join(' ') || '—';
+  let rxBadge = '<span style="color:var(--text3);font-size:11px">—</span>';
+  if (d.rx_power !== null && d.rx_power !== undefined) {
+    const rx = d.rx_power;
+    let bg, col, lbl;
+    if (rx >= -25)      { bg='rgba(22,163,74,.12)';  col='#16a34a'; lbl='Bagus'; }
+    else if (rx >= -28) { bg='rgba(217,119,6,.12)';  col='#d97706'; lbl='Lumayan'; }
+    else                { bg='rgba(220,38,38,.12)';  col='#dc2626'; lbl='Danger'; }
+    rxBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:${bg};color:${col};font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px"><span style="font-family:monospace">${rx}</span> ${lbl}</span>`;
+  }
+  return `<tr>
+    <td>
+      <div style="display:flex;align-items:center;gap:9px">
+        <div style="width:32px;height:32px;border-radius:8px;background:${online?'rgba(37,99,235,.1)':'rgba(100,116,139,.1)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-router" style="font-size:15px;color:${online?'#2563eb':'#94a3b8'}" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--text);font-family:monospace">${d.serial_number||'—'}</div>
+          <div class="td-text-sub" style="font-size:10px;margin-top:1px">${vendor}</div>
+        </div>
+      </div>
+    </td>
+    <td style="font-size:12px;color:var(--text2);font-family:monospace">${d.username||'—'}</td>
+    <td style="font-size:12px;color:var(--text2);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${d.ssid||''}">${d.ssid||'—'}</td>
+    <td style="font-size:11px;color:var(--text2)">${d.model||'—'}</td>
+    <td style="font-size:12px;font-family:monospace">${d.ip_address||'—'}</td>
+    <td>${rxBadge}</td>
+    <td>${d.pelanggan_nama ? `<span style="background:rgba(37,99,235,.1);color:#2563eb;font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px">${d.pelanggan_nama}</span>` : '<span style="color:var(--text3);font-size:12px">—</span>'}</td>
+    <td>${stBadge}</td>
+    <td style="font-size:11px;color:var(--text2);white-space:nowrap">${fmtInform(d.last_inform)}</td>
+    <td>
+      <button class="btn sm" onclick="bukaACSDetail('${d.genie_id}')" style="padding:5px 10px;border-radius:7px;gap:4px">
+        <i class="ti ti-info-circle" style="font-size:12px" aria-hidden="true"></i>
+      </button>
+    </td>
+  </tr>`;
+}
+
+// Filter + pagination render
+function acsRenderPage(page) {
+  const t = document.getElementById('tbl-acs-device');
+  if (!t) return;
+  const q = (document.getElementById('acs-search')?.value || '').toLowerCase().trim();
+  const perPage = parseInt(document.getElementById('acs-perpage')?.value || '10');
+
+  // filter
+  let data = _acsDevices;
+  if (q) {
+    const S = v => String(v == null ? '' : v).toLowerCase();
+    data = data.filter(d =>
+      S(d.serial_number).includes(q) ||
+      S(d.username).includes(q) ||
+      S(d.ssid).includes(q) ||
+      S(d.ip_address).includes(q) ||
+      S(d.model).includes(q) ||
+      S(d.manufacturer).includes(q) ||
+      S(d.pelanggan_nama).includes(q)
+    );
+  }
+
+  const total = data.length;
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
+  if (page < 1) page = 1;
+  if (page > totalPages) page = totalPages;
+  _acsPage = page;
+
+  if (!total) {
+    t.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text3);padding:28px"><i class="ti ti-router-off" style="font-size:28px;display:block;margin-bottom:8px;opacity:.4"></i>' + (q ? 'Tidak ada device cocok pencarian.' : 'Belum ada device di GenieACS.') + '</td></tr>';
+    document.getElementById('acs-page-info').textContent = '0 device';
+    document.getElementById('acs-page-nav').innerHTML = '';
+    return;
+  }
+
+  const start = (page - 1) * perPage;
+  const slice = data.slice(start, start + perPage);
+  t.innerHTML = slice.map(acsRenderRow).join('');
+
+  // info
+  document.getElementById('acs-page-info').textContent =
+    `Menampilkan ${start + 1}–${start + slice.length} dari ${total} device`;
+
+  // nav buttons
+  const nav = document.getElementById('acs-page-nav');
+  const btn = (label, p, disabled, active) =>
+    `<button onclick="acsRenderPage(${p})" ${disabled?'disabled':''} style="min-width:32px;padding:5px 9px;border-radius:6px;border:1px solid var(--border);background:${active?'var(--accent,#4f46e5)':'var(--bg2)'};color:${active?'#fff':'var(--text2)'};font-size:12px;cursor:${disabled?'not-allowed':'pointer'};opacity:${disabled?'.4':'1'}">${label}</button>`;
+  let html = btn('‹', page - 1, page === 1, false);
+  // tampilkan maksimal 7 nomor halaman dengan ellipsis
+  const pages = [];
+  const win = 2;
+  for (let p = 1; p <= totalPages; p++) {
+    if (p === 1 || p === totalPages || (p >= page - win && p <= page + win)) pages.push(p);
+    else if (pages[pages.length-1] !== '…') pages.push('…');
+  }
+  pages.forEach(p => {
+    if (p === '…') html += `<span style="padding:0 4px;color:var(--text3)">…</span>`;
+    else html += btn(p, p, false, p === page);
+  });
+  html += btn('›', page + 1, page === totalPages, false);
+  nav.innerHTML = html;
+}
+
+// fungsi lama loadACSDevices_OLD digantikan; sisa kode di bawah tidak dipakai
+async function loadACSDevices_OLD() {
+  const t = document.getElementById('tbl-acs-device');
+  try {
+    const rows = await apiFetch('/api/acs/devices');
     if (!rows.length) {
-      t.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:28px"><i class="ti ti-router-off" style="font-size:28px;display:block;margin-bottom:8px;opacity:.4"></i>Belum ada device terdaftar. Arahkan router ke ACS URL di atas.</td></tr>';
+      t.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:28px"><i class="ti ti-router-off" style="font-size:28px;display:block;margin-bottom:8px;opacity:.4"></i>Belum ada device di GenieACS.</td></tr>';
       return;
     }
     const fmtInform = dt => {
@@ -5591,11 +5772,20 @@ async function loadACSDevices() {
     };
     t.innerHTML = rows.map(d => {
       const online = d.status === 'online';
-      const dotColor = online ? '#22c55e' : '#ef4444';
       const stBadge  = online
         ? `<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(22,163,74,.12);color:#16a34a;font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px"><span style="width:6px;height:6px;border-radius:50%;background:#22c55e"></span>Online</span>`
         : `<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(220,38,38,.12);color:#dc2626;font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px"><span style="width:6px;height:6px;border-radius:50%;background:#ef4444"></span>Offline</span>`;
       const vendor = [d.manufacturer, d.product_class].filter(Boolean).join(' ') || '—';
+      // RX Power badge — warna sesuai kualitas sinyal optik (dBm)
+      let rxBadge = '<span style="color:var(--text3);font-size:11px">—</span>';
+      if (d.rx_power !== null && d.rx_power !== undefined) {
+        const rx = d.rx_power;
+        let bg, col, lbl;
+        if (rx >= -25)      { bg='rgba(22,163,74,.12)';  col='#16a34a'; lbl='Bagus'; }
+        else if (rx >= -28) { bg='rgba(217,119,6,.12)';  col='#d97706'; lbl='Lumayan'; }
+        else                { bg='rgba(220,38,38,.12)';  col='#dc2626'; lbl='Danger'; }
+        rxBadge = `<span style="display:inline-flex;align-items:center;gap:4px;background:${bg};color:${col};font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px"><span style="font-family:monospace">${rx}</span> ${lbl}</span>`;
+      }
       return `<tr>
         <td>
           <div style="display:flex;align-items:center;gap:9px">
@@ -5603,25 +5793,27 @@ async function loadACSDevices() {
               <i class="ti ti-router" style="font-size:15px;color:${online?'#2563eb':'#94a3b8'}" aria-hidden="true"></i>
             </div>
             <div>
-              <div style="font-size:12px;font-weight:600;color:var(--text);font-family:monospace">${d.serial_number}</div>
+              <div style="font-size:12px;font-weight:600;color:var(--text);font-family:monospace">${d.serial_number||'—'}</div>
               <div class="td-text-sub" style="font-size:10px;margin-top:1px">${vendor}</div>
             </div>
           </div>
         </td>
+        <td style="font-size:12px;color:var(--text2);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${d.ssid||''}">${d.ssid||'—'}</td>
+        <td style="font-size:11px;color:var(--text2)">${d.model||'—'}</td>
         <td style="font-size:12px;font-family:monospace">${d.ip_address||'—'}</td>
-        <td style="font-size:11px;color:var(--text2)">${d.software_version||'—'}</td>
+        <td>${rxBadge}</td>
         <td>${d.pelanggan_nama ? `<span style="background:rgba(37,99,235,.1);color:#2563eb;font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px">${d.pelanggan_nama}</span>` : '<span style="color:var(--text3);font-size:12px">—</span>'}</td>
-        <td style="font-size:11px;color:var(--text2);white-space:nowrap">${fmtInform(d.last_inform)}</td>
         <td>${stBadge}</td>
+        <td style="font-size:11px;color:var(--text2);white-space:nowrap">${fmtInform(d.last_inform)}</td>
         <td>
-          <button class="btn sm" onclick="bukaACSDetail(${d.id})" style="padding:5px 10px;border-radius:7px;gap:4px">
+          <button class="btn sm" onclick="bukaACSDetail('${d.genie_id}')" style="padding:5px 10px;border-radius:7px;gap:4px">
             <i class="ti ti-info-circle" style="font-size:12px" aria-hidden="true"></i>
           </button>
         </td>
       </tr>`;
     }).join('');
   } catch(e) {
-    t.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#dc2626;padding:20px">❌ ${e.message}</td></tr>`;
+    t.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#dc2626;padding:20px">❌ ${e.message}</td></tr>`;
   }
 }
 
@@ -5657,7 +5849,9 @@ async function loadACSTask() {
 async function bukaACSDetail(id) {
   _acsDeviceId = id;
   try {
-    const d = await apiFetch(`/api/acs/devices/${id}`);
+    const d = await apiFetch(`/api/acs/devices/${encodeURIComponent(id)}`);
+    _acsSerial = d.serial_number || '';
+    _acsManufacturer = d.manufacturer || '';
     document.getElementById('acs-detail-title').textContent = `📡 ${d.serial_number}`;
 
     // Info grid
@@ -5705,33 +5899,82 @@ async function bukaACSDetail(id) {
       }).join('');
     }
 
-    // Dropdown pelanggan
-    const sel = document.getElementById('acs-pel-select');
-    sel.innerHTML = '<option value="">— Tidak ditautkan —</option>';
-    try {
-      const pels = await apiFetch('/api/pelanggan?limit=200');
-      const list = Array.isArray(pels) ? pels : (pels.data || []);
-      list.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = p.nama + ' (' + p.username + ')';
-        if (d.pelanggan_id == p.id) opt.selected = true;
-        sel.appendChild(opt);
-      });
-    } catch(e) {}
+    // Search pelanggan — set nilai awal kalau device sudah tertaut/auto-match
+    const pelSearch = document.getElementById('acs-pel-search');
+    const pelId = document.getElementById('acs-pel-id');
+    if (pelSearch && pelId) {
+      const resBox = document.getElementById('acs-pel-results');
+      if (resBox) { resBox.style.display = 'none'; resBox.innerHTML = ''; }
+      if (d.pelanggan_id && d.pelanggan_nama) {
+        pelSearch.value = d.pelanggan_nama + (d.username ? ' (' + d.username + ')' : '');
+        pelId.value = d.pelanggan_id;
+      } else {
+        pelSearch.value = '';
+        pelId.value = '';
+        // kalau ada username PPPoE tapi belum tertaut, tampilkan sbg petunjuk
+        if (d.username) pelSearch.placeholder = 'Auto-match: ' + d.username + ' (ketik untuk ubah)';
+      }
+    }
 
     openModal('m-acs-detail');
   } catch(e) { toast('❌ ' + e.message, true); }
 }
 
+// Daftar pelanggan untuk pencarian (di-cache saat pertama kali dibuka)
+let _acsPelCache = null;
+async function acsCariPelanggan(q) {
+  const box = document.getElementById('acs-pel-results');
+  if (!box) return;
+  // muat daftar pelanggan sekali
+  if (_acsPelCache === null) {
+    try {
+      const pels = await apiFetch('/api/pelanggan?limit=5000');
+      _acsPelCache = Array.isArray(pels) ? pels : (pels.data || []);
+    } catch(e) { _acsPelCache = []; }
+  }
+  const query = (q || '').toLowerCase().trim();
+  let list = _acsPelCache;
+  if (query) {
+    list = list.filter(p =>
+      (p.nama || '').toLowerCase().includes(query) ||
+      (p.username || '').toLowerCase().includes(query)
+    );
+  }
+  list = list.slice(0, 30); // batasi hasil
+  if (!list.length) {
+    box.innerHTML = '<div style="padding:10px 12px;color:var(--text3);font-size:12px">Tidak ada pelanggan cocok</div>';
+    box.style.display = 'block';
+    return;
+  }
+  box.innerHTML = list.map(p =>
+    `<div onclick="acsPilihPelanggan(${p.id}, '${(p.nama||'').replace(/'/g,"\\'")}', '${(p.username||'').replace(/'/g,"\\'")}')"
+       style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)"
+       onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+       <span style="font-weight:600;color:var(--text)">${p.nama||'—'}</span>
+       <span style="color:var(--text3);font-size:11px"> (${p.username||'—'})</span>
+     </div>`
+  ).join('');
+  box.style.display = 'block';
+}
+
+function acsPilihPelanggan(id, nama, username) {
+  document.getElementById('acs-pel-id').value = id;
+  document.getElementById('acs-pel-search').value = nama + (username ? ' (' + username + ')' : '');
+  const box = document.getElementById('acs-pel-results');
+  if (box) { box.style.display = 'none'; box.innerHTML = ''; }
+}
+
 async function acsLinkPelanggan() {
-  if (!_acsDeviceId) return;
-  const pelId = document.getElementById('acs-pel-select').value;
+  if (!_acsSerial) return;
+  const pelId = document.getElementById('acs-pel-id').value;
+  const searchVal = document.getElementById('acs-pel-search').value.trim();
+  // kalau kotak search dikosongkan, lepas tautan
+  const finalId = (searchVal === '') ? null : (pelId || null);
   try {
-    await apiFetch(`/api/acs/devices/${_acsDeviceId}`, {
-      method: 'PUT', body: JSON.stringify({ pelanggan_id: pelId || null })
+    await apiFetch(`/api/acs/devices/${encodeURIComponent(_acsSerial)}/link`, {
+      method: 'PUT', body: JSON.stringify({ pelanggan_id: finalId })
     });
-    toast('✅ Link pelanggan disimpan');
+    toast(finalId ? '✅ Tautan pelanggan disimpan' : '✅ Tautan dilepas (kembali auto-match)');
     loadACSDevices();
   } catch(e) { toast('❌ ' + e.message, true); }
 }
@@ -5739,9 +5982,10 @@ async function acsLinkPelanggan() {
 async function acsRefresh() {
   if (!_acsDeviceId) return;
   try {
-    const d = await apiFetch(`/api/acs/devices/${_acsDeviceId}/refresh`, { method: 'POST' });
+    const d = await apiFetch(`/api/acs/devices/${encodeURIComponent(_acsDeviceId)}/refresh`, { method: 'POST' });
     toast('✅ ' + d.pesan);
-    loadACSTask();
+    // muat ulang detail setelah jeda (beri waktu GenieACS ambil data device)
+    setTimeout(() => bukaACSDetail(_acsDeviceId), 2500);
   } catch(e) { toast('❌ ' + e.message, true); }
 }
 
@@ -5749,9 +5993,8 @@ async function acsReboot() {
   if (!_acsDeviceId) return;
   if (!confirm('Yakin ingin reboot router ini?')) return;
   try {
-    const d = await apiFetch(`/api/acs/devices/${_acsDeviceId}/reboot`, { method: 'POST' });
+    const d = await apiFetch(`/api/acs/devices/${encodeURIComponent(_acsDeviceId)}/reboot`, { method: 'POST' });
     toast('✅ ' + d.pesan);
-    loadACSTask();
   } catch(e) { toast('❌ ' + e.message, true); }
 }
 
@@ -5773,16 +6016,16 @@ async function acsGantiWifi() {
   if (!_acsDeviceId) return;
   const ssid = document.getElementById('acs-wifi-ssid').value.trim();
   const pw   = document.getElementById('acs-wifi-pw').value;
-  if (!pw || pw.length < 8) { toast('❌ Password minimal 8 karakter', true); return; }
+  if (pw && pw.length < 8) { toast('❌ Password minimal 8 karakter', true); return; }
+  if (!ssid && !pw) { toast('❌ Isi SSID dan/atau password', true); return; }
   try {
-    const d = await apiFetch(`/api/acs/devices/${_acsDeviceId}/wifi`, {
-      method: 'POST', body: JSON.stringify({ ssid: ssid || undefined, password: pw })
+    const d = await apiFetch(`/api/acs/devices/${encodeURIComponent(_acsDeviceId)}/wifi`, {
+      method: 'POST', body: JSON.stringify({ ssid: ssid || undefined, password: pw || undefined, manufacturer: _acsManufacturer })
     });
     toast('✅ ' + d.pesan);
     closeModal('m-acs-wifi');
     document.getElementById('acs-wifi-ssid').value = '';
     document.getElementById('acs-wifi-pw').value   = '';
-    loadACSTask();
   } catch(e) { toast('❌ ' + e.message, true); }
 }
 
@@ -12748,7 +12991,7 @@ async function apiPutusSesi(username) {
 }
 
 async function apiBersihkanStale() {
-  if (!confirm('Bersihkan semua sesi stale (tidak update > 30 menit)?')) return;
+  if (!confirm('Bersihkan semua sesi stale (tidak update > 15 menit)?')) return;
   try {
     const d = await apiFetch('/api/radius/sesi/bersihkan-stale', { method:'POST' });
     toast(`✅ ${d.jumlah} sesi stale dibersihkan`);
