@@ -86,6 +86,10 @@ CREATE TABLE IF NOT EXISTS radacct (
     servicetype       VARCHAR(32) DEFAULT NULL,
     framedprotocol    VARCHAR(32) DEFAULT NULL,
     framedipaddress   VARCHAR(15) NOT NULL DEFAULT '',
+    framedipv6address   VARCHAR(45) DEFAULT NULL,
+    framedipv6prefix    VARCHAR(45) DEFAULT NULL,
+    framedinterfaceid   VARCHAR(44) DEFAULT NULL,
+    delegatedipv6prefix VARCHAR(45) DEFAULT NULL,
     PRIMARY KEY (radacctid),
     UNIQUE KEY radacct_acctuniqueid (acctuniqueid),
     KEY radacct_username (username),
@@ -119,6 +123,14 @@ CREATE TABLE IF NOT EXISTS radpostauth (
     PRIMARY KEY (id),
     KEY radpostauth_username (username),
     KEY radpostauth_authdate (authdate)
+) ENGINE=InnoDB;
+
+-- Tabel nasreload: dibutuhkan FreeRADIUS untuk mendeteksi perubahan NAS.
+-- Tanpa ini, radius.log dibanjiri "ERROR 1146 ... nasreload doesn't exist".
+CREATE TABLE IF NOT EXISTS nasreload (
+    nasipaddress VARCHAR(15) NOT NULL,
+    reloadtime   DATETIME NOT NULL,
+    PRIMARY KEY (nasipaddress)
 ) ENGINE=InnoDB;
 
 -- ============================================================

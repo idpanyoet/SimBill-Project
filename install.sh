@@ -179,6 +179,23 @@ else
   info "schema.sql tidak ditemukan — lewati impor"
 fi
 
+# ── Perbaikan skema RADIUS yang sering terlewat ──
+# 1) Tabel nasreload: dibutuhkan FreeRADIUS untuk deteksi perubahan NAS.
+#    Tanpa tabel ini, radius.log dibanjiri "ERROR 1146 ... nasreload doesn't exist".
+# 2) Bersihkan atribut Mikrotik-Keepalive-Timeout: TIDAK dikenal dictionary
+#    FreeRADIUS 3.2.x → membuat SELURUH auth group gagal (semua user hotspot
+#    di group itu tak bisa login). Aman dihapus; keepalive diatur di MikroTik.
+mysql "${DB_NAME}" <<'SQL' 2>/dev/null || true
+CREATE TABLE IF NOT EXISTS nasreload (
+  nasipaddress varchar(15) NOT NULL,
+  reloadtime datetime NOT NULL,
+  PRIMARY KEY (nasipaddress)
+);
+DELETE FROM radgroupreply WHERE attribute='Mikrotik-Keepalive-Timeout';
+DELETE FROM radreply      WHERE attribute='Mikrotik-Keepalive-Timeout';
+SQL
+ok "Tabel nasreload dipastikan ada + atribut RADIUS bermasalah dibersihkan"
+
 # ── Set password admin default (hash bcrypt asli, bukan placeholder) ──
 ADMIN_USER="${ADMIN_USER:-admin}"
 ADMIN_PASS="${ADMIN_PASS:-admin123}"
@@ -225,7 +242,33 @@ if [[ "${INSTALL_RADIUS,,}" == y* ]]; then
       -e "s|^\([[:space:]]*\)password = .*|\1password = \"${DB_PASS}\"|" \
       -e "s|^\([[:space:]]*\)radius_db = .*|\1radius_db = \"${DB_NAME}\"|" \
       -e 's|^\([[:space:]]*\)#[[:space:]]*read_clients = yes|\1read_clients = yes|' \
+      -e 's|^\([[:space:]]*\)#[[:space:]]*client_table = .*|\1client_table = "nas"|' \
       "$SQLMOD"
+
+    # 1b) BUANG blok tls{} secara utuh (brace-aware). Penting di Ubuntu 24:
+    #     mods-available/sql bawaan punya tls{ ca_file="/etc/ssl/certs/my_ca.crt" }
+    #     yang menunjuk file tak ada → modul sql gagal di-instantiate → FreeRADIUS
+    #     menolak start. Mengomentari sebagian akan merusak pasangan kurung, jadi
+    #     blok-nya dihapus utuh dengan menghitung kedalaman { }.
+    python3 - "$SQLMOD" <<'PY'
+import sys, re
+f = sys.argv[1]
+lines = open(f).read().splitlines()
+out, skip, depth = [], False, 0
+for ln in lines:
+    st = ln.strip().lstrip('#').strip()
+    if not skip and re.match(r'tls\s*\{', st):
+        skip = True
+        depth = ln.count('{') - ln.count('}')
+        if depth <= 0: skip = False
+        continue
+    if skip:
+        depth += ln.count('{') - ln.count('}')
+        if depth <= 0: skip = False
+        continue
+    out.append(ln)
+open(f, 'w').write('\n'.join(out) + '\n')
+PY
 
     # 2) Aktifkan modul sql
     ln -sf ../mods-available/sql "${RADDIR}mods-enabled/sql"
@@ -241,15 +284,43 @@ if [[ "${INSTALL_RADIUS,,}" == y* ]]; then
     chmod 640 "$SQLMOD" 2>/dev/null || true
 
     # 5) Cek config & jalankan
-    if freeradius -XC >/dev/null 2>&1; then
+    if freeradius -XC >/tmp/simbill-fr-check.log 2>&1; then
       systemctl enable --now freeradius >/dev/null 2>&1 || true
       ok "FreeRADIUS aktif → DB '${DB_NAME}', NAS dibaca dari tabel 'nas'"
     else
       systemctl enable freeradius >/dev/null 2>&1 || true
-      info "FreeRADIUS terpasang tapi cek config gagal. Debug: ${C_B}freeradius -X${C_R}"
+      info "FreeRADIUS terpasang tapi cek config gagal. 15 baris terakhir:"
+      tail -15 /tmp/simbill-fr-check.log | sed 's/^/    /'
+      info "Debug manual: ${C_B}freeradius -X${C_R}"
     fi
     info "Daftarkan MikroTik di menu RADIUS/NAS SimBill, lalu: systemctl restart freeradius"
   fi
+fi
+
+# ── Jaringan: ip_forward + buka port RADIUS/VPN (idempotent, non-destruktif) ──
+# Banyak VPS (mis. Tencent/Alibaba) punya INPUT policy DROP → paket RADIUS (1812/1813)
+# & L2TP (1701) diblok diam-diam sehingga "server tidak merespon". Plus L2TP butuh
+# IP forwarding. Hanya dijalankan bila RADIUS atau VPN dipasang.
+if [[ "${INSTALL_RADIUS,,}" == y* || "${INSTALL_VPN,,}" == y* ]]; then
+  step "Jaringan (ip_forward + firewall RADIUS/L2TP)"
+  sysctl -w net.ipv4.ip_forward=1 >/dev/null 2>&1 || true
+  echo 'net.ipv4.ip_forward=1' > /etc/sysctl.d/99-simbill.conf
+
+  if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -qi "Status: active"; then
+    # Hormati ufw bila sedang dipakai — buka port lewat ufw (persist sendiri)
+    for p in 1812 1813 1701; do ufw allow ${p}/udp >/dev/null 2>&1 || true; done
+    ok "Port RADIUS/L2TP dibuka via ufw (UDP 1812/1813/1701)"
+  else
+    # Tanpa ufw aktif → pakai iptables langsung (idempotent: -C cek dulu, -I bila belum ada)
+    for p in 1812 1813 1701; do
+      iptables -C INPUT -p udp --dport $p -j ACCEPT 2>/dev/null || iptables -I INPUT -p udp --dport $p -j ACCEPT
+    done
+    iptables -C INPUT -i ppp+ -j ACCEPT 2>/dev/null || iptables -I INPUT -i ppp+ -j ACCEPT
+    command -v netfilter-persistent >/dev/null 2>&1 || apt-get install -y -qq iptables-persistent >/dev/null 2>&1 || true
+    mkdir -p /etc/iptables; iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
+    ok "Port RADIUS/L2TP dibuka via iptables (UDP 1812/1813/1701 + ppp+)"
+  fi
+  info "Jika VPS di belakang firewall cloud (Security Group), buka juga UDP 1812/1813/1701 di panel."
 fi
 
 # ── Nginx + SSL (opsional, jika DOMAIN diisi) — penting untuk webhook payment HTTPS ──
@@ -305,7 +376,7 @@ echo
 echo "  Login admin  : ${C_OK}${ADMIN_USER}${C_R} / ${C_WARN}${ADMIN_PASS}${C_R}"
 echo "  ${C_WARN}↑ Ganti password admin segera setelah login.${C_R}"
 echo
-echo "  Port yang dipakai (buka di firewall bila perlu):"
+echo "  Port yang dipakai (buka juga di firewall cloud bila perlu):"
 echo "    3000 (app) · 7547 (TR-069/ACS)"
 echo "    1812-1813/udp (RADIUS) · 51820/udp (WireGuard) · 1701/500/4500/udp (L2TP/IPSec)"
 echo "  Update nanti :"
