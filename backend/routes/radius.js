@@ -1043,4 +1043,73 @@ router.get('/snmp-interfaces', async (req, res, next) => {
     } catch(e) { next(e); }
 });
 
+// ── GET /api/radius/cek-user/:username — diagnosa lengkap satu user/voucher ──
+// Gabungan: info voucher/pelanggan (paket, status, expired, pertama dipakai),
+// status online saat ini, dan riwayat sesi (login, IP, MAC, durasi, kuota).
+router.get('/cek-user/:username', async (req, res, next) => {
+    try {
+        const username = (req.params.username || '').trim();
+        if (!username) return res.status(400).json({ error: 'Username wajib diisi' });
+
+        // 1) Identitas: cek di voucher dulu, lalu pelanggan
+        let tipe = null, info = null;
+        const v = await queryOne(`
+            SELECT v.username, v.status, v.tgl_digunakan, v.tgl_expired, v.created_at,
+                   v.batch_id, p.nama AS nama_paket, p.masa_aktif, p.satuan_masa
+            FROM voucher v LEFT JOIN paket p ON v.paket_id = p.id
+            WHERE v.username = ? LIMIT 1
+        `, [username]);
+        if (v) { tipe = 'voucher'; info = v; }
+        else {
+            const pl = await queryOne(`
+                SELECT pl.username, pl.nama, pl.status, pl.tgl_expired, pl.created_at,
+                       p.nama AS nama_paket, p.masa_aktif, p.satuan_masa
+                FROM pelanggan pl LEFT JOIN paket p ON pl.paket_id = p.id
+                WHERE pl.username = ? LIMIT 1
+            `, [username]);
+            if (pl) { tipe = 'pelanggan'; info = pl; }
+        }
+
+        // 2) Status online (sesi terbuka)
+        const online = await queryOne(`
+            SELECT framedipaddress AS ip, callingstationid AS mac,
+                   nasipaddress AS nas, acctstarttime AS mulai,
+                   TIMESTAMPDIFF(MINUTE, acctstarttime, NOW()) AS durasi_menit
+            FROM radacct
+            WHERE username = ? AND acctstoptime IS NULL
+            ORDER BY acctstarttime DESC LIMIT 1
+        `, [username]);
+
+        // 3) Riwayat sesi (maks 20 terakhir)
+        const sesi = await query(`
+            SELECT acctstarttime AS login,
+                   acctstoptime  AS logout,
+                   framedipaddress AS ip,
+                   callingstationid AS mac,
+                   nasipaddress AS nas,
+                   TIMESTAMPDIFF(MINUTE, acctstarttime, IFNULL(acctstoptime, NOW())) AS durasi_menit,
+                   ROUND(acctinputoctets/1048576, 2)  AS mb_in,
+                   ROUND(acctoutputoctets/1048576, 2) AS mb_out,
+                   acctterminatecause AS sebab
+            FROM radacct
+            WHERE username = ?
+            ORDER BY acctstarttime DESC
+            LIMIT 20
+        `, [username]);
+
+        if (!info && !sesi.length) {
+            return res.status(404).json({ error: 'Username tidak ditemukan di voucher, pelanggan, maupun riwayat sesi' });
+        }
+
+        res.json({
+            username,
+            tipe,                 // 'voucher' | 'pelanggan' | null (hanya ada di radacct)
+            info,                 // detail paket/status/expired
+            online: online || null,
+            total_sesi: sesi.length,
+            sesi
+        });
+    } catch (e) { next(e); }
+});
+
 module.exports = router;

@@ -521,8 +521,9 @@ async function syncVoucher(username = null) {
             const v = await queryOne(`SELECT username, password, status FROM voucher WHERE username = ?`, [username]);
             if (!v || !v.username) return;
             if (v.status === 'expired') {
-                // Voucher expired → pastikan TIDAK ada di radcheck
+                // Voucher expired → pastikan TIDAK ada di radcheck/radreply
                 await query(`DELETE FROM radcheck WHERE username = ?`, [v.username]);
+                await query(`DELETE FROM radreply WHERE username = ?`, [v.username]);
                 return;
             }
             await query(`
@@ -533,6 +534,12 @@ async function syncVoucher(username = null) {
             // Terapkan batas Shared Users (Simultaneous-Use) sesuai paket voucher.
             try { await syncSimultaneousUse(v.username); }
             catch (e) { console.warn(`[radcheck] sync share voucher ${v.username}:`, e.message); }
+            // Terapkan Session-Timeout (voucher berbasis JAM) → MikroTik "Session Time Left".
+            try { await syncSessionTimeout(v.username); }
+            catch (e) { console.warn(`[radreply] sync session-timeout ${v.username}:`, e.message); }
+            // Terapkan Mikrotik-Rate-Limit (bandwidth diatur dari billing/paket).
+            try { await syncVoucherRate(v.username); }
+            catch (e) { console.warn(`[radreply] sync rate voucher ${v.username}:`, e.message); }
             console.log(`[radcheck] Synced voucher: ${username}`);
         } else {
             // Sync semua voucher sekaligus (KECUALI yang expired)
@@ -551,10 +558,92 @@ async function syncVoucher(username = null) {
                 JOIN voucher v ON v.username = rc.username
                 WHERE v.status = 'expired'
             `);
+            // ── Session-Timeout massal (voucher JAM aktif) ──
+            // Bersihkan dulu Session-Timeout milik semua voucher, lalu set ulang
+            // hanya untuk voucher berbasis JAM yang belum expired.
+            await query(`
+                DELETE rr FROM radreply rr
+                JOIN voucher v ON v.username = rr.username
+                WHERE rr.attribute = 'Session-Timeout'
+            `);
+            await query(`
+                INSERT INTO radreply (username, attribute, op, value)
+                SELECT v.username, 'Session-Timeout', ':=', CAST(pk.masa_aktif * 3600 AS CHAR)
+                FROM voucher v JOIN paket pk ON pk.id = v.paket_id
+                WHERE v.username IS NOT NULL AND v.username != ''
+                  AND v.status != 'expired'
+                  AND pk.satuan_masa = 'jam'
+                  AND COALESCE(pk.masa_aktif,0) > 0
+            `);
+            // ── Mikrotik-Rate-Limit massal (bandwidth diatur billing) ──
+            await query(`
+                DELETE rr FROM radreply rr
+                JOIN voucher v ON v.username = rr.username
+                WHERE rr.attribute = 'Mikrotik-Rate-Limit'
+            `);
+            await query(`
+                INSERT INTO radreply (username, attribute, op, value)
+                SELECT v.username, 'Mikrotik-Rate-Limit', ':=',
+                       COALESCE(NULLIF(TRIM(pk.rate_limit), ''),
+                                CONCAT(pk.kecepatan_up, 'M/', pk.kecepatan_dn, 'M'))
+                FROM voucher v JOIN paket pk ON pk.id = v.paket_id
+                WHERE v.username IS NOT NULL AND v.username != ''
+                  AND v.status != 'expired'
+                  AND ( NULLIF(TRIM(pk.rate_limit), '') IS NOT NULL
+                        OR (pk.kecepatan_up IS NOT NULL AND pk.kecepatan_dn IS NOT NULL) )
+            `);
         }
     } catch(e) {
         console.warn('[radcheck] Sync gagal:', e.message);
     }
+}
+
+// Set Session-Timeout (detik) di radreply untuk voucher berbasis JAM, agar
+// MikroTik menampilkan "Session Time Left" dan memutus sesi otomatis saat habis.
+// - satuan 'jam'  → masa_aktif * 3600 detik.
+// - satuan hari/bulan → TIDAK diberi Session-Timeout (pakai expiry tanggal/cron;
+//   masa hari/bulan = berlaku kalender, bukan durasi sesi).
+// - masa 0 (VIP/tanpa batas) → tanpa Session-Timeout.
+async function syncSessionTimeout(username) {
+    if (!username) return;
+    // Selalu bersihkan dulu (mencegah nilai basi bila paket diubah).
+    await query(`DELETE FROM radreply WHERE username = ? AND attribute = 'Session-Timeout'`, [username]);
+    const v = await queryOne(`
+        SELECT pk.masa_aktif, pk.satuan_masa
+        FROM voucher v JOIN paket pk ON pk.id = v.paket_id
+        WHERE v.username = ?`, [username]);
+    if (!v) return;
+    const masa = Number(v.masa_aktif);
+    if (!masa || masa <= 0) return;          // VIP / tanpa batas
+    if (v.satuan_masa !== 'jam') return;     // hari/bulan → expiry tanggal (cron)
+    const detik = masa * 3600;
+    await query(`
+        INSERT INTO radreply (username, attribute, op, value)
+        VALUES (?, 'Session-Timeout', ':=', ?)
+    `, [username, String(detik)]);
+}
+
+// Set Mikrotik-Rate-Limit di radreply untuk voucher sesuai paketnya, sehingga
+// BANDWIDTH voucher diatur dari billing (RADIUS), bukan dari profil hotspot.
+// Format mengikuti _syncGroupPaket: pakai paket.rate_limit bila ada, jika tidak
+// pakai "<up>M/<dn>M".
+async function syncVoucherRate(username) {
+    if (!username) return;
+    await query(`DELETE FROM radreply WHERE username = ? AND attribute = 'Mikrotik-Rate-Limit'`, [username]);
+    const v = await queryOne(`
+        SELECT pk.rate_limit, pk.kecepatan_up, pk.kecepatan_dn
+        FROM voucher v JOIN paket pk ON pk.id = v.paket_id
+        WHERE v.username = ?`, [username]);
+    if (!v) return;
+    let rate = (v.rate_limit && String(v.rate_limit).trim()) ? String(v.rate_limit).trim() : '';
+    if (!rate) {
+        if (v.kecepatan_up == null || v.kecepatan_dn == null) return; // data kurang → jangan paksa
+        rate = `${v.kecepatan_up}M/${v.kecepatan_dn}M`;
+    }
+    await query(`
+        INSERT INTO radreply (username, attribute, op, value)
+        VALUES (?, 'Mikrotik-Rate-Limit', ':=', ?)
+    `, [username, rate]);
 }
 
 // Tandai voucher 'used' berdasarkan radacct (catatan login FreeRADIUS).
@@ -631,6 +720,8 @@ async function expireVoucherHabis() {
                 await query(`UPDATE voucher SET status='expired', tgl_expired=DATE_ADD(NOW(), INTERVAL 90 DAY) WHERE username=?`, [v.username]);
                 // hapus dari radcheck → tidak bisa login lagi
                 await query(`DELETE FROM radcheck WHERE username=?`, [v.username]);
+                // hapus Session-Timeout di radreply (tidak relevan lagi)
+                await query(`DELETE FROM radreply WHERE username=? AND attribute='Session-Timeout'`, [v.username]);
                 // putus sesi aktif (CoA)
                 await _putusSesilAktif(v.username);
                 n++;
@@ -664,6 +755,7 @@ async function hapusVoucherExpiredLama() {
         for (const v of lama) {
             try {
                 await query(`DELETE FROM radcheck WHERE username=?`, [v.username]);
+                await query(`DELETE FROM radreply WHERE username=?`, [v.username]);
                 await query(`DELETE FROM voucher  WHERE username=?`, [v.username]);
                 n++;
             } catch (e) {
@@ -765,6 +857,8 @@ module.exports = {
     syncSimultaneousUse,
     syncSimultaneousUsePaket,
     syncSimultaneousUseSemua,
+    syncSessionTimeout,
+    syncVoucherRate,
     expireVoucherHabis,
     hapusVoucherExpiredLama
 };

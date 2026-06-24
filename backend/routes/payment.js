@@ -9,11 +9,21 @@ router.use(authMiddleware);
 router.get('/transaksi', async (req, res, next) => {
     try {
         const { dari, sampai, halaman = 1, limit = 30 } = req.query;
-        const offset = (parseInt(halaman) - 1) * parseInt(limit);
+        const per = Math.min(Math.max(parseInt(limit) || 10, 1), 50);
+        const hal = Math.max(parseInt(halaman) || 1, 1);
+        const offset = (hal - 1) * per;
 
         let where = ['1=1'], params = [];
         if (dari)   { where.push('pl.created_at >= ?'); params.push(dari); }
         if (sampai) { where.push('pl.created_at <= ?'); params.push(sampai + ' 23:59:59'); }
+
+        const totalRows = await query(`
+            SELECT COUNT(*) AS total
+            FROM payment_log pl
+            JOIN invoice i ON pl.invoice_id = i.id
+            WHERE ${where.join(' AND ')}
+        `, params);
+        const total = (totalRows[0] && totalRows[0].total) || 0;
 
         const rows = await query(`
             SELECT pl.*, i.no_invoice, p.nama AS nama_pelanggan
@@ -22,9 +32,9 @@ router.get('/transaksi', async (req, res, next) => {
             LEFT JOIN pelanggan p ON i.pelanggan_id = p.id
             WHERE ${where.join(' AND ')}
             ORDER BY pl.created_at DESC LIMIT ? OFFSET ?
-        `, [...params, parseInt(limit), offset]);
+        `, [...params, per, offset]);
 
-        res.json(rows);
+        res.json({ data: rows, total, halaman: hal, limit: per });
     } catch (e) { next(e); }
 });
 

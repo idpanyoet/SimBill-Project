@@ -10,6 +10,15 @@ const radiusService  = require('../services/radius');
 const waService      = require('../services/whatsapp');
 const dayjs = require('dayjs');
 
+// Escape pencegah CSV/formula injection saat export Excel.
+function sf(v) {
+    return (typeof v === 'string' && /^[=+\-@\t\r]/.test(v)) ? "'" + v : v;
+}
+// Cek apakah sebuah batch_id milik reseller ini (penanda RSL-<id>-...).
+function _batchMilikReseller(batchId, resellerId) {
+    return typeof batchId === 'string' && batchId.startsWith(`RSL-${resellerId}-`);
+}
+
 // ── Helper hitung harga reseller (terima db handle opsional untuk dipakai dalam transaksi) ──
 async function hitungHarga(resellerId, paketId, hargaNormal, db = { query, queryOne }) {
     // 1) Harga khusus per reseller (override tertinggi)
@@ -211,11 +220,15 @@ router.post('/topup', resellerAuth, async (req, res, next) => {
 // GET /reseller/topup — riwayat topup
 router.get('/topup', resellerAuth, async (req, res, next) => {
     try {
+        const per = Math.min(Math.max(parseInt(req.query.per, 10) || 10, 1), 50);
+        const hal = Math.max(parseInt(req.query.hal, 10) || 1, 1);
+        const off = (hal - 1) * per;
+        const totalRow = await queryOne(`SELECT COUNT(*) AS total FROM reseller_topup WHERE reseller_id=?`, [req.reseller.id]);
         const rows = await query(`
             SELECT * FROM reseller_topup WHERE reseller_id=?
-            ORDER BY created_at DESC LIMIT 30
-        `, [req.reseller.id]);
-        res.json(rows);
+            ORDER BY created_at DESC LIMIT ? OFFSET ?
+        `, [req.reseller.id, per, off]);
+        res.json({ data: rows, total: totalRow?.total || 0, hal, per });
     } catch (e) { next(e); }
 });
 
@@ -301,6 +314,10 @@ router.post('/beli/voucher', resellerAuth, async (req, res, next) => {
             const saldoSisa = await catatMutasi(db, req.reseller.id, 'pembelian', totalBayar,
                 `Beli ${jumlah}x voucher ${paket.nama}`, refId);
 
+            // batch_id penanda reseller: RSL-<resellerId>-<timestamp> → dipakai
+            // untuk panel "Riwayat Batch Generate" + scoping export milik reseller.
+            const batchId = `RSL-${req.reseller.id}-${Date.now().toString(36).toUpperCase()}`;
+
             const kodes = [];
             for (let i = 0; i < jumlah; i++) {
                 const kode = genKode();
@@ -308,9 +325,9 @@ router.post('/beli/voucher', resellerAuth, async (req, res, next) => {
                 // bukan kolom `kode` yang sudah dihapus. Tanpa ini INSERT gagal & seluruh
                 // transaksi rollback (saldo tidak terpotong, voucher tidak terbuat).
                 await db.query(`
-                    INSERT INTO voucher (username, password, paket_id, status, tgl_expired)
-                    VALUES (?,?,?,'unused', NULL)
-                `, [kode, kode, paket_id]);
+                    INSERT INTO voucher (username, password, paket_id, status, tgl_expired, batch_id)
+                    VALUES (?,?,?,'unused', NULL, ?)
+                `, [kode, kode, paket_id, batchId]);
                 kodes.push(kode);
             }
 
@@ -319,9 +336,9 @@ router.post('/beli/voucher', resellerAuth, async (req, res, next) => {
                   (reseller_id, tipe, paket_id, jumlah_item, harga_normal, harga_reseller, total_bayar, detail)
                 VALUES (?,?,?,?,?,?,?,?)
             `, [req.reseller.id, 'voucher', paket_id, jumlah,
-                paket.harga, hargaReseller, totalBayar, JSON.stringify({ voucher: kodes })]);
+                paket.harga, hargaReseller, totalBayar, JSON.stringify({ voucher: kodes, batch_id: batchId })]);
 
-            return { kodes, hargaReseller, totalBayar, saldoSisa };
+            return { kodes, hargaReseller, totalBayar, saldoSisa, batch_id: batchId };
         });
 
         // Daftarkan voucher ke radcheck SETELAH transaksi commit, supaya
@@ -980,6 +997,267 @@ router.put('/admin/:id/izin-paket', authMiddleware, requireAdmin, async (req, re
         }
         res.json({ pesan: `${ids.length} paket diizinkan` });
     } catch(e) { next(e); }
+});
+
+// ============================================================
+// RIWAYAT BATCH GENERATE (voucher yang dibeli reseller)
+// batch_id berformat RSL-<resellerId>-<ts>. Semua endpoint di-scope ke
+// reseller pemilik (cek prefix RSL-<id>-).
+// ============================================================
+
+// POST /reseller/generate-voucher — generate voucher massal dengan opsi
+// (mode/panjang/prefix/charset) + potong saldo (harga reseller × jumlah).
+router.post('/generate-voucher', resellerAuth, async (req, res, next) => {
+    try {
+        const paket_id = req.body.paket_id;
+        const jumlah   = parseInt(req.body.jumlah, 10) || 1;
+        const mode     = req.body.mode === 'beda' ? 'beda' : 'sama';
+        const panjang  = Math.min(Math.max(parseInt(req.body.panjang, 10) || 8, 4), 20);
+        const prefix   = (req.body.prefix || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 10);
+        const charsetKey = req.body.charset || 'angka';
+
+        if (!paket_id) return res.status(400).json({ error: 'Paket wajib dipilih' });
+        if (jumlah < 1 || jumlah > 100)
+            return res.status(400).json({ error: 'Jumlah 1–100 voucher per transaksi' });
+
+        const CHARSETS = {
+            angka:       '0123456789',
+            angka_kecil: '0123456789abcdefghijklmnopqrstuvwxyz',
+            angka_besar: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        };
+        const charset = CHARSETS[charsetKey];
+        if (!charset) return res.status(400).json({ error: 'Jenis karakter tidak valid' });
+        const panjangAcak = Math.max(panjang - prefix.length, 4);
+        const _acak = (cs, n) => Array.from({ length: n }, () => cs[require('crypto').randomInt(cs.length)]).join('');
+
+        const paket = await queryOne('SELECT * FROM paket WHERE id=? AND aktif=1', [paket_id]);
+        if (!paket) return res.status(404).json({ error: 'Paket tidak ditemukan' });
+
+        // Validasi izin paket reseller
+        try {
+            const izin = await query(`SELECT 1 FROM reseller_izin_paket WHERE reseller_id=?`, [req.reseller.id]);
+            if (izin.length) {
+                const boleh = await queryOne(`SELECT 1 FROM reseller_izin_paket WHERE reseller_id=? AND paket_id=?`, [req.reseller.id, paket_id]);
+                if (!boleh) return res.status(403).json({ error: 'Paket ini tidak diizinkan untuk akun Anda' });
+            }
+        } catch (_) {}
+
+        const hasil = await withTransaction(async (db) => {
+            const hargaReseller = await hitungHarga(req.reseller.id, paket_id, paket.harga, db);
+            const totalBayar    = hargaReseller * jumlah;
+
+            // Potong saldo (kunci baris + cek cukup). Throw bila tidak cukup → rollback.
+            const refId = `TRX-${Date.now()}`;
+            const saldoSisa = await catatMutasi(db, req.reseller.id, 'pembelian', totalBayar,
+                `Generate ${jumlah}x voucher ${paket.nama}`, refId);
+
+            const batchId = `RSL-${req.reseller.id}-${Date.now().toString(36).toUpperCase()}`;
+            const kodes = [];
+            for (let i = 0; i < jumlah; i++) {
+                // Buat username unik (cegah tabrakan dengan beberapa percobaan)
+                let username, ada = true, coba = 0;
+                while (ada && coba < 20) {
+                    username = prefix + _acak(charset, panjangAcak);
+                    ada = await db.queryOne('SELECT id FROM voucher WHERE username=?', [username]);
+                    coba++;
+                }
+                if (ada) throw new Error('Gagal membuat kode unik, perbesar panjang kode atau kurangi jumlah');
+                const password = mode === 'sama' ? username : _acak(charset, panjangAcak);
+                await db.query(`
+                    INSERT INTO voucher (username, password, paket_id, status, tgl_expired, batch_id)
+                    VALUES (?,?,?,'unused', NULL, ?)
+                `, [username, password, paket_id, batchId]);
+                kodes.push({ username, password });
+            }
+
+            await db.query(`
+                INSERT INTO reseller_transaksi
+                  (reseller_id, tipe, paket_id, jumlah_item, harga_normal, harga_reseller, total_bayar, detail)
+                VALUES (?,?,?,?,?,?,?,?)
+            `, [req.reseller.id, 'voucher', paket_id, jumlah,
+                paket.harga, hargaReseller, totalBayar,
+                JSON.stringify({ voucher: kodes.map(k => k.username), batch_id: batchId })]);
+
+            return { kodes, hargaReseller, totalBayar, saldoSisa, batch_id: batchId };
+        });
+
+        // Daftarkan ke radcheck setelah commit
+        for (const k of hasil.kodes) {
+            radiusService.syncVoucher(k.username).catch(err =>
+                console.warn(`[RESELLER] Sync radcheck ${k.username} gagal:`, err.message));
+        }
+
+        res.json({
+            pesan: `${hasil.kodes.length} voucher dibuat`,
+            voucher: hasil.kodes,
+            batch_id: hasil.batch_id,
+            paket: paket.nama,
+            total: hasil.totalBayar,
+            saldo_sisa: hasil.saldoSisa
+        });
+    } catch (e) {
+        if (/saldo tidak mencukupi/i.test(e.message)) return res.status(400).json({ error: 'Saldo tidak mencukupi' });
+        next(e);
+    }
+});
+
+// GET /reseller/voucher — daftar voucher milik reseller (paginated + cari)
+router.get('/voucher', resellerAuth, async (req, res, next) => {
+    try {
+        const per  = Math.min(Math.max(parseInt(req.query.per, 10) || 25, 1), 200);
+        const hal  = Math.max(parseInt(req.query.hal, 10) || 1, 1);
+        const off  = (hal - 1) * per;
+        const like = `RSL-${req.reseller.id}-%`;
+        const q    = (req.query.q || '').trim();
+        const status = req.query.status || '';
+
+        const where = ['v.batch_id LIKE ?'];
+        const params = [like];
+        if (q) { where.push('(v.username LIKE ? OR v.password LIKE ?)'); params.push(`%${q}%`, `%${q}%`); }
+        if (['unused','used','expired'].includes(status)) { where.push('v.status = ?'); params.push(status); }
+        const whereStr = where.join(' AND ');
+
+        const totalRow = await queryOne(`SELECT COUNT(*) AS total FROM voucher v WHERE ${whereStr}`, params);
+        const total = totalRow?.total || 0;
+
+        const rows = await query(`
+            SELECT v.username, v.password, v.status, v.tgl_digunakan, v.created_at,
+                   p.nama AS nama_paket
+            FROM voucher v LEFT JOIN paket p ON v.paket_id = p.id
+            WHERE ${whereStr}
+            ORDER BY v.id DESC
+            LIMIT ? OFFSET ?
+        `, [...params, per, off]);
+
+        res.json({ data: rows, total, hal, per });
+    } catch (e) { next(e); }
+});
+
+// GET /reseller/batch — daftar batch voucher milik reseller (paginated)
+router.get('/batch', resellerAuth, async (req, res, next) => {
+    try {
+        const per  = Math.min(Math.max(parseInt(req.query.per, 10) || 10, 1), 50);
+        const hal  = Math.max(parseInt(req.query.hal, 10) || 1, 1);
+        const off  = (hal - 1) * per;
+        const like = `RSL-${req.reseller.id}-%`;
+
+        const totalRow = await queryOne(`
+            SELECT COUNT(*) AS total FROM (
+                SELECT v.batch_id FROM voucher v
+                WHERE v.batch_id LIKE ? GROUP BY v.batch_id
+            ) t
+        `, [like]);
+        const total = totalRow?.total || 0;
+
+        const rows = await query(`
+            SELECT v.batch_id,
+                   COUNT(*) AS jumlah,
+                   SUM(CASE WHEN v.status='used' THEN 1 ELSE 0 END) AS terpakai,
+                   MIN(v.created_at) AS created_at,
+                   MIN(v.username) AS u_min,
+                   MAX(v.username) AS u_max,
+                   p.nama AS nama_paket
+            FROM voucher v
+            JOIN paket p ON v.paket_id = p.id
+            WHERE v.batch_id LIKE ?
+            GROUP BY v.batch_id, p.nama
+            ORDER BY MIN(v.created_at) DESC
+            LIMIT ? OFFSET ?
+        `, [like, per, off]);
+
+        res.json({ data: rows, total, hal, per });
+    } catch (e) { next(e); }
+});
+
+// GET /reseller/batch/:batchId/data — voucher + template (untuk Print client-side)
+router.get('/batch/:batchId/data', resellerAuth, async (req, res, next) => {
+    try {
+        if (!_batchMilikReseller(req.params.batchId, req.reseller.id))
+            return res.status(403).json({ error: 'Batch ini bukan milik Anda' });
+        const vouchers = await query(`
+            SELECT v.username, v.password, v.status,
+                   p.nama AS nama_paket, p.masa_aktif, p.satuan_masa, p.harga
+            FROM voucher v LEFT JOIN paket p ON v.paket_id = p.id
+            WHERE v.batch_id = ? ORDER BY v.id
+        `, [req.params.batchId]);
+        if (!vouchers.length) return res.status(404).json({ error: 'Batch tidak ditemukan' });
+        const template = await queryOne(`SELECT * FROM voucher_template WHERE is_default=1 LIMIT 1`)
+                      || await queryOne(`SELECT * FROM voucher_template ORDER BY id LIMIT 1`);
+        res.json({ vouchers, template: template || null });
+    } catch (e) { next(e); }
+});
+
+// GET /reseller/batch/:batchId/export-xlsx — unduh daftar voucher (Excel)
+router.get('/batch/:batchId/export-xlsx', resellerAuth, async (req, res, next) => {
+    try {
+        if (!_batchMilikReseller(req.params.batchId, req.reseller.id))
+            return res.status(403).json({ error: 'Batch ini bukan milik Anda' });
+        const ExcelJS = require('exceljs');
+        const rows = await query(`
+            SELECT v.*, p.nama AS nama_paket, p.harga
+            FROM voucher v LEFT JOIN paket p ON v.paket_id = p.id
+            WHERE v.batch_id = ? ORDER BY v.id
+        `, [req.params.batchId]);
+        if (!rows.length) return res.status(404).json({ error: 'Batch tidak ditemukan' });
+
+        const wb = new ExcelJS.Workbook();
+        const ws = wb.addWorksheet('Voucher');
+        ws.columns = [
+            { header: 'No', key: 'no', width: 6 },
+            { header: 'Username', key: 'username', width: 18 },
+            { header: 'Password', key: 'password', width: 18 },
+            { header: 'Paket', key: 'paket', width: 24 },
+            { header: 'Status', key: 'status', width: 12 },
+            { header: 'Dibuat', key: 'dibuat', width: 20 },
+        ];
+        ws.getRow(1).font = { bold: true };
+        rows.forEach((v, i) => ws.addRow({
+            no: i + 1, username: sf(v.username), password: sf(v.password),
+            paket: sf(v.nama_paket || '-'), status: sf(v.status),
+            dibuat: v.created_at ? new Date(v.created_at).toLocaleString('id-ID') : ''
+        }));
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${req.params.batchId}.xlsx"`);
+        await wb.xlsx.write(res);
+        res.end();
+    } catch (e) { next(e); }
+});
+
+// GET /reseller/batch/:batchId/export-pdf — unduh kartu voucher (PDF template)
+router.get('/batch/:batchId/export-pdf', resellerAuth, async (req, res, next) => {
+    try {
+        if (!_batchMilikReseller(req.params.batchId, req.reseller.id))
+            return res.status(403).json({ error: 'Batch ini bukan milik Anda' });
+        const { renderHtmlToPdf } = require('../services/invoice-pdf');
+        const rows = await query(`
+            SELECT v.*, p.nama AS nama_paket, p.masa_aktif, p.satuan_masa, p.harga
+            FROM voucher v LEFT JOIN paket p ON v.paket_id = p.id
+            WHERE v.batch_id = ? ORDER BY v.id
+        `, [req.params.batchId]);
+        if (!rows.length) return res.status(404).json({ error: 'Batch tidak ditemukan' });
+
+        const tpl = await queryOne(`SELECT * FROM voucher_template WHERE is_default=1 LIMIT 1`)
+                 || await queryOne(`SELECT * FROM voucher_template ORDER BY id LIMIT 1`);
+        if (!tpl) return res.status(400).json({ error: 'Template voucher belum dikonfigurasi' });
+
+        const isi = (s, v, i) => (s || '')
+            .replace(/%username%/g, v.username || '')
+            .replace(/%password%/g, v.password || v.username || '')
+            .replace(/%profile%/g,  v.nama_paket || '—')
+            .replace(/%validity%/g, v.masa_aktif
+                ? `${v.masa_aktif} ${v.satuan_masa === 'jam' ? 'Jam' : v.satuan_masa === 'bulan' ? 'Bulan' : 'Hari'}` : '—')
+            .replace(/%price%/g,    v.harga ? 'Rp ' + Number(v.harga).toLocaleString('id-ID') : '—')
+            .replace(/%no_urut%/g,  String(i + 1).padStart(3, '0'));
+
+        const body   = rows.map((v, i) => isi(tpl.row_html, v, i)).join('');
+        const header = (tpl.header_html || '').replace(/<script[^>]*\ssrc=[^>]*>\s*<\/script>/gi, '');
+        const html   = header + body + (tpl.footer_html || '');
+
+        const pdf = await renderHtmlToPdf(html, { margin: { top: '8mm', right: '8mm', bottom: '8mm', left: '8mm' } });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${req.params.batchId}.pdf"`);
+        res.end(pdf);
+    } catch (e) { next(e); }
 });
 
 module.exports = { router, prosesTopupWebhook };

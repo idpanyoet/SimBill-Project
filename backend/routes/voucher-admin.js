@@ -67,6 +67,8 @@ router.get('/batch', async (req, res, next) => {
              COUNT(*) AS jumlah,
              SUM(CASE WHEN v.status='used' THEN 1 ELSE 0 END) AS terpakai,
              MIN(v.created_at) AS created_at,
+             MIN(v.username) AS u_min,
+             MAX(v.username) AS u_max,
              p.nama AS nama_paket
       FROM voucher v
       JOIN paket p ON v.paket_id = p.id

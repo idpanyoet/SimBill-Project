@@ -96,6 +96,9 @@ body.role-reseller .sb-group-body{display:none!important}
 body.role-reseller .sb-section.rs-section{display:block}
 body.role-reseller .sb-item.rs-item{display:flex}
 body.role-reseller .admin-only{display:none!important}
+/* Reseller tidak memakai pencarian invoice di topbar */
+body.role-reseller .topbar-search-wrap{display:none!important}
+body.role-reseller .tb-search-btn{display:none!important}
 /* ── Superadmin-only: sembunyi by default, tampil hanya untuk superadmin ── */
 .superadmin-only{display:none!important}
 body.role-superadmin .superadmin-only{display:inline-flex!important}
@@ -704,7 +707,7 @@ body.dark #inv-action-menu button:hover{background:#21262d}
             onfocusin="this.style.width='300px';this.style.borderColor='#2563eb';this.style.background='#fff'"
             onfocusout="this.style.width='240px';this.style.borderColor='#e2e7ef';this.style.background='#f8fafc'">
           <!-- Dropdown hasil -->
-          <div id="topbar-search-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid #e2e7ef;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:200;max-height:320px;overflow-y:auto;min-width:320px"></div>
+          <div id="topbar-search-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);right:0;left:auto;background:#fff;border:1px solid #e2e7ef;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:200;max-height:320px;overflow-y:auto;min-width:300px;max-width:calc(100vw - 24px)"></div>
         </div>
 
         <!-- Tombol cari (HP) -->
@@ -845,10 +848,36 @@ body.dark #inv-action-menu button:hover{background:#21262d}
           <i class="ti ti-ticket" style="font-size:34px;opacity:.5"></i>
         </div>
         <div class="rv-layout" style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:start">
-          <div class="card" style="padding:14px">
-            <div style="font-weight:600;margin-bottom:10px">Pilih Paket Voucher</div>
-            <div id="rv-paket-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">
-              <div style="color:var(--text3);font-size:13px">Memuat paket…</div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="card" style="padding:14px">
+              <div style="font-weight:600;margin-bottom:10px">Pilih Paket Voucher</div>
+              <div id="rv-paket-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">
+                <div style="color:var(--text3);font-size:13px">Memuat paket…</div>
+              </div>
+            </div>
+            <div class="card" style="padding:16px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                <div style="font-weight:600">🗂️ Riwayat Batch Generate</div>
+                <button class="btn sm" onclick="rvBatchHal=1;rvLoadBatch()"><i class="ti ti-refresh"></i></button>
+              </div>
+              <div id="rv-batch-list">
+                <div style="text-align:center;color:var(--text3);font-size:13px;padding:12px">Memuat…</div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:10px;flex-wrap:wrap;font-size:12px">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <label for="rv-batch-per" style="color:var(--text3)">Baris</label>
+                  <select id="rv-batch-per" onchange="rvBatchHal=1;rvLoadBatch()" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="50">50</option>
+                  </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span id="rv-batch-info" style="color:var(--text3)">—</span>
+                  <button class="btn sm" id="rv-batch-prev" onclick="rvBatchHalaman(-1)">‹</button>
+                  <button class="btn sm" id="rv-batch-next" onclick="rvBatchHalaman(1)">›</button>
+                </div>
+              </div>
             </div>
           </div>
           <div class="card" style="padding:16px;position:sticky;top:70px">
@@ -857,10 +886,88 @@ body.dark #inv-action-menu button:hover{background:#21262d}
             <div id="rv-sel-nama" style="font-size:15px;font-weight:700;margin-bottom:10px">— belum dipilih —</div>
             <label class="fg-label">Jumlah Voucher (maks 100)</label>
             <input id="rv-jumlah" type="number" min="1" max="100" value="1" oninput="rvHitung()" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;font-family:inherit">
+
+            <!-- Mode Kode -->
+            <label class="fg-label">Mode Kode</label>
+            <input type="hidden" id="rv-mode" value="sama">
+            <div style="display:flex;gap:8px;margin-bottom:10px">
+              <div id="rv-mode-sama" onclick="rvSetMode('sama')" style="flex:1;cursor:pointer;border:1.5px solid var(--accent,#7C3AED);background:rgba(124,58,237,.06);border-radius:8px;padding:8px 10px">
+                <div style="font-size:12px;font-weight:700">User = Pass</div>
+                <div style="font-size:10px;color:var(--text3);margin-top:1px">Username & password sama</div>
+              </div>
+              <div id="rv-mode-beda" onclick="rvSetMode('beda')" style="flex:1;cursor:pointer;border:1.5px solid var(--border);border-radius:8px;padding:8px 10px">
+                <div style="font-size:12px;font-weight:700">User + Pass</div>
+                <div style="font-size:10px;color:var(--text3);margin-top:1px">Password terpisah</div>
+              </div>
+            </div>
+
+            <!-- Panjang & Prefix -->
+            <div style="display:flex;gap:10px;margin-bottom:10px">
+              <div style="flex:1">
+                <label class="fg-label">Panjang Kode</label>
+                <input type="number" id="rv-panjang" min="4" max="20" value="9" oninput="rvPreview()" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-family:inherit">
+              </div>
+              <div style="flex:1">
+                <label class="fg-label">Prefix (opsional)</label>
+                <input type="text" id="rv-prefix" maxlength="10" placeholder="mis. wifi" oninput="rvPreview()" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-family:inherit">
+              </div>
+            </div>
+
+            <!-- Jenis Karakter -->
+            <label class="fg-label">Jenis Karakter</label>
+            <input type="hidden" id="rv-charset" value="angka">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+              <div class="rv-cs-chip" id="rv-cs-angka" onclick="rvSetCharset('angka')" style="cursor:pointer;border:1.5px solid var(--accent,#7C3AED);background:rgba(124,58,237,.06);border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600">0–9</div>
+              <div class="rv-cs-chip" id="rv-cs-angka_kecil" onclick="rvSetCharset('angka_kecil')" style="cursor:pointer;border:1.5px solid var(--border);border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600">a–z 0–9</div>
+              <div class="rv-cs-chip" id="rv-cs-angka_besar" onclick="rvSetCharset('angka_besar')" style="cursor:pointer;border:1.5px solid var(--border);border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600">A–Z 0–9</div>
+            </div>
+
+            <!-- Preview -->
+            <div style="margin-bottom:10px;padding:8px 11px;border-radius:8px;background:#fef3c7;border:1px solid #fde68a;display:flex;align-items:center;justify-content:space-between;gap:10px">
+              <span style="font-size:11px;color:#92400e;font-weight:600">Contoh kode:</span>
+              <span id="rv-preview-kode" style="font-family:monospace;font-size:14px;font-weight:700;letter-spacing:1px;color:#b45309">—</span>
+            </div>
+
             <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span>Harga satuan</span><span id="rv-harga-satuan">Rp 0</span></div>
             <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:700;border-top:1px solid var(--border);padding-top:8px;margin-top:4px"><span>Total</span><span id="rv-total" style="color:#BA7517">Rp 0</span></div>
-            <button class="btn" style="width:100%;margin-top:14px;background:linear-gradient(135deg,#7C3AED,#2563EB);color:#fff;border:none;font-weight:700;padding:11px" onclick="rvBeli()" id="rv-btn-beli" disabled><i class="ti ti-shopping-cart"></i> Beli Sekarang</button>
+            <button class="btn" style="width:100%;margin-top:14px;background:linear-gradient(135deg,#7C3AED,#2563EB);color:#fff;border:none;font-weight:700;padding:11px" onclick="rvBeli()" id="rv-btn-beli" disabled><i class="ti ti-ticket"></i> Generate Voucher</button>
             <div id="rv-hasil" style="margin-top:14px"></div>
+          </div>
+        </div>
+        <div class="card" style="padding:16px;margin-top:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px;flex-wrap:wrap">
+            <div style="font-weight:600">🎟️ Voucher Saya</div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <select id="rvv-status" onchange="rvvHal=1;rvLoadVoucher()" style="padding:6px 9px;border:1px solid var(--border);border-radius:7px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit">
+                <option value="">Semua status</option>
+                <option value="unused">Belum dipakai</option>
+                <option value="used">Sudah dipakai</option>
+                <option value="expired">Kedaluwarsa</option>
+              </select>
+              <input id="rvv-cari" placeholder="Cari kode…" oninput="rvvCariDebounce()" style="padding:6px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit;width:160px">
+              <button class="btn sm" onclick="rvvHal=1;rvLoadVoucher()"><i class="ti ti-refresh"></i></button>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr><th>Username</th><th>Password</th><th>Paket</th><th>Status</th><th>Dipakai</th></tr></thead>
+              <tbody id="rvv-tbody"><tr><td colspan="5" style="text-align:center;padding:18px;color:var(--text3)">Memuat…</td></tr></tbody>
+            </table>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:10px;flex-wrap:wrap;font-size:12px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <label for="rvv-per" style="color:var(--text3)">Baris</label>
+              <select id="rvv-per" onchange="rvvHal=1;rvLoadVoucher()" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit">
+                <option value="25" selected>25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span id="rvv-info" style="color:var(--text3)">—</span>
+              <button class="btn sm" id="rvv-prev" onclick="rvvHalaman(-1)">‹</button>
+              <button class="btn sm" id="rvv-next" onclick="rvvHalaman(1)">›</button>
+            </div>
           </div>
         </div>
       </div>
@@ -926,8 +1033,26 @@ body.dark #inv-action-menu button:hover{background:#21262d}
           </div>
 
           <div class="card" style="padding:0;overflow:hidden">
-            <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700">Riwayat Topup</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)">
+              <span style="font-weight:700">Riwayat Topup</span>
+              <div style="display:flex;align-items:center;gap:6px;font-size:12px">
+                <label for="rt-per" style="color:var(--text3)">Baris</label>
+                <select id="rt-per" onchange="rtHal=1;rtLoadRiwayat()" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit">
+                  <option value="5">5</option>
+                  <option value="10" selected>10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                </select>
+              </div>
+            </div>
             <div id="rt-list"><div style="padding:18px;text-align:center;color:var(--text3);font-size:13px">Memuat…</div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--border);font-size:12px">
+              <span id="rt-info" style="color:var(--text3)">—</span>
+              <div style="display:flex;gap:8px">
+                <button class="btn sm" id="rt-prev" onclick="rtHalaman(-1)">‹</button>
+                <button class="btn sm" id="rt-next" onclick="rtHalaman(1)">›</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1974,9 +2099,51 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
               </button>
             </div>
 
+            <!-- Transaksi Terbaru (dipindah ke kiri) -->
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(186,117,23,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-receipt-2" style="font-size:17px;color:#BA7517" aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Transaksi Terbaru</div>
+                  <div class="td-text-sub" style="font-size:11px">Log pembayaran masuk</div>
+                </div>
+                <div style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px">
+                  <label for="trx-per" style="color:var(--text3)">Baris</label>
+                  <select id="trx-per" onchange="trxHal=1;loadTransaksiPG()" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text);font-size:12px;font-family:inherit">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                  </select>
+                </div>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Pelanggan</th>
+                    <th>Metode</th>
+                    <th>Jumlah</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="tbl-transaksi">
+                  <tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">Tidak ada data</td></tr>
+                </tbody>
+              </table>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:12px">
+                <span id="trx-info" style="color:var(--text3)">—</span>
+                <div style="display:flex;gap:8px">
+                  <button class="btn sm" id="trx-prev" onclick="trxHalaman(-1)">‹</button>
+                  <button class="btn sm" id="trx-next" onclick="trxHalaman(1)">›</button>
+                </div>
+              </div>
+            </div>
+
           </div>
 
-          <!-- Kolom Kanan: Metode Aktif + Transaksi -->
+          <!-- Kolom Kanan: Metode Aktif -->
           <div style="display:flex;flex-direction:column;gap:16px">
 
             <!-- Metode Aktif -->
@@ -2001,32 +2168,6 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
                   <i class="ti ti-arrow-left" aria-hidden="true"></i> Pilih provider dulu di kiri
                 </div>
               </div>
-            </div>
-
-            <!-- Transaksi Terbaru -->
-            <div class="card">
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
-                <div style="width:34px;height:34px;border-radius:9px;background:rgba(186,117,23,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                  <i class="ti ti-receipt-2" style="font-size:17px;color:#BA7517" aria-hidden="true"></i>
-                </div>
-                <div>
-                  <div style="font-size:13px;font-weight:700;color:var(--text)">Transaksi Terbaru</div>
-                  <div class="td-text-sub" style="font-size:11px">Log pembayaran masuk</div>
-                </div>
-              </div>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Pelanggan</th>
-                    <th>Metode</th>
-                    <th>Jumlah</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody id="tbl-transaksi">
-                  <tr><td colspan="4" style="text-align:center;color:var(--text3);padding:20px">Tidak ada data</td></tr>
-                </tbody>
-              </table>
             </div>
 
           </div>
@@ -2644,6 +2785,24 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
       <!-- ══ SESI AKTIF ══ -->
       <div class="page" id="p-sesi">
 
+        <!-- Modal Cek User/Voucher -->
+        <div class="overlay" id="m-cek-user">
+          <div class="modal" style="max-width:640px;width:94%;padding:20px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <div>
+                <div style="font-size:16px;font-weight:700">🔍 Cek User / Voucher</div>
+                <div style="font-size:12px;color:var(--text3);margin-top:2px">Riwayat login, IP, MAC address, paket &amp; tanggal expired</div>
+              </div>
+              <button class="btn sm" onclick="closeModal('m-cek-user')">✕</button>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:14px">
+              <input id="cu-username" placeholder="Ketik username / kode voucher (mis. sul216782)" onkeydown="if(event.key==='Enter')jalankanCekUser()" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-family:monospace;font-size:14px">
+              <button class="btn primary" onclick="jalankanCekUser()" style="gap:6px"><i class="ti ti-search"></i> Cek</button>
+            </div>
+            <div id="cu-hasil"></div>
+          </div>
+        </div>
+
         <!-- Header -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
           <div>
@@ -2651,6 +2810,9 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
             <div class="td-text-sub" style="font-size:12px;margin-top:3px">Pantau dan putuskan sesi PPPoE dan Hotspot secara real-time</div>
           </div>
           <div style="display:flex;gap:8px">
+            <button class="btn primary" onclick="bukaCekUser()" style="gap:6px">
+              <i class="ti ti-search" style="font-size:13px" aria-hidden="true"></i> Cek User
+            </button>
             <button class="btn" onclick="loadSesi()" style="gap:6px">
               <i class="ti ti-refresh" style="font-size:13px" aria-hidden="true"></i> Refresh
             </button>
@@ -5725,10 +5887,12 @@ function vtTestPrint() {
 }
 
 // Fungsi print batch pakai template default
-async function printBatchDenganTemplate(vouchers, autoPrint) {
+async function printBatchDenganTemplate(vouchers, autoPrint, tplOverride) {
   if (autoPrint === undefined) autoPrint = true;
   try {
-    const tpl = await apiFetch('/api/voucher-template/default/get');
+    // tplOverride dipakai oleh portal reseller (yang tidak boleh akses endpoint
+    // template admin) — template dikirim dari backend reseller.
+    const tpl = tplOverride || await apiFetch('/api/voucher-template/default/get');
     if (!tpl) { bukaWindowPrint(document.querySelector('.sidebar-brand span')?.textContent||'SimBill', vouchers); return; }
 
     const rows = vouchers.map(function(v, i) {
@@ -6671,17 +6835,29 @@ function topbarSearchInvoice(q) {
         dd.innerHTML = '<div style="padding:14px 16px;font-size:13px;color:#94a3b8;text-align:center">Tidak ada hasil</div>';
       } else {
         dd.innerHTML = list.map(inv => `
-          <div onclick="goto('invoice',null);setTimeout(()=>document.getElementById('topbar-search').value='',100)" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f1f5f9;transition:background .12s" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
-            <div style="display:flex;align-items:center;justify-content:space-between">
-              <span style="font-size:13px;font-weight:600;color:#0f172a">${inv.no_invoice||inv.nomor||'—'}</span>
-              <span style="font-size:12px;font-weight:600;color:#dc2626">${fmt ? fmt(inv.jumlah||0) : 'Rp'+parseInt(inv.jumlah||0).toLocaleString('id-ID')}</span>
+          <div style="padding:10px 14px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;gap:10px;transition:background .12s" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+            <div style="min-width:0;flex:1;cursor:pointer" onclick="goto('invoice',null);setTimeout(()=>document.getElementById('topbar-search').value='',100)">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <span style="font-size:13px;font-weight:600;color:#0f172a">${inv.no_invoice||inv.nomor||'—'}</span>
+                <span style="font-size:12px;font-weight:600;color:#dc2626">${fmt ? fmt(inv.jumlah||0) : 'Rp'+parseInt(inv.jumlah||0).toLocaleString('id-ID')}</span>
+              </div>
+              <div style="font-size:11px;color:#64748b;margin-top:2px">${inv.nama_pelanggan||inv.nama||'—'} · ${String(inv.jatuh_tempo||inv.tgl_jatuh_tempo||'—').slice(0,10)}</div>
             </div>
-            <div style="font-size:11px;color:#64748b;margin-top:2px">${inv.nama_pelanggan||inv.nama||'—'} · ${inv.jatuh_tempo||inv.tgl_jatuh_tempo||'—'}</div>
+            <button onmousedown="event.preventDefault()" onclick="event.stopPropagation();topbarLunasi(${inv.id},'${String(inv.no_invoice||'').replace(/['\\]/g,'')}')" style="flex-shrink:0;background:#16a34a;color:#fff;border:none;border-radius:8px;padding:7px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">✓ Lunasi</button>
           </div>`).join('');
       }
       dd.style.display = 'block';
     } catch(e) { if (dd) dd.style.display = 'none'; }
   }, 300);
+}
+// Lunasi langsung dari hasil pencarian topbar (konfirmasi → bayar tunai).
+async function topbarLunasi(id, no) {
+  if (!confirm(`Tandai invoice ${no || ''} sebagai LUNAS?\n\nInternet pelanggan akan otomatis diaktifkan.`)) return;
+  const dd = document.getElementById('topbar-search-dropdown');
+  if (dd) dd.style.display = 'none';
+  const s = document.getElementById('topbar-search'); if (s) s.value = '';
+  try { await apiBayarTunai(id); }
+  catch (e) { toast('❌ ' + (e.message || e), true); }
 }
 function topbarSearchShow() {
   const q = document.getElementById('topbar-search')?.value || '';
@@ -6700,6 +6876,18 @@ function topbarSearchMobileToggle() {
   if (open) { if (inp) setTimeout(() => inp.focus(), 50); }
   else { if (inp) inp.value=''; topbarSearchHide(); }
 }
+// Klik di luar area pencarian (HP) → tutup bar pencarian kembali seperti semula.
+document.addEventListener('click', function(e) {
+  const tb = document.querySelector('.topbar');
+  if (!tb || !tb.classList.contains('tb-search-open')) return;
+  // Abaikan klik di dalam kotak pencarian / dropdown / tombol toggle.
+  if (e.target.closest('.topbar-search-wrap') || e.target.closest('.tb-search-btn')
+      || e.target.closest('#topbar-search-dropdown')) return;
+  tb.classList.remove('tb-search-open');
+  const inp = document.getElementById('topbar-search');
+  if (inp) inp.value = '';
+  topbarSearchHide();
+});
 
 // ── TOPBAR NOTIF ──────────────────────────────────────────────
 function topbarTutupNotif() {
@@ -6806,6 +6994,13 @@ async function apiFetch(path, opts={}) {
     ...opts,
     headers: { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json', ...(opts.headers||{}) }
   });
+  // Token kadaluarsa / tidak valid → auto-logout (hanya bila sedang login,
+  // supaya percobaan login dengan kredensial salah tidak ikut ter-"logout").
+  if (res.status === 401 && TOKEN) {
+    try { toast('Sesi berakhir. Silakan login kembali.', true); } catch(e) {}
+    try { doLogout(); } catch(e) {}
+    throw new Error('Sesi berakhir');
+  }
   const data = await res.json();
   if (!res.ok) { const _e = new Error(data.error || 'Gagal'); _e.detail = data.detail; throw _e; }
   return data;
@@ -7246,6 +7441,9 @@ async function loadResellerVoucher() {
         ${Number(p.harga)>Number(p.harga_jual)?`<div style="font-size:11px;color:var(--text3);text-decoration:line-through">${rsRp(p.harga)}</div>`:''}
       </div>`).join('');
   } catch (e) { toast('❌ ' + e.message, true); }
+  rvLoadBatch();
+  rvLoadVoucher();
+  if (typeof rvPreview === 'function') rvPreview();
 }
 function rvPilih(id) {
   RV_SEL = RV_PAKET.find(p => p.id === id);
@@ -7270,25 +7468,191 @@ function rvHitung() {
 async function rvBeli() {
   if (!RV_SEL) return;
   const jml = Math.max(1, Math.min(100, parseInt(document.getElementById('rv-jumlah').value) || 1));
+  const mode    = document.getElementById('rv-mode').value;
+  const panjang = parseInt(document.getElementById('rv-panjang').value) || 9;
+  const prefix  = document.getElementById('rv-prefix').value.trim();
+  const charset = document.getElementById('rv-charset').value;
+  if (prefix.length >= panjang) return toast('❌ Panjang prefix harus lebih kecil dari panjang kode', true);
   const total = (Number(RV_SEL.harga_jual) || 0) * jml;
-  if (!confirm(`Beli ${jml}x voucher ${RV_SEL.nama} seharga ${rsRp(total)}?`)) return;
+  if (!confirm(`Generate ${jml}x voucher ${RV_SEL.nama} seharga ${rsRp(total)}?`)) return;
   const btn = document.getElementById('rv-btn-beli');
   btn.disabled = true; btn.textContent = 'Memproses…';
   try {
-    const r = await apiFetch('/api/reseller/beli/voucher', {
-      method: 'POST', body: JSON.stringify({ paket_id: RV_SEL.id, jumlah: jml })
+    const r = await apiFetch('/api/reseller/generate-voucher', {
+      method: 'POST', body: JSON.stringify({ paket_id: RV_SEL.id, jumlah: jml, mode, panjang, prefix, charset })
     });
-    const kodes = r.voucher || [];
+    const kodes = (r.voucher || []).map(function(v){ return v.username + (v.password && v.password !== v.username ? ' / ' + v.password : ''); });
     document.getElementById('rv-hasil').innerHTML = `
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px">
         <div style="font-weight:700;color:#16a34a;margin-bottom:6px">✅ Berhasil! Sisa saldo ${rsRp(r.saldo_sisa)}</div>
         <div style="font-family:monospace;line-height:1.7;max-height:180px;overflow:auto">${kodes.join('<br>')}</div>
         <button class="btn sm" style="margin-top:8px" onclick="navigator.clipboard.writeText('${kodes.join('\\n')}').then(()=>toast('✅ Kode disalin'))">📋 Salin semua</button>
       </div>`;
-    toast('✅ Pembelian berhasil');
+    toast('✅ Generate berhasil');
     loadResellerVoucher();
+    rvLoadBatch();
+    rvvHal = 1; rvLoadVoucher();
   } catch (e) { toast('❌ ' + e.message, true); }
-  finally { btn.disabled = false; btn.innerHTML = '<i class="ti ti-shopping-cart"></i> Beli Sekarang'; }
+  finally { btn.disabled = false; btn.innerHTML = '<i class="ti ti-ticket"></i> Generate Voucher'; }
+}
+
+// ── RESELLER: opsi generate (mode/charset/preview) ──
+function rvSetMode(m) {
+  document.getElementById('rv-mode').value = m;
+  ['sama','beda'].forEach(function(x){
+    const el = document.getElementById('rv-mode-'+x);
+    if (!el) return;
+    const on = (x === m);
+    el.style.borderColor = on ? 'var(--accent,#7C3AED)' : 'var(--border)';
+    el.style.background  = on ? 'rgba(124,58,237,.06)' : 'transparent';
+  });
+}
+function rvSetCharset(c) {
+  document.getElementById('rv-charset').value = c;
+  ['angka','angka_kecil','angka_besar'].forEach(function(x){
+    const el = document.getElementById('rv-cs-'+x);
+    if (!el) return;
+    const on = (x === c);
+    el.style.borderColor = on ? 'var(--accent,#7C3AED)' : 'var(--border)';
+    el.style.background  = on ? 'rgba(124,58,237,.06)' : 'transparent';
+  });
+  rvPreview();
+}
+function rvPreview() {
+  const panjang = Math.min(Math.max(parseInt(document.getElementById('rv-panjang').value) || 9, 4), 20);
+  const prefix  = (document.getElementById('rv-prefix').value || '').replace(/[^A-Za-z0-9]/g,'').slice(0,10);
+  const cs = document.getElementById('rv-charset').value;
+  const sets = { angka:'0123456789', angka_kecil:'0123456789abcdefghijklmnopqrstuvwxyz', angka_besar:'0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ' };
+  const chars = sets[cs] || sets.angka;
+  const n = Math.max(panjang - prefix.length, 4);
+  let s = prefix;
+  for (let i=0;i<n;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  const el = document.getElementById('rv-preview-kode'); if (el) el.textContent = s;
+}
+
+// ── RESELLER: RIWAYAT BATCH GENERATE ──
+// Hitung prefix voucher dari awalan username (common prefix MIN & MAX).
+// Untuk batch yang dibuat dengan prefix (mis. "sul"), semua username diawali
+// prefix itu → common prefix = prefix-nya. Tanpa prefix → biasanya kosong.
+function _batchPrefix(b) {
+  const a = String((b && b.u_min) || ''), c = String((b && b.u_max) || '');
+  let i = 0;
+  while (i < a.length && i < c.length && a[i] === c[i]) i++;
+  return a.slice(0, i);
+}
+let rvBatchHal = 1, rvBatchTotal = 0;
+async function rvLoadBatch() {
+  const el = document.getElementById('rv-batch-list');
+  if (!el) return;
+  const per = parseInt((document.getElementById('rv-batch-per')||{}).value) || 10;
+  try {
+    const resp = await apiFetch('/api/reseller/batch?hal=' + rvBatchHal + '&per=' + per);
+    const rows = resp.data || [];
+    rvBatchTotal = resp.total || 0;
+    if (!rows.length) {
+      el.innerHTML = '<div style="text-align:center;color:var(--text3);font-size:13px;padding:12px">Belum ada batch</div>';
+    } else {
+      el.innerHTML = rows.map(function(b) {
+        const tgl = new Date(b.created_at).toLocaleString('id-ID', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+        const sisaAktif = b.jumlah - b.terpakai;
+        const prefix = _batchPrefix(b);
+        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:120px">
+            <div style="font-weight:500;color:var(--text)">${escapeHtml(b.nama_paket)}${prefix ? ' - ' + escapeHtml(prefix) : ''}</div>
+            <div style="color:var(--text3);margin-top:1px">${tgl} &nbsp;·&nbsp; ${b.jumlah} voucher &nbsp;·&nbsp; <span style="color:var(--green)">${sisaAktif} aktif</span></div>
+          </div>
+          <button class="btn sm primary" onclick="rvPrintBatch('${b.batch_id}',${b.jumlah})">🖨️ Print</button>
+          <button class="btn sm" onclick="rvExportBatchXlsx('${b.batch_id}')" title="Export Excel">📊 Excel</button>
+          <button class="btn sm" onclick="rvExportBatchPdf('${b.batch_id}')" title="Export PDF kartu">📄 PDF</button>
+        </div>`;
+      }).join('');
+    }
+    // info halaman + tombol prev/next
+    const totalHal = Math.max(1, Math.ceil(rvBatchTotal / per));
+    const info = document.getElementById('rv-batch-info');
+    if (info) info.textContent = rvBatchTotal ? `Hal ${rvBatchHal}/${totalHal} (${rvBatchTotal})` : '—';
+    const prev = document.getElementById('rv-batch-prev'); if (prev) prev.disabled = rvBatchHal <= 1;
+    const next = document.getElementById('rv-batch-next'); if (next) next.disabled = rvBatchHal >= totalHal;
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px">❌ Gagal memuat</div>';
+  }
+}
+function rvBatchHalaman(d) {
+  const per = parseInt((document.getElementById('rv-batch-per')||{}).value) || 10;
+  const totalHal = Math.max(1, Math.ceil(rvBatchTotal / per));
+  rvBatchHal = Math.min(Math.max(1, rvBatchHal + d), totalHal);
+  rvLoadBatch();
+}
+
+// ── RESELLER: VOUCHER SAYA (daftar voucher individual) ──
+let rvvHal = 1, rvvTotal = 0, rvvCariTimer = null;
+function rvvBadge(s) {
+  const map = {
+    unused:  ['Belum dipakai', '#2563eb', 'rgba(37,99,235,.12)'],
+    used:    ['Dipakai',       '#16a34a', 'rgba(22,163,74,.12)'],
+    expired: ['Kedaluwarsa',   '#dc2626', 'rgba(220,38,38,.12)']
+  };
+  const m = map[s] || [s, '#64748b', 'rgba(100,116,139,.12)'];
+  return `<span style="font-size:11px;font-weight:600;color:${m[1]};background:${m[2]};padding:2px 9px;border-radius:20px">${m[0]}</span>`;
+}
+async function rvLoadVoucher() {
+  const tb = document.getElementById('rvv-tbody');
+  if (!tb) return;
+  const per = parseInt((document.getElementById('rvv-per')||{}).value) || 25;
+  const q   = (document.getElementById('rvv-cari')||{}).value || '';
+  const st  = (document.getElementById('rvv-status')||{}).value || '';
+  try {
+    const resp = await apiFetch('/api/reseller/voucher?hal=' + rvvHal + '&per=' + per
+      + '&q=' + encodeURIComponent(q) + '&status=' + encodeURIComponent(st));
+    const rows = resp.data || [];
+    rvvTotal = resp.total || 0;
+    if (!rows.length) {
+      tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:18px;color:var(--text3)">Belum ada voucher</td></tr>';
+    } else {
+      tb.innerHTML = rows.map(function(v) {
+        const dipakai = v.tgl_digunakan ? new Date(v.tgl_digunakan).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+        return `<tr>
+          <td style="font-family:monospace">${escapeHtml(v.username)}</td>
+          <td style="font-family:monospace">${escapeHtml(v.password || v.username)}</td>
+          <td>${escapeHtml(v.nama_paket || '-')}</td>
+          <td>${rvvBadge(v.status)}</td>
+          <td style="color:var(--text3)">${dipakai}</td>
+        </tr>`;
+      }).join('');
+    }
+    const totalHal = Math.max(1, Math.ceil(rvvTotal / per));
+    const info = document.getElementById('rvv-info');
+    if (info) info.textContent = rvvTotal ? `Hal ${rvvHal}/${totalHal} (${rvvTotal})` : '—';
+    const prev = document.getElementById('rvv-prev'); if (prev) prev.disabled = rvvHal <= 1;
+    const next = document.getElementById('rvv-next'); if (next) next.disabled = rvvHal >= totalHal;
+  } catch(e) {
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:18px;color:var(--text3)">❌ Gagal memuat</td></tr>';
+  }
+}
+function rvvHalaman(d) {
+  const per = parseInt((document.getElementById('rvv-per')||{}).value) || 25;
+  const totalHal = Math.max(1, Math.ceil(rvvTotal / per));
+  rvvHal = Math.min(Math.max(1, rvvHal + d), totalHal);
+  rvLoadVoucher();
+}
+function rvvCariDebounce() {
+  clearTimeout(rvvCariTimer);
+  rvvCariTimer = setTimeout(function(){ rvvHal = 1; rvLoadVoucher(); }, 350);
+}
+async function rvPrintBatch(batchId) {
+  try {
+    toast('⏳ Menyiapkan data voucher...');
+    const d = await apiFetch('/api/reseller/batch/' + encodeURIComponent(batchId) + '/data');
+    const list = d.vouchers || [];
+    if (!list.length) { toast('❌ Tidak ada voucher batch ini', true); return; }
+    await printBatchDenganTemplate(list, true, d.template);
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+function rvExportBatchXlsx(batchId) {
+  _unduhBatch('/api/reseller/batch/' + encodeURIComponent(batchId) + '/export-xlsx', batchId, 'xlsx');
+}
+function rvExportBatchPdf(batchId) {
+  _unduhBatch('/api/reseller/batch/' + encodeURIComponent(batchId) + '/export-pdf', batchId, 'pdf');
 }
 
 // ── RESELLER: PELANGGAN SAYA ──
@@ -7451,24 +7815,42 @@ async function rtBayar() {
   } catch (e) { toast('❌ ' + e.message + (e.detail ? ' — ' + e.detail : ''), true); }
   finally { btn.disabled = false; btn.innerHTML = 'Lanjut Bayar <i class="ti ti-arrow-right"></i>'; }
 }
+let rtHal = 1, rtTotal = 0;
 async function rtLoadRiwayat() {
   const box = document.getElementById('rt-list');
+  const per = parseInt((document.getElementById('rt-per')||{}).value) || 10;
   try {
-    const rows = await apiFetch('/api/reseller/topup');
-    if (!rows.length) { box.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">Belum ada topup.</div>'; return; }
-    const st = (s)=>({paid:['Berhasil','#16a34a'],pending:['Menunggu','#d97706'],expired:['Kadaluarsa','#dc2626'],cancelled:['Batal','#64748b']}[s]||[s,'#64748b']);
-    box.innerHTML = rows.map(t => { const m=st(t.status); return `
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border)">
-        <div style="min-width:0">
-          <div style="font-size:14px;font-weight:700">${rsRp(t.jumlah)}</div>
-          <div style="font-size:11px;color:var(--text3);text-transform:capitalize">${fmtDate?fmtDate(t.created_at):String(t.created_at).slice(0,10)} · ${t.payment_method||'—'}</div>
-        </div>
-        <div style="text-align:right">
-          <span style="font-size:11px;font-weight:700;color:${m[1]};background:${m[1]}1f;padding:3px 10px;border-radius:20px">${m[0]}</span>
-          ${t.status==='pending'&&t.payment_url?`<div style="margin-top:3px"><a href="${t.payment_url}" target="_blank" style="color:#7C3AED;font-size:11px;font-weight:600">Bayar sekarang →</a></div>`:''}
-        </div>
-      </div>`; }).join('');
+    const resp = await apiFetch('/api/reseller/topup?hal=' + rtHal + '&per=' + per);
+    const rows = resp.data || [];
+    rtTotal = resp.total || 0;
+    if (!rows.length) {
+      box.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">Belum ada topup.</div>';
+    } else {
+      const st = (s)=>({paid:['Berhasil','#16a34a'],pending:['Menunggu','#d97706'],expired:['Kadaluarsa','#dc2626'],cancelled:['Batal','#64748b']}[s]||[s,'#64748b']);
+      box.innerHTML = rows.map(t => { const m=st(t.status); return `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border)">
+          <div style="min-width:0">
+            <div style="font-size:14px;font-weight:700">${rsRp(t.jumlah)}</div>
+            <div style="font-size:11px;color:var(--text3);text-transform:capitalize">${fmtDate?fmtDate(t.created_at):String(t.created_at).slice(0,10)} · ${t.payment_method||'—'}</div>
+          </div>
+          <div style="text-align:right">
+            <span style="font-size:11px;font-weight:700;color:${m[1]};background:${m[1]}1f;padding:3px 10px;border-radius:20px">${m[0]}</span>
+            ${t.status==='pending'&&t.payment_url?`<div style="margin-top:3px"><a href="${t.payment_url}" target="_blank" style="color:#7C3AED;font-size:11px;font-weight:600">Bayar sekarang →</a></div>`:''}
+          </div>
+        </div>`; }).join('');
+    }
+    const totalHal = Math.max(1, Math.ceil(rtTotal / per));
+    const info = document.getElementById('rt-info');
+    if (info) info.textContent = rtTotal ? `Hal ${rtHal}/${totalHal} (${rtTotal})` : '—';
+    const prev = document.getElementById('rt-prev'); if (prev) prev.disabled = rtHal <= 1;
+    const next = document.getElementById('rt-next'); if (next) next.disabled = rtHal >= totalHal;
   } catch (e) { box.innerHTML = `<div style="padding:18px;text-align:center;color:#dc2626;font-size:13px">${e.message}</div>`; }
+}
+function rtHalaman(d) {
+  const per = parseInt((document.getElementById('rt-per')||{}).value) || 10;
+  const totalHal = Math.max(1, Math.ceil(rtTotal / per));
+  rtHal = Math.min(Math.max(1, rtHal + d), totalHal);
+  rtLoadRiwayat();
 }
 async function rpBukaTambah() {
   try {
@@ -10951,9 +11333,10 @@ async function loadBatchHistory() {
     el.innerHTML = rows.map(function(b) {
       const tgl = new Date(b.created_at).toLocaleString('id-ID', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
       const sisaAktif = b.jumlah - b.terpakai;
+      const prefix = _batchPrefix(b);
       return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px">
         <div style="flex:1;min-width:0">
-          <div style="font-weight:500;color:var(--text)">${escapeHtml(b.nama_paket)}</div>
+          <div style="font-weight:500;color:var(--text)">${escapeHtml(b.nama_paket)}${prefix ? ' - ' + escapeHtml(prefix) : ''}</div>
           <div style="color:var(--text3);margin-top:1px">${tgl} &nbsp;·&nbsp; ${b.jumlah} voucher &nbsp;·&nbsp; <span style="color:var(--green)">${sisaAktif} aktif</span></div>
         </div>
         <button class="btn sm primary" onclick="printBatch('${b.batch_id}',${b.jumlah})">🖨️ Print</button>
@@ -12031,23 +12414,46 @@ async function loadPayment() {
     renderMetodeAktif(provider);
   } catch(e) { console.warn('Setting PG:', e.message); }
 
-  // Riwayat transaksi
+  // Riwayat transaksi (paginated)
+  loadTransaksiPG();
+}
+
+// ── Transaksi Terbaru (Payment Gateway) — paginated ──
+let trxHal = 1, trxTotal = 0;
+async function loadTransaksiPG() {
+  const t = document.getElementById('tbl-transaksi');
+  if (!t) return;
+  const per = parseInt((document.getElementById('trx-per')||{}).value) || 10;
   try {
-    const rows = await apiFetch('/api/payment/transaksi?limit=10');
-    const t = document.getElementById('tbl-transaksi');
-    if (!rows.length) { t.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:16px">Belum ada transaksi</td></tr>'; return; }
-    t.innerHTML = rows.map(r=>`
-      <tr>
-        <td>${escapeHtml(r.nama_pelanggan||'Voucher')}</td>
-        <td>${r.payment_type||r.metode_bayar||'—'}</td>
-        <td>${fmt(r.gross_amount||r.jumlah)}</td>
-        <td><span class="tag ${r.status==='success'||r.status==='paid'?'paid':'unpaid'}">${r.status==='success'||r.status==='paid'?'Sukses':'Pending'}</span></td>
-      </tr>`).join('');
+    const resp = await apiFetch('/api/payment/transaksi?halaman=' + trxHal + '&limit=' + per);
+    const rows = resp.data || [];
+    trxTotal = resp.total || 0;
+    if (!rows.length) {
+      t.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:16px">Belum ada transaksi</td></tr>';
+    } else {
+      t.innerHTML = rows.map(r=>`
+        <tr>
+          <td>${escapeHtml(r.nama_pelanggan||'Voucher')}</td>
+          <td>${r.payment_type||r.metode_bayar||'—'}</td>
+          <td>${fmt(r.gross_amount||r.jumlah)}</td>
+          <td><span class="tag ${r.status==='success'||r.status==='paid'?'paid':'unpaid'}">${r.status==='success'||r.status==='paid'?'Sukses':'Pending'}</span></td>
+        </tr>`).join('');
+    }
+    const totalHal = Math.max(1, Math.ceil(trxTotal / per));
+    const info = document.getElementById('trx-info');
+    if (info) info.textContent = trxTotal ? `Hal ${trxHal}/${totalHal} (${trxTotal})` : '—';
+    const prev = document.getElementById('trx-prev'); if (prev) prev.disabled = trxHal <= 1;
+    const next = document.getElementById('trx-next'); if (next) next.disabled = trxHal >= totalHal;
   } catch(e) {
     console.warn('Payment API:', e.message);
-    document.getElementById('tbl-transaksi').innerHTML =
-      '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:16px">Gagal memuat transaksi</td></tr>';
+    t.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:16px">Gagal memuat transaksi</td></tr>';
   }
+}
+function trxHalaman(d) {
+  const per = parseInt((document.getElementById('trx-per')||{}).value) || 10;
+  const totalHal = Math.max(1, Math.ceil(trxTotal / per));
+  trxHal = Math.min(Math.max(1, trxHal + d), totalHal);
+  loadTransaksiPG();
 }
 
 // Tampilkan grup field yang relevan sesuai provider terpilih, sembunyikan yang lain
@@ -13498,6 +13904,109 @@ async function isoSimpan() {
 
 let _sesiRows = [];
 
+// ── CEK USER / VOUCHER (diagnosa login, IP, MAC, expired) ──
+function bukaCekUser(prefillUsername) {
+  openModal('m-cek-user');
+  const inp = document.getElementById('cu-username');
+  if (inp) {
+    if (prefillUsername) inp.value = prefillUsername;
+    setTimeout(function(){ inp.focus(); }, 50);
+  }
+  document.getElementById('cu-hasil').innerHTML = '';
+  if (prefillUsername) jalankanCekUser();
+}
+function _cuFmt(t) {
+  if (!t) return '—';
+  return new Date(t).toLocaleString('id-ID', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+function _cuDurasi(menit) {
+  if (menit == null) return '—';
+  const h = Math.floor(menit/60), m = menit%60;
+  return (h ? h+'j ' : '') + m + 'm';
+}
+// Hitung expired EFEKTIF voucher: untuk voucher per-jam/hari/bulan, masa
+// berlaku dihitung dari LOGIN PERTAMA (tgl_digunakan), bukan saat dibuat.
+// Kolom tgl_expired lama bisa berisi nilai basi (dihitung saat pembuatan),
+// jadi untuk voucher kita hitung ulang di sini agar akurat.
+function _cuHitungExpired(info, tipe) {
+  const masa = Number(info.masa_aktif);
+  // Pelanggan (PPPoE/bulanan): pakai tgl_expired tersimpan apa adanya.
+  if (tipe !== 'voucher') {
+    if (info.tgl_expired) return _cuFmt(info.tgl_expired);
+    return masa === 0 ? '∞ Tanpa batas' : '—';
+  }
+  // Voucher VIP / tanpa batas
+  if (!masa || masa === 0) return '∞ Tanpa batas';
+  // Belum pernah login → masa belum mulai berjalan
+  if (!info.tgl_digunakan) {
+    const sat = info.satuan_masa === 'jam' ? 'jam' : info.satuan_masa === 'bulan' ? 'bulan' : 'hari';
+    return `belum aktif (berlaku ${masa} ${sat} sejak login pertama)`;
+  }
+  // Hitung: login pertama + masa
+  const dt = new Date(info.tgl_digunakan);
+  if (info.satuan_masa === 'jam')       dt.setHours(dt.getHours() + masa);
+  else if (info.satuan_masa === 'bulan') dt.setMonth(dt.getMonth() + masa);
+  else                                   dt.setDate(dt.getDate() + masa);
+  return _cuFmt(dt);
+}
+async function jalankanCekUser() {
+  const username = (document.getElementById('cu-username').value || '').trim();
+  const box = document.getElementById('cu-hasil');
+  if (!username) { box.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px">Masukkan username dulu.</div>'; return; }
+  box.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3)"><i class="ti ti-loader"></i> Memuat…</div>';
+  try {
+    const d = await apiFetch('/api/radius/cek-user/' + encodeURIComponent(username));
+    const info = d.info || {};
+    const expired = _cuHitungExpired(info, d.tipe);
+    const pertamaLogin = (d.tipe === 'voucher' && info.tgl_digunakan) ? _cuFmt(info.tgl_digunakan)
+                       : (d.sesi.length ? _cuFmt(d.sesi[d.sesi.length-1].login) : '—');
+
+    let html = '';
+    // Kartu ringkasan
+    html += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-family:monospace;font-size:15px;font-weight:700">${escapeHtml(d.username)}</span>
+        ${d.tipe ? `<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(124,58,237,.12);color:#7C3AED;font-weight:600">${d.tipe}</span>` : ''}
+        ${d.online ? '<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(22,163,74,.14);color:#16a34a;font-weight:700">● ONLINE</span>'
+                   : '<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(100,116,139,.14);color:#64748b;font-weight:600">○ Offline</span>'}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;font-size:13px">
+        <div><span style="color:var(--text3)">Paket:</span> <b>${escapeHtml(info.nama_paket || '—')}</b></div>
+        <div><span style="color:var(--text3)">Status:</span> <b>${escapeHtml(info.status || '—')}</b></div>
+        <div><span style="color:var(--text3)">Pertama login:</span> <b>${pertamaLogin}</b></div>
+        <div><span style="color:var(--text3)">Expired:</span> <b>${expired}</b></div>
+        ${d.online ? `<div><span style="color:var(--text3)">IP sekarang:</span> <b style="font-family:monospace">${escapeHtml(d.online.ip||'—')}</b></div>
+        <div><span style="color:var(--text3)">MAC sekarang:</span> <b style="font-family:monospace">${escapeHtml(d.online.mac||'—')}</b></div>` : ''}
+      </div>
+    </div>`;
+
+    // Tabel riwayat sesi
+    if (d.sesi.length) {
+      html += `<div style="font-size:12px;color:var(--text3);margin-bottom:6px">Riwayat sesi (${d.total_sesi} terakhir):</div>
+      <div style="overflow-x:auto;max-height:300px;overflow-y:auto">
+        <table style="font-size:12px"><thead><tr>
+          <th>Login</th><th>Logout</th><th>Durasi</th><th>IP</th><th>MAC</th><th>Data</th>
+        </tr></thead><tbody>`;
+      html += d.sesi.map(function(s){
+        const data = (s.mb_in!=null||s.mb_out!=null) ? `↓${s.mb_in||0} ↑${s.mb_out||0} MB` : '—';
+        return `<tr>
+          <td style="white-space:nowrap">${_cuFmt(s.login)}</td>
+          <td style="white-space:nowrap;color:${s.logout?'var(--text)':'#16a34a'}">${s.logout?_cuFmt(s.logout):'aktif'}</td>
+          <td>${_cuDurasi(s.durasi_menit)}</td>
+          <td style="font-family:monospace">${escapeHtml(s.ip||'—')}</td>
+          <td style="font-family:monospace">${escapeHtml(s.mac||'—')}</td>
+          <td style="white-space:nowrap;color:var(--text3)">${data}</td>
+        </tr>`;
+      }).join('');
+      html += '</tbody></table></div>';
+    } else {
+      html += '<div style="color:var(--text3);font-size:13px;padding:8px">Belum ada riwayat sesi login untuk user ini.</div>';
+    }
+    box.innerHTML = html;
+  } catch(e) {
+    box.innerHTML = `<div style="color:#dc2626;font-size:13px;padding:10px;background:rgba(220,38,38,.08);border-radius:8px">❌ ${escapeHtml(e.message)}</div>`;
+  }
+}
 async function loadSesi() {
   const tbody = document.getElementById('tbl-sesi');
   if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3)"><i class="ti ti-loader"></i> Memuat...</td></tr>';
