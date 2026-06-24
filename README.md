@@ -40,6 +40,7 @@ Installer otomatis memasang **Node.js 20, pm2, MariaDB**, membuat database, meng
 
 ### 🔑 Login Default
 🌐 **Demo:** [simbill.rfnet.id](https://simbill.rfnet.id)
+
 Setelah install, masuk dengan akun default:
 
 | Username | Password   |
