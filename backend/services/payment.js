@@ -12,6 +12,8 @@ const { query } = require('../config/db');
 let _cache = null;
 let _cacheAt = 0;
 const CACHE_MS = 10_000;
+let _lastError = null;
+function getLastError() { return _lastError; }
 
 async function getConfig(providerOverride) {
     const now = Date.now();
@@ -21,7 +23,7 @@ async function getConfig(providerOverride) {
         `SELECT kunci, nilai FROM setting WHERE kunci IN
          ('pg_provider','pg_sandbox','pg_server_key','pg_client_key',
           'pg_secret_key','pg_webhook_token','pg_merchant_code',
-          'pg_merchant_code_duitku','pg_merchant_code_tripay',
+          'pg_merchant_code_duitku','pg_merchant_code_tripay','pg_metode_duitku','pg_metode_aktif_duitku',
           'pg_merchant_code_midtrans','pg_merchant_code_xendit',
           'pg_api_key','pg_api_key_duitku','pg_api_key_tripay',
           'pg_server_key_midtrans','pg_client_key_midtrans',
@@ -45,17 +47,19 @@ async function getConfig(providerOverride) {
 
     const cfg = {
         provider,
-        sandbox:       map.pg_sandbox !== '0',
+        sandbox:       String(map.pg_sandbox || '').trim() === '1',
         serverKey:     map.pg_server_key_midtrans  || map.pg_server_key    || '',
         clientKey:     map.pg_client_key_midtrans  || map.pg_client_key    || '',
         secretKey:     map.pg_secret_key_xendit    || map.pg_secret_key    || '',
         webhookToken:  map.pg_webhook_token_xendit || map.pg_webhook_token || '',
-        merchantCode,
-        apiKey:        provider === 'duitku'
+        merchantCode: String(merchantCode || '').trim(),
+        metodeDuitku:  map.pg_metode_duitku || '',
+        metodeAktifDuitku: map.pg_metode_aktif_duitku || '',
+        apiKey:        String((provider === 'duitku'
                          ? (map.pg_api_key_duitku  || '')
                          : provider === 'tripay'
                          ? (map.pg_api_key_tripay  || '')
-                         : '',
+                         : '') || '').trim(),
         privateKey:    map.pg_private_key_tripay   || map.pg_private_key   || '',
         appUrl:        map.app_url || process.env.APP_URL || 'http://localhost:3000'
     };
@@ -72,8 +76,10 @@ function invalidateCache() {
 // ============================================================
 async function buatTransaksi({ order_id, gross_amount, pelanggan, metode, provider }) {
     const cfg = await getConfig(provider);
+    _lastError = null;
     try {
         if (!cfg.serverKey && !cfg.secretKey && !cfg.apiKey) {
+            _lastError = `Kredensial ${cfg.provider} kosong di Setting > Payment Gateway`;
             console.warn('[PAYMENT] Kredensial payment gateway belum diisi di Setting > Payment Gateway.');
             return null;
         }
@@ -86,8 +92,10 @@ async function buatTransaksi({ order_id, gross_amount, pelanggan, metode, provid
         } else if (cfg.provider === 'tripay') {
             return await _tripayBuat(order_id, gross_amount, pelanggan, cfg, metode);
         }
+        _lastError = `Provider tidak dikenal: ${cfg.provider}`;
     } catch (err) {
         const detail = err.response?.data ? JSON.stringify(err.response.data) : err.message;
+        _lastError = `${cfg.provider}: ${detail}`;
         console.error('[PAYMENT] Gagal buat transaksi:', detail);
         // Tidak throw — invoice tetap dibuat meski payment link gagal
         return null;
@@ -222,37 +230,133 @@ async function handleXenditWebhook(body) {
 // ============================================================
 // DUITKU
 // ============================================================
+// Pilih kode metode Duitku untuk link WA (tunggal, fallback inquiry v2).
+// Urutan prioritas dari metode yang dicentang admin di halaman "Metode Aktif".
+// Setting pg_metode_aktif_duitku bisa berformat CSV atau JSON array kode metode.
+// Peta nama/alias metode -> kode resmi Duitku (inquiry v2).
+const _DUITKU_KODE = {
+    // QRIS
+    'QRIS':'SP','qris':'SP','QR':'SP','NQ':'NQ','SP':'SP',
+    // E-wallet
+    'SHOPEEPAY':'SP','SA':'SP',
+    'OVO':'OV','OV':'OV',
+    'DANA':'DA','DA':'DA',
+    'GOPAY':'SP','gopay':'SP',
+    // Virtual Account
+    'BRIVA':'BR','BR':'BR','VA BRI':'BR',
+    'BCAVA':'BC','BC':'BC','VA BCA':'BC',
+    'BNIVA':'B1','B1':'B1','VA BNI':'B1',
+    'MANDIRIVA':'M2','M2':'M2','I1':'I1','VA MANDIRI':'M2',
+    'PERMATAVA':'BT','BT':'BT',
+    'BSIVA':'BV','BV':'BV',
+    'ATMBERSAMA':'AG','AG':'AG','ATM BERSAMA':'AG',
+    'MAYBANKVA':'VA','VA':'VA',
+    // Retail
+    'ALFAMART':'A1','LA':'A1','A1':'A1',
+    'RETAIL':'FT','FT':'FT','PEGADAIAN':'FT','POS':'FT',
+    'INDOMARET':'IR','IR':'IR',
+    // Kartu kredit
+    'VC':'VC','CC':'VC'
+};
+function _kodeDuitku(metode) {
+    if (!metode) return '';
+    const m = String(metode).trim();
+    return _DUITKU_KODE[m] || _DUITKU_KODE[m.toUpperCase()] || m;
+}
+
+function _pilihMetodeDuitku(cfg) {
+    // 1) kalau admin set metode khusus untuk WA, pakai itu
+    if (cfg.metodeDuitku) return cfg.metodeDuitku;
+    // 2) ambil dari daftar metode aktif (yang dicentang)
+    let list = [];
+    const raw = (cfg.metodeAktifDuitku || '').trim();
+    if (raw) {
+        try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) list = parsed.map(String);
+        } catch (e) {
+            list = raw.split(',').map(x => x.trim()).filter(Boolean);
+        }
+    }
+    // 3) prioritas metode e-wallet/QRIS yang umum (lebih mudah dibayar dari link tunggal)
+    // konversi semua ke kode Duitku resmi
+    list = list.map(_kodeDuitku).filter(Boolean);
+    const prioritas = ['SP', 'OV', 'DA', 'NQ', 'BR', 'BC', 'M2', 'I1', 'B1', 'VC'];
+    for (const p of prioritas) if (list.includes(p)) return p;
+    // 4) kalau ada metode lain di list, pakai yang pertama
+    if (list.length) return list[0];
+    // 5) default terakhir
+    return 'SP';
+}
+
 async function _duitkuBuat(order_id, gross_amount, pelanggan, cfg, metode) {
+    const amount = Math.round(gross_amount);
+    const phone  = (pelanggan.no_hp || '').replace(/[^0-9]/g, '') || '08123456789';
+
+    // --- Cara 1: POP createInvoice (dinonaktifkan: endpoint perlu konfigurasi khusus) ---
+    const PAKAI_POP = false;  // set true hanya jika akun sudah aktif Duitku POP
+    if (PAKAI_POP) try {
+        const popUrl = cfg.sandbox
+            ? 'https://sandbox.duitku.com/api/merchant/createInvoice'
+            : 'https://passport.duitku.com/api/merchant/createInvoice';
+        const timestamp = Date.now();
+        const sigPop = crypto.createHash('sha256')
+            .update(`${cfg.merchantCode}${timestamp}${cfg.apiKey}`)
+            .digest('hex');
+        const resp = await axios.post(popUrl, {
+            paymentAmount: amount,
+            merchantOrderId: order_id,
+            productDetails: `Tagihan Internet ${pelanggan.nama || ''}`.trim(),
+            email:    pelanggan.email || `${pelanggan.username || 'cust'}@customer.id`,
+            customerVaName: pelanggan.nama || pelanggan.username || 'Pelanggan',
+            phoneNumber: phone,
+            callbackUrl: `${cfg.appUrl}/webhook/duitku`,
+            returnUrl:   `${cfg.appUrl}/pembayaran/selesai`,
+            expiryPeriod: 1440
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'x-duitku-signature': sigPop,
+                'x-duitku-timestamp': String(timestamp),
+                'x-duitku-merchantcode': cfg.merchantCode
+            },
+            timeout: 15000
+        });
+        if (resp.data && resp.data.paymentUrl) {
+            return { order_id: resp.data.reference || order_id, payment_url: resp.data.paymentUrl };
+        }
+        console.warn('[PAYMENT] Duitku POP tanpa paymentUrl, fallback ke inquiry v2');
+    } catch (ePop) {
+        const msg = ePop.response?.data ? JSON.stringify(ePop.response.data) : ePop.message;
+        console.warn('[PAYMENT] Duitku POP gagal, fallback ke inquiry v2:', msg);
+    }
+
+    // --- Cara 2: inquiry v2 dengan metode e-wallet spesifik (fallback) ---
+    // Kode metode: OVO='OV', DANA='DA', ShopeePay='SP', QRIS='SP'/'QR'.
+    // Diambil dari setting pg_metode_duitku (default 'SP' = ShopeePay).
     const baseUrl = cfg.sandbox
         ? 'https://sandbox.duitku.com/webapi/api/merchant/v2/inquiry'
         : 'https://passport.duitku.com/webapi/api/merchant/v2/inquiry';
-
-    const merchantOrderId = order_id;
     const signature = crypto.createHash('md5')
-        .update(`${cfg.merchantCode}${merchantOrderId}${Math.round(gross_amount)}${cfg.apiKey}`)
+        .update(`${cfg.merchantCode}${order_id}${amount}${cfg.apiKey}`)
         .digest('hex');
-
-    const resp = await axios.post(baseUrl, {
+    const resp2 = await axios.post(baseUrl, {
         merchantCode: cfg.merchantCode,
-        paymentAmount: Math.round(gross_amount),
-        paymentMethod: metode || 'VC',
-        merchantOrderId,
-        productDetails: `Tagihan Internet ${pelanggan.nama}`,
-        email:    pelanggan.email || `${pelanggan.username}@customer.id`,
-        phoneNumber: pelanggan.no_hp,
+        paymentAmount: amount,
+        paymentMethod: _kodeDuitku(metode) || _pilihMetodeDuitku(cfg),
+        merchantOrderId: order_id,
+        productDetails: `Tagihan Internet ${pelanggan.nama || ''}`.trim(),
+        email:    pelanggan.email || `${pelanggan.username || 'cust'}@customer.id`,
+        phoneNumber: phone,
         additionalParam: '',
-        merchantUserInfo: pelanggan.username,
-        customerVaName: pelanggan.nama,
+        merchantUserInfo: pelanggan.username || '',
+        customerVaName: pelanggan.nama || 'Pelanggan',
         callbackUrl: `${cfg.appUrl}/webhook/duitku`,
         returnUrl:   `${cfg.appUrl}/pembayaran/selesai`,
         signature,
-        expiryPeriod: 1440  // 24 jam
+        expiryPeriod: 1440
     });
-
-    return {
-        order_id,
-        payment_url: resp.data.paymentUrl
-    };
+    return { order_id, payment_url: resp2.data.paymentUrl };
 }
 
 // ============================================================
@@ -302,5 +406,6 @@ module.exports = {
     handleMidtransWebhook,
     handleXenditWebhook,
     getConfig,
+    getLastError,
     invalidateCache
 };

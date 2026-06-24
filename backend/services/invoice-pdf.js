@@ -80,6 +80,12 @@ function buildHtmlA4(inv, cfg, qrDataUrl, logoDataUrl) {
     const jumlah     = Number(inv.jumlah || 0);
     const terbilangStr = terbilang(jumlah);
 
+    // Invoice pembelian voucher online: kode voucher disimpan di keterangan
+    // dengan format "— VoucherDibuat: XXXX". Tampilkan agar pembeli tahu kodenya.
+    let kodeVoucher = null;
+    const mKode = String(inv.keterangan || '').match(/VoucherDibuat:\s*([A-Za-z0-9_-]+)/i);
+    if (mKode) kodeVoucher = mKode[1];
+
     return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Invoice ${inv.no_invoice}</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -172,6 +178,13 @@ body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
       </tr>
     </tbody>
   </table>
+
+  ${kodeVoucher ? `
+  <div style="margin:10px 0;padding:12px 16px;border:2px dashed #16a34a;border-radius:8px;background:#f0fdf4;text-align:center">
+    <div style="font-size:9pt;color:#15803d;font-weight:600;letter-spacing:1px;text-transform:uppercase">Kode Voucher (Username &amp; Password)</div>
+    <div style="font-size:18pt;font-weight:800;font-family:'Courier New',monospace;color:#166534;letter-spacing:2px;margin:4px 0">${esc(kodeVoucher)}</div>
+    <div style="font-size:8pt;color:#666">Gunakan kode ini untuk login di halaman voucher / hotspot</div>
+  </div>` : ''}
 
   <div class="total-row">
     <div class="total-box">

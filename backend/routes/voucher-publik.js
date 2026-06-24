@@ -437,4 +437,35 @@ router.get('/hasil/:order', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-module.exports = { router, _aktivasiVoucher, _acakUsername };
+module.exports = { router, _aktivasiVoucher, _acakUsername, buatVoucherDariInvoice };
+
+// Buat voucher untuk sebuah invoice voucher online (VCR, pelanggan_id NULL)
+// berdasarkan keterangan ("WA: xxx — Nama: xxx — Paket: id"). Idempotent:
+// kalau keterangan sudah ada "VoucherDibuat:", langsung kembalikan kode itu.
+// Dipakai oleh webhook (via _aktivasiVoucher) DAN saat Lunasi manual.
+// Mengembalikan { username, created } atau null bila gagal.
+async function buatVoucherDariInvoice(invId) {
+    const inv = await queryOne('SELECT * FROM invoice WHERE id=? AND pelanggan_id IS NULL', [invId]);
+    if (!inv) return null;
+    const ket = inv.keterangan || '';
+    const sudah = ket.match(/VoucherDibuat:\s*([A-Za-z0-9_-]+)/i);
+    if (sudah) return { username: sudah[1], created: false };
+
+    const waMatch   = ket.match(/WA:\s*(\d+)/);
+    const namaMatch = ket.match(/Nama:\s*([^—]+)/);
+    const noHp     = waMatch?.[1];
+    const namaBeli = namaMatch?.[1]?.trim() || 'Pelanggan';
+    if (!noHp) { console.warn(`[VOUCHER] buatVoucherDariInvoice: WA tidak ada di keterangan inv ${invId}`); }
+
+    const paket = await queryOne('SELECT * FROM paket WHERE id=?', [inv.paket_id]);
+    if (!paket) { console.warn(`[VOUCHER] buatVoucherDariInvoice: paket ${inv.paket_id} tak ada`); return null; }
+
+    const username = _acakUsername();
+    // Buat voucher + kirim WA (kalau noHp ada). _aktivasiVoucher aman dipanggil
+    // walau noHp kosong (WA-nya saja yang gagal, voucher tetap dibuat).
+    await _aktivasiVoucher(username, noHp || '', namaBeli, paket);
+    await query(`UPDATE invoice SET keterangan = CONCAT(COALESCE(keterangan,''), ' — VoucherDibuat: ', ?) WHERE id=?`,
+        [username, invId]).catch(()=>{});
+    console.log(`[VOUCHER] Voucher dibuat dari invoice ${inv.no_invoice} → ${username}`);
+    return { username, created: true };
+}

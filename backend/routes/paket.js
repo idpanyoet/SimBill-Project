@@ -24,7 +24,7 @@ router.post('/', async (req, res, next) => {
             pool_name, tipe='keduanya', burst_limit, burst_time, deskripsi, rate_limit, izin_voucher,
             harga_reseller, share_users } = req.body;
 
-    if (!nama || !kecepatan_up || !kecepatan_dn || !harga)
+    if (!nama || !kecepatan_up || !kecepatan_dn || harga === undefined || harga === null || harga === '')
       return res.status(400).json({ error: 'nama, kecepatan_up, kecepatan_dn, harga wajib diisi' });
 
     await query(`ALTER TABLE paket ADD COLUMN IF NOT EXISTS rate_limit VARCHAR(128) NULL`).catch(()=>{});
@@ -39,7 +39,7 @@ router.post('/', async (req, res, next) => {
       INSERT INTO paket (nama, kecepatan_up, kecepatan_dn, harga, masa_aktif, satuan_masa,
         pool_name, tipe, burst_limit, burst_time, deskripsi, rate_limit, izin_voucher, harga_reseller, share_users)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-    `, [nama, kecepatan_up, kecepatan_dn, harga, masa_aktif || 30, satuan_masa || 'hari',
+    `, [nama, kecepatan_up, kecepatan_dn, harga, (masa_aktif ?? 30), satuan_masa || 'hari',
         pool_name || null, tipe || 'keduanya', burst_limit || null, burst_time || null,
         deskripsi || null, rate_limit || null, izin_voucher ? 1 : 0,
         (harga_reseller === '' || harga_reseller == null) ? null : harga_reseller, shareUsers]);
@@ -49,7 +49,7 @@ router.post('/', async (req, res, next) => {
     try {
       const radiusService = require('../services/radius');
       await radiusService._syncGroupPaketPublic(
-        { kecepatan_dn, kecepatan_up, rate_limit, pool_name: pool_name || null, masa_aktif: masa_aktif || 30 }, tipe || 'keduanya'
+        { kecepatan_dn, kecepatan_up, rate_limit, pool_name: pool_name || null, masa_aktif: (masa_aktif ?? 30) }, tipe || 'keduanya'
       );
     } catch(e) {
       console.warn('[PAKET] Sync RADIUS group gagal (tidak fatal):', e.message);

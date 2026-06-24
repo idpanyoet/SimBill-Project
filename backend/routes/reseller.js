@@ -34,9 +34,14 @@ async function catatMutasi(db, resellerId, tipe, jumlah, keterangan, refId = nul
     const r = await db.queryOne('SELECT saldo FROM reseller WHERE id=? FOR UPDATE', [resellerId]);
     if (!r) throw new Error('Reseller tidak ditemukan');
 
-    const sebelum = parseFloat(r.saldo);
+    // PENTING: paksa angka. Bila 'jumlah' berupa string (mis. "220000"),
+    // operasi sebelum + jumlah akan menjadi penggabungan teks
+    // ("2239" + "220000" = "2239220000"), bukan penjumlahan.
+    const sebelum = parseFloat(r.saldo) || 0;
+    const nilai   = parseFloat(jumlah);
+    if (isNaN(nilai)) throw new Error('Jumlah mutasi tidak valid');
     const mengurangi = tipe === 'pembelian' || tipe === 'koreksi';
-    const sesudah = mengurangi ? sebelum - jumlah : sebelum + jumlah;
+    const sesudah = mengurangi ? sebelum - nilai : sebelum + nilai;
 
     if (mengurangi && sesudah < 0)
         throw new Error('Saldo tidak mencukupi');
@@ -46,7 +51,7 @@ async function catatMutasi(db, resellerId, tipe, jumlah, keterangan, refId = nul
         INSERT INTO reseller_mutasi
           (reseller_id, tipe, jumlah, saldo_sebelum, saldo_sesudah, keterangan, ref_id, payment_method)
         VALUES (?,?,?,?,?,?,?,?)
-    `, [resellerId, tipe, jumlah, sebelum, sesudah, keterangan, refId, method]);
+    `, [resellerId, tipe, nilai, sebelum, sesudah, keterangan, refId, method]);
 
     return sesudah;
 }
@@ -179,8 +184,12 @@ router.post('/topup', resellerAuth, async (req, res, next) => {
         });
 
         if (!pg?.payment_url) {
+            const detail = (typeof paymentService.getLastError === 'function')
+                ? paymentService.getLastError() : null;
+            console.error(`[RESELLER] Topup gagal buat link untuk ${order_id}:`, detail || '(tanpa detail)');
             return res.status(400).json({
-                error: 'Gagal membuat link pembayaran. Pastikan payment gateway sudah dikonfigurasi admin di Setting > Payment Gateway.'
+                error: 'Gagal membuat link pembayaran. Pastikan payment gateway sudah dikonfigurasi admin di Setting > Payment Gateway.',
+                detail: detail || undefined
             });
         }
 
@@ -300,7 +309,7 @@ router.post('/beli/voucher', resellerAuth, async (req, res, next) => {
                 // transaksi rollback (saldo tidak terpotong, voucher tidak terbuat).
                 await db.query(`
                     INSERT INTO voucher (username, password, paket_id, status, tgl_expired)
-                    VALUES (?,?,?,'unused', DATE_ADD(NOW(), INTERVAL 365 DAY))
+                    VALUES (?,?,?,'unused', NULL)
                 `, [kode, kode, paket_id]);
                 kodes.push(kode);
             }
@@ -775,7 +784,7 @@ router.post('/admin/approve/:id', authMiddleware, requireAdmin, async (req, res,
 // PUT /reseller/admin/:id
 router.put('/admin/:id', authMiddleware, requireAdmin, async (req, res, next) => {
     try {
-        const { level, status, saldo_tambah, keterangan_koreksi } = req.body;
+        const { level, status, saldo_tambah, saldo_set, keterangan_koreksi } = req.body;
 
         if (level !== undefined || status !== undefined) {
             await query(`
@@ -786,11 +795,26 @@ router.put('/admin/:id', authMiddleware, requireAdmin, async (req, res, next) =>
             `, [level ?? null, status ?? null, req.params.id]);
         }
 
-        // Koreksi saldo manual
-        if (saldo_tambah && saldo_tambah !== 0) {
-            const tipe = saldo_tambah > 0 ? 'bonus' : 'koreksi';
+        // Koreksi saldo: SET nilai pasti (prioritas) ATAU tambah/kurang delta.
+        if (saldo_set !== undefined && saldo_set !== null && saldo_set !== '') {
+            const target = parseFloat(saldo_set);
+            if (isNaN(target) || target < 0)
+                return res.status(400).json({ error: 'Nilai saldo tidak valid' });
+            await withTransaction(async (db) => {
+                const r = await db.queryOne('SELECT saldo FROM reseller WHERE id=? FOR UPDATE', [req.params.id]);
+                if (!r) throw new Error('Reseller tidak ditemukan');
+                const sekarang = parseFloat(r.saldo) || 0;
+                const selisih  = target - sekarang;
+                if (selisih === 0) return; // tidak ada perubahan
+                const tipe = selisih > 0 ? 'bonus' : 'koreksi';
+                await catatMutasi(db, req.params.id, tipe, Math.abs(selisih),
+                    keterangan_koreksi || `Set saldo ke Rp ${target.toLocaleString('id-ID')} oleh admin`);
+            });
+        } else if (saldo_tambah && parseFloat(saldo_tambah) !== 0) {
+            const delta = parseFloat(saldo_tambah);
+            const tipe = delta > 0 ? 'bonus' : 'koreksi';
             await withTransaction(db =>
-                catatMutasi(db, req.params.id, tipe, Math.abs(saldo_tambah),
+                catatMutasi(db, req.params.id, tipe, Math.abs(delta),
                     keterangan_koreksi || `Koreksi saldo oleh admin`)
             );
         }

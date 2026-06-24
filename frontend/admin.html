@@ -537,6 +537,27 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
   .content [style*="padding:24px"],
   .content [style*="padding: 24px"]{padding:14px!important}
 }
+.inv-menu-btn{width:30px!important;height:30px!important;min-width:30px!important;max-width:30px!important;padding:0!important;border-radius:50%!important;border:1px solid var(--border);background:var(--bg);color:var(--text2);font-weight:800;font-size:15px;line-height:1;cursor:pointer;display:inline-flex!important;align-items:center;justify-content:center;vertical-align:middle;transition:all .12s;flex:0 0 auto;box-sizing:border-box}
+.vcr-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.vcr-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:transform .1s,box-shadow .12s,filter .12s;white-space:nowrap}
+.vcr-chip b{font-weight:800;color:var(--text)}
+.vcr-chip i{font-size:14px}
+.vcr-chip:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.12)}
+.vcr-chip-dark{background:#1f2937;border-color:#1f2937;color:#fff}.vcr-chip-dark b{color:#fff}
+.vcr-chip-green{background:#ecfdf5;border-color:#a7f3d0;color:#047857}.vcr-chip-green b{color:#065f46}
+.vcr-chip-amber{background:#fffbeb;border-color:#fde68a;color:#b45309}.vcr-chip-amber b{color:#92400e}
+.vcr-chip-red{background:#fef2f2;border-color:#fecaca;color:#dc2626}.vcr-chip-red b{color:#991b1b}
+.vcr-chip-blue{background:#eff6ff;border-color:#bfdbfe;color:#2563eb}.vcr-chip-blue b{color:#1e40af}
+.vcr-chip-gray{background:#f8fafc;border-color:#e2e8f0;color:#64748b}.vcr-chip-gray b{color:#475569}
+.vcr-chip-violet{background:#f5f3ff;border-color:#ddd6fe;color:#7c3aed}.vcr-chip-violet b{color:#5b21b6}
+.vcr-chip-teal{background:#f0fdfa;border-color:#99f6e4;color:#0d9488}.vcr-chip-teal b{color:#115e59}
+.vcr-chip.vcr-card-active{outline:2px solid currentColor;outline-offset:1px;filter:brightness(.97);box-shadow:0 3px 12px rgba(0,0,0,.18)}
+body.dark .vcr-chip{background:#161b22;border-color:#30363d;color:#9ba7b4}
+body.dark .vcr-chip b{color:#e6edf3}
+body.dark .vcr-chip-dark{background:#0d1117;border-color:#30363d}
+.inv-menu-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+#inv-action-menu button:hover{background:var(--bg)}
+body.dark #inv-action-menu button:hover{background:#21262d}
 </style></head>
 <body>
 
@@ -608,9 +629,9 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
     <div class="sb-section">Utama</div>
     <div class="sb-item active" onclick="goto('dashboard',this)"><i class="ti ti-layout-dashboard icon" aria-hidden="true"></i> Dashboard</div>
     <div class="sb-item" onclick="goto('pelanggan',this)"><i class="ti ti-users icon" aria-hidden="true"></i> Pelanggan</div>
-    <div class="sb-item" onclick="goto('paket',this)"><i class="ti ti-package icon" aria-hidden="true"></i> Paket Internet</div>
-    <div class="sb-item" onclick="goto('invoice',this)"><i class="ti ti-receipt icon" aria-hidden="true"></i> Invoice</div>
     <div class="sb-item" onclick="goto('voucher',this)"><i class="ti ti-ticket icon" aria-hidden="true"></i> Voucher</div>
+    <div class="sb-item" onclick="goto('invoice',this)"><i class="ti ti-receipt icon" aria-hidden="true"></i> Invoice</div>
+    <div class="sb-item" onclick="goto('paket',this)"><i class="ti ti-package icon" aria-hidden="true"></i> Paket Internet</div>
     <div class="sb-item" onclick="goto('reseller',this)"><i class="ti ti-building-store icon" aria-hidden="true"></i> Reseller</div>
     <div class="sb-item" onclick="goto('tiket',this)"><i class="ti ti-headset icon" aria-hidden="true"></i> Tiket <span id="sb-tiket-badge" style="display:none;background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:6px">0</span></div>
 
@@ -1210,11 +1231,14 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
           <button class="btn" onclick="apiExportPelangganCSV()"><i class="ti ti-download" aria-hidden="true"></i> Export CSV</button>
           <button class="btn" onclick="bukaImportCSV()"><i class="ti ti-upload" aria-hidden="true"></i> Import CSV</button>
         </div>
-        <div class="metrics" style="grid-template-columns:repeat(4,1fr)">
-          <div class="metric blue"><div class="metric-ico"><i class="ti ti-users"></i></div><div><div class="lbl">Total Pelanggan</div><div class="val" id="pl-st-total">0</div></div></div>
-          <div class="metric green"><div class="metric-ico"><i class="ti ti-circle-check"></i></div><div><div class="lbl">Aktif</div><div class="val" id="pl-st-aktif">0</div></div></div>
-          <div class="metric amber"><div class="metric-ico"><i class="ti ti-player-pause"></i></div><div><div class="lbl">Suspend</div><div class="val" id="pl-st-suspend">0</div></div></div>
-          <div class="metric red"><div class="metric-ico"><i class="ti ti-circle-x"></i></div><div><div class="lbl">Nonaktif</div><div class="val" id="pl-st-nonaktif">0</div></div></div>
+        <div class="vcr-chips" id="pl-chips">
+          <button class="vcr-chip vcr-chip-dark pl-filter-card" id="pl-card-all" onclick="filterPelangganStatus('')"><i class="ti ti-users"></i> Total: <b id="pl-st-total">0</b></button>
+          <button class="vcr-chip vcr-chip-green pl-filter-card" id="pl-card-aktif" onclick="filterPelangganStatus('aktif')"><i class="ti ti-circle-check"></i> Aktif: <b id="pl-st-aktif">0</b></button>
+          <button class="vcr-chip vcr-chip-amber pl-filter-card" id="pl-card-suspend" onclick="filterPelangganStatus('suspended')"><i class="ti ti-player-pause"></i> Suspend: <b id="pl-st-suspend">0</b></button>
+          <button class="vcr-chip vcr-chip-red pl-filter-card" id="pl-card-nonaktif" onclick="filterPelangganStatus('nonaktif')"><i class="ti ti-circle-x"></i> Nonaktif: <b id="pl-st-nonaktif">0</b></button>
+          <button class="vcr-chip vcr-chip-blue pl-filter-card" id="pl-card-online" onclick="filterPelangganStatus('online')"><i class="ti ti-wifi"></i> Online: <b id="pl-st-online">0</b></button>
+          <button class="vcr-chip vcr-chip-gray pl-filter-card" id="pl-card-offline" onclick="filterPelangganStatus('offline')"><i class="ti ti-wifi-off"></i> Offline: <b id="pl-st-offline">0</b></button>
+          <button class="vcr-chip vcr-chip-violet pl-filter-card" id="pl-card-baru" onclick="filterPelangganStatus('baru')"><i class="ti ti-sparkles"></i> Baru: <b id="pl-st-baru">0</b></button>
         </div>
         <div class="card">
           <div class="search-bar">
@@ -1244,11 +1268,11 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
       <!-- ══ PAKET ══ -->
       <div class="page" id="p-paket">
         <div class="action-bar"><button class="btn primary" onclick="bukaTambahPaket()"><span data-i18n="+ Tambah Paket">+ Tambah Paket</span></button></div>
-        <div class="metrics" style="grid-template-columns:repeat(4,1fr)">
-          <div class="metric blue"><div class="metric-ico"><i class="ti ti-package"></i></div><div><div class="lbl">Total Paket</div><div class="val" id="pk-st-total">0</div></div></div>
-          <div class="metric green"><div class="metric-ico"><i class="ti ti-circle-check"></i></div><div><div class="lbl">Aktif</div><div class="val" id="pk-st-aktif">0</div></div></div>
-          <div class="metric purple"><div class="metric-ico"><i class="ti ti-router"></i></div><div><div class="lbl">PPPoE</div><div class="val" id="pk-st-pppoe">0</div></div></div>
-          <div class="metric teal"><div class="metric-ico"><i class="ti ti-wifi"></i></div><div><div class="lbl">Hotspot</div><div class="val" id="pk-st-hotspot">0</div></div></div>
+        <div class="vcr-chips" id="pk-chips">
+          <button class="vcr-chip vcr-chip-dark pk-filter-card" id="pk-card-all" onclick="filterPaket('')"><i class="ti ti-package"></i> Total: <b id="pk-st-total">0</b></button>
+          <button class="vcr-chip vcr-chip-green pk-filter-card" id="pk-card-aktif" onclick="filterPaket('aktif')"><i class="ti ti-circle-check"></i> Aktif: <b id="pk-st-aktif">0</b></button>
+          <button class="vcr-chip vcr-chip-violet pk-filter-card" id="pk-card-pppoe" onclick="filterPaket('pppoe')"><i class="ti ti-router"></i> PPPoE: <b id="pk-st-pppoe">0</b></button>
+          <button class="vcr-chip vcr-chip-blue pk-filter-card" id="pk-card-hotspot" onclick="filterPaket('hotspot')"><i class="ti ti-wifi"></i> Hotspot: <b id="pk-st-hotspot">0</b></button>
         </div>
         <div class="card" style="padding:0;overflow:hidden">
           <table id="plan-grid">
@@ -1299,6 +1323,14 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
           </button>
         </div>
 
+        <div class="vcr-chips" id="inv-chips">
+          <button class="vcr-chip vcr-chip-dark inv-filter-card" id="inv-card-all" onclick="filterInvoiceStatus('')"><i class="ti ti-receipt"></i> Total: <b id="inv-st-total">0</b></button>
+          <button class="vcr-chip vcr-chip-green inv-filter-card" id="inv-card-paid" onclick="filterInvoiceStatus('paid')"><i class="ti ti-circle-check"></i> Lunas: <b id="inv-st-paid">0</b></button>
+          <button class="vcr-chip vcr-chip-amber inv-filter-card" id="inv-card-unpaid" onclick="filterInvoiceStatus('unpaid')"><i class="ti ti-clock"></i> Belum Bayar: <b id="inv-st-unpaid">0</b></button>
+          <button class="vcr-chip vcr-chip-red inv-filter-card" id="inv-card-overdue" onclick="filterInvoiceStatus('overdue')"><i class="ti ti-alert-triangle"></i> Terlambat: <b id="inv-st-overdue">0</b></button>
+          <span class="vcr-chip vcr-chip-teal" style="cursor:default" title="Total pendapatan dari invoice lunas"><i class="ti ti-coin"></i> Pendapatan: <b id="inv-st-pendapatan">0</b></span>
+        </div>
+
         <!-- Tab bar -->
         <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:12px">
           <button id="inv-tab-pppoe"   onclick="switchInvTab('pppoe')"   style="padding:8px 20px;font-size:13px;font-weight:500;border:none;background:none;border-bottom:2px solid var(--accent);margin-bottom:-2px;color:var(--accent);cursor:pointer">📡 PPPoE</button>
@@ -1346,26 +1378,19 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
 
       <!-- ══ VOUCHER ══ -->
       <div class="page" id="p-voucher">
-        <div class="metrics">
-          <div class="metric blue">
-            <div class="metric-ico"><i class="ti ti-ticket" aria-hidden="true"></i></div>
-            <div><div class="lbl">Total Voucher</div><div class="val">—</div></div>
-          </div>
-          <div class="metric green">
-            <div class="metric-ico"><i class="ti ti-circle-check" aria-hidden="true"></i></div>
-            <div><div class="lbl">Belum Dipakai</div><div class="val">—</div></div>
-          </div>
-          <div class="metric amber">
-            <div class="metric-ico"><i class="ti ti-user-check" aria-hidden="true"></i></div>
-            <div><div class="lbl">Sudah Dipakai</div><div class="val">—</div></div>
-          </div>
-          <div class="metric teal">
-            <div class="metric-ico"><i class="ti ti-coin" aria-hidden="true"></i></div>
-            <div><div class="lbl">Pendapatan Voucher</div><div class="val">—</div></div>
-          </div>
+        <div class="vcr-chips" id="vcr-chips">
+          <button class="vcr-chip vcr-chip-dark vcr-filter-card" id="vcr-card-all" onclick="filterVoucherStatus('')"><i class="ti ti-ticket"></i> Total: <b id="vc-total">—</b></button>
+          <button class="vcr-chip vcr-chip-green vcr-filter-card" id="vcr-card-unused" onclick="filterVoucherStatus('unused')"><i class="ti ti-circle-check"></i> Belum Dipakai: <b id="vc-unused">—</b></button>
+          <button class="vcr-chip vcr-chip-amber vcr-filter-card" id="vcr-card-used" onclick="filterVoucherStatus('used')"><i class="ti ti-user-check"></i> Sudah Dipakai: <b id="vc-used">—</b></button>
+          <button class="vcr-chip vcr-chip-red vcr-filter-card" id="vcr-card-expired" onclick="filterVoucherStatus('expired')"><i class="ti ti-clock-x"></i> Kedaluwarsa: <b id="vc-expired">—</b></button>
+          <button class="vcr-chip vcr-chip-blue vcr-filter-card" id="vcr-card-online" onclick="filterVoucherStatus('online')"><i class="ti ti-wifi"></i> Online: <b id="vc-online">—</b></button>
+          <button class="vcr-chip vcr-chip-gray vcr-filter-card" id="vcr-card-offline" onclick="filterVoucherStatus('offline')"><i class="ti ti-wifi-off"></i> Offline: <b id="vc-offline">—</b></button>
+          <button class="vcr-chip vcr-chip-violet vcr-filter-card" id="vcr-card-baru" onclick="filterVoucherStatus('baru')"><i class="ti ti-sparkles"></i> Baru: <b id="vc-baru">—</b></button>
+          <span class="vcr-chip vcr-chip-teal" style="cursor:default" title="Total pendapatan voucher terjual"><i class="ti ti-coin"></i> Pendapatan: <b id="vc-pendapatan">—</b></span>
         </div>
         <div class="action-bar">
           <button class="btn primary" onclick="openModal('m-gen-voucher')">⚡ Generate Voucher</button>
+          <button class="btn" onclick="bukaVoucherManual()">＋ Voucher Manual</button>
           <div class="dropdown" id="dd-aksi-massal">
             <button class="btn" onclick="toggleDropdownAksi()">Aksi Massal ▾</button>
             <div class="dropdown-menu" id="dd-aksi-menu" style="display:none;position:absolute;z-index:100;background:var(--bg2);border:1px solid var(--border);border-radius:8px;min-width:190px;box-shadow:0 4px 16px rgba(0,0,0,.3);overflow:hidden">
@@ -1419,16 +1444,6 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
                 <div style="text-align:center;color:var(--text3);font-size:13px;padding:16px">Memuat...</div>
               </div>
             </div>
-            <div class="card">
-              <div class="card-title">Penjualan per Paket Voucher</div>
-              <div id="vcr-stat-paket">
-                <div style="text-align:center;color:var(--text3);padding:16px;font-size:13px">Tidak ada data</div>
-              </div>
-              <div class="divider"></div>
-              <div class="stat-row"><span class="lbl" style="font-weight:600">Total Pendapatan</span><span class="val" id="vcr-total-pendapatan" style="color:var(--green)">—</span></div>
-              <button class="btn" style="margin-top:12px;width:100%;justify-content:center" onclick="window.open('/','_blank')">🔗 Buka Halaman Voucher Publik</button>
-            </div>
-
             <!-- Riwayat Sesi Voucher -->
             <div class="card">
               <div class="card-title">
@@ -1472,6 +1487,16 @@ body.dark .auth-mode-item:has(input:checked){background:rgba(186,117,23,.15);bor
                 </div>
               </div>
             </div>
+            <div class="card">
+              <div class="card-title">Penjualan per Paket Voucher</div>
+              <div id="vcr-stat-paket">
+                <div style="text-align:center;color:var(--text3);padding:16px;font-size:13px">Tidak ada data</div>
+              </div>
+              <div class="divider"></div>
+              <div class="stat-row"><span class="lbl" style="font-weight:600">Total Pendapatan</span><span class="val" id="vcr-total-pendapatan" style="color:var(--green)">—</span></div>
+              <button class="btn" style="margin-top:12px;width:100%;justify-content:center" onclick="window.open('/','_blank')">🔗 Buka Halaman Voucher Publik</button>
+            </div>
+
           </div>
         </div>
       </div>
@@ -3708,6 +3733,46 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
                   <div class="td-text-sub" style="font-size:10px;margin-top:3px">Suspend X hari setelah jatuh tempo</div>
                 </div>
               </div>
+              <div class="fg-row">
+                <div class="fg">
+                  <label>Generate Invoice H- (hari)</label>
+                  <input id="s-invoice_gen_h" type="number" min="0" placeholder="3">
+                  <div class="td-text-sub" style="font-size:10px;margin-top:3px">Buat invoice X hari sebelum masa aktif (tgl_expired) habis</div>
+                </div>
+                <div class="fg"></div>
+              </div>
+              <div style="padding-top:10px;margin-top:4px;border-top:1px solid var(--border)">
+                <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">Otomasi (Aktif/Nonaktif)</div>
+                <div class="fg-row">
+                  <div class="fg">
+                    <label>Generate Invoice Otomatis</label>
+                    <select id="s-auto_generate_invoice">
+                      <option value="1">Aktif</option>
+                      <option value="0">Nonaktif</option>
+                    </select>
+                    <div class="td-text-sub" style="font-size:10px;margin-top:3px">Buat invoice otomatis jelang expired (cron harian 07:00)</div>
+                  </div>
+                  <div class="fg">
+                    <label>Reminder WA Otomatis</label>
+                    <select id="s-auto_reminder">
+                      <option value="1">Aktif</option>
+                      <option value="0">Nonaktif</option>
+                    </select>
+                    <div class="td-text-sub" style="font-size:10px;margin-top:3px">Kirim reminder WA H- dan H-1 otomatis</div>
+                  </div>
+                </div>
+                <div class="fg-row">
+                  <div class="fg">
+                    <label>Auto-Suspend Otomatis</label>
+                    <select id="s-auto_suspend">
+                      <option value="1">Aktif</option>
+                      <option value="0">Nonaktif</option>
+                    </select>
+                    <div class="td-text-sub" style="font-size:10px;margin-top:3px">Suspend otomatis (telat bayar / masa aktif habis)</div>
+                  </div>
+                  <div class="fg"></div>
+                </div>
+              </div>
               <div style="padding-top:12px;border-top:1px solid var(--border);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap">
                 <button class="btn" onclick="apiSyncRadcheck()" style="gap:5px">
                   <i class="ti ti-refresh" style="font-size:13px" aria-hidden="true"></i> Sync Radcheck
@@ -4433,17 +4498,25 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
           Koreksi Saldo Manual
           <span style="background:#f3e8ff;color:#7c3aed;font-size:9px;font-weight:600;padding:1px 7px;border-radius:99px">Opsional</span>
         </div>
+        <div class="td-text-sub" style="font-size:11px;margin-bottom:8px">Saldo sekarang: <b id="er-saldo-now" style="color:var(--text)">—</b></div>
         <div class="fg-row">
           <div class="fg">
-            <label>Jumlah (+/-)</label>
-            <input id="er-saldo-koreksi" type="number" placeholder="cth: 50000 atau -20000">
+            <label>Tambah / Kurang (+/-)</label>
+            <input id="er-saldo-koreksi" type="number" placeholder="cth: 50000 atau -20000" oninput="erHitungSetelah()">
           </div>
           <div class="fg">
-            <label>Keterangan</label>
-            <input id="er-ket-koreksi" placeholder="Alasan koreksi">
+            <label>Atau Set Saldo ke (nilai pasti)</label>
+            <input id="er-saldo-set" type="number" min="0" placeholder="cth: 222239" oninput="erHitungSetelah()">
           </div>
         </div>
-        <div class="td-text-sub" style="font-size:11px;margin-top:4px">Kosongkan jika tidak ada koreksi saldo</div>
+        <div class="fg">
+          <label>Keterangan</label>
+          <input id="er-ket-koreksi" placeholder="Alasan koreksi">
+        </div>
+        <div class="td-text-sub" style="font-size:11px;margin-top:6px">
+          Saldo setelah disimpan: <b id="er-saldo-after" style="color:var(--accent,#7c3aed)">—</b><br>
+          Isi salah satu saja. "Set Saldo" mengatur langsung ke nilai pasti (lebih aman). Kosongkan keduanya jika tidak ada koreksi.
+        </div>
       </div>
 
       <div class="modal-foot" style="padding:0;border:none;margin-top:2px">
@@ -4742,7 +4815,7 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
         <div class="fg">
           <label>Masa Aktif</label>
           <div style="display:flex;gap:6px">
-            <input id="fp-masa" type="number" value="30" min="1" style="width:70px;flex-shrink:0">
+            <input id="fp-masa" type="number" value="30" min="0" style="width:70px;flex-shrink:0">
             <select id="fp-satuan" style="flex:1">
               <option value="hari">Hari</option>
               <option value="bulan">Bulan</option>
@@ -4838,7 +4911,7 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
         <div class="fg">
           <label>Masa Aktif</label>
           <div style="display:flex;gap:6px">
-            <input id="ep2-masa" type="number" value="30" min="1" style="width:70px;flex-shrink:0">
+            <input id="ep2-masa" type="number" value="30" min="0" style="width:70px;flex-shrink:0">
             <select id="ep2-satuan" style="flex:1">
               <option value="hari">Hari</option>
               <option value="bulan">Bulan</option>
@@ -5151,11 +5224,11 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
       <div style="display:flex;gap:10px;margin-bottom:14px">
         <div style="flex:1">
           <label class="fg-label">Panjang Kode</label>
-          <input type="number" id="fv-panjang" min="4" max="20" value="8" oninput="gvUpdatePreview()" style="width:100%;padding:9px 11px;border:1px solid #e2e7ef;border-radius:8px;font-size:13px;font-family:inherit">
+          <input type="number" id="fv-panjang" min="4" max="20" value="9" oninput="gvUpdatePreview()" style="width:100%;padding:9px 11px;border:1px solid #e2e7ef;border-radius:8px;font-size:13px;font-family:inherit">
         </div>
         <div style="flex:1">
           <label class="fg-label">Prefix (opsional)</label>
-          <input type="text" id="fv-prefix" maxlength="10" placeholder="mis. wifi" oninput="this.value=this.value.toLowerCase();gvUpdatePreview()" style="width:100%;padding:9px 11px;border:1px solid #e2e7ef;border-radius:8px;font-size:13px;font-family:inherit;text-transform:lowercase">
+          <input type="text" id="fv-prefix" maxlength="10" placeholder="mis. wifi" oninput="gvUpdatePreview()" style="width:100%;padding:9px 11px;border:1px solid #e2e7ef;border-radius:8px;font-size:13px;font-family:inherit">
         </div>
       </div>
 
@@ -5167,7 +5240,7 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
           <div class="gv-cs-chip" id="gv-cs-angka_kecil" onclick="gvSetCharset('angka_kecil')">a–z 0–9</div>
           <div class="gv-cs-chip" id="gv-cs-angka_besar" onclick="gvSetCharset('angka_besar')">A–Z 0–9</div>
         </div>
-        <input type="hidden" id="fv-charset" value="angka_kecil">
+        <input type="hidden" id="fv-charset" value="angka">
       </div>
 
       <!-- Preview kode -->
@@ -5190,6 +5263,84 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
     <div style="display:flex;gap:8px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border)">
       <button class="btn" onclick="closeModal('m-gen-voucher')">Batal</button>
       <button class="btn primary" onclick="apiGenerateVoucher()">⚡ Generate</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Voucher Manual: buat 1 voucher dengan username & password sendiri -->
+<div class="overlay" id="m-voucher-manual">
+  <div class="modal" style="max-width:440px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <i class="ti ti-ticket" style="font-size:18px;color:var(--accent)" aria-hidden="true"></i>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">Voucher Manual</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:1px">Buat 1 voucher dengan username &amp; password sendiri</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-voucher-manual')">✕</button>
+    </div>
+    <div style="padding:18px 20px">
+      <div style="margin-bottom:14px">
+        <label class="fg-label">Paket</label>
+        <select id="vm-paket" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--bg)"></select>
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="fg-label">Username Voucher</label>
+        <input type="text" id="vm-username" maxlength="32" placeholder="mis. promo2026" oninput="this.value=this.value.replace(/[^A-Za-z0-9_-]/g,'')" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--bg)">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">3–32 karakter. Huruf, angka, - dan _ saja.</div>
+      </div>
+      <div style="margin-bottom:4px">
+        <label class="fg-label">Password <span style="color:var(--text3);font-weight:400">(opsional)</span></label>
+        <input type="text" id="vm-password" maxlength="32" placeholder="Kosongkan = sama dengan username" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--bg)">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border)">
+      <button class="btn" onclick="closeModal('m-voucher-manual')">Batal</button>
+      <button class="btn primary" onclick="apiVoucherManual()">＋ Buat Voucher</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Edit Voucher -->
+<div class="overlay" id="m-voucher-edit">
+  <div class="modal" style="max-width:440px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <i class="ti ti-edit" style="font-size:18px;color:var(--accent)" aria-hidden="true"></i>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--text)">Edit Voucher</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:1px">Ubah password, paket, atau status voucher</div>
+        </div>
+      </div>
+      <button class="btn-x" onclick="closeModal('m-voucher-edit')">✕</button>
+    </div>
+    <div style="padding:18px 20px">
+      <div style="margin-bottom:14px">
+        <label class="fg-label">Username</label>
+        <input type="text" id="ve-username" disabled style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:monospace;background:var(--bg2);color:var(--text3)">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">Username tidak bisa diubah (identitas voucher).</div>
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="fg-label">Password</label>
+        <input type="text" id="ve-password" maxlength="32" placeholder="Kosongkan = sama dengan username" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--bg)">
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="fg-label">Paket</label>
+        <select id="ve-paket" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--bg)"></select>
+      </div>
+      <div style="margin-bottom:4px">
+        <label class="fg-label">Status</label>
+        <select id="ve-status" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--bg)">
+          <option value="unused">unused (belum dipakai)</option>
+          <option value="used">used (sudah dipakai)</option>
+          <option value="expired">expired (nonaktif)</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border)">
+      <button class="btn" onclick="closeModal('m-voucher-edit')">Batal</button>
+      <button class="btn primary" onclick="apiSimpanEditVoucher()">💾 Simpan</button>
     </div>
   </div>
 </div>
@@ -6656,7 +6807,7 @@ async function apiFetch(path, opts={}) {
     headers: { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json', ...(opts.headers||{}) }
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Gagal');
+  if (!res.ok) { const _e = new Error(data.error || 'Gagal'); _e.detail = data.detail; throw _e; }
   return data;
 }
 
@@ -6853,8 +7004,10 @@ function openModal(id) {
     if (sum) sum.textContent = '50';
     // Reset mode ke sama
     gvSetMode('sama');
-    // Reset charset ke angka_kecil
-    gvSetCharset('angka_kecil');
+    // Default panjang kode 9
+    const pj = document.getElementById('fv-panjang'); if (pj) pj.value = 9;
+    // Default charset 0–9 (angka)
+    gvSetCharset('angka');
     // Update preview kode
     gvUpdatePreview();
     gvUpdateSummary();
@@ -7088,7 +7241,7 @@ async function loadResellerVoucher() {
     box.innerHTML = vp.map(p => `
       <div class="rv-card" data-id="${p.id}" onclick="rvPilih(${p.id})" style="border:1.5px solid var(--border);border-radius:10px;padding:11px;cursor:pointer;transition:all .12s">
         <div style="font-weight:700;font-size:14px">${escapeHtml(p.nama)}</div>
-        <div style="font-size:11px;color:var(--text3);margin:2px 0 6px">${p.kecepatan_dn||'-'} Mbps · ${p.masa_aktif} ${p.satuan_masa||'hari'}</div>
+        <div style="font-size:11px;color:var(--text3);margin:2px 0 6px">${p.kecepatan_dn||'-'} Mbps · ${Number(p.masa_aktif)===0?'∞':(p.masa_aktif+' '+(p.satuan_masa||'hari'))}</div>
         <div style="font-size:15px;font-weight:800;color:#BA7517">${rsRp(p.harga_jual)}</div>
         ${Number(p.harga)>Number(p.harga_jual)?`<div style="font-size:11px;color:var(--text3);text-decoration:line-through">${rsRp(p.harga)}</div>`:''}
       </div>`).join('');
@@ -7295,7 +7448,7 @@ async function rtBayar() {
     const r = await apiFetch('/api/reseller/topup', { method:'POST', body: JSON.stringify({ jumlah }) });
     if (r.payment_url) { toast('✅ Membuka halaman pembayaran…'); window.open(r.payment_url, '_blank'); rtLoadRiwayat(); }
     else toast('❌ Gagal membuat pembayaran', true);
-  } catch (e) { toast('❌ ' + e.message, true); }
+  } catch (e) { toast('❌ ' + e.message + (e.detail ? ' — ' + e.detail : ''), true); }
   finally { btn.disabled = false; btn.innerHTML = 'Lanjut Bayar <i class="ti ti-arrow-right"></i>'; }
 }
 async function rtLoadRiwayat() {
@@ -8468,6 +8621,17 @@ let _plCariTimer = null;
 
 function plSetCari(v)   { plCari = (v||'').trim(); plPage = 1; clearTimeout(_plCariTimer); _plCariTimer = setTimeout(loadPelanggan, 350); }
 function plSetStatus(v) { plStatus = v || ''; plPage = 1; loadPelanggan(); }
+// Filter pelanggan lewat klik chip statistik
+function filterPelangganStatus(status) {
+  if (plStatus === status && status !== '') status = ''; // toggle → reset
+  plStatus = status;
+  plPage = 1;
+  document.querySelectorAll('.pl-filter-card').forEach(c => c.classList.remove('vcr-card-active'));
+  const map = { '':'pl-card-all','aktif':'pl-card-aktif','suspended':'pl-card-suspend','nonaktif':'pl-card-nonaktif','online':'pl-card-online','offline':'pl-card-offline','baru':'pl-card-baru' };
+  const aktif = document.getElementById(map[status] || 'pl-card-all');
+  if (aktif) aktif.classList.add('vcr-card-active');
+  loadPelanggan();
+}
 function plSetTipe(v)   { plTipe = v || '';   plPage = 1; loadPelanggan(); }
 function plSetLimit(v)  { plLimit = parseInt(v) || 25; plPage = 1; loadPelanggan(); }
 function plGoto(p)      { const max = Math.max(1, Math.ceil(plTotal / plLimit)); plPage = Math.min(Math.max(1, p), max); loadPelanggan(); }
@@ -8566,18 +8730,25 @@ function plRenderPagination() {
     `</select></div>`;
 }
 async function loadPelangganStats() {
-  const setp=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  const setp=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=(v??0).toLocaleString('id-ID');};
   try {
-    const [tot, akt, sus, non] = await Promise.all([
+    const [tot, akt, sus, non, onl, bar] = await Promise.all([
       apiFetch('/api/pelanggan?limit=1'),
       apiFetch('/api/pelanggan?status=aktif&limit=1'),
       apiFetch('/api/pelanggan?status=suspended&limit=1'),
-      apiFetch('/api/pelanggan?status=nonaktif&limit=1')
+      apiFetch('/api/pelanggan?status=nonaktif&limit=1'),
+      apiFetch('/api/pelanggan?status=online&limit=1'),
+      apiFetch('/api/pelanggan?status=baru&limit=1')
     ]);
+    const totalAktif = akt.total ?? 0;
+    const online = onl.total ?? 0;
     setp('pl-st-total', tot.total ?? 0);
-    setp('pl-st-aktif', akt.total ?? 0);
+    setp('pl-st-aktif', totalAktif);
     setp('pl-st-suspend', sus.total ?? 0);
     setp('pl-st-nonaktif', non.total ?? 0);
+    setp('pl-st-online', online);
+    setp('pl-st-offline', Math.max(0, totalAktif - online));
+    setp('pl-st-baru', bar.total ?? 0);
   } catch(e) {}
 }
 
@@ -8998,12 +9169,31 @@ function pkGantiPerHalaman() {
   if (LAST_PAKET_LIST) renderPaket(LAST_PAKET_LIST);
 }
 
+let _pkFilter = '';
+function filterPaket(jenis) {
+  if (_pkFilter === jenis && jenis !== '') jenis = ''; // toggle → reset
+  _pkFilter = jenis;
+  _pkPage = 1;
+  document.querySelectorAll('.pk-filter-card').forEach(c => c.classList.remove('vcr-card-active'));
+  const map = { '':'pk-card-all','aktif':'pk-card-aktif','pppoe':'pk-card-pppoe','hotspot':'pk-card-hotspot' };
+  const aktif = document.getElementById(map[jenis] || 'pk-card-all');
+  if (aktif) aktif.classList.add('vcr-card-active');
+  if (LAST_PAKET_LIST) renderPaket(LAST_PAKET_LIST);
+}
+
 function renderPaket(rows) {
   const setp=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  // Statistik selalu dari SELURUH paket (bukan hasil filter)
   setp('pk-st-total', rows.length);
   setp('pk-st-aktif', rows.filter(p=>p.aktif).length);
   setp('pk-st-pppoe', rows.filter(p=>p.tipe==='pppoe'||p.tipe==='keduanya').length);
   setp('pk-st-hotspot', rows.filter(p=>p.tipe==='hotspot'||p.tipe==='keduanya').length);
+
+  // Terapkan filter chip ke daftar yang ditampilkan
+  if (_pkFilter === 'aktif')        rows = rows.filter(p=>p.aktif);
+  else if (_pkFilter === 'pppoe')   rows = rows.filter(p=>p.tipe==='pppoe'||p.tipe==='keduanya');
+  else if (_pkFilter === 'hotspot') rows = rows.filter(p=>p.tipe==='hotspot'||p.tipe==='keduanya');
+
   const tbody = document.getElementById('plan-tbody');
   if (!tbody) return;
 
@@ -9027,7 +9217,7 @@ function renderPaket(rows) {
   tbody.innerHTML = pageRows.map(p => {
     const satuan = p.satuan_masa || 'hari';
     const satuanLabel = satuan === 'jam' ? 'Jam' : satuan === 'bulan' ? 'Bulan' : 'Hari';
-    const masaLabel   = `${p.masa_aktif || 30} ${satuanLabel}`;
+    const masaLabel   = (Number(p.masa_aktif) === 0) ? '∞ Tanpa Batas' : `${p.masa_aktif ?? 30} ${satuanLabel}`;
     const tipeBadge   = p.tipe === 'pppoe' ? 'pppoe' : p.tipe === 'hotspot' ? 'hotspot' : 'blue';
     const tipeBadgeLabel = p.tipe === 'keduanya' ? 'Keduanya' : (p.tipe === 'pppoe' ? 'PPPoE' : 'Hotspot');
     const statusDot   = p.aktif ? 'dot-green' : 'dot-red';
@@ -9113,7 +9303,7 @@ function filterPaketByTipe() {
     filtered.map(function(p) {
       const satuan = p.satuan_masa === 'jam' ? 'Jam' : p.satuan_masa === 'bulan' ? 'Bln' : 'Hari';
       const speed  = p.rate_limit || (p.kecepatan_dn + ' Mbps');
-      return `<option value="${p.id}" ${p.id == curVal ? 'selected' : ''}>${escapeHtml(p.nama)} — ${fmt(p.harga)} · ${speed} · ${p.masa_aktif||30} ${satuan}</option>`;
+      return `<option value="${p.id}" ${p.id == curVal ? 'selected' : ''}>${escapeHtml(p.nama)} — ${fmt(p.harga)} · ${speed} · ${Number(p.masa_aktif)===0?'∞':((p.masa_aktif??30)+' '+satuan)}</option>`;
     }).join('');
 }
 
@@ -9144,7 +9334,7 @@ function bukaEditPaket(id) {
   document.getElementById('ep2-harga').value     = p.harga;
   document.getElementById('ep2-harga-reseller').value = (p.harga_reseller ?? '') === null ? '' : (p.harga_reseller ?? '');
   document.getElementById('ep2-pool').value      = p.pool_name || '';
-  document.getElementById('ep2-masa').value      = p.masa_aktif || 30;
+  document.getElementById('ep2-masa').value      = (p.masa_aktif ?? 30);
   document.getElementById('ep2-satuan').value    = p.satuan_masa || 'hari';
   const descEl = document.getElementById('ep2-deskripsi');
   if (descEl) descEl.value = p.deskripsi || '';
@@ -9212,12 +9402,12 @@ async function apiTambahPaket() {
   const harga      = parseInt(document.getElementById('fp-harga').value);
   const pool_name  = document.getElementById('fp-pool').value.trim();
   const tipe       = document.getElementById('fp-tipe').value;
-  const masa_aktif = parseInt(document.getElementById('fp-masa').value) || 30;
+  const masa_aktif = (function(){ const v=document.getElementById('fp-masa').value; return (v===''||isNaN(parseInt(v)))?30:parseInt(v); })();
   const satuan_masa= document.getElementById('fp-satuan').value;
   const deskripsi  = document.getElementById('fp-deskripsi')?.value.trim() || '';
   const izin_voucher = document.getElementById('fp-izin-voucher')?.checked ? 1 : 0;
   const share_users  = Math.max(1, parseInt(document.getElementById('fp-share-users')?.value, 10) || 1);
-  if (!nama || !rate_limit || !harga) return toast('❌ Nama, kecepatan, dan harga wajib diisi', true);
+  if (!nama || !rate_limit || isNaN(harga)) return toast('❌ Nama, kecepatan, dan harga wajib diisi', true);
   const { kecepatan_up, kecepatan_dn } = _parseRateLimit(rate_limit);
   try {
     await apiFetch('/api/paket', { method:'POST',
@@ -9247,10 +9437,10 @@ async function apiUpdatePaketGrid() {
   const harga      = parseInt(document.getElementById('ep2-harga').value);
   const pool_name  = document.getElementById('ep2-pool').value.trim();
   const tipe       = document.getElementById('ep2-tipe').value;
-  const masa_aktif = parseInt(document.getElementById('ep2-masa').value) || 30;
+  const masa_aktif = (function(){ const v=document.getElementById('ep2-masa').value; return (v===''||isNaN(parseInt(v)))?30:parseInt(v); })();
   const satuan_masa= document.getElementById('ep2-satuan').value;
   const deskripsi  = document.getElementById('ep2-deskripsi')?.value.trim() || '';
-  if (!nama || !rate_limit || !harga) return toast('❌ Nama, kecepatan, harga wajib diisi', true);
+  if (!nama || !rate_limit || isNaN(harga)) return toast('❌ Nama, kecepatan, harga wajib diisi', true);
   const { kecepatan_up, kecepatan_dn } = _parseRateLimit(rate_limit);
   const izin_voucher = document.getElementById('ep2-izin-voucher')?.checked ? 1 : 0;
   const share_users  = Math.max(1, parseInt(document.getElementById('ep2-share-users')?.value, 10) || 1);
@@ -9375,11 +9565,11 @@ async function apiSimpanPaket() {
   const harga      = parseInt(document.getElementById('fp-harga').value);
   const pool_name  = document.getElementById('fp-pool').value.trim();
   const tipe       = document.getElementById('fp-tipe').value;
-  const masa_aktif = parseInt(document.getElementById('fp-masa').value) || 30;
+  const masa_aktif = (function(){ const v=document.getElementById('fp-masa').value; return (v===''||isNaN(parseInt(v)))?30:parseInt(v); })();
   const satuan_masa= document.getElementById('fp-satuan').value;
   const deskripsi  = document.getElementById('fp-deskripsi')?.value.trim() || '';
   const izin_voucher = document.getElementById('fp-izin-voucher')?.checked ? 1 : 0;
-  if (!nama || !rate_limit || !harga) return toast('❌ Nama, kecepatan, harga wajib diisi', true);
+  if (!nama || !rate_limit || isNaN(harga)) return toast('❌ Nama, kecepatan, harga wajib diisi', true);
   const { kecepatan_up, kecepatan_dn } = _parseRateLimit(rate_limit);
   const share_users = Math.max(1, parseInt(document.getElementById('fp-share-users')?.value, 10) || 1);
   try {
@@ -9557,7 +9747,7 @@ function gvUpdatePaket() {
   const satuan = p.satuan_masa === 'jam' ? 'Jam' : p.satuan_masa === 'bulan' ? 'Bulan' : 'Hari';
   const chips  = document.getElementById('gv-paket-chips');
   if (chips) chips.innerHTML = [
-    `${p.masa_aktif || 30} ${satuan}`,
+    `${Number(p.masa_aktif)===0?'∞ Tanpa Batas':(p.masa_aktif??30)+' '+satuan}`,
     `${p.kecepatan_dn} Mbps`,
     `Rp ${parseInt(p.harga).toLocaleString('id-ID')}`
   ].map(t => `<span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:99px;background:rgba(186,117,23,.15);color:#854F0B">${t}</span>`).join('');
@@ -9797,6 +9987,14 @@ function invoiceOnPelangganChange() {
     document.getElementById('fi-jml').value = p.harga;
     invoiceUpdatePreview();
   }
+  // auto-isi Jatuh Tempo = tgl_expired pelanggan (biar sesuai masa aktifnya)
+  const tglEl = document.getElementById('fi-tgl');
+  if (tglEl && p.tgl_expired) {
+    tglEl.value = String(p.tgl_expired).slice(0, 10);
+    // nonaktifkan highlight chip preset karena jatuh tempo mengikuti pelanggan
+    document.querySelectorAll('.due-chip').forEach(c => c.classList.remove('active'));
+    invoiceUpdatePreview && invoiceUpdatePreview();
+  }
   card.style.display = 'flex';
 }
 
@@ -9878,6 +10076,34 @@ async function loadInvoice() {
     console.warn('Invoice API:', e.message);
     if (t) t.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px">Gagal memuat data</td></tr>';
   }
+  loadInvoiceStats();
+}
+
+// Hitung & isi chip statistik invoice (per tab aktif)
+async function loadInvoiceStats() {
+  const setv=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  try {
+    const s = await apiFetch('/api/invoice/statistik?tipe_koneksi=' + encodeURIComponent(_invTab||''));
+    setv('inv-st-total', (s.total||0).toLocaleString('id-ID'));
+    setv('inv-st-paid', (s.paid||0).toLocaleString('id-ID'));
+    setv('inv-st-unpaid', (s.unpaid||0).toLocaleString('id-ID'));
+    setv('inv-st-overdue', (s.overdue||0).toLocaleString('id-ID'));
+    setv('inv-st-pendapatan', fmt(s.pendapatan||0));
+  } catch(e) {}
+}
+
+// Filter daftar invoice lewat klik chip (set dropdown status + reload)
+function filterInvoiceStatus(status) {
+  const dd = document.getElementById('inv-filter-status');
+  const cur = dd ? dd.value : '';
+  if (cur === status && status !== '') status = ''; // toggle → reset
+  if (dd) dd.value = status;
+  _invPage = 1;
+  document.querySelectorAll('.inv-filter-card').forEach(c => c.classList.remove('vcr-card-active'));
+  const map = { '':'inv-card-all','paid':'inv-card-paid','unpaid':'inv-card-unpaid','overdue':'inv-card-overdue' };
+  const aktif = document.getElementById(map[status] || 'inv-card-all');
+  if (aktif) aktif.classList.add('vcr-card-active');
+  loadInvoice();
 }
 
 // Pencarian invoice: debounce 350ms, selalu kembali ke halaman 1.
@@ -9937,14 +10163,8 @@ function renderTblInvoice(rows) {
       <td class="td-text-sub">${fmtDate(i.tgl_jatuh_tempo)}</td>
       <td><span class="tag ${i.status==='paid'?'paid':i.status==='overdue'?'overdue':'unpaid'}">${i.status==='paid'?'Lunas':i.status==='overdue'?'Terlambat':'Belum Bayar'}</span></td>
       <td style="white-space:nowrap">
-        ${i.status!=='paid' ? `<button class="btn sm" onclick="apiKirimReminder(${i.id})" title="Kirim reminder WA"><i class="ti ti-brand-whatsapp" aria-hidden="true"></i></button>
-        <button class="btn sm" onclick="apiBayarTunai(${i.id})" title="Lunasi manual"><i class="ti ti-check" aria-hidden="true"></i> Lunasi</button>` : ''}
-        ${i.status==='overdue' ? `<button class="btn sm danger" onclick="apiSuspendDariInvoice(${i.id}, '${jsAttr(i.nama_pelanggan)}')" title="Suspend pelanggan"><i class="ti ti-ban" aria-hidden="true"></i></button>` : ''}
-        <button class="btn sm" onclick="cetakInvoice(${i.id},'a4')" title="Print A4"><i class="ti ti-printer" style="font-size:12px" aria-hidden="true"></i> A4</button>
-        <button class="btn sm" onclick="cetakInvoice(${i.id},'thermal')" title="Print Thermal 58mm"><i class="ti ti-receipt" style="font-size:12px" aria-hidden="true"></i> Thermal</button>
-        <button class="btn sm" onclick="unduhInvoicePDF(${i.id},'${i.no_invoice}')" title="Download PDF"><i class="ti ti-file-type-pdf" style="font-size:12px" aria-hidden="true"></i> PDF</button>
-        <button class="btn sm" onclick="kirimInvoicePDFwa(${i.id},'${i.no_invoice}')" title="Kirim PDF ke WhatsApp"><i class="ti ti-send" style="font-size:12px" aria-hidden="true"></i> PDF→WA</button>
-        ${i.status!=='paid' ? `<button class="btn sm danger" onclick="apiHapusInvoice(${i.id}, '${i.no_invoice}')" title="Hapus invoice"><i class="ti ti-trash" aria-hidden="true"></i></button>` : `<button class="btn sm danger superadmin-only" onclick="apiHapusInvoiceLunas(${i.id}, '${jsAttr(i.no_invoice)}')" title="Hapus invoice lunas (khusus Super Admin)"><i class="ti ti-trash" aria-hidden="true"></i></button>`}
+        ${i.status!=='paid' ? `<button class="btn sm" onclick="apiBayarTunai(${i.id})" title="Lunasi manual"><i class="ti ti-check" aria-hidden="true"></i> Lunasi</button>` : ''}
+        <button class="inv-menu-btn" onclick="openInvoiceMenu(event, ${i.id}, '${i.status}', '${jsAttr(i.no_invoice)}', '${jsAttr(i.nama_pelanggan||'')}')" title="Aksi lainnya">!</button>
       </td>
     </tr>`).join('');
 }
@@ -9969,6 +10189,11 @@ async function _invoiceHtml(id, mode) {
     const appUrl     = cfg.app_url     || '';
 
     const isLunas    = inv.status === 'paid';
+    // Invoice pembelian voucher online: kode voucher tersimpan di keterangan
+    // ("— VoucherDibuat: XXXX"). Tampilkan di struk agar pembeli tahu kodenya.
+    let kodeVoucher = null;
+    const _mKode = String(inv.keterangan || '').match(/VoucherDibuat:\s*([A-Za-z0-9_-]+)/i);
+    if (_mKode) kodeVoucher = _mKode[1];
     const statusLabel= isLunas ? 'LUNAS' : (inv.status === 'overdue' ? 'TERLAMBAT' : 'BELUM BAYAR');
     const statusColor= isLunas ? '#16a34a' : (inv.status === 'overdue' ? '#dc2626' : '#d97706');
 
@@ -10102,6 +10327,13 @@ table.items td:nth-child(3),table.items td:nth-child(4),table.items td:nth-child
     </tbody>
   </table>
 
+  ${kodeVoucher ? `
+  <div style="margin:10px 0;padding:12px 16px;border:2px dashed #16a34a;border-radius:8px;background:#f0fdf4;text-align:center">
+    <div style="font-size:9pt;color:#15803d;font-weight:600;letter-spacing:1px;text-transform:uppercase">Kode Voucher (Username &amp; Password)</div>
+    <div style="font-size:18pt;font-weight:800;font-family:'Courier New',monospace;color:#166534;letter-spacing:2px;margin:4px 0">${kodeVoucher}</div>
+    <div style="font-size:8pt;color:#666">Gunakan kode ini untuk login di halaman voucher / hotspot</div>
+  </div>` : ''}
+
   <!-- Total -->
   <div class="total-row">
     <div class="total-box">
@@ -10196,6 +10428,14 @@ body{font-family:'Courier New',monospace;font-size:9pt;color:#000;background:#ff
   <div class="row bold"><span>TOTAL</span><span>Rp ${(jumlah).toLocaleString('id-ID')}</span></div>
   <div style="font-size:7pt;font-style:italic">${terbilangStr} rupiah</div>
   <div class="line"></div>
+
+  ${kodeVoucher ? `
+  <div style="margin:6px 0;padding:7px 4px;border:1px dashed #000;text-align:center">
+    <div style="font-size:7.5pt;font-weight:700;letter-spacing:1px">KODE VOUCHER</div>
+    <div style="font-size:13pt;font-weight:800;font-family:'Courier New',monospace;letter-spacing:2px;margin:2px 0">${kodeVoucher}</div>
+    <div style="font-size:6.5pt">Username & Password sama.<br>Login di halaman voucher/hotspot.</div>
+  </div>
+  <div class="line"></div>` : ''}
 
   <!-- Status -->
   <div class="center" style="margin:4px 0">
@@ -10483,6 +10723,57 @@ async function apiHapusInvoiceLunas(id, noInvoice) {
   } catch(e) { toast('❌ '+e.message, true); }
 }
 
+async function apiBuatVoucher(id) {
+  try {
+    const d = await apiFetch(`/api/invoice/${id}/buat-voucher`, { method:'POST' });
+    toast('✅ ' + (d.pesan || 'Voucher diproses') + (d.kode_voucher ? ` (${d.kode_voucher})` : ''));
+    loadInvoice();
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+
+async function apiBatalkanLunas(id, noInvoice) {
+  if (ROLE !== 'superadmin') { toast('❌ Hanya Super Admin yang bisa membatalkan pembayaran', true); return; }
+  if (!confirm(`↩️ Batalkan pembayaran invoice ${noInvoice}?\n\nStatus akan kembali ke "Belum Bayar". Gunakan ini jika tadi salah klik Lunasi.`)) return;
+
+  // Ambil detail untuk cek masa aktif pelanggan sebelum menawarkan suspend
+  let masihAktif = false, tglExpStr = '';
+  try {
+    const inv = await apiFetch(`/api/invoice/${id}`);
+    if (inv && inv.pelanggan_expired) {
+      const exp = new Date(inv.pelanggan_expired);
+      if (!isNaN(exp) && exp > new Date()) {
+        masihAktif = true;
+        tglExpStr = exp.toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' });
+      }
+    }
+  } catch(e) {}
+
+  let suspend = false, force = false;
+  if (masihAktif) {
+    // Pelanggan masih aktif → default JANGAN suspend, beri peringatan jelas
+    suspend = confirm(
+      `⚠️ Pelanggan ini MASIH AKTIF sampai ${tglExpStr}.\n\n` +
+      `Disarankan JANGAN di-suspend (masa aktifnya masih ada).\n\n` +
+      `• Cancel = Batalkan invoice saja, biarkan pelanggan AKTIF (disarankan)\n` +
+      `• OK = Tetap suspend pelanggan (tidak disarankan)`
+    );
+    if (suspend) {
+      force = confirm(`Yakin tetap suspend pelanggan yang masih aktif s/d ${tglExpStr}?\n\nOK = Ya, tetap suspend.`);
+      if (!force) suspend = false; // batal suspend kalau tidak yakin
+    }
+  } else {
+    suspend = confirm('Suspend (isolir) pelanggan ini juga?\n\n• OK = Ya, suspend pelanggan (mis. dia memang belum bayar)\n• Cancel = Tidak, biarkan pelanggan tetap aktif');
+  }
+
+  try {
+    const d = await apiFetch(`/api/invoice/${id}/batalkan-lunas`, {
+      method:'POST', body: JSON.stringify({ suspend, force })
+    });
+    toast('✅ ' + (d.pesan || 'Pembayaran dibatalkan'));
+    loadInvoice();
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+
 async function apiKirimReminder(id) {
   try {
     await apiFetch(`/api/invoice/${id}/kirim-reminder`, {method:'POST'});
@@ -10490,24 +10781,79 @@ async function apiKirimReminder(id) {
   } catch(e) { toast('❌ '+e.message, true); }
 }
 
+// ── Menu popup aksi invoice (tombol bulat "!") ──
+function openInvoiceMenu(ev, id, status, noInv, nama) {
+  ev.stopPropagation();
+  let menu = document.getElementById('inv-action-menu');
+  if (!menu) {
+    menu = document.createElement('div');
+    menu.id = 'inv-action-menu';
+    menu.style.cssText = 'position:fixed;z-index:9999;background:var(--bg2);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.28);overflow:hidden;min-width:210px;display:none';
+    document.body.appendChild(menu);
+  }
+  const isSuper = (typeof ROLE !== 'undefined' && ROLE === 'superadmin');
+  const item = (onclick, icon, label, danger) =>
+    `<button onclick="closeInvoiceMenu();${onclick}" style="display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:11px 16px;background:none;border:none;color:${danger?'var(--red,#ef4444)':'var(--text)'};cursor:pointer;font-size:13px"><i class="ti ${icon}" style="font-size:15px" aria-hidden="true"></i> ${label}</button>`;
+  const sep = '<div style="border-top:1px solid var(--border)"></div>';
+
+  let html = '';
+  if (status !== 'paid') html += item(`apiKirimReminder(${id})`, 'ti-brand-whatsapp', 'Kirim Reminder WA');
+  html += item(`cetakInvoice(${id},'a4')`, 'ti-printer', 'Print A4');
+  html += item(`cetakInvoice(${id},'thermal')`, 'ti-receipt', 'Print Thermal');
+  html += item(`unduhInvoicePDF(${id},'${noInv}')`, 'ti-file-type-pdf', 'Download PDF');
+  html += item(`kirimInvoicePDFwa(${id},'${noInv}')`, 'ti-send', 'Kirim PDF ke WhatsApp');
+  // Invoice voucher online (VCR...): opsi buat/cek kode voucher
+  if (String(noInv).startsWith('VCR')) html += sep + item(`apiBuatVoucher(${id})`, 'ti-ticket', 'Buat / Cek Kode Voucher');
+  if (status === 'overdue') html += sep + item(`apiSuspendDariInvoice(${id},'${nama}')`, 'ti-ban', 'Suspend Pelanggan', true);
+  if (status === 'paid' && isSuper) html += sep + item(`apiBatalkanLunas(${id},'${noInv}')`, 'ti-arrow-back-up', 'Batalkan Lunas');
+  if (status !== 'paid') html += sep + item(`apiHapusInvoice(${id},'${noInv}')`, 'ti-trash', 'Hapus Invoice', true);
+  else if (isSuper)        html += sep + item(`apiHapusInvoiceLunas(${id},'${noInv}')`, 'ti-trash', 'Hapus Invoice Lunas', true);
+
+  menu.innerHTML = html;
+  menu.style.display = 'block';
+  // Posisikan dekat tombol, jaga tetap di dalam layar
+  const r = ev.currentTarget.getBoundingClientRect();
+  const mw = 210, mh = menu.offsetHeight || 260;
+  let left = r.right - mw; if (left < 8) left = 8;
+  let top = r.bottom + 4;
+  if (top + mh > window.innerHeight - 8) top = r.top - mh - 4;
+  if (top < 8) top = 8;
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
+}
+function closeInvoiceMenu() {
+  const m = document.getElementById('inv-action-menu');
+  if (m) m.style.display = 'none';
+}
+document.addEventListener('click', function(e) {
+  const m = document.getElementById('inv-action-menu');
+  if (m && m.style.display === 'block' && !m.contains(e.target)) closeInvoiceMenu();
+});
+window.addEventListener('scroll', closeInvoiceMenu, true);
+
 async function apiBayarTunai(id) {
+  // Optimistic: ubah baris SEKARANG (tanpa menunggu server), reconnect ditangani
+  // backend di background. Kalau server gagal, kembalikan baris seperti semula.
+  const chk = document.querySelector(`.inv-chk[value="${id}"]`);
+  const tr  = chk ? chk.closest('tr') : null;
+  let snapshot = null;
+  if (tr) {
+    snapshot = tr.innerHTML; // simpan untuk rollback
+    const badge = tr.querySelector('.tag');
+    if (badge) { badge.className = 'tag paid'; badge.textContent = 'Lunas'; }
+    if (chk) { chk.setAttribute('data-status', 'paid'); chk.checked = false; }
+    tr.querySelectorAll('[onclick^="apiKirimReminder"],[onclick^="apiBayarTunai"],[onclick^="apiSuspendDariInvoice"],[onclick^="apiHapusInvoice"]').forEach(b => b.remove());
+    if (typeof invUpdateSelBtn === 'function') invUpdateSelBtn();
+  }
   try {
     await apiFetch(`/api/invoice/${id}/bayar-tunai`, {method:'POST'});
     toast('✅ Pembayaran dikonfirmasi & internet aktif');
-    // Ubah baris langsung tanpa reload penuh: badge → Lunas, tombol Lunasi/reminder/
-    // suspend/hapus hilang. (Reconnect pelanggan sudah ditangani backend via aktifkanUser.)
-    const chk = document.querySelector(`.inv-chk[value="${id}"]`);
-    const tr  = chk ? chk.closest('tr') : null;
-    if (tr) {
-      const badge = tr.querySelector('.tag');
-      if (badge) { badge.className = 'tag paid'; badge.textContent = 'Lunas'; }
-      if (chk) { chk.setAttribute('data-status', 'paid'); chk.checked = false; }
-      tr.querySelectorAll('[onclick^="apiKirimReminder"],[onclick^="apiBayarTunai"],[onclick^="apiSuspendDariInvoice"],[onclick^="apiHapusInvoice"]').forEach(b => b.remove());
-      if (typeof invUpdateSelBtn === 'function') invUpdateSelBtn();
-    } else {
-      loadInvoice();
-    }
-  } catch(e) { toast('❌ '+e.message, true); }
+    if (!tr) loadInvoice(); // baris tak ketemu (mis. halaman lain) → muat ulang
+  } catch(e) {
+    // Gagal → kembalikan baris seperti semula
+    if (tr && snapshot != null) tr.innerHTML = snapshot;
+    toast('❌ '+e.message, true);
+  }
 }
 
 async function apiSuspendDariInvoice(invoiceId, nama) {
@@ -10712,14 +11058,29 @@ function renderVcrSesi() {
 }
 // ── END RIWAYAT SESI VOUCHER ─────────────────────────────────
 
+// Filter daftar voucher lewat klik kartu statistik
+function filterVoucherStatus(status) {
+  // Toggle: klik kartu yang sama lagi → reset ke semua
+  if (window._vcrStatus === status && status !== '') status = '';
+  window._vcrStatus = status;
+  vcrHalaman = 1;
+  // Highlight kartu aktif
+  document.querySelectorAll('.vcr-filter-card').forEach(c => c.classList.remove('vcr-card-active'));
+  const map = { '': 'vcr-card-all', 'unused': 'vcr-card-unused', 'used': 'vcr-card-used', 'expired': 'vcr-card-expired', 'online': 'vcr-card-online', 'offline': 'vcr-card-offline', 'baru': 'vcr-card-baru' };
+  const aktif = document.getElementById(map[status] || 'vcr-card-all');
+  if (aktif) aktif.classList.add('vcr-card-active');
+  loadVoucher();
+}
+
 async function loadVoucher() {
   loadBatchHistory();
   loadVcrSesi();
   try {
     const cariParam = (window._vcrCari || '').trim();
     const qsCari = cariParam ? `&cari=${encodeURIComponent(cariParam)}` : '';
+    const qsStatus = (window._vcrStatus) ? `&status=${encodeURIComponent(window._vcrStatus)}` : '';
     const [list, stat] = await Promise.all([
-      apiFetch(`/api/voucher?limit=${vcrLimit}&halaman=${vcrHalaman}${qsCari}`),
+      apiFetch(`/api/voucher?limit=${vcrLimit}&halaman=${vcrHalaman}${qsCari}${qsStatus}`),
       apiFetch('/api/voucher/statistik')
     ]);
     vcrTotal = list.total || 0;
@@ -10766,6 +11127,7 @@ function gantiHalamanVoucher(arah) {
 }
 
 function renderTblVoucher(rows) {
+  window._vcrRows = rows || [];
   const t = document.getElementById('tbl-voucher');
   const chkAll = document.getElementById('vcr-pilih-semua');
   if (chkAll) chkAll.checked = false;
@@ -10779,9 +11141,11 @@ function renderTblVoucher(rows) {
       <td><span class="tag ${v.status==='used'?'paid':v.status==='expired'?'overdue':'aktif'}">${v.status==='used'?'used':v.status==='expired'?'disabled':'unused'}</span></td>
       <td>
         ${v.status==='unused'
-          ? `<button class="btn sm" onclick="bukaKirimVoucher('${jsAttr(v.username)}')">💬 Kirim</button>
+          ? `<button class="btn sm" onclick="bukaEditVoucher('${jsAttr(v.username)}')">✏️ Edit</button>
+             <button class="btn sm" onclick="bukaKirimVoucher('${jsAttr(v.username)}')">💬 Kirim</button>
              <button class="btn sm danger" onclick="apiHapusVoucher('${jsAttr(v.username)}')">✕</button>`
-          : `<span style="font-size:11px;color:var(--text3)">${fmtDate(v.tgl_digunakan)}</span>`}
+          : `<button class="btn sm" onclick="bukaEditVoucher('${jsAttr(v.username)}')">✏️ Edit</button>
+             <span style="font-size:11px;color:var(--text3);margin-left:6px">${fmtDate(v.tgl_digunakan)}</span>`}
       </td>
     </tr>`).join('');
 }
@@ -10835,11 +11199,19 @@ function renderStatVoucher(data) {
     if(s.status==='used')   used+=parseInt(s.jumlah);
     if(s.status==='expired') expired+=parseInt(s.jumlah);
   });
-  const ms = document.querySelectorAll('#p-voucher .metric .val');
-  if(ms[0]) ms[0].textContent = unused+used+expired;
-  if(ms[1]) ms[1].textContent = unused;
-  if(ms[2]) ms[2].textContent = used;
-  if(ms[3]) ms[3].textContent = fmt(pendapatan);
+  const total = unused+used+expired;
+  const online = parseInt(data.online||0);
+  const offline = Math.max(0, used - online); // used tapi tidak ada sesi aktif
+  const baru = parseInt(data.baru||0);
+  const setv=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  setv('vc-total', total.toLocaleString('id-ID'));
+  setv('vc-unused', unused.toLocaleString('id-ID'));
+  setv('vc-used', used.toLocaleString('id-ID'));
+  setv('vc-expired', expired.toLocaleString('id-ID'));
+  setv('vc-online', online.toLocaleString('id-ID'));
+  setv('vc-offline', offline.toLocaleString('id-ID'));
+  setv('vc-baru', baru.toLocaleString('id-ID'));
+  setv('vc-pendapatan', fmt(pendapatan));
 
   // Agregasi penjualan per paket (hanya status 'used' = benar-benar terjual)
   const perPaket = {};
@@ -10867,6 +11239,74 @@ function renderStatVoucher(data) {
 
   const elPendapatan = document.getElementById('vcr-total-pendapatan');
   if (elPendapatan) elPendapatan.textContent = fmt(pendapatan);
+}
+
+// ── Voucher Manual ──
+function bukaVoucherManual() {
+  // Isi dropdown paket (hotspot/keduanya saja) dari cache paket terbaru
+  const sel = document.getElementById('vm-paket');
+  const list = (typeof LAST_PAKET_LIST !== 'undefined' && LAST_PAKET_LIST) ? LAST_PAKET_LIST : [];
+  if (sel) {
+    const opsi = list.filter(p => p.tipe !== 'pppoe')
+      .map(p => `<option value="${p.id}">${escapeHtml(p.nama)} — ${fmt(p.harga)}</option>`).join('');
+    sel.innerHTML = '<option value="">-- pilih paket --</option>' + opsi;
+  }
+  const u = document.getElementById('vm-username'); if (u) u.value = '';
+  const pw = document.getElementById('vm-password'); if (pw) pw.value = '';
+  openModal('m-voucher-manual');
+}
+
+async function apiVoucherManual() {
+  const paket_id = document.getElementById('vm-paket').value;
+  const username = document.getElementById('vm-username').value.trim();
+  const password = document.getElementById('vm-password').value.trim();
+  if (!paket_id) return toast('❌ Pilih paket', true);
+  if (!username)  return toast('❌ Username voucher wajib diisi', true);
+  if (username.length < 3) return toast('❌ Username minimal 3 karakter', true);
+  try {
+    const d = await apiFetch('/api/voucher/manual', { method:'POST',
+      body: JSON.stringify({ paket_id: parseInt(paket_id), username, password })
+    });
+    toast(`✅ ${d.pesan}`);
+    closeModal('m-voucher-manual');
+    loadVoucher();
+  } catch(e) { toast('❌ '+e.message, true); }
+}
+
+// ── Edit Voucher ──
+function bukaEditVoucher(username) {
+  const v = (window._vcrRows || []).find(x => x.username === username);
+  if (!v) return toast('❌ Data voucher tidak ditemukan, muat ulang halaman', true);
+  // Dropdown paket (hotspot/keduanya saja)
+  const sel = document.getElementById('ve-paket');
+  const list = (typeof LAST_PAKET_LIST !== 'undefined' && LAST_PAKET_LIST) ? LAST_PAKET_LIST : [];
+  if (sel) {
+    sel.innerHTML = list.filter(p => p.tipe !== 'pppoe')
+      .map(p => `<option value="${p.id}" ${p.id == v.paket_id ? 'selected' : ''}>${escapeHtml(p.nama)} — ${fmt(p.harga)}</option>`).join('');
+  }
+  document.getElementById('ve-username').value = v.username;
+  // Password: kalau username===password (tampil "(sama)"), biarkan kosong
+  document.getElementById('ve-password').value = (v.username === v.password) ? '' : (v.password || '');
+  document.getElementById('ve-status').value = v.status || 'unused';
+  document.getElementById('m-voucher-edit').dataset.username = v.username;
+  openModal('m-voucher-edit');
+}
+
+async function apiSimpanEditVoucher() {
+  const username = document.getElementById('m-voucher-edit').dataset.username;
+  const password = document.getElementById('ve-password').value.trim();
+  const paket_id = document.getElementById('ve-paket').value;
+  const status   = document.getElementById('ve-status').value;
+  if (!username) return toast('❌ Username tidak ada', true);
+  if (!paket_id) return toast('❌ Pilih paket', true);
+  try {
+    const d = await apiFetch('/api/voucher/' + encodeURIComponent(username), { method:'PUT',
+      body: JSON.stringify({ password, paket_id: parseInt(paket_id), status })
+    });
+    toast(`✅ ${d.pesan}`);
+    closeModal('m-voucher-edit');
+    loadVoucher();
+  } catch(e) { toast('❌ '+e.message, true); }
 }
 
 async function apiGenerateVoucher() {
@@ -13637,7 +14077,7 @@ async function loadSysInfo() {
 }
 
 async function apiSimpanSetting() {
-  const keys = ['app_name','app_url','invoice_prefix','reminder_h','suspend_h','pajak_persen','wa_number','alamat','app_logo'];
+  const keys = ['app_name','app_url','invoice_prefix','reminder_h','suspend_h','invoice_gen_h','auto_generate_invoice','auto_reminder','auto_suspend','pajak_persen','wa_number','alamat','app_logo'];
   const body = {};
   keys.forEach(k => {
     const el = document.getElementById('s-'+k);
@@ -13756,7 +14196,7 @@ async function loadReseller() {
           <td style="white-space:nowrap">
             ${r.status==='nonaktif'?`<button class="btn sm success" onclick="apiApproveReseller(${r.id},'${jsAttr(r.nama)}')">✅ Approve</button>`:'' }
             <button class="btn sm" onclick="bukaTambahSaldoReseller(${r.id},'${jsAttr(r.nama)}')">💰 Saldo</button>
-            <button class="btn sm" onclick="bukaEditReseller(${r.id},'${jsAttr(r.nama)}','${r.level}','${r.status}')">✏️</button>
+            <button class="btn sm" onclick="bukaEditReseller(${r.id},'${jsAttr(r.nama)}','${r.level}','${r.status}',${Number(r.saldo)||0})">✏️</button>
             <button class="btn sm" onclick="lihatMutasiReseller(${r.id},'${jsAttr(r.nama)}')">💳</button>
           </td>
         </tr>`;
@@ -13870,11 +14310,17 @@ async function apiApproveReseller(id, nama) {
   } catch(e) { toast('❌ '+e.message, true); }
 }
 
-function bukaEditReseller(id, nama, level, status) {
+function bukaEditReseller(id, nama, level, status, saldoNow) {
   document.getElementById('er-id').value = id;
   document.getElementById('er-saldo-koreksi').value = '';
+  document.getElementById('er-saldo-set').value     = '';
   document.getElementById('er-ket-koreksi').value   = '';
   document.getElementById('er-title').textContent   = 'Edit: ' + nama;
+  window._erSaldoNow = Number(saldoNow) || 0;
+  const sn = document.getElementById('er-saldo-now');
+  if (sn) sn.textContent = 'Rp ' + (window._erSaldoNow).toLocaleString('id-ID');
+  const sa = document.getElementById('er-saldo-after');
+  if (sa) sa.textContent = '—';
   erSetLevel(level || 'gold');
   erSetStatus(status || 'aktif');
   openModal('m-edit-reseller');
@@ -13923,17 +14369,36 @@ function erSetStatus(status) {
   });
 }
 
+// Preview saldo setelah koreksi (delta atau set pasti)
+function erHitungSetelah() {
+  const now   = Number(window._erSaldoNow) || 0;
+  const delta = document.getElementById('er-saldo-koreksi').value;
+  const setEl = document.getElementById('er-saldo-set');
+  const setV  = setEl.value;
+  const after = document.getElementById('er-saldo-after');
+  // Jika "Set Saldo" diisi, nonaktifkan delta (dan sebaliknya) agar tidak bentrok
+  const koreksiEl = document.getElementById('er-saldo-koreksi');
+  koreksiEl.disabled = (setV !== '');
+  setEl.disabled     = (delta !== '' && delta !== null);
+  let hasil = now;
+  if (setV !== '' && !isNaN(parseFloat(setV)))      hasil = parseFloat(setV);
+  else if (delta !== '' && !isNaN(parseFloat(delta))) hasil = now + parseFloat(delta);
+  if (after) after.textContent = 'Rp ' + (Number(hasil)||0).toLocaleString('id-ID');
+}
+
 async function apiUpdateReseller() {
   const id     = document.getElementById('er-id').value;
   const level  = document.getElementById('er-level').value;
   const status = document.getElementById('er-status').value;
   const saldo  = document.getElementById('er-saldo-koreksi').value;
+  const saldoSet = document.getElementById('er-saldo-set').value;
   const ket    = document.getElementById('er-ket-koreksi').value;
   try {
     await apiFetch('/api/reseller/admin/'+id, {
       method:'PUT', body: JSON.stringify({
         level, status,
-        saldo_tambah: saldo ? parseFloat(saldo) : undefined,
+        saldo_set:   (saldoSet !== '' && !isNaN(parseFloat(saldoSet))) ? parseFloat(saldoSet) : undefined,
+        saldo_tambah: (saldoSet === '' && saldo) ? parseFloat(saldo) : undefined,
         keterangan_koreksi: ket
       })
     });

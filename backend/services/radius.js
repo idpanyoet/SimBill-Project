@@ -204,6 +204,19 @@ async function aktifkanUser(username) {
     console.log(`[RADIUS] Aktifkan: ${username}`);
 }
 
+// Pastikan atribut RADIUS benar (hapus reject/isolir, pulihkan password,
+// sync shared users) TANPA memutus sesi aktif. Dipakai saat pelanggan yang
+// SUDAH aktif melakukan pembayaran (perpanjang) — sesinya tidak perlu diputus.
+async function pulihkanTanpaReconnect(username) {
+    try { await _hapusReject(username); } catch (e) {}
+    try { await query(`DELETE FROM radreply WHERE username = ? AND attribute = 'Framed-Pool'`, [username]); } catch (e) {}
+    try { await _pastikanPassword(username); } catch (e) {}
+    try { await syncSimultaneousUse(username); }
+    catch (e) { console.warn(`[RADIUS] sync share ${username}:`, e.message); }
+    // CATATAN: sengaja TIDAK memanggil _putusSesilAktif → sesi tidak diputus.
+    console.log(`[RADIUS] Pulihkan tanpa reconnect: ${username}`);
+}
+
 // (versi lama aktifkanUser di bawah dipertahankan sbg referensi, tidak dipakai)
 async function _aktifkanUserLama(username) {
     // Hapus reject attribute
@@ -595,13 +608,15 @@ async function syncStatusVoucher() {
 // ============================================================
 async function expireVoucherHabis() {
     try {
-        // Cari voucher used yang sudah lewat masa aktif (dari login pertama)
+        // Cari voucher used yang sudah lewat masa aktif (dari login pertama).
+        // Paket masa_aktif 0 = TANPA BATAS (VIP) → tidak pernah di-expire.
         const habis = await query(`
             SELECT v.username, v.tgl_digunakan, pk.masa_aktif, pk.satuan_masa
             FROM voucher v
             JOIN paket pk ON v.paket_id = pk.id
             WHERE v.status = 'used'
               AND v.tgl_digunakan IS NOT NULL
+              AND COALESCE(pk.masa_aktif,0) > 0
               AND (
                     (pk.satuan_masa = 'jam'   AND v.tgl_digunakan + INTERVAL pk.masa_aktif HOUR  < NOW())
                  OR (pk.satuan_masa = 'bulan' AND v.tgl_digunakan + INTERVAL pk.masa_aktif MONTH < NOW())
@@ -612,8 +627,8 @@ async function expireVoucherHabis() {
         let n = 0;
         for (const v of habis) {
             try {
-                // tandai expired
-                await query(`UPDATE voucher SET status='expired' WHERE username=?`, [v.username]);
+                // tandai expired + set masa simpan 90 hari (batas auto-hapus)
+                await query(`UPDATE voucher SET status='expired', tgl_expired=DATE_ADD(NOW(), INTERVAL 90 DAY) WHERE username=?`, [v.username]);
                 // hapus dari radcheck → tidak bisa login lagi
                 await query(`DELETE FROM radcheck WHERE username=?`, [v.username]);
                 // putus sesi aktif (CoA)
@@ -632,7 +647,36 @@ async function expireVoucherHabis() {
 }
 
 // ============================================================
-// SIMULTANEOUS-USE (Shared Users) — batas jumlah HP per akun.
+// HAPUS voucher expired yang sudah melewati masa simpan (90 hari).
+// Saat di-expire, voucher diberi tgl_expired = NOW + 90 hari sebagai batas
+// simpan. Setelah lewat, baris voucher + radcheck dihapus permanen agar
+// tabel tidak menumpuk voucher mati.
+// ============================================================
+async function hapusVoucherExpiredLama() {
+    try {
+        const lama = await query(`
+            SELECT username FROM voucher
+            WHERE status = 'expired'
+              AND tgl_expired IS NOT NULL
+              AND tgl_expired < NOW()
+        `);
+        let n = 0;
+        for (const v of lama) {
+            try {
+                await query(`DELETE FROM radcheck WHERE username=?`, [v.username]);
+                await query(`DELETE FROM voucher  WHERE username=?`, [v.username]);
+                n++;
+            } catch (e) {
+                console.warn(`[voucher] gagal hapus expired lama ${v.username}: ${e.message}`);
+            }
+        }
+        if (n > 0) console.log(`[voucher] ${n} voucher expired lama (>90 hari) dihapus`);
+        return n;
+    } catch (e) {
+        console.warn('[voucher] hapusVoucherExpiredLama gagal:', e.message);
+        return 0;
+    }
+}
 // Ditulis per-user di radcheck (`Simultaneous-Use := N`) berdasarkan
 // kolom paket.share_users. FreeRADIUS menolak login ke-(N+1) selama N sesi
 // masih aktif (butuh pengecekan simultaneous-use SQL aktif di server —
@@ -708,6 +752,7 @@ module.exports = {
     updatePaket,
     suspendUser,
     aktifkanUser,
+    pulihkanTanpaReconnect,
     hapusUser,
     getSesi,
     semuaSesiAktif,
@@ -720,5 +765,6 @@ module.exports = {
     syncSimultaneousUse,
     syncSimultaneousUsePaket,
     syncSimultaneousUseSemua,
-    expireVoucherHabis
+    expireVoucherHabis,
+    hapusVoucherExpiredLama
 };

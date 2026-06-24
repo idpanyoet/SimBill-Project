@@ -24,31 +24,36 @@ router.get('/', async (req, res, next) => {
     const { status, paket_id, batch_id, cari, halaman = 1, limit = 30 } = req.query;
     const offset = (parseInt(halaman)-1) * parseInt(limit);
 
-    let where = ['1=1'], params = [];
-    if (status)   { where.push('v.status=?');   params.push(status); }
-    if (paket_id) { where.push('v.paket_id=?'); params.push(paket_id); }
-    if (batch_id) { where.push('v.batch_id=?'); params.push(batch_id); }
-    if (cari)     { where.push('(v.username LIKE ? OR v.password LIKE ?)'); params.push(`%${cari}%`, `%${cari}%`); }
+    // Bangun filter (dipakai untuk query data & count). Pakai alias v.
+    // Nilai status khusus: 'online' (sedang ada sesi di radacct), 'offline'
+    // (used tapi tidak ada sesi aktif), 'baru' (dibuat 7 hari terakhir).
+    const SESI_AKTIF = `EXISTS (SELECT 1 FROM radacct ra WHERE ra.username=v.username AND ra.acctstoptime IS NULL)`;
+    function buildWhere() {
+      const where = ['1=1'], params = [];
+      if (status === 'online')      { where.push(SESI_AKTIF); }
+      else if (status === 'offline'){ where.push(`v.status='used' AND NOT ${SESI_AKTIF}`); }
+      else if (status === 'baru')   { where.push(`v.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)`); }
+      else if (status)              { where.push('v.status=?'); params.push(status); }
+      if (paket_id) { where.push('v.paket_id=?'); params.push(paket_id); }
+      if (batch_id) { where.push('v.batch_id=?'); params.push(batch_id); }
+      if (cari)     { where.push('(v.username LIKE ? OR v.password LIKE ?)'); params.push(`%${cari}%`, `%${cari}%`); }
+      return { where, params };
+    }
+    const f = buildWhere();
 
     const rows = await query(`
       SELECT v.*, p.nama AS nama_paket, p.kecepatan_dn, p.harga
       FROM voucher v LEFT JOIN paket p ON v.paket_id = p.id
-      WHERE ${where.join(' AND ')}
+      WHERE ${f.where.join(' AND ')}
       ORDER BY v.created_at DESC LIMIT ? OFFSET ?
-    `, [...params, parseInt(limit), offset]);
+    `, [...f.params, parseInt(limit), offset]);
 
     // Jika filter batch_id, kembalikan array langsung (bukan paginasi)
     if (batch_id) return res.json(rows);
 
-    // Count langsung dari tabel voucher tanpa JOIN
-    const countWhere = ['1=1'];
-    const countParams = [];
-    if (status)   { countWhere.push('status=?');   countParams.push(status); }
-    if (paket_id) { countWhere.push('paket_id=?'); countParams.push(paket_id); }
-    if (batch_id) { countWhere.push('batch_id=?'); countParams.push(batch_id); }
-    if (cari)     { countWhere.push('(username LIKE ? OR password LIKE ?)'); countParams.push(`%${cari}%`, `%${cari}%`); }
+    const fc = buildWhere();
     const [{ total }] = await query(
-      `SELECT COUNT(*) AS total FROM voucher WHERE ${countWhere.join(' AND ')}`, countParams
+      `SELECT COUNT(*) AS total FROM voucher v WHERE ${fc.where.join(' AND ')}`, fc.params
     );
     res.json({ data: rows, total });
   } catch (e) { next(e); }
@@ -66,6 +71,8 @@ router.get('/batch', async (req, res, next) => {
       FROM voucher v
       JOIN paket p ON v.paket_id = p.id
       WHERE v.batch_id IS NOT NULL
+        AND v.batch_id LIKE 'BATCH-%'
+        AND COALESCE(p.harga,0) > 0
       GROUP BY v.batch_id, p.nama
       ORDER BY MIN(v.created_at) DESC
       LIMIT 10
@@ -81,7 +88,7 @@ router.post('/generate', async (req, res, next) => {
     const jumlah   = parseInt(req.body.jumlah, 10) || 10;
     const mode     = req.body.mode === 'beda' ? 'beda' : 'sama'; // 'sama' = username=password, 'beda' = username+password terpisah
     const panjang  = Math.min(Math.max(parseInt(req.body.panjang, 10) || 6, 4), 20);
-    const prefix   = (req.body.prefix || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 10);
+    const prefix   = (req.body.prefix || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 10);
     const charsetKey = req.body.charset || 'angka';
 
     if (!paket_id) return res.status(400).json({ error: 'paket_id wajib diisi' });
@@ -124,9 +131,11 @@ router.post('/generate', async (req, res, next) => {
 
       const password = mode === 'sama' ? username : _acak(charset, panjangAcak);
 
+      // tgl_expired NULL: masa aktif voucher dihitung dari login pertama +
+      // masa_aktif paket (expireVoucherHabis), bukan dari kolom ini.
       await query(`
         INSERT INTO voucher (username, password, paket_id, status, tgl_expired, batch_id)
-        VALUES (?, ?, ?, 'unused', DATE_ADD(NOW(), INTERVAL 365 DAY), ?)
+        VALUES (?, ?, ?, 'unused', NULL, ?)
       `, [username, password, paket_id, batchId]);
 
       hasil.push({ username, password });
@@ -145,6 +154,55 @@ router.post('/generate', async (req, res, next) => {
       voucher:  hasil
     });
   } catch (e) { next(e); }
+});
+
+// POST /api/voucher/manual — buat 1 voucher dengan username & password ditentukan admin
+router.post('/manual', async (req, res, next) => {
+  try {
+    const paket_id = req.body.paket_id;
+    const username = (req.body.username || '').trim();
+    let   password = (req.body.password || '').trim();
+
+    if (!paket_id) return res.status(400).json({ error: 'Paket wajib dipilih' });
+    if (!username)  return res.status(400).json({ error: 'Username voucher wajib diisi' });
+    // Username hanya huruf/angka/-/_ (aman untuk RADIUS & URL)
+    if (!/^[A-Za-z0-9_-]{3,32}$/.test(username)) {
+      return res.status(400).json({ error: 'Username 3–32 karakter, hanya huruf, angka, - dan _' });
+    }
+    // Password boleh kosong → samakan dengan username
+    if (!password) password = username;
+
+    const paket = await queryOne('SELECT * FROM paket WHERE id=?', [paket_id]);
+    if (!paket) return res.status(404).json({ error: 'Paket tidak ditemukan' });
+
+    // Pastikan username belum dipakai voucher lain MAUPUN pelanggan (radcheck unik)
+    const adaVcr = await queryOne('SELECT id FROM voucher WHERE username=?', [username]);
+    if (adaVcr) return res.status(409).json({ error: `Username "${username}" sudah dipakai voucher lain` });
+    const adaPel = await queryOne('SELECT id FROM pelanggan WHERE username=?', [username]).catch(() => null);
+    if (adaPel) return res.status(409).json({ error: `Username "${username}" sudah dipakai pelanggan` });
+
+    const batchId = 'MANUAL-' + Date.now().toString(36).toUpperCase();
+    // tgl_expired NULL: masa aktif dihitung dari login pertama + masa_aktif paket.
+    await query(`
+      INSERT INTO voucher (username, password, paket_id, status, tgl_expired, batch_id)
+      VALUES (?, ?, ?, 'unused', NULL, ?)
+    `, [username, password, paket_id, batchId]);
+
+    // Sync ke radcheck agar voucher langsung bisa login
+    radiusService.syncVoucher().catch(e => console.warn('[sync]', e.message));
+    radiusService.syncSimultaneousUsePaket(paket_id).catch(e => console.warn('[sync share]', e.message));
+
+    res.status(201).json({
+      pesan:   `Voucher "${username}" berhasil dibuat`,
+      paket:   paket.nama,
+      voucher: { username, password }
+    });
+  } catch (e) {
+    if (e && (e.code === 'ER_DUP_ENTRY' || /duplicate/i.test(e.message || ''))) {
+      return res.status(409).json({ error: 'Username sudah dipakai, pilih yang lain' });
+    }
+    next(e);
+  }
 });
 
 // POST /api/voucher/:username/kirim-wa — kirim voucher ke WA
@@ -182,6 +240,37 @@ router.delete('/:username', async (req, res, next) => {
     if (v.status === 'used') return res.status(400).json({ error: 'Voucher sudah dipakai' });
     await query('DELETE FROM voucher WHERE username=?', [req.params.username]);
     res.json({ pesan: 'Voucher dihapus' });
+  } catch (e) { next(e); }
+});
+
+// PUT /api/voucher/:username — edit voucher (password, paket, status).
+// Username TIDAK diubah (identitas di radcheck). Password kosong → samakan username.
+router.put('/:username', async (req, res, next) => {
+  try {
+    const v = await queryOne('SELECT * FROM voucher WHERE username=?', [req.params.username]);
+    if (!v) return res.status(404).json({ error: 'Voucher tidak ditemukan' });
+
+    let password = (req.body.password != null ? String(req.body.password).trim() : v.password);
+    if (!password) password = v.username;
+    const paket_id = req.body.paket_id ? parseInt(req.body.paket_id, 10) : v.paket_id;
+    const status   = req.body.status || v.status;
+
+    if (!['unused', 'used', 'expired'].includes(status)) {
+      return res.status(400).json({ error: "status harus unused/used/expired" });
+    }
+    const paket = await queryOne('SELECT id FROM paket WHERE id=?', [paket_id]);
+    if (!paket) return res.status(404).json({ error: 'Paket tidak ditemukan' });
+
+    await query(
+      `UPDATE voucher SET password=?, paket_id=?, status=? WHERE username=?`,
+      [password, paket_id, status, req.params.username]
+    );
+
+    // Sync ke radcheck agar perubahan password/paket langsung berlaku
+    radiusService.syncVoucher().catch(e => console.warn('[sync]', e.message));
+    radiusService.syncSimultaneousUsePaket(paket_id).catch(e => console.warn('[sync share]', e.message));
+
+    res.json({ pesan: `Voucher "${req.params.username}" diperbarui` });
   } catch (e) { next(e); }
 });
 
@@ -238,7 +327,22 @@ router.get('/statistik', async (req, res, next) => {
       WHERE v.status='used'
     `);
 
-    res.json({ stats, total_pendapatan: total_pendapatan[0]?.total || 0 });
+    // Hitungan tambahan untuk chip: online (sesi aktif), baru (7 hari)
+    let online = 0, baru = 0;
+    try {
+      const [o] = await query(`
+        SELECT COUNT(DISTINCT v.id) AS n
+        FROM voucher v
+        WHERE EXISTS (SELECT 1 FROM radacct ra WHERE ra.username=v.username AND ra.acctstoptime IS NULL)
+      `);
+      online = o?.n || 0;
+    } catch (e) { /* radacct mungkin tidak ada */ }
+    try {
+      const [b] = await query(`SELECT COUNT(*) AS n FROM voucher WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)`);
+      baru = b?.n || 0;
+    } catch (e) {}
+
+    res.json({ stats, total_pendapatan: total_pendapatan[0]?.total || 0, online, baru });
   } catch (e) { next(e); }
 });
 

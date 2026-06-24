@@ -17,7 +17,13 @@ router.get('/', async (req, res, next) => {
         let where = ['1=1'];
         let params = [];
 
-        if (status) { where.push('p.status = ?'); params.push(status); }
+        // Status khusus: online (ada sesi radacct aktif), offline (aktif tapi
+        // tidak ada sesi), baru (didaftar 7 hari terakhir). Selain itu = status biasa.
+        const SESI_AKTIF_PEL = `EXISTS (SELECT 1 FROM radacct ra WHERE ra.username=p.username AND ra.acctstoptime IS NULL)`;
+        if (status === 'online')       { where.push(SESI_AKTIF_PEL); }
+        else if (status === 'offline') { where.push(`p.status='aktif' AND NOT ${SESI_AKTIF_PEL}`); }
+        else if (status === 'baru')    { where.push(`p.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)`); }
+        else if (status)               { where.push('p.status = ?'); params.push(status); }
         if (tipe)   { where.push('p.tipe_koneksi = ?'); params.push(tipe); }
         if (cari)   {
             where.push('(p.nama LIKE ? OR p.username LIKE ? OR p.no_hp LIKE ?)');

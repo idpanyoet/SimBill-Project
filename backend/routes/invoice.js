@@ -65,6 +65,43 @@ router.get('/', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
+// GET /api/invoice/statistik — hitung per status + pendapatan (hormati tab)
+router.get('/statistik', async (req, res, next) => {
+    try {
+        const { tipe_koneksi } = req.query;
+        let cond = ['1=1'];
+        if (tipe_koneksi === 'voucher') {
+            cond.push('i.pelanggan_id IS NULL');
+        } else if (tipe_koneksi === 'pppoe') {
+            cond.push('i.pelanggan_id IS NOT NULL');
+            cond.push("(pk.tipe = 'pppoe' OR pk.tipe = 'keduanya')");
+        } else if (tipe_koneksi === 'hotspot') {
+            cond.push('i.pelanggan_id IS NOT NULL');
+            cond.push("(pk.tipe = 'hotspot' OR pk.tipe = 'keduanya')");
+        }
+        const whereStr = cond.join(' AND ');
+        const [r] = await query(`
+            SELECT
+              COUNT(*) AS total,
+              SUM(i.status='paid')    AS paid,
+              SUM(i.status='unpaid')  AS unpaid,
+              SUM(i.status='overdue') AS overdue,
+              SUM(CASE WHEN i.status='paid' THEN i.jumlah ELSE 0 END) AS pendapatan
+            FROM invoice i
+            LEFT JOIN pelanggan p ON i.pelanggan_id = p.id
+            JOIN paket pk ON i.paket_id = pk.id
+            WHERE ${whereStr}
+        `);
+        res.json({
+            total: Number(r.total || 0),
+            paid: Number(r.paid || 0),
+            unpaid: Number(r.unpaid || 0),
+            overdue: Number(r.overdue || 0),
+            pendapatan: Number(r.pendapatan || 0)
+        });
+    } catch (e) { next(e); }
+});
+
 // GET /api/invoice/:id — detail invoice
 router.get('/:id', async (req, res, next) => {
     try {
@@ -72,6 +109,7 @@ router.get('/:id', async (req, res, next) => {
             SELECT i.*,
                 COALESCE(p.nama, 'Pembeli Voucher') AS nama_pelanggan,
                 p.no_hp, p.alamat, p.tipe_koneksi,
+                p.tgl_expired AS pelanggan_expired, p.status AS pelanggan_status,
                 pk.nama AS nama_paket, pk.tipe AS paket_tipe, pk.kecepatan_dn, pk.masa_aktif, pk.satuan_masa
             FROM invoice i
             LEFT JOIN pelanggan p ON i.pelanggan_id = p.id
@@ -149,27 +187,44 @@ router.post('/', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
-// POST /api/invoice/generate-bulanan — generate tagihan untuk semua pelanggan aktif
+// POST /api/invoice/generate-bulanan — generate tagihan untuk pelanggan yang
+// mendekati tgl_expired (H-N), jatuh tempo = tgl_expired. Tombol manual ini
+// melakukan hal yang sama dengan cron harian (catch-up on demand).
 router.post('/generate-bulanan', async (req, res, next) => {
     try {
+        let H = parseInt(process.env.INVOICE_GEN_H_MINUS) || 3;
+        try {
+            const sr = await query(`SELECT nilai FROM setting WHERE kunci='invoice_gen_h' LIMIT 1`);
+            if (sr && sr[0] && String(sr[0].nilai).trim() !== '') H = parseInt(sr[0].nilai) || H;
+        } catch (e) {}
+        const batasAtas = dayjs().add(H, 'day').format('YYYY-MM-DD');
         const pelanggan = await query(`
             SELECT pl.*, pk.harga, pk.id AS paket_id
             FROM pelanggan pl JOIN paket pk ON pl.paket_id = pk.id
             WHERE pl.status = 'aktif'
-        `);
+              AND pl.tgl_expired IS NOT NULL
+              AND DATE(pl.tgl_expired) >= CURDATE()
+              AND DATE(pl.tgl_expired) <= ?
+        `, [batasAtas]);
 
         let berhasil = 0, gagal = 0, gagalWa = 0;
-        const tahun      = dayjs().format('YYYY');
-        const tgl_jatuh  = dayjs().endOf('month').format('YYYY-MM-DD');
+        const tahun = dayjs().format('YYYY');
 
         for (const p of pelanggan) {
             try {
-                // Cek sudah ada invoice bulan ini
+                // Paket gratis tidak ditagih
+                if (!p.harga || Number(p.harga) <= 0) continue;
+
+                const tgl_jatuh = dayjs(p.tgl_expired).format('YYYY-MM-DD');
+
+                // Cegah duplikat: sudah ada invoice belum-lunas dengan jatuh tempo
+                // = tgl_expired ini?
                 const ada = await queryOne(`
                     SELECT id FROM invoice
-                    WHERE pelanggan_id = ? AND MONTH(tgl_invoice) = MONTH(NOW())
-                    AND YEAR(tgl_invoice) = YEAR(NOW())
-                `, [p.id]);
+                    WHERE pelanggan_id = ?
+                      AND DATE(tgl_jatuh_tempo) = ?
+                      AND status IN ('unpaid','overdue')
+                `, [p.id, tgl_jatuh]);
                 if (ada) continue;
 
                 // Insert invoice dengan nomor yang aman dari race condition
@@ -224,11 +279,32 @@ router.post('/:id/bayar-tunai', async (req, res, next) => {
     try {
         const invCek = await queryOne('SELECT pelanggan_id, status FROM invoice WHERE id = ?', [req.params.id]);
         if (!invCek) return res.status(404).json({ error: 'Invoice tidak ditemukan' });
-        if (invCek.pelanggan_id === null)
-            return res.status(400).json({ error: 'Invoice voucher hotspot tidak bisa dikonfirmasi lewat menu ini' });
+
+        // Invoice voucher online (pelanggan_id NULL): lunasi + buat voucher.
+        if (invCek.pelanggan_id === null) {
+            if (invCek.status === 'paid') {
+                // Sudah lunas — pastikan voucher ada (repair bila webhook gagal)
+            } else {
+                await query(`UPDATE invoice SET status='paid', tgl_bayar=NOW(), metode_bayar='tunai' WHERE id=?`, [req.params.id]);
+            }
+            let kode = null;
+            try {
+                const { buatVoucherDariInvoice } = require('./voucher-publik');
+                const r = await buatVoucherDariInvoice(req.params.id);
+                kode = r?.username || null;
+            } catch (e) { console.warn('[bayar-tunai voucher] buat voucher gagal:', e.message); }
+            try {
+                const invV = await queryOne('SELECT no_invoice, jumlah FROM invoice WHERE id=?', [req.params.id]);
+                require('./log').tulisLog({ kategori:'Billing', pelaku: req.admin?.nama||'Admin',
+                    aksi:'INVOICE_PAID', target: invV?.no_invoice,
+                    detail:`Voucher online lunas manual${kode?` → ${kode}`:''}`,
+                    ip: req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || req.ip });
+            } catch (e) {}
+            return res.json({ pesan: kode ? `Pembayaran dikonfirmasi, voucher: ${kode}` : 'Pembayaran dikonfirmasi', kode_voucher: kode });
+        }
 
         const inv = await queryOne(`
-            SELECT i.*, p.nama, p.no_hp, p.id AS pid, p.paket_id, pk.masa_aktif, pk.nama AS nama_paket
+            SELECT i.*, p.nama, p.no_hp, p.id AS pid, p.paket_id, p.status AS status_lama, pk.masa_aktif, pk.nama AS nama_paket
             FROM invoice i
             JOIN pelanggan p ON i.pelanggan_id = p.id
             JOIN paket pk ON i.paket_id = pk.id
@@ -248,27 +324,122 @@ router.post('/:id/bayar-tunai', async (req, res, next) => {
             [tgl_expired, inv.pelanggan_id]
         );
 
-        // Aktifkan di RADIUS jika suspended
-        const radiusService = require('../services/radius');
-        const p = await queryOne('SELECT username FROM pelanggan WHERE id=?', [inv.pelanggan_id]);
-        await radiusService.aktifkanUser(p.username);
+        // Balas SEGERA setelah DB konsisten — biar UI berubah cepat.
+        res.json({ pesan: 'Pembayaran dikonfirmasi', tgl_expired });
 
-        // Kirim WA konfirmasi
-        await waService.kirimKonfirmasiBayar({
-            no_hp: inv.no_hp, nama: inv.nama,
-            jumlah: inv.jumlah, total: inv.jumlah, tgl_expired,
-            no_invoice: inv.no_invoice,
-            paket: inv.nama_paket || inv.paket,
-            metode_bayar: inv.metode_bayar || 'Tunai',
-            tgl_invoice: inv.tgl_invoice,
-            tgl_jatuh_tempo: inv.tgl_jatuh_tempo,
-            periode: inv.tgl_invoice
+        // Tugas berat dijalankan di BACKGROUND (tidak menahan response):
+        // reconnect RADIUS (termasuk CoA radclient) + kirim WA konfirmasi + audit log.
+        (async () => {
+            try {
+                const radiusService = require('../services/radius');
+                const p = await queryOne('SELECT username FROM pelanggan WHERE id=?', [inv.pelanggan_id]);
+                // Hanya reconnect (putus sesi) jika pelanggan SEBELUMNYA tidak aktif
+                // (suspended/isolir/nonaktif). Kalau sudah aktif, jangan ganggu
+                // sesinya — pembayaran cuma memperpanjang masa aktif.
+                if (p && p.username) {
+                    if (inv.status_lama === 'aktif') {
+                        // Sudah aktif: pastikan atribut RADIUS benar tanpa memutus sesi
+                        if (typeof radiusService.pulihkanTanpaReconnect === 'function') {
+                            await radiusService.pulihkanTanpaReconnect(p.username);
+                        }
+                        // (jika fungsi belum ada, lewati — tidak ada yang perlu diubah)
+                    } else {
+                        await radiusService.aktifkanUser(p.username);
+                    }
+                }
+            } catch (e) { console.warn('[bayar-tunai] reconnect gagal:', e.message); }
+
+            try {
+                await waService.kirimKonfirmasiBayar({
+                    no_hp: inv.no_hp, nama: inv.nama,
+                    jumlah: inv.jumlah, total: inv.jumlah, tgl_expired,
+                    no_invoice: inv.no_invoice,
+                    paket: inv.nama_paket || inv.paket,
+                    metode_bayar: inv.metode_bayar || 'Tunai',
+                    tgl_invoice: inv.tgl_invoice,
+                    tgl_jatuh_tempo: inv.tgl_jatuh_tempo,
+                    periode: inv.tgl_invoice
+                });
+            } catch (e) { console.warn('[bayar-tunai] kirim WA gagal:', e.message); }
+
+            try {
+                require('./log').tulisLog({ kategori:'Billing', pelaku: req.admin?.nama||'Admin',
+                    aksi:'INVOICE_PAID', target: inv.no_invoice,
+                    detail:`Amount: ${inv.jumlah}, Method: cash`, ip: req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || req.ip });
+            } catch (e) { console.warn('[bayar-tunai] log gagal:', e.message); }
+        })();
+    } catch (e) { next(e); }
+});
+
+// POST /api/invoice/:id/batalkan-lunas — rollback invoice 'paid' → 'unpaid'
+// Khusus SUPERADMIN. Opsional: suspend pelanggan (req.body.suspend === true).
+router.post('/:id/batalkan-lunas', async (req, res, next) => {
+    try {
+        if (req.admin?.role !== 'superadmin') {
+            return res.status(403).json({ error: 'Hanya Super Admin yang bisa membatalkan pembayaran (rollback).' });
+        }
+        const inv = await queryOne(`
+            SELECT i.*, p.username, p.nama, p.tgl_expired AS pelanggan_expired
+            FROM invoice i LEFT JOIN pelanggan p ON i.pelanggan_id = p.id
+            WHERE i.id = ?
+        `, [req.params.id]);
+        if (!inv) return res.status(404).json({ error: 'Invoice tidak ditemukan' });
+        if (inv.status !== 'paid') return res.status(400).json({ error: 'Invoice ini belum berstatus Lunas' });
+        if (inv.pelanggan_id === null) {
+            return res.status(400).json({ error: 'Invoice voucher hotspot tidak bisa di-rollback lewat menu ini' });
+        }
+
+        let suspend = req.body.suspend === true || req.body.suspend === 'true';
+        const force = req.body.force === true || req.body.force === 'true';
+
+        // Pengaman: kalau pelanggan masih AKTIF (tgl_expired di masa depan),
+        // jangan suspend kecuali admin menegaskan (force). Mencegah salah suspend
+        // pelanggan yang masa aktifnya masih ada.
+        const masihAktif = inv.pelanggan_expired && new Date(inv.pelanggan_expired) > new Date();
+        let suspendDibatalkan = false;
+        if (suspend && masihAktif && !force) {
+            suspend = false;
+            suspendDibatalkan = true;
+        }
+
+        // Kembalikan invoice ke belum bayar (hapus jejak pembayaran)
+        await query(
+            `UPDATE invoice SET status='unpaid', tgl_bayar=NULL, metode_bayar=NULL WHERE id=?`,
+            [req.params.id]
+        );
+
+        // Suspend pelanggan jika diminta admin
+        if (suspend && inv.pelanggan_id) {
+            await query(`UPDATE pelanggan SET status='suspended' WHERE id=?`, [inv.pelanggan_id]);
+        }
+
+        // Balas segera; tugas RADIUS + audit log di background
+        res.json({
+            pesan: suspend
+                ? `Pembayaran dibatalkan & pelanggan ${inv.nama || ''} di-suspend`
+                : (suspendDibatalkan
+                    ? `Pembayaran dibatalkan. Pelanggan ${inv.nama || ''} TIDAK di-suspend (masa aktif masih ada).`
+                    : 'Pembayaran dibatalkan (pelanggan dibiarkan aktif)'),
+            suspend,
+            suspendDibatalkan
         });
 
-        res.json({ pesan: 'Pembayaran dikonfirmasi', tgl_expired });
-        require('./log').tulisLog({ kategori:'Billing', pelaku: req.admin?.nama||'Admin',
-            aksi:'INVOICE_PAID', target: inv.no_invoice,
-            detail:`Amount: ${inv.jumlah}, Method: cash`, ip: req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || req.ip });
+        (async () => {
+            if (suspend && inv.username) {
+                try {
+                    const radiusService = require('../services/radius');
+                    await radiusService.suspendUser(inv.username);
+                } catch (e) { console.warn('[batalkan-lunas] suspend RADIUS gagal:', e.message); }
+            }
+            try {
+                require('./log').tulisLog({
+                    kategori: 'Billing', pelaku: req.admin?.nama || 'Superadmin',
+                    aksi: 'ROLLBACK_INVOICE', target: inv.no_invoice,
+                    detail: `Batalkan lunas ${inv.no_invoice}${suspend ? ' + suspend pelanggan' : ''}`,
+                    ip: req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || req.ip
+                });
+            } catch (e) { console.warn('[batalkan-lunas] log gagal:', e.message); }
+        })();
     } catch (e) { next(e); }
 });
 
@@ -371,6 +542,25 @@ router.get('/:id/pdf', async (req, res, next) => {
     }
 });
 
+// POST /api/invoice/:id/buat-voucher — REPAIR: buat voucher untuk invoice
+// voucher online yang sudah lunas tapi vouchernya belum dibuat (webhook gagal).
+router.post('/:id/buat-voucher', async (req, res, next) => {
+    try {
+        const inv = await queryOne('SELECT id, no_invoice, status, pelanggan_id, keterangan FROM invoice WHERE id=?', [req.params.id]);
+        if (!inv) return res.status(404).json({ error: 'Invoice tidak ditemukan' });
+        if (inv.pelanggan_id !== null) return res.status(400).json({ error: 'Ini bukan invoice voucher online' });
+        if (inv.status !== 'paid') return res.status(400).json({ error: 'Invoice belum lunas — lunasi dulu' });
+
+        const { buatVoucherDariInvoice } = require('./voucher-publik');
+        const r = await buatVoucherDariInvoice(req.params.id);
+        if (!r) return res.status(400).json({ error: 'Gagal membuat voucher (cek keterangan invoice: WA/Paket)' });
+        res.json({
+            pesan: r.created ? `Voucher dibuat: ${r.username}` : `Voucher sudah ada: ${r.username}`,
+            kode_voucher: r.username, dibuat: r.created
+        });
+    } catch (e) { next(e); }
+});
+
 // POST /api/invoice/:id/kirim-wa-pdf — kirim PDF ke WA pelanggan.
 // Jika browser mengupload file PDF (html2pdf, identik dgn print) → pakai itu;
 // kalau tidak ada (mis. dipanggil tanpa file) → fallback generate server-side.
@@ -378,10 +568,20 @@ router.post('/:id/kirim-wa-pdf', uploadPdf.single('file'), async (req, res, next
     try {
         const inv = await queryOne(`
             SELECT i.no_invoice, i.jumlah, i.status, i.tgl_jatuh_tempo, i.payment_url,
+                   i.keterangan, i.pelanggan_id,
                    p.nama, p.no_hp
             FROM invoice i LEFT JOIN pelanggan p ON i.pelanggan_id = p.id
             WHERE i.id = ?`, [req.params.id]);
         if (!inv) return res.status(404).json({ error: 'Invoice tidak ditemukan' });
+
+        // Invoice voucher online (pelanggan_id NULL) tidak punya p.no_hp/p.nama.
+        // Ambil dari keterangan: "WA: 628xxx — Nama: Budi".
+        if (inv.pelanggan_id === null) {
+            const ket = inv.keterangan || '';
+            if (!inv.no_hp) { const m = ket.match(/WA:\s*(\d+)/); if (m) inv.no_hp = m[1]; }
+            if (!inv.nama)  { const m = ket.match(/Nama:\s*([^—]+)/); if (m) inv.nama = m[1].trim(); }
+            if (!inv.nama) inv.nama = 'Pembeli Voucher';
+        }
 
         const noHp = req.body?.no_hp || inv.no_hp;
         if (!noHp) return res.status(400).json({ error: 'Nomor HP pelanggan tidak tersedia' });
