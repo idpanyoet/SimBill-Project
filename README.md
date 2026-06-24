@@ -1,6 +1,5 @@
 <h1 align="center">SimBill</h1>
 
-🌐 **Demo:** [simbill.rfnet.id](https://simbill.rfnet.id)
 
 
 <p align="center">
@@ -40,7 +39,7 @@ wget -qO- https://raw.githubusercontent.com/idpanyoet/SimBill-Project/master/upd
 Installer otomatis memasang **Node.js 20, pm2, MariaDB**, membuat database, meng-clone aplikasi ke `/opt/simbill`, membuat file `.env` (JWT digenerate otomatis), mengimpor schema, lalu menjalankan aplikasi via **pm2** dengan nama `billing-radius`. Setelah selesai, akses dashboard di `http://IP-VPS:3000`.
 
 ### 🔑 Login Default
-
+🌐 **Demo:** [simbill.rfnet.id](https://simbill.rfnet.id)
 Setelah install, masuk dengan akun default:
 
 | Username | Password   |
