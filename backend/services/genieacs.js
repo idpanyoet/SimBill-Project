@@ -152,20 +152,32 @@ function normalizeDevice(d) {
     const wcdAll = ((igd.WANDevice || {})['1'] || {}).WANConnectionDevice || {};
     let pppUsername = '';
     let wanIp = '';
+    // Scan SEMUA index WANConnectionDevice.* DAN semua WANPPPConnection.* /
+    // WANIPConnection.* di dalamnya. Sebagian ONU (mis. ZTE F463N) menaruh
+    // koneksi INTERNET di index .2/.3, bukan .1 (yang .1 sering TR069/mgmt) —
+    // kalau cuma baca .1, IP & username PPPoE tidak ketemu (tampil 0.0.0.0/"–").
+    const ambilKoneksi = (parent, type) => {
+        const all = parent[type] || {};
+        for (const j of Object.keys(all)) {
+            if (j[0] === '_') continue;
+            const c = all[j] || {};
+            const ip   = gv(c, 'ExternalIPAddress');
+            const user = (type === 'WANPPPConnection') ? gv(c, 'Username') : '';
+            if (ip && ip !== '0.0.0.0') {
+                // koneksi aktif (punya IP WAN) → sumber paling andal
+                wanIp = ip;
+                if (user) pppUsername = user;
+            } else {
+                if (!wanIp && ip) wanIp = ip;                 // simpan 0.0.0.0 sbg fallback
+                if (user && !pppUsername) pppUsername = user; // username fallback
+            }
+        }
+    };
     for (const idx of Object.keys(wcdAll)) {
         if (idx[0] === '_') continue;
         const wcd = wcdAll[idx] || {};
-        if (!pppUsername) {
-            const u = gv(wcd, 'WANPPPConnection.1.Username');
-            if (u) pppUsername = u;
-        }
-        if (!wanIp || wanIp === '0.0.0.0') {
-            const ipP = gv(wcd, 'WANPPPConnection.1.ExternalIPAddress');
-            const ipI = gv(wcd, 'WANIPConnection.1.ExternalIPAddress');
-            const valid = [ipP, ipI].find(x => x && x !== '0.0.0.0');
-            if (valid) wanIp = valid;
-            else if (!wanIp && (ipP || ipI)) wanIp = ipP || ipI; // fallback (mis. 0.0.0.0)
-        }
+        ambilKoneksi(wcd, 'WANPPPConnection');
+        ambilKoneksi(wcd, 'WANIPConnection');
     }
     const ssid = gv(igd, 'LANDevice.1.WLANConfiguration.1.SSID') || '';
     // RX optik (redaman) — coba beberapa path vendor

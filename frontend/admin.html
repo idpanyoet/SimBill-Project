@@ -1711,6 +1711,121 @@ body.dark #inv-action-menu button:hover{background:#21262d}
               </div>
             </div>
 
+            <!-- Card Broadcast Massal -->
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(220,38,38,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-speakerphone" style="font-size:17px;color:#dc2626" aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Broadcast Massal</div>
+                  <div class="td-text-sub" style="font-size:11px">Kirim pesan ke banyak pelanggan sekaligus</div>
+                </div>
+              </div>
+
+              <div class="fg">
+                <label>Target Penerima</label>
+                <select id="wa-broadcast-target" style="width:100%">
+                  <option value="unpaid">📋 Semua belum bayar</option>
+                  <option value="overdue">⚠️ Sudah terlambat</option>
+                  <option value="semua">👥 Semua pelanggan</option>
+                </select>
+              </div>
+
+              <div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:14px">
+                <div class="fg" style="margin-bottom:0;flex:1">
+                  <label>Delay min (detik)</label>
+                  <input id="wa-broadcast-delay-min" type="number" value="30" min="1" max="300" style="width:100%;text-align:center;font-weight:700;font-size:16px">
+                </div>
+                <div class="fg" style="margin-bottom:0;flex:1">
+                  <label>Delay max (detik)</label>
+                  <input id="wa-broadcast-delay-max" type="number" value="60" min="1" max="600" style="width:100%;text-align:center;font-weight:700;font-size:16px">
+                </div>
+              </div>
+              <div style="font-size:11px;color:var(--text2);margin-bottom:14px">
+                Jeda antar pesan akan diacak antara <b>min</b> dan <b>max</b> detik agar lebih natural dan tidak terkena blokir WhatsApp. Disarankan <b>30–60 detik</b> untuk broadcast banyak.
+              </div>
+
+              <div style="background:rgba(220,38,38,.05);border:1px solid rgba(220,38,38,.15);border-radius:9px;padding:10px 13px;font-size:11px;color:#b91c1c;margin-bottom:14px;display:flex;gap:8px">
+                <i class="ti ti-alert-triangle" style="font-size:14px;flex-shrink:0;margin-top:1px" aria-hidden="true"></i>
+                Broadcast akan mengirim pesan ke semua pelanggan dalam target. Pastikan konten pesan tidak melanggar kebijakan WhatsApp.
+              </div>
+
+              <button class="btn danger" style="width:100%;justify-content:center;gap:6px;background:#dc2626;border-color:#dc2626;color:#fff" onclick="apiBroadcastWA()">
+                <i class="ti ti-speakerphone" style="font-size:14px" aria-hidden="true"></i> Kirim Broadcast
+              </button>
+            </div>
+
+            <!-- Card Statistik 30 Hari -->
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(37,99,235,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-chart-bar" style="font-size:17px;color:#2563eb" aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">WA Gateway — 30 Hari</div>
+                  <div class="td-text-sub" style="font-size:11px">Statistik pengiriman pesan</div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <div class="stat-row"><span class="lbl">Reminder terkirim</span><span class="val" style="color:var(--green)" id="wa-pg-stat-reminder">—</span></div>
+                <div class="stat-row"><span class="lbl">Notif suspend</span><span class="val" style="color:var(--red)" id="wa-pg-stat-suspend">—</span></div>
+                <div class="stat-row"><span class="lbl">Konfirmasi bayar</span><span class="val" style="color:var(--accent)" id="wa-pg-stat-konfirmasi">—</span></div>
+                <div class="stat-row"><span class="lbl">Voucher terkirim</span><span class="val" id="wa-pg-stat-voucher">—</span></div>
+                <div class="divider"></div>
+                <div class="stat-row"><span class="lbl">Delivery rate</span><span class="val" style="color:var(--green)" id="wa-pg-stat-rate">—</span></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ══ KOLOM KANAN ══ -->
+          <div style="display:flex;flex-direction:column;gap:14px">
+
+            <!-- Card Test Kirim + Preview Chat -->
+            <div class="card">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(22,163,74,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i class="ti ti-send" style="font-size:17px;color:#16a34a" aria-hidden="true"></i>
+                </div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text)">Test Kirim Pesan</div>
+                  <div class="td-text-sub" style="font-size:11px">Kirim pesan percobaan ke nomor tujuan</div>
+                </div>
+              </div>
+              <div class="fg">
+                <label>Nomor Tujuan</label>
+                <input id="wa-to" placeholder="628xxxxxxxxxx">
+              </div>
+              <div class="fg" style="margin-top:10px">
+                <label>Pesan</label>
+                <textarea id="wa-pesan" rows="3" placeholder="Tulis pesan..." style="resize:vertical"></textarea>
+              </div>
+              <button class="btn primary" style="width:100%;justify-content:center;gap:6px;margin-top:4px" onclick="apiKirimWATest()">
+                <i class="ti ti-send" style="font-size:13px" aria-hidden="true"></i> Kirim Test
+              </button>
+
+              <!-- Preview Chat -->
+              <div style="margin-top:14px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                  <div style="font-size:12px;font-weight:600;color:var(--text2);display:flex;align-items:center;gap:6px">
+                    <i class="ti ti-history" style="font-size:13px" aria-hidden="true"></i>
+                    Riwayat Pesan WA
+                    <span style="font-size:11px;font-weight:400;color:var(--text3)">Delivery rate: <b id="wa-delivery-rate" style="color:var(--text2)">—</b></span>
+                  </div>
+                  <button class="btn sm" onclick="loadWAMsgLog(1)" style="padding:3px 8px" title="Muat ulang">
+                    <i class="ti ti-refresh" style="font-size:11px" aria-hidden="true"></i>
+                  </button>
+                </div>
+                <div class="wa-chat" id="wa-chat" style="min-height:400px;max-height:550px">
+                  <div style="text-align:center;color:var(--text3);padding:20px;font-size:12px">
+                    <i class="ti ti-loader" style="font-size:20px;display:block;margin-bottom:8px;opacity:.4" aria-hidden="true"></i>
+                    Memuat riwayat pesan...
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Card Template Pesan -->
             <div class="card">
               <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
@@ -1836,122 +1951,6 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
                 <div id="tpl-ph-reference"></div>
               </div>
             </div>
-
-            <!-- Card Broadcast Massal -->
-            <div class="card">
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
-                <div style="width:34px;height:34px;border-radius:9px;background:rgba(220,38,38,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                  <i class="ti ti-speakerphone" style="font-size:17px;color:#dc2626" aria-hidden="true"></i>
-                </div>
-                <div>
-                  <div style="font-size:13px;font-weight:700;color:var(--text)">Broadcast Massal</div>
-                  <div class="td-text-sub" style="font-size:11px">Kirim pesan ke banyak pelanggan sekaligus</div>
-                </div>
-              </div>
-
-              <div class="fg">
-                <label>Target Penerima</label>
-                <select id="wa-broadcast-target" style="width:100%">
-                  <option value="unpaid">📋 Semua belum bayar</option>
-                  <option value="overdue">⚠️ Sudah terlambat</option>
-                  <option value="semua">👥 Semua pelanggan</option>
-                </select>
-              </div>
-
-              <div style="display:flex;align-items:flex-end;gap:10px;margin-bottom:14px">
-                <div class="fg" style="margin-bottom:0;flex:1">
-                  <label>Delay min (detik)</label>
-                  <input id="wa-broadcast-delay-min" type="number" value="30" min="1" max="300" style="width:100%;text-align:center;font-weight:700;font-size:16px">
-                </div>
-                <div class="fg" style="margin-bottom:0;flex:1">
-                  <label>Delay max (detik)</label>
-                  <input id="wa-broadcast-delay-max" type="number" value="60" min="1" max="600" style="width:100%;text-align:center;font-weight:700;font-size:16px">
-                </div>
-              </div>
-              <div style="font-size:11px;color:var(--text2);margin-bottom:14px">
-                Jeda antar pesan akan diacak antara <b>min</b> dan <b>max</b> detik agar lebih natural dan tidak terkena blokir WhatsApp. Disarankan <b>30–60 detik</b> untuk broadcast banyak.
-              </div>
-
-              <div style="background:rgba(220,38,38,.05);border:1px solid rgba(220,38,38,.15);border-radius:9px;padding:10px 13px;font-size:11px;color:#b91c1c;margin-bottom:14px;display:flex;gap:8px">
-                <i class="ti ti-alert-triangle" style="font-size:14px;flex-shrink:0;margin-top:1px" aria-hidden="true"></i>
-                Broadcast akan mengirim pesan ke semua pelanggan dalam target. Pastikan konten pesan tidak melanggar kebijakan WhatsApp.
-              </div>
-
-              <button class="btn danger" style="width:100%;justify-content:center;gap:6px;background:#dc2626;border-color:#dc2626;color:#fff" onclick="apiBroadcastWA()">
-                <i class="ti ti-speakerphone" style="font-size:14px" aria-hidden="true"></i> Kirim Broadcast
-              </button>
-            </div>
-
-          </div>
-
-          <!-- ══ KOLOM KANAN ══ -->
-          <div style="display:flex;flex-direction:column;gap:14px">
-
-            <!-- Card Test Kirim + Preview Chat -->
-            <div class="card">
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
-                <div style="width:34px;height:34px;border-radius:9px;background:rgba(22,163,74,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                  <i class="ti ti-send" style="font-size:17px;color:#16a34a" aria-hidden="true"></i>
-                </div>
-                <div>
-                  <div style="font-size:13px;font-weight:700;color:var(--text)">Test Kirim Pesan</div>
-                  <div class="td-text-sub" style="font-size:11px">Kirim pesan percobaan ke nomor tujuan</div>
-                </div>
-              </div>
-              <div class="fg">
-                <label>Nomor Tujuan</label>
-                <input id="wa-to" placeholder="628xxxxxxxxxx">
-              </div>
-              <div class="fg" style="margin-top:10px">
-                <label>Pesan</label>
-                <textarea id="wa-pesan" rows="3" placeholder="Tulis pesan..." style="resize:vertical"></textarea>
-              </div>
-              <button class="btn primary" style="width:100%;justify-content:center;gap:6px;margin-top:4px" onclick="apiKirimWATest()">
-                <i class="ti ti-send" style="font-size:13px" aria-hidden="true"></i> Kirim Test
-              </button>
-
-              <!-- Preview Chat -->
-              <div style="margin-top:14px">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                  <div style="font-size:12px;font-weight:600;color:var(--text2);display:flex;align-items:center;gap:6px">
-                    <i class="ti ti-message-dots" style="font-size:13px" aria-hidden="true"></i>
-                    Preview Chat
-                    <span style="font-size:11px;font-weight:400;color:var(--text3)">Delivery rate: <b id="wa-delivery-rate" style="color:var(--text2)">—</b></span>
-                  </div>
-                  <button class="btn sm" onclick="document.getElementById('wa-chat').innerHTML=''" style="padding:3px 8px">
-                    <i class="ti ti-trash" style="font-size:11px" aria-hidden="true"></i>
-                  </button>
-                </div>
-                <div class="wa-chat" id="wa-chat" style="min-height:400px;max-height:550px">
-                  <div style="text-align:center;color:var(--text3);padding:20px;font-size:12px">
-                    <i class="ti ti-loader" style="font-size:20px;display:block;margin-bottom:8px;opacity:.4" aria-hidden="true"></i>
-                    Memuat riwayat pesan...
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Card Statistik 30 Hari -->
-            <div class="card">
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
-                <div style="width:34px;height:34px;border-radius:9px;background:rgba(37,99,235,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                  <i class="ti ti-chart-bar" style="font-size:17px;color:#2563eb" aria-hidden="true"></i>
-                </div>
-                <div>
-                  <div style="font-size:13px;font-weight:700;color:var(--text)">WA Gateway — 30 Hari</div>
-                  <div class="td-text-sub" style="font-size:11px">Statistik pengiriman pesan</div>
-                </div>
-              </div>
-              <div style="display:flex;flex-direction:column;gap:2px">
-                <div class="stat-row"><span class="lbl">Reminder terkirim</span><span class="val" style="color:var(--green)" id="wa-pg-stat-reminder">—</span></div>
-                <div class="stat-row"><span class="lbl">Notif suspend</span><span class="val" style="color:var(--red)" id="wa-pg-stat-suspend">—</span></div>
-                <div class="stat-row"><span class="lbl">Konfirmasi bayar</span><span class="val" style="color:var(--accent)" id="wa-pg-stat-konfirmasi">—</span></div>
-                <div class="stat-row"><span class="lbl">Voucher terkirim</span><span class="val" id="wa-pg-stat-voucher">—</span></div>
-                <div class="divider"></div>
-                <div class="stat-row"><span class="lbl">Delivery rate</span><span class="val" style="color:var(--green)" id="wa-pg-stat-rate">—</span></div>
-              </div>
-            </div>
-
 
           </div>
         </div>
@@ -12247,30 +12246,25 @@ async function loadWALog() {
       tokenEl.value = map.wa_token;
       tokenEl.setAttribute('data-saved', '1');
     }
-    if (map.wa_tpl_daftar)          document.getElementById('wa-tpl-daftar').value          = map.wa_tpl_daftar;
-    if (map.wa_tpl_reminder)        document.getElementById('wa-tpl-reminder').value        = map.wa_tpl_reminder;
-    if (map.wa_tpl_suspend)         document.getElementById('wa-tpl-suspend').value         = map.wa_tpl_suspend;
-    if (map.wa_tpl_konfirmasi)      document.getElementById('wa-tpl-konfirmasi').value      = map.wa_tpl_konfirmasi;
-    if (map.wa_tpl_voucher_sukses)  document.getElementById('wa-tpl-voucher_sukses').value  = map.wa_tpl_voucher_sukses;
-    if (map.wa_tpl_invoice_baru)    document.getElementById('wa-tpl-invoice_baru').value    = map.wa_tpl_invoice_baru;
-    // Init template editor dengan template pertama
-    tplLoad(document.getElementById('wa-tpl-select')?.value || 'daftar');
+    const _setTplVal = (k, v) => { const el = document.getElementById('wa-tpl-' + k); if (el && v) el.value = v; };
+    _setTplVal('daftar',         map.wa_tpl_daftar);
+    _setTplVal('reminder',       map.wa_tpl_reminder);
+    _setTplVal('suspend',        map.wa_tpl_suspend);
+    _setTplVal('konfirmasi',     map.wa_tpl_konfirmasi);
+    _setTplVal('voucher_sukses', map.wa_tpl_voucher_sukses);
+    _setTplVal('invoice_baru',   map.wa_tpl_invoice_baru);
     // Tampilkan field Phone ID hanya untuk WA Business API
-    document.getElementById('wa-phoneid-wrap').style.display =
-      map.wa_provider === 'wa_business' ? '' : 'none';
+    const _phw = document.getElementById('wa-phoneid-wrap');
+    if (_phw) _phw.style.display = map.wa_provider === 'wa_business' ? '' : 'none';
     // Token tidak ditampilkan kembali demi keamanan
   } catch(e) { console.warn('Setting WA:', e.message); }
 
-  // Riwayat log → tampilkan sebagai preview chat
-  try {
-    const rows = await apiFetch('/api/whatsapp/log?limit=10');
-    renderWAChatPreview(rows);
-  } catch(e) {
-    console.warn('WA log API:', e.message);
-    const chat = document.getElementById('wa-chat');
-    if (chat) chat.innerHTML =
-      '<div style="text-align:center;color:var(--text3);padding:20px;font-size:12px"><i class="ti ti-message-off" style="font-size:24px;display:block;margin-bottom:8px;opacity:.4"></i>Belum ada riwayat pengiriman WA<br><span style="font-size:11px">Riwayat akan muncul setelah pesan pertama dikirim</span></div>';
-  }
+  // Init editor template — DIJAMIN jalan walau fetch setting di atas gagal
+  try { tplLoad(document.getElementById('wa-tpl-select')?.value || 'daftar'); }
+  catch(e) { console.warn('tplLoad init:', e.message); }
+
+  // Riwayat log → tampilkan sebagai tabel (dengan pagination)
+  loadWAMsgLog(1);
 
   // Statistik 30 hari
   try {
@@ -12279,23 +12273,111 @@ async function loadWALog() {
   } catch(e) { console.warn('WA stat API:', e.message); }
 }
 
-function renderWAChatPreview(rows) {
+var _waLogPage = 1, _waLogPerPage = 30, _waLogTotal = 0, _waLogRows = [];
+
+async function loadWAMsgLog(page) {
+  if (page) _waLogPage = page;
   const chat = document.getElementById('wa-chat');
   if (!chat) return;
-  if (!rows || !rows.length) {
-    chat.innerHTML = '<div style="text-align:center;color:var(--text3);padding:20px;font-size:12px"><i class="ti ti-message-off" style="font-size:24px;display:block;margin-bottom:8px;opacity:.4"></i>Belum ada riwayat pengiriman WA<br><span style="font-size:11px">Riwayat akan muncul setelah pesan pertama dikirim</span></div>';
+  try {
+    const resp  = await apiFetch(`/api/whatsapp/log?halaman=${_waLogPage}&limit=${_waLogPerPage}`);
+    const items = Array.isArray(resp) ? resp : (resp.items || []);
+    _waLogRows  = items;
+    _waLogTotal = Array.isArray(resp) ? items.length : (resp.total || items.length);
+    renderWALogTable();
+  } catch(e) {
+    console.warn('WA log API:', e.message);
+    chat.style.background='transparent'; chat.style.padding='0'; chat.style.display='block';
+    chat.innerHTML = '<div style="text-align:center;color:var(--text3);padding:24px;font-size:12px"><i class="ti ti-message-off" style="font-size:24px;display:block;margin-bottom:8px;opacity:.4"></i>Belum ada riwayat pengiriman WA</div>';
+  }
+}
+
+function setWALogPerPage(n){ _waLogPerPage = parseInt(n,10)||30; _waLogPage = 1; loadWAMsgLog(1); }
+
+function _waTplLabel(tipe){
+  const m = { reminder:'invoice_reminder', konfirmasi_bayar:'konfirmasi_bayar', suspend:'suspend', broadcast:'broadcast' };
+  return m[tipe] || '–';
+}
+function _waStatusIcon(status){
+  if (status==='sent')   return '<span style="color:#53bdeb;font-weight:700" title="Terkirim">✓✓</span>';
+  if (status==='failed') return '<span style="color:#dc2626;font-weight:700" title="Gagal">✗</span>';
+  return '<span style="color:#94a3b8" title="Menunggu">⏳</span>';
+}
+
+function renderWALogTable(){
+  const chat = document.getElementById('wa-chat');
+  if (!chat) return;
+  // Ubah container dari gaya "chat" jadi gaya tabel
+  chat.style.background='transparent'; chat.style.padding='0'; chat.style.display='block';
+
+  if (!_waLogRows.length){
+    chat.innerHTML = '<div style="text-align:center;color:var(--text3);padding:24px;font-size:12px"><i class="ti ti-message-off" style="font-size:24px;display:block;margin-bottom:8px;opacity:.4"></i>Belum ada riwayat pengiriman WA</div>';
     return;
   }
-  chat.innerHTML = rows.slice(0,10).reverse().map(r => {
-    const waktu    = r.sent_at || r.created_at;
-    const jam      = waktu ? new Date(waktu).toLocaleTimeString('id',{hour:'2-digit',minute:'2-digit'}) : '';
-    const centang  = r.status === 'sent' ? '✓✓' : r.status === 'failed' ? '✗' : '⏳';
-    const centangColor = r.status === 'sent' ? '#53bdeb' : r.status === 'failed' ? '#dc2626' : '#94a3b8';
-    const pesanRingkas = (r.pesan||'').replace(/\*(.*?)\*/g,'<b>$1</b>').slice(0, 300);
-    const nama     = r.nama_pelanggan ? `<div style="font-size:10px;color:#94a3b8;margin-bottom:3px">${escapeHtml(r.nama_pelanggan)} · ${escapeHtml(r.no_hp||'')}</div>` : '';
-    return `<div class="wa-msg out">${nama}${pesanRingkas}<div class="time">${jam} <span style="color:${centangColor}">${centang}</span></div></div>`;
+
+  const rows = _waLogRows.map((r, i) => {
+    const waktu  = r.sent_at || r.created_at;
+    const wkt    = waktu ? new Date(waktu).toLocaleString('id-ID') : '–';
+    const tujuan = escapeHtml(r.no_tujuan || r.no_hp || '–');
+    const tpl    = _waTplLabel(r.tipe);
+    const pesan  = escapeHtml((r.pesan||'').replace(/\s+/g,' ').trim()).slice(0, 90);
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:8px 10px;white-space:nowrap;font-size:12px;color:var(--text2)">${wkt}</td>
+      <td style="padding:8px 10px;white-space:nowrap;font-family:'Space Mono',monospace;font-size:12px;font-weight:600">${tujuan}</td>
+      <td style="padding:8px 10px;font-size:11px;color:var(--accent)">${escapeHtml(tpl)}</td>
+      <td style="padding:8px 10px;text-align:center;font-size:13px">${_waStatusIcon(r.status)}</td>
+      <td style="padding:8px 10px;font-size:12px;color:var(--text2);max-width:380px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${pesan}</td>
+      <td style="padding:8px 10px;text-align:center"><button class="btn sm" style="padding:2px 9px" onclick="waLogDetail(${i})" title="Lihat detail">⋯</button></td>
+    </tr>`;
   }).join('');
-  chat.scrollTop = chat.scrollHeight;
+
+  const totalPages = Math.max(1, Math.ceil(_waLogTotal / _waLogPerPage));
+  if (_waLogPage > totalPages) _waLogPage = totalPages;
+  const ppOpts = [10,30,50,100].map(n => `<option value="${n}"${n===_waLogPerPage?' selected':''}>${n}</option>`).join('');
+  const footer = `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 4px;font-size:12px;color:var(--text3)">
+      <label style="display:inline-flex;align-items:center;gap:6px">Tampil
+        <select onchange="setWALogPerPage(this.value)" style="padding:3px 7px;border:1px solid var(--border);border-radius:7px;background:var(--card,#fff);color:inherit;font-size:12px">${ppOpts}</select>
+        <span style="color:var(--text3)">· total ${_waLogTotal}</span>
+      </label>
+      <span style="display:inline-flex;align-items:center;gap:9px">
+        <button class="btn sm" ${_waLogPage<=1?'disabled':''} onclick="loadWAMsgLog(${_waLogPage-1})" style="padding:2px 9px">‹</button>
+        <span style="color:var(--text2)">Hal ${_waLogPage} / ${totalPages}</span>
+        <button class="btn sm" ${_waLogPage>=totalPages?'disabled':''} onclick="loadWAMsgLog(${_waLogPage+1})" style="padding:2px 9px">›</button>
+      </span>
+    </div>`;
+
+  chat.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+    <thead><tr style="text-align:left;color:var(--text3);font-size:10px;letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid var(--border)">
+      <th style="padding:8px 10px;font-weight:600">Waktu</th>
+      <th style="padding:8px 10px;font-weight:600">Tujuan</th>
+      <th style="padding:8px 10px;font-weight:600">Template</th>
+      <th style="padding:8px 10px;font-weight:600;text-align:center">Status</th>
+      <th style="padding:8px 10px;font-weight:600">Pesan</th>
+      <th style="padding:8px 10px;font-weight:600;text-align:center">Aksi</th>
+    </tr></thead><tbody>${rows}</tbody></table></div>${footer}`;
+}
+
+function waLogDetail(i){
+  const r = _waLogRows[i]; if (!r) return;
+  const waktu = r.sent_at || r.created_at;
+  const wkt   = waktu ? new Date(waktu).toLocaleString('id-ID') : '–';
+  const baris = (lbl,val) => `<div style="display:flex;gap:8px;margin-bottom:4px"><span style="min-width:78px;color:var(--text3);font-size:12px">${lbl}</span><span style="font-size:12px;color:var(--text)">${val}</span></div>`;
+  const html =
+    baris('Waktu', escapeHtml(wkt)) +
+    baris('Tujuan', escapeHtml(r.no_tujuan||r.no_hp||'–')) +
+    baris('Template', escapeHtml(_waTplLabel(r.tipe)) + ` <span style="color:var(--text3)">(${escapeHtml(r.tipe||'-')})</span>`) +
+    baris('Status', escapeHtml(r.status||'-')) +
+    (r.nama_pelanggan ? baris('Pelanggan', escapeHtml(r.nama_pelanggan)) : '') +
+    `<div style="margin-top:8px;padding:10px;border:1px solid var(--border);border-radius:8px;white-space:pre-wrap;font-size:12.5px;line-height:1.55;max-height:320px;overflow:auto">${escapeHtml(r.pesan||'')}</div>`;
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:18px';
+  ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
+  ov.innerHTML = `<div style="background:var(--card,#fff);color:var(--text);border-radius:14px;max-width:480px;width:100%;padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.3)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-weight:700;font-size:14px">Detail Pesan WA</div>
+        <button class="btn sm" onclick="this.closest('[style*=fixed]').remove()" style="padding:2px 9px">✕</button>
+      </div>${html}</div>`;
+  document.body.appendChild(ov);
 }
 
 function renderWAStat(stats) {
@@ -12377,14 +12459,10 @@ async function apiKirimWATest() {
     await apiFetch('/api/whatsapp/kirim', {method:'POST',
       body: JSON.stringify({no_hp:to.replace(/^0/,'62'), pesan:msg})
     });
-    const chat = document.getElementById('wa-chat');
-    const el   = document.createElement('div');
-    el.className = 'wa-msg out';
-    el.innerHTML = msg.replace(/\*(.*?)\*/g,'<b>$1</b>') +
-      `<div class="time">${new Date().toLocaleTimeString('id',{hour:'2-digit',minute:'2-digit'})} ✓</div>`;
-    chat.appendChild(el); chat.scrollTop = chat.scrollHeight;
     document.getElementById('wa-pesan').value = '';
     toast('✅ WA terkirim');
+    // Muat ulang tabel log agar pesan test muncul sebagai baris baru
+    setTimeout(() => { loadWAMsgLog(1); }, 900);
   } catch(e) { toast('❌ '+e.message, true); }
 }
 

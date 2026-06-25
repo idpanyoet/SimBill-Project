@@ -15,23 +15,28 @@ router.get('/status', async (req, res, next) => {
     } catch (e) { next(e); }
 });
 
-// GET /api/whatsapp/log
+// GET /api/whatsapp/log  → { items, total, halaman, limit }
 router.get('/log', async (req, res, next) => {
     try {
-        const { tipe, status, halaman = 1, limit = 30 } = req.query;
-        const offset = (parseInt(halaman) - 1) * parseInt(limit);
+        const { tipe, status } = req.query;
+        const halaman = Math.max(1, parseInt(req.query.halaman) || 1);
+        const limit   = Math.min(200, Math.max(1, parseInt(req.query.limit) || 30));
+        const offset  = (halaman - 1) * limit;
         let where = ['1=1'], params = [];
-        if (tipe)   { where.push('tipe = ?');   params.push(tipe); }
-        if (status) { where.push('status = ?'); params.push(status); }
+        if (tipe)   { where.push('wl.tipe = ?');   params.push(tipe); }
+        if (status) { where.push('wl.status = ?'); params.push(status); }
+        const whereSql = where.join(' AND ');
 
-        const rows = await query(`
+        const items = await query(`
             SELECT wl.*, p.nama AS nama_pelanggan
             FROM wa_log wl
             LEFT JOIN pelanggan p ON wl.pelanggan_id = p.id
-            WHERE ${where.join(' AND ')}
+            WHERE ${whereSql}
             ORDER BY wl.created_at DESC LIMIT ? OFFSET ?
-        `, [...params, parseInt(limit), offset]);
-        res.json(rows);
+        `, [...params, limit, offset]);
+
+        const totalRow = await query(`SELECT COUNT(*) AS total FROM wa_log wl WHERE ${whereSql}`, params);
+        res.json({ items, total: totalRow[0]?.total || 0, halaman, limit });
     } catch (e) { next(e); }
 });
 
