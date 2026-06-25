@@ -364,6 +364,16 @@ async function kirimKonfirmasiBayar(opt) {
     const totalFinal = (total !== undefined && total !== null && total !== '')
         ? total : jumlah;
 
+    // Periode layanan = tgl invoice s/d tgl expired (jatuh tempo berikutnya).
+    // Kalau tgl_expired tak ada (paket VIP/unlimited), tampilkan tgl invoice saja.
+    const _periodeStr = tgl_expired
+        ? `${tgl(tgl_invoice)} s/d ${tgl(tgl_expired)}`
+        : tgl(periode || tgl_invoice);
+    // Pada konfirmasi pembayaran, "Jatuh Tempo" = tanggal aktif berikutnya
+    // (cocok dengan billing/portal pelanggan), BUKAN jatuh tempo invoice lama
+    // yang sudah dibayar.
+    const _jatuhTempoStr = tgl_expired ? tgl(tgl_expired) : tgl(tgl_jatuh_tempo);
+
     const data = {
         // identitas
         nama: nama, fullname: nama,
@@ -379,12 +389,12 @@ async function kirimKonfirmasiBayar(opt) {
         profile: paket || '-', paket: paket || '-',
         payment_method: metode_bayar || '-', metode: metode_bayar || '-',
         invoice_date: tgl(tgl_invoice), tgl_invoice: tgl(tgl_invoice),
-        period: tgl(periode), periode: tgl(periode),
+        period: _periodeStr, periode: _periodeStr,
         // tanggal aktif/expired
         tgl_expired: tgl(tgl_expired), expired: tgl(tgl_expired),
         tgl_aktif: tgl(tgl_expired),
-        next_suspend_at: tgl(tgl_jatuh_tempo || tgl_expired),
-        tgl_jatuh_tempo: tgl(tgl_jatuh_tempo), jatuh_tempo: tgl(tgl_jatuh_tempo)
+        next_suspend_at: _jatuhTempoStr,
+        tgl_jatuh_tempo: _jatuhTempoStr, jatuh_tempo: _jatuhTempoStr
     };
     const tpl = (cfg.wa_tpl_konfirmasi || '').trim();
     const pesan = tpl

@@ -359,15 +359,10 @@ app.use('/api/client',    require('./routes/client'));
 app.use('/api/acs',            require('./routes/acs'));
 app.use('/api/voucher-template', require('./routes/voucher-template'));
 
-// ── ACS CWMP Server (TR-069) port 7547 ───────────────────────
-const { createCwmpRouter } = require('./services/acs');
-const cwmpApp = express();
-cwmpApp.use(createCwmpRouter());
-const ACS_PORT = process.env.ACS_PORT || 7547;
-cwmpApp.listen(ACS_PORT, () => {
-    console.log(`[ACS] CWMP server aktif di port ${ACS_PORT}`);
-    console.log(`[ACS] URL untuk router: http://<IP-VPS>:${ACS_PORT}/`);
-});
+// ── ACS CWMP lama (port 7547) DIHAPUS ────────────────────────
+// Manajemen TR-069 kini sepenuhnya via GenieACS (VPS terpisah, NBI 7557).
+// Semua ONU sudah diarahkan ke GenieACS, jadi server CWMP buatan-sendiri ini
+// sudah tidak dipakai (dead code). Lihat services/genieacs.js + routes/acs.js.
 
 // Voucher: publik (tanpa auth) + admin (dengan auth)
 const voucherPublik  = require('./routes/voucher-publik');

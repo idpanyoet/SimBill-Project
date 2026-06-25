@@ -132,8 +132,7 @@ router.get('/profil', clientAuth, async (req, res, next) => {
         const pel = await queryOne(`
             SELECT p.id, p.nama, p.username, p.no_hp, p.email, p.alamat,
                    p.tipe_koneksi, p.status, p.tgl_expired,
-                   pk.nama AS nama_paket, pk.kecepatan_dn, pk.kecepatan_up,
-                   pk.masa_aktif, pk.satuan_masa, pk.harga
+                   pk.nama AS nama_paket, pk.kecepatan_dn, pk.kecepatan_up
             FROM pelanggan p
             LEFT JOIN paket pk ON p.paket_id = pk.id
             WHERE p.id = ?
@@ -243,11 +242,19 @@ router.get('/tiket', clientAuth, async (req, res, next) => {
 // ── GET /api/client/acs-device — cek router pelanggan di ACS ──
 router.get('/acs-device', clientAuth, async (req, res, next) => {
     try {
-        const device = await queryOne(
-            'SELECT id, serial_number, manufacturer, product_class, ip_address, software_version, status, last_inform FROM acs_device WHERE pelanggan_id=? ORDER BY last_inform DESC LIMIT 1',
-            [req.client.id]
-        );
-        res.json(device || null);
+        const dev = await cariDeviceGenie(req.client.id);
+        if (!dev) return res.json(null);
+        res.json({
+            serial_number:    dev.serial_number,
+            manufacturer:     dev.manufacturer,
+            product_class:    dev.model || dev.product_class || '',
+            ip_address:       dev.ip_address,
+            software_version: dev.software_version,
+            ssid:             dev.ssid || '',
+            status:           dev.status,        // 'online' | 'offline'
+            last_inform:      dev.last_inform,
+            genie_id:         dev.genie_id
+        });
     } catch(e) { next(e); }
 });
 
@@ -258,75 +265,127 @@ router.post('/wifi', clientAuth, async (req, res, next) => {
         if (!password || password.length < 8)
             return res.status(400).json({ error: 'Password minimal 8 karakter' });
 
-        // Cek apakah pelanggan punya device ACS
-        const device = await queryOne(
-            'SELECT * FROM acs_device WHERE pelanggan_id=? ORDER BY last_inform DESC LIMIT 1',
-            [req.client.id]
-        );
+        // Cari device pelanggan di GenieACS.
+        // Prioritas: link manual (acs_link) > auto-match username PPPoE.
+        const pel = await queryOne('SELECT nama, no_hp, username FROM pelanggan WHERE id=?', [req.client.id]);
+        const genie = require('../services/genieacs');
+        const dev = await cariDeviceGenie(req.client.id);
 
-        if (device) {
-            // Kirim via ACS TR-069
-            const { getWifiParams } = require('../services/acs');
-            const wifiParams = getWifiParams(device.manufacturer);
-            const pairs = [];
-            if (ssid) pairs.push({ name: wifiParams.ssid, value: ssid });
-            pairs.push({ name: wifiParams.password, value: password });
-
-            await query('INSERT INTO acs_task (device_id, type, params, status, created_by) VALUES (?,?,?,?,?)',
-                [device.id, 'SetParameterValues', JSON.stringify(pairs), 'pending', 'pelanggan']);
-
-            res.json({
+        if (dev && dev.genie_id) {
+            // Kirim via GenieACS (TR-069)
+            await genie.setWifi(dev.genie_id, { ssid, password });
+            return res.json({
                 sukses: true,
-                via: 'acs',
-                pesan: 'Perintah dikirim ke router. Password akan berubah dalam beberapa menit (saat router polling ke ACS).'
-            });
-        } else {
-            // Fallback: buat tiket
-            const pel = await queryOne('SELECT nama, no_hp, username FROM pelanggan WHERE id=?', [req.client.id]);
-            const pesanTiket = `Pelanggan meminta ganti password WiFi.\n\nSSID baru: ${ssid || '(tidak diganti)'}\nPassword baru: ${password}`;
-            const result = await query(
-                `INSERT INTO tiket (pelanggan_id, judul, pesan, kategori, status) VALUES (?, 'Ganti Password WiFi', ?, 'lainnya', 'open')`,
-                [req.client.id, pesanTiket]
-            );
-
-            // Notif admin
-            try {
-                const cfg = await query("SELECT kunci, nilai FROM setting WHERE kunci IN ('admin_no_hp','app_name')");
-                const map = {};
-                cfg.forEach(c => map[c.kunci] = c.nilai);
-                if (map.admin_no_hp) {
-                    const notif = `🔑 *Request Ganti Password WiFi*\n\nDari: ${pel.nama} (${pel.username})\nSSID: ${ssid || '-'}\nPassword: ${password}\n\nSegera proses di dashboard admin.`;
-                    await waService.kirimPesan(map.admin_no_hp, notif, req.client.id, 'tiket');
-                }
-            } catch(e) {}
-
-            res.json({
-                sukses: true,
-                via: 'tiket',
-                tiket_id: result.insertId,
-                pesan: 'Router Anda belum terhubung ke ACS. Permintaan sudah diteruskan ke admin dan akan diproses segera.'
+                via: 'genieacs',
+                pesan: 'Perintah dikirim ke router via GenieACS. Password akan berubah dalam beberapa menit (saat router polling ke ACS).'
             });
         }
+
+        // Fallback: device tak ketemu di GenieACS → buat tiket untuk admin
+        const pesanTiket = `Pelanggan meminta ganti password WiFi.\n\nSSID baru: ${ssid || '(tidak diganti)'}\nPassword baru: ${password}`;
+        const result = await query(
+            `INSERT INTO tiket (pelanggan_id, judul, pesan, kategori, status) VALUES (?, 'Ganti Password WiFi', ?, 'lainnya', 'open')`,
+            [req.client.id, pesanTiket]
+        );
+
+        // Notif admin
+        try {
+            const cfg = await query("SELECT kunci, nilai FROM setting WHERE kunci IN ('admin_no_hp','app_name')");
+            const map = {};
+            cfg.forEach(c => map[c.kunci] = c.nilai);
+            if (map.admin_no_hp) {
+                const notif = `🔑 *Request Ganti Password WiFi*\n\nDari: ${pel.nama} (${pel.username})\nSSID: ${ssid || '-'}\nPassword: ${password}\n\nSegera proses di dashboard admin.`;
+                await waService.kirimPesan(map.admin_no_hp, notif, req.client.id, 'tiket');
+            }
+        } catch(e) {}
+
+        res.json({
+            sukses: true,
+            via: 'tiket',
+            tiket_id: result.insertId,
+            pesan: 'Router Anda belum terdeteksi di GenieACS. Permintaan sudah diteruskan ke admin dan akan diproses segera.'
+        });
     } catch(e) { next(e); }
 });
 
 // ── GET /api/client/wifi-tasks — riwayat task WiFi pelanggan ──
 router.get('/wifi-tasks', clientAuth, async (req, res, next) => {
     try {
-        const device = await queryOne('SELECT id FROM acs_device WHERE pelanggan_id=? ORDER BY last_inform DESC LIMIT 1', [req.client.id]);
-        if (!device) {
-            // Ambil dari tiket
-            const tikets = await query(
-                `SELECT id, judul, status, created_at FROM tiket WHERE pelanggan_id=? AND judul LIKE '%Password WiFi%' ORDER BY created_at DESC LIMIT 5`,
-                [req.client.id]
-            );
-            return res.json({ via: 'tiket', items: tikets });
-        }
-        const tasks = await query(
-            `SELECT * FROM acs_task WHERE device_id=? AND type='SetParameterValues' ORDER BY id DESC LIMIT 5`,
-            [device.id]
+        const tikets = await query(
+            `SELECT id, judul, status, created_at FROM tiket WHERE pelanggan_id=? AND judul LIKE '%Password WiFi%' ORDER BY created_at DESC LIMIT 5`,
+            [req.client.id]
         );
-        res.json({ via: 'acs', items: tasks });
+        res.json({ via: 'tiket', items: tikets });
+    } catch(e) { next(e); }
+});
+
+// ── POST /api/client/ganti-akun — ganti username & sandi (HOTSPOT) ──
+// Khusus pelanggan hotspot: mereka login captive-portal pakai username +
+// password RADIUS. (PPPoE TIDAK boleh ganti via sini: username/sandi PPPoE
+// tersimpan di ONU, kalau diubah di RADIUS saja koneksi malah putus.)
+router.post('/ganti-akun', clientAuth, async (req, res, next) => {
+    try {
+        const p = await queryOne('SELECT id, username, tipe_koneksi FROM pelanggan WHERE id=?', [req.client.id]);
+        if (!p) return res.status(404).json({ error: 'Pelanggan tidak ditemukan' });
+        if (p.tipe_koneksi !== 'hotspot')
+            return res.status(400).json({ error: 'Fitur ganti username/sandi ini khusus pelanggan hotspot' });
+
+        let usernameBaru = (req.body.username_baru || '').trim();
+        let passwordBaru = (req.body.password_baru || '').trim();
+        if (!usernameBaru && !passwordBaru)
+            return res.status(400).json({ error: 'Isi username baru dan/atau password baru' });
+
+        const usernameLama = p.username;
+        let usernameFinal  = usernameLama;
+
+        // ── Validasi & siapkan ganti username ──
+        if (usernameBaru && usernameBaru !== usernameLama) {
+            if (!/^[A-Za-z0-9._-]{3,32}$/.test(usernameBaru))
+                return res.status(400).json({ error: 'Username 3-32 karakter (huruf, angka, titik, garis bawah, strip)' });
+            const cek = await queryOne('SELECT id FROM pelanggan WHERE username=? AND id!=?', [usernameBaru, p.id]);
+            if (cek) return res.status(400).json({ error: 'Username sudah dipakai pelanggan lain' });
+            usernameFinal = usernameBaru;
+        }
+
+        if (passwordBaru && passwordBaru.length < 4)
+            return res.status(400).json({ error: 'Password minimal 4 karakter' });
+
+        // ── Terapkan rename username di tabel RADIUS + pelanggan ──
+        // (mirror logika admin: hapus dulu baris milik username BARU agar
+        //  UPDATE tak bentrok UNIQUE KEY, lalu pindahkan dari username lama)
+        if (usernameFinal !== usernameLama) {
+            await query('DELETE FROM radcheck    WHERE username=?', [usernameFinal]);
+            await query('DELETE FROM radreply     WHERE username=?', [usernameFinal]);
+            await query('DELETE FROM radusergroup WHERE username=?', [usernameFinal]);
+            await query('UPDATE radcheck    SET username=? WHERE username=?', [usernameFinal, usernameLama]);
+            await query('UPDATE radreply     SET username=? WHERE username=?', [usernameFinal, usernameLama]);
+            await query('UPDATE radusergroup SET username=? WHERE username=?', [usernameFinal, usernameLama]);
+            await query('UPDATE pelanggan SET username=? WHERE id=?', [usernameFinal, p.id]);
+        }
+
+        // ── Terapkan password baru (Cleartext-Password + enc untuk restore) ──
+        if (passwordBaru) {
+            await query(`
+                INSERT INTO radcheck (username, attribute, op, value)
+                VALUES (?, 'Cleartext-Password', ':=', ?)
+                ON DUPLICATE KEY UPDATE value = VALUES(value)
+            `, [usernameFinal, passwordBaru]);
+            try {
+                const enc  = radiusService.encryptPassword(passwordBaru);
+                const hash = await bcrypt.hash(passwordBaru, 12);
+                await query('UPDATE pelanggan SET radius_password_enc=?, password=? WHERE id=?', [enc, hash, p.id]);
+            } catch(e) { console.warn('[client] simpan enc/hash gagal:', e.message); }
+        }
+
+        // Putus sesi aktif agar kredensial baru langsung berlaku saat login ulang
+        try { await radiusService.putusKoneksi(usernameLama); } catch(e) {}
+        if (usernameFinal !== usernameLama) { try { await radiusService.putusKoneksi(usernameFinal); } catch(e) {} }
+
+        res.json({
+            sukses: true,
+            username: usernameFinal,
+            pesan: 'Akun hotspot berhasil diperbarui. Sambungkan ulang ke hotspot dan login dengan kredensial baru.'
+        });
     } catch(e) { next(e); }
 });
 
@@ -412,54 +471,75 @@ router.get('/sesi', clientAuth, async (req, res, next) => {
 });
 
 // ── GET /api/client/perangkat-wifi — perangkat terhubung (dari ACS Hosts) ──
-function parseHostsFromCache(cache) {
-    const map = {};
-    const re = /Hosts\.Host\.(\d+)\.(HostName|IPAddress|MACAddress|Active|AddressSource|InterfaceType|LeaseTimeRemaining)$/i;
-    for (const k in cache) {
-        const m = k.match(re);
-        if (!m) continue;
-        const idx = m[1], field = m[2].toLowerCase();
-        (map[idx] = map[idx] || {})[field] = cache[k];
+// ── Cari device GenieACS milik seorang pelanggan ─────────────
+// Prioritas: link manual (acs_link by serial) > auto-match username PPPoE.
+// Mengembalikan device hasil normalizeDevice (punya genie_id, status, dll) / null.
+async function cariDeviceGenie(pelangganId) {
+    const genie = require('../services/genieacs');
+    let devices = [];
+    try { devices = await genie.listDevices({ limit: 5000 }); } catch (e) { return null; }
+    let dev = null;
+    try {
+        const link = await queryOne('SELECT serial_number FROM acs_link WHERE pelanggan_id=? LIMIT 1', [pelangganId]);
+        if (link && link.serial_number) {
+            const ln = String(link.serial_number).toLowerCase();
+            dev = devices.find(d => d.serial_number && String(d.serial_number).toLowerCase() === ln);
+        }
+    } catch (e) {}
+    if (!dev) {
+        const pel = await queryOne('SELECT username FROM pelanggan WHERE id=?', [pelangganId]);
+        if (pel && pel.username) {
+            const un = String(pel.username).toLowerCase();
+            dev = devices.find(d => d.pppoe_username && String(d.pppoe_username).toLowerCase() === un);
+        }
     }
-    return Object.keys(map).map(i => ({
-        hostname: map[i].hostname || '',
-        ip:       map[i].ipaddress || '',
-        mac:      (map[i].macaddress || '').toUpperCase(),
-        active:   /^(1|true)$/i.test(map[i].active || ''),
-        iface:    map[i].interfacetype || '',
-        sumber:   map[i].addresssource || ''
-    })).filter(h => h.mac || h.ip || h.hostname);
+    return dev || null;
+}
+
+// ── Parse daftar perangkat terhubung (Hosts.Host) dari tree GenieACS ──
+// Dukung TR-098 (InternetGatewayDevice.LANDevice.1.Hosts) & TR-181 (Device.Hosts).
+function parseHostsGenie(raw) {
+    if (!raw || typeof raw !== 'object') return [];
+    const leaf = (n) => (n && typeof n === 'object') ? ('_value' in n ? n._value : null) : n;
+    const tr098 = ((((raw.InternetGatewayDevice || {}).LANDevice || {})['1'] || {}).Hosts || {}).Host;
+    const tr181 = ((raw.Device || {}).Hosts || {}).Host;
+    const hostsRoot = tr098 || tr181 || {};
+    const out = [];
+    for (const i of Object.keys(hostsRoot)) {
+        if (i[0] === '_') continue;
+        const h = hostsRoot[i] || {};
+        const mac = leaf(h.MACAddress) || leaf(h.PhysAddress) || '';
+        const item = {
+            hostname: leaf(h.HostName) || '',
+            ip:       leaf(h.IPAddress) || '',
+            mac:      String(mac).toUpperCase(),
+            active:   /^(1|true)$/i.test(String(leaf(h.Active) == null ? '' : leaf(h.Active))),
+            iface:    leaf(h.InterfaceType) || '',
+            sumber:   leaf(h.AddressSource) || ''
+        };
+        if (item.mac || item.ip || item.hostname) out.push(item);
+    }
+    return out;
 }
 
 router.get('/perangkat-wifi', clientAuth, async (req, res, next) => {
     try {
-        const device = await queryOne(
-            'SELECT id, param_cache, manufacturer, last_inform FROM acs_device WHERE pelanggan_id=? ORDER BY last_inform DESC LIMIT 1',
-            [req.client.id]
-        );
-        if (!device) return res.json({ device: false, perangkat: [], last_inform: null });
+        const dev = await cariDeviceGenie(req.client.id);
+        if (!dev) return res.json({ device: false, perangkat: [], last_inform: null });
 
-        let cache = {};
-        try { cache = JSON.parse(device.param_cache || '{}'); } catch(e) {}
-        let perangkat = parseHostsFromCache(cache);
-        // perangkat aktif dulu, lalu urut nama
-        perangkat.sort((a, b) => (b.active - a.active) || (a.hostname || a.ip).localeCompare(b.hostname || b.ip));
+        const genie = require('../services/genieacs');
+        let raw = null;
+        try { raw = await genie.getDevice(dev.genie_id); } catch (e) { raw = null; }
+        let perangkat = parseHostsGenie(raw);
+        perangkat.sort((a, b) => (b.active - a.active) || ((a.hostname || a.ip || '').localeCompare(b.hostname || b.ip || '')));
 
-        // Antri refresh (sekali saja kalau belum ada task pending/running)
-        try {
-            const ada = await queryOne(
-                'SELECT id FROM acs_task WHERE device_id=? AND type="GetParameterValues" AND status IN ("pending","running") LIMIT 1',
-                [device.id]
-            );
-            if (!ada) {
-                await query(
-                    'INSERT INTO acs_task (device_id, type, status, created_by) VALUES (?,?,?,?)',
-                    [device.id, 'GetParameterValues', 'pending', 'client']
-                );
-            }
-        } catch(e) {}
+        // Hanya saat user menekan ⟳ (manual=1): minta GenieACS tarik ulang subtree
+        // dari device (connection request). Hindari spam pada load biasa.
+        if (req.query.manual === '1') {
+            try { await genie.refreshDevice(dev.genie_id); } catch (e) {}
+        }
 
-        res.json({ device: true, last_inform: device.last_inform, perangkat });
+        res.json({ device: true, last_inform: dev.last_inform, perangkat });
     } catch(e) { next(e); }
 });
 
