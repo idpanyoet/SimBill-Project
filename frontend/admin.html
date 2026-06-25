@@ -4238,6 +4238,10 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
           <div id="ep-info-paket" class="td-text-main" style="font-size:11px;font-weight:600"></div>
         </div>
       </div>
+      <div id="ep-info-pembuat-wrap" style="display:none;margin:-2px 0 6px;font-size:11px;color:var(--text3)">
+        <i class="ti ti-user-plus" style="font-size:12px" aria-hidden="true"></i>
+        Ditambahkan oleh <span id="ep-info-pembuat" style="font-weight:600;color:var(--text2)"></span>
+      </div>
       <div class="fg-row">
         <div class="fg"><label>Nama Lengkap</label><input id="ep-nama" placeholder="Nama"></div>
         <div class="fg"><label>No. WhatsApp</label><input id="ep-nohp" placeholder="628xxxxxxxx"></div>
@@ -4421,6 +4425,7 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
             <option value="teknisi">Teknisi</option>
             <option value="admin">Admin</option>
             <option value="superadmin">Super Admin</option>
+            <option value="demo">Demo (hanya lihat)</option>
           </select>
         </div>
       </div>
@@ -4472,6 +4477,7 @@ Silakan lakukan pembayaran sebelum jatuh tempo. Terima kasih! 🙏</textarea>
             <option value="teknisi">Teknisi</option>
             <option value="admin">Admin</option>
             <option value="superadmin">Super Admin</option>
+            <option value="demo">Demo (hanya lihat)</option>
           </select>
         </div>
       </div>
@@ -5977,14 +5983,12 @@ async function simpanACSUrl() {
 }
 
 async function ujiKoneksiGenie() {
-  // simpan dulu URL yang sedang diketik agar uji pakai nilai terbaru
+  // Uji koneksi pakai URL yang sedang diketik TANPA menyimpan dulu, supaya
+  // bisa dipakai semua peran (menyimpan URL tetap admin-only via tombol Simpan).
   const url = document.getElementById('acs-url-input').value.trim();
   try {
-    if (url) {
-      await apiFetch('/api/setting', { method: 'PUT', body: JSON.stringify({ genieacs_url: url }) });
-    }
     toast('⏳ Menguji koneksi GenieACS...');
-    const r = await apiFetch('/api/acs/test');
+    const r = await apiFetch('/api/acs/test' + (url ? ('?url=' + encodeURIComponent(url)) : ''));
     if (r && r.ok) {
       toast('✅ Terhubung ke GenieACS (' + (r.url || url) + ')');
       loadACS();
@@ -6970,7 +6974,7 @@ function topbarUpdateProfil(nama, role) {
     if (textNode && textNode.nodeType === 3) textNode.textContent = inisial;
   }
   if (namaEl && nama) namaEl.textContent = nama;
-  if (roleEl && role) roleEl.textContent = role === 'superadmin' ? 'Super Admin' : role === 'admin' ? 'Admin' : role === 'teknisi' ? 'Teknisi' : 'Operator';
+  if (roleEl && role) roleEl.textContent = role === 'superadmin' ? 'Super Admin' : role === 'admin' ? 'Admin' : role === 'teknisi' ? 'Teknisi' : role === 'demo' ? 'Demo' : 'Operator';
 }
 
 // Cek notif tiket open → badge angka di lonceng
@@ -7002,8 +7006,25 @@ async function apiFetch(path, opts={}) {
     throw new Error('Sesi berakhir');
   }
   const data = await res.json();
+  // Mode Demo: server menolak perubahan data → tampilkan pesan ramah.
+  if (res.status === 403 && data && data.demo) {
+    try { toast('🔒 Mode Demo: hanya bisa melihat, tidak bisa mengubah data.', true); } catch(e) {}
+    const _ed = new Error(data.error || 'Mode Demo'); _ed.demo = true; throw _ed;
+  }
   if (!res.ok) { const _e = new Error(data.error || 'Gagal'); _e.detail = data.detail; throw _e; }
   return data;
+}
+
+// Banner kecil penanda Mode Demo (hanya-baca). Dipanggil sekali saat login demo.
+function tampilkanBannerDemo() {
+  if (document.getElementById('demo-banner')) return;
+  const b = document.createElement('div');
+  b.id = 'demo-banner';
+  b.style.cssText = 'position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:9999;'
+    + 'background:#d97706;color:#fff;font-size:12px;font-weight:700;padding:8px 16px;border-radius:99px;'
+    + 'box-shadow:0 4px 14px rgba(0,0,0,.2);display:flex;align-items:center;gap:7px;font-family:inherit;max-width:calc(100vw - 24px)';
+  b.innerHTML = '🔒 MODE DEMO — hanya bisa melihat, perubahan data dinonaktifkan';
+  document.body.appendChild(b);
 }
 
 async function cekStatusSistem() {
@@ -7269,6 +7290,8 @@ function tampilApp() {
   const isTeknisi = !!(ADMIN && ADMIN.role === 'teknisi');
   document.body.classList.toggle('role-teknisi', isTeknisi);
   document.body.classList.toggle('role-superadmin', !!(ADMIN && ADMIN.role === 'superadmin'));
+  document.body.classList.toggle('role-demo', !!(ADMIN && ADMIN.role === 'demo'));
+  if (ADMIN && ADMIN.role === 'demo') { try { tampilkanBannerDemo(); } catch(e) {} }
   topbarUpdateProfil(ADMIN.nama, ADMIN.role);
   topbarCekNotif();
   if (typeof tkRefreshBadge === 'function') tkRefreshBadge();
@@ -9142,7 +9165,7 @@ function renderTblPelanggan(rows) {
     <tr>
       <td style="text-align:center"><input type="checkbox" class="pl-check" data-id="${p.id}" ${plSelected.has(p.id)?'checked':''} onchange="plToggleRow(this)" style="width:16px;height:16px;accent-color:#4f46e5;cursor:pointer;vertical-align:middle"></td>
       <td>${base + i + 1}</td>
-      <td><div style="font-weight:500">${escapeHtml(p.nama)}</div><div style="font-size:11px;color:var(--text3)">${escapeHtml(p.email||'')}</div></td>
+      <td><div style="font-weight:500">${escapeHtml(p.nama)}</div><div style="font-size:11px;color:var(--text3)">${escapeHtml(p.email||'')}</div>${p.dibuat_oleh && p.dibuat_oleh_role==='teknisi' ? `<div style="font-size:10px;color:#d97706;font-weight:600;margin-top:1px"><i class="ti ti-tool" style="font-size:10px" aria-hidden="true"></i> + ${escapeHtml(p.dibuat_oleh)}</div>` : ''}</td>
       <td><span style="font-family:monospace;font-size:12px">${escapeHtml(p.username)}</span></td>
       <td>${escapeHtml(p.no_hp)}</td>
       <td>${escapeHtml(p.nama_paket||'—')}</td>
@@ -9271,6 +9294,18 @@ async function bukaModalEdit(id) {
     tipeEl.textContent = p.tipe_koneksi === 'hotspot' ? 'Hotspot' : 'PPPoE';
     tipeEl.className   = 'tag ' + (p.tipe_koneksi || 'pppoe');
     document.getElementById('ep-info-paket').textContent     = p.nama_paket || '—';
+    // Penanda siapa yang menambahkan pelanggan (terutama bila oleh teknisi)
+    const pembWrap = document.getElementById('ep-info-pembuat-wrap');
+    const pembEl   = document.getElementById('ep-info-pembuat');
+    if (pembWrap && pembEl) {
+      if (p.dibuat_oleh) {
+        const role = p.dibuat_oleh_role ? ' (' + (PERAN_LABEL[p.dibuat_oleh_role] || p.dibuat_oleh_role) + ')' : '';
+        pembEl.textContent = p.dibuat_oleh + role;
+        pembWrap.style.display = '';
+      } else {
+        pembWrap.style.display = 'none';
+      }
+    }
 
     // Set status, tipe cards
     epSetStatus(p.status || 'aktif');
@@ -13496,8 +13531,8 @@ function petaToggleGeser() {
 // ══════════════════════════════════════════════════
 let pgHalaman = 0, pgTotalHalaman = 1;
 
-const PERAN_LABEL = { superadmin:'Super Admin', admin:'Admin', operator:'Operator', teknisi:'Teknisi' };
-const PERAN_COLOR = { superadmin:'#7c3aed', admin:'#2563eb', operator:'#0891b2', teknisi:'#16a34a' };
+const PERAN_LABEL = { superadmin:'Super Admin', admin:'Admin', operator:'Operator', teknisi:'Teknisi', demo:'Demo' };
+const PERAN_COLOR = { superadmin:'#7c3aed', admin:'#2563eb', operator:'#0891b2', teknisi:'#16a34a', demo:'#d97706' };
 
 async function loadPengguna() {
   const tbody = document.getElementById('tbl-pengguna');

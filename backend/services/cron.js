@@ -39,6 +39,17 @@ cron.schedule('*/15 * * * *', async () => {
     }
 });
 
+// Hapus voucher expired yang sudah melewati masa simpan 90 hari — harian 03:00
+cron.schedule('0 3 * * *', async () => {
+    console.log('[CRON] Bersihkan voucher expired lama (>90 hari)...');
+    try {
+        const h = await radiusService.hapusVoucherExpiredLama();
+        if (h > 0) console.log(`[CRON] ${h} voucher expired lama dihapus`);
+    } catch (e) {
+        console.error('[CRON] Error hapus voucher expired lama:', e.message);
+    }
+}, { timezone: 'Asia/Jakarta' });
+
 // ============================================================
 // 1. KIRIM REMINDER TAGIHAN (setiap hari jam 08:00 WIB)
 // ============================================================
@@ -186,7 +197,7 @@ async function _generateInvoiceJelangExpired(Hparam) {
     const batasAtas = dayjs().add(H, 'day').format('YYYY-MM-DD');
 
     const pelanggan = await query(`
-        SELECT pl.*, pk.harga, pk.id AS paket_id, pk.nama AS nama_paket, pk.masa_aktif
+        SELECT pl.*, pk.harga, pk.id AS paket_id, pk.nama AS nama_paket, pk.masa_aktif, pk.satuan_masa
         FROM pelanggan pl
         JOIN paket pk ON pl.paket_id = pk.id
         WHERE pl.status = 'aktif'
@@ -203,14 +214,29 @@ async function _generateInvoiceJelangExpired(Hparam) {
 
             const tglJatuh = dayjs(p.tgl_expired).format('YYYY-MM-DD');
 
-            // Cegah duplikat: sudah ada invoice belum-lunas dengan jatuh tempo
-            // = tgl_expired ini? (artinya tagihan periode ini sudah dibuat)
-            const ada = await queryOne(`
-                SELECT id FROM invoice
-                WHERE pelanggan_id = ?
-                  AND DATE(tgl_jatuh_tempo) = ?
-                  AND status IN ('unpaid','overdue')
-            `, [p.id, tglJatuh]);
+            // Cegah duplikat tagihan.
+            // - Paket BULANAN: cukup ada 1 invoice belum-lunas dalam BULAN yang sama
+            //   (mencegah dobel walau tgl_expired bergeser beberapa hari dalam bulan itu).
+            // - Paket harian/jam: tetap cek tanggal persis (siklus pendek, boleh >1/bulan).
+            let ada;
+            if (String(p.satuan_masa || '').toLowerCase() === 'bulan') {
+                ada = await queryOne(`
+                    SELECT id FROM invoice
+                    WHERE pelanggan_id = ?
+                      AND status IN ('unpaid','overdue')
+                      AND YEAR(tgl_jatuh_tempo) = YEAR(?)
+                      AND MONTH(tgl_jatuh_tempo) = MONTH(?)
+                    LIMIT 1
+                `, [p.id, tglJatuh, tglJatuh]);
+            } else {
+                ada = await queryOne(`
+                    SELECT id FROM invoice
+                    WHERE pelanggan_id = ?
+                      AND status IN ('unpaid','overdue')
+                      AND DATE(tgl_jatuh_tempo) = ?
+                    LIMIT 1
+                `, [p.id, tglJatuh]);
+            }
             if (ada) continue;
 
             const { no_invoice, result } = await withTransaction(db =>

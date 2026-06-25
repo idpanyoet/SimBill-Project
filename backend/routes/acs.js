@@ -14,7 +14,7 @@ router.use(authMiddleware);
 // ── GET /api/acs/test — uji koneksi GenieACS (tombol "Uji Koneksi") ──
 router.get('/test', async (req, res) => {
     try {
-        const r = await genie.testConnection();
+        const r = await genie.testConnection(req.query.url);
         res.json({ ok: true, ...r });
     } catch (e) {
         res.status(502).json({ ok: false, error: 'Gagal konek GenieACS: ' + e.message });

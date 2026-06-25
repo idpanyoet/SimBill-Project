@@ -199,7 +199,7 @@ router.post('/generate-bulanan', async (req, res, next) => {
         } catch (e) {}
         const batasAtas = dayjs().add(H, 'day').format('YYYY-MM-DD');
         const pelanggan = await query(`
-            SELECT pl.*, pk.harga, pk.id AS paket_id
+            SELECT pl.*, pk.harga, pk.id AS paket_id, pk.satuan_masa
             FROM pelanggan pl JOIN paket pk ON pl.paket_id = pk.id
             WHERE pl.status = 'aktif'
               AND pl.tgl_expired IS NOT NULL
@@ -217,14 +217,27 @@ router.post('/generate-bulanan', async (req, res, next) => {
 
                 const tgl_jatuh = dayjs(p.tgl_expired).format('YYYY-MM-DD');
 
-                // Cegah duplikat: sudah ada invoice belum-lunas dengan jatuh tempo
-                // = tgl_expired ini?
-                const ada = await queryOne(`
-                    SELECT id FROM invoice
-                    WHERE pelanggan_id = ?
-                      AND DATE(tgl_jatuh_tempo) = ?
-                      AND status IN ('unpaid','overdue')
-                `, [p.id, tgl_jatuh]);
+                // Cegah duplikat tagihan (paket bulanan: 1 invoice / bulan;
+                // paket harian/jam: cek tanggal persis).
+                let ada;
+                if (String(p.satuan_masa || '').toLowerCase() === 'bulan') {
+                    ada = await queryOne(`
+                        SELECT id FROM invoice
+                        WHERE pelanggan_id = ?
+                          AND status IN ('unpaid','overdue')
+                          AND YEAR(tgl_jatuh_tempo) = YEAR(?)
+                          AND MONTH(tgl_jatuh_tempo) = MONTH(?)
+                        LIMIT 1
+                    `, [p.id, tgl_jatuh, tgl_jatuh]);
+                } else {
+                    ada = await queryOne(`
+                        SELECT id FROM invoice
+                        WHERE pelanggan_id = ?
+                          AND status IN ('unpaid','overdue')
+                          AND DATE(tgl_jatuh_tempo) = ?
+                        LIMIT 1
+                    `, [p.id, tgl_jatuh]);
+                }
                 if (ada) continue;
 
                 // Insert invoice dengan nomor yang aman dari race condition
@@ -313,7 +326,10 @@ router.post('/:id/bayar-tunai', async (req, res, next) => {
         if (!inv) return res.status(404).json({ error: 'Invoice tidak ditemukan' });
         if (inv.status === 'paid') return res.status(400).json({ error: 'Sudah lunas' });
 
-        const tgl_expired = hitungExpired(inv.masa_aktif, inv.satuan_masa).format('YYYY-MM-DD HH:mm:ss');
+        // masa_aktif 0 = paket tanpa batas (VIP) → tgl_expired NULL (tak pernah expired)
+        const tgl_expired = (Number(inv.masa_aktif) > 0)
+            ? hitungExpired(inv.masa_aktif, inv.satuan_masa).format('YYYY-MM-DD HH:mm:ss')
+            : null;
 
         await query(
             `UPDATE invoice SET status='paid', tgl_bayar=NOW(), metode_bayar='tunai' WHERE id=?`,

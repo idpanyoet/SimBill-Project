@@ -155,7 +155,10 @@ router.post('/import/csv', async (req, res, next) => {
                 if (!paket) throw new Error(`Paket id ${paket_id} tidak ditemukan`);
 
                 const tgl_aktif   = dayjs().format('YYYY-MM-DD');
-                const tgl_expired = hitungExpired(paket.masa_aktif, paket.satuan_masa).format('YYYY-MM-DD');
+                // masa_aktif 0 = paket tanpa batas (VIP) → tgl_expired NULL
+                const tgl_expired = (Number(paket.masa_aktif) > 0)
+                    ? hitungExpired(paket.masa_aktif, paket.satuan_masa).format('YYYY-MM-DD')
+                    : null;
                 const hash        = await bcrypt.hash(password, 10);
 
                 const result = await query(`
@@ -228,20 +231,32 @@ router.post('/', async (req, res, next) => {
         await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS ktp_url VARCHAR(255) NULL`).catch(()=>{});
 
         step = 'siapkan_data';
+        // Penanda siapa yang menambahkan pelanggan (admin/teknisi)
+        await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS dibuat_oleh_id INT NULL`).catch(()=>{});
+        await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS dibuat_oleh VARCHAR(100) NULL`).catch(()=>{});
+        await query(`ALTER TABLE pelanggan ADD COLUMN IF NOT EXISTS dibuat_oleh_role VARCHAR(20) NULL`).catch(()=>{});
+        const _pembuatId   = req.admin?.id || null;
+        const _pembuatNama = req.admin?.nama || req.admin?.username || null;
+        const _pembuatRole = req.admin?.role || null;
         const tgl_aktif    = dayjs().format('YYYY-MM-DD');
-        const tgl_expired  = hitungExpired(paket.masa_aktif, paket.satuan_masa).format('YYYY-MM-DD');
+        // masa_aktif 0 = paket tanpa batas (VIP) → tgl_expired NULL
+        const tgl_expired  = (Number(paket.masa_aktif) > 0)
+            ? hitungExpired(paket.masa_aktif, paket.satuan_masa).format('YYYY-MM-DD')
+            : null;
         const hash         = await bcrypt.hash(password, 12);
 
         step = 'insert_pelanggan';
         const result = await query(`
             INSERT INTO pelanggan (nama, username, password, no_hp, email, alamat,
                 paket_id, tipe_koneksi, tgl_aktif, tgl_expired, ip_tetap, notes,
-                latitude, longitude, odc, odp, no_ktp, tgl_lahir, ktp_url, reseller_id)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                latitude, longitude, odc, odp, no_ktp, tgl_lahir, ktp_url, reseller_id,
+                dibuat_oleh_id, dibuat_oleh, dibuat_oleh_role)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         `, [nama, username, hash, no_hp, email || null, alamat || null,
             paket_id, tipe_koneksi, tgl_aktif, tgl_expired, ip_tetap || null, notes || null,
             latitude || null, longitude || null, odc || null, odp || null,
-            no_ktp || null, tgl_lahir || null, ktp_url || null, reseller_id || null]);
+            no_ktp || null, tgl_lahir || null, ktp_url || null, reseller_id || null,
+            _pembuatId, _pembuatNama, _pembuatRole]);
 
         step = 'sync_radius';
         // Sync ke FreeRADIUS — jika gagal, hapus dulu baris pelanggan agar tidak ada data
