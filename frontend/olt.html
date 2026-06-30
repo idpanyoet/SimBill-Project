@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OLT Monitor — SimBill</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+  :root{
+    --bg:#0f1018; --panel:#171826; --panel-2:#1f2133; --line:#2a2c42;
+    --ink:#e8e9f3; --muted:#9598b4; --faint:#6b6d8a;
+    --indigo:#6366f1; --violet:#8b5cf6; --indigo-soft:#6366f122;
+    --ok:#34d399; --ok-bg:#34d39915; --warn:#fbbf24; --warn-bg:#fbbf2415;
+    --bad:#f87171; --bad-bg:#f8717115; --off:#5b5e7e;
+    --r:14px; --mono:'Space Mono',monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5;
+    padding:18px;max-width:1500px;margin:0 auto}
+  h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;
+    margin:0;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:13px;margin-top:2px}
+  header{display:flex;justify-content:space-between;align-items:flex-start;
+    gap:16px;flex-wrap:wrap;margin-bottom:20px}
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  select,button{font-family:inherit;font-size:13px;border-radius:10px;
+    border:1px solid var(--line);background:var(--panel-2);color:var(--ink);
+    padding:8px 12px;cursor:pointer}
+  button.primary{background:linear-gradient(135deg,var(--indigo),var(--violet));
+    border:none;font-weight:600}
+  button:hover{border-color:var(--indigo)}
+  .auto{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+    gap:12px;margin-bottom:18px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+    padding:14px 16px}
+  .stat .n{font-family:var(--mono);font-size:28px;font-weight:700;letter-spacing:-.02em}
+  .stat .l{color:var(--muted);font-size:12px;text-transform:uppercase;
+    letter-spacing:.05em;margin-top:2px}
+  .stat.on .n{color:var(--ok)} .stat.off .n{color:var(--bad)}
+  .stat.unc .n{color:var(--warn)} .stat.match .n{color:var(--violet)}
+
+  .section{background:var(--panel);border:1px solid var(--line);
+    border-radius:var(--r);padding:16px;margin-bottom:16px}
+  .section h2{font-family:'Bricolage Grotesque',sans-serif;font-size:15px;
+    font-weight:700;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  .badge{font-family:var(--mono);font-size:11px;background:var(--indigo-soft);
+    color:var(--violet);padding:2px 8px;border-radius:20px}
+
+  .pon-group{margin-bottom:14px}
+  .pon-label{font-family:var(--mono);font-size:12px;color:var(--muted);
+    margin-bottom:6px}
+  .onu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));
+    gap:6px}
+  .onu{aspect-ratio:1;border-radius:9px;display:flex;align-items:center;
+    justify-content:center;font-family:var(--mono);font-size:13px;font-weight:700;
+    cursor:pointer;border:1px solid transparent;transition:transform .08s}
+  .onu:hover{transform:translateY(-2px)}
+  .onu.on{background:var(--ok-bg);color:var(--ok);border-color:#34d39940}
+  .onu.off{background:#22243a;color:var(--off);border-color:var(--line)}
+  .onu.due{box-shadow:inset 0 0 0 2px var(--warn)}
+  .onu.nolink{opacity:.5}
+  .onu.vcr{background:#22d3ee18;color:#22d3ee;border-color:#22d3ee44}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:500;font-size:12px;text-transform:uppercase;
+    letter-spacing:.04em}
+  td.mono{font-family:var(--mono)}
+  .pill{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600}
+  .pill.ok{background:var(--ok-bg);color:var(--ok)}
+  .pill.warn{background:var(--warn-bg);color:var(--warn)}
+  .pill.bad{background:var(--bad-bg);color:var(--bad)}
+  .empty{color:var(--faint);font-size:13px;padding:8px 0}
+
+  /* modal */
+  .overlay{position:fixed;inset:0;background:#000a;display:none;
+    align-items:center;justify-content:center;padding:20px;z-index:50}
+  .overlay.show{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    width:100%;max-width:720px;padding:20px;max-height:88vh;overflow:auto}
+  .inforow{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  @media(max-width:620px){ .inforow{grid-template-columns:1fr} }
+  .modal h3{font-family:'Bricolage Grotesque',sans-serif;margin:0 0 2px;font-size:18px}
+  .modal .idx{font-family:var(--mono);color:var(--violet);font-size:13px}
+  .kv{display:grid;grid-template-columns:118px 1fr;gap:6px 10px;margin-top:14px;
+    font-size:13px}
+  .kv .k{color:var(--muted)} .kv .v{font-family:var(--mono)}
+  .pwr{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  .pwr .box{background:var(--panel-2);border:1px solid var(--line);
+    border-radius:10px;padding:12px}
+  .pwr .box .t{font-size:11px;color:var(--muted);text-transform:uppercase}
+  .pwr .box .v{font-family:var(--mono);font-size:22px;font-weight:700;margin-top:2px}
+  .closex{float:right;background:none;border:none;color:var(--muted);font-size:20px;
+    cursor:pointer;padding:0;line-height:1}
+  .loading{color:var(--muted);font-size:13px;padding:20px;text-align:center}
+  .err{color:var(--bad);font-size:13px;background:var(--bad-bg);padding:10px 12px;
+    border-radius:10px}
+
+  /* blok pelanggan di modal */
+  .pelbox{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;
+    padding:12px 14px;margin-top:14px}
+  .pelbox.linked{border-color:#34d39940} .pelbox.suggest{border-color:var(--violet)}
+  .pelbox .t{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .pelname{font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:16px;
+    margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .pelmeta{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:2px}
+  .linkbtn{font-family:inherit;font-size:12px;margin-top:10px;margin-right:6px;
+    padding:7px 12px;border-radius:9px;border:none;cursor:pointer;
+    background:linear-gradient(135deg,var(--indigo),var(--violet));color:#fff;font-weight:600}
+  .linkbtn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted)}
+  .linkbtn.danger{border-color:#f8717140;color:var(--bad)}
+  .presult{display:flex;justify-content:space-between;align-items:center;gap:8px;
+    padding:8px 10px;border:1px solid var(--line);border-radius:9px;margin-bottom:6px;
+    cursor:pointer;font-size:13px}
+  .presult:hover{border-color:var(--indigo);background:var(--indigo-soft)}
+  #pelSearch{font-family:inherit;font-size:13px;background:var(--bg);color:var(--ink);
+    border:1px solid var(--line);border-radius:9px;padding:8px 10px}
+  .candrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .candchip{font-family:inherit;font-size:13px;padding:6px 11px;border-radius:20px;
+    border:1px solid var(--violet);background:var(--indigo-soft);color:var(--ink);
+    cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .candchip:hover{background:var(--violet);color:#fff}
+  .dotw{width:7px;height:7px;border-radius:50%;background:var(--warn);display:inline-block}
+  .kv2{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .kv2 label{width:96px;color:var(--muted);font-size:12px;flex-shrink:0}
+  .kv2 input{flex:1;font-family:inherit;font-size:13px;background:var(--bg);color:var(--ink);
+    border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+  .kv2 select{flex:1;font-family:inherit;font-size:13px;background:var(--bg);color:var(--ink);
+    border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+  .cmdpre{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;
+    font-family:var(--mono);font-size:12px;line-height:1.6;color:#c9d1f0;white-space:pre-wrap;
+    max-height:240px;overflow:auto;margin-top:6px}
+  .tabbar{display:flex;gap:4px;margin:14px 0 4px;border-bottom:1px solid var(--line)}
+  .tab{background:none;border:none;color:var(--muted);font-family:inherit;font-size:13px;
+    padding:8px 14px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tab:hover{color:var(--ink)}
+  .tab.active{color:var(--violet);border-bottom-color:var(--violet);font-weight:600}
+  .trange{display:flex;gap:5px;margin-top:12px;flex-wrap:wrap}
+  .rbtn{background:var(--panel-2);border:1px solid var(--line);color:var(--muted);
+    font-family:inherit;font-size:12px;padding:5px 12px;border-radius:8px;cursor:pointer}
+  .rbtn.active{background:linear-gradient(135deg,var(--indigo),var(--violet));color:#fff;border:none}
+  .trip{display:flex;gap:10px;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .actionbar{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+  .actrow{display:flex;flex-wrap:wrap;gap:6px}
+  .actbtn{background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+    font-family:inherit;font-size:12px;padding:7px 12px;border-radius:8px;cursor:pointer}
+  .actbtn:hover{border-color:var(--violet)}
+  .actbtn.warn{color:#f5b73c;border-color:#f5b73c55}
+  .actbtn.ok2{color:var(--ok);border-color:#34d39955}
+  .actbtn.danger{color:#ff6b6b;border-color:#ff6b6b55}
+  .actbtn:disabled{opacity:.5;cursor:default}
+  .actconfirm{margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+  .actconfirm.warn{border-color:#f5b73c66}
+  .actconfirm.crit{border-color:#ff6b6b88;background:#ff6b6b0d}
+  .acthead{font-weight:600;font-size:14px}
+  .actdesc{font-size:12px;color:var(--muted);margin-top:4px}
+  .cfgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-top:10px}
+  .cfgrid label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--muted)}
+  .cfgrid input{font-family:var(--mono);font-size:13px;background:var(--bg);color:var(--ink);
+    border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+  .cfgrid input:focus{outline:none;border-color:var(--violet)}
+  @media(max-width:560px){ .cfgrid{grid-template-columns:1fr} }
+  .legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:4px}
+  .legend span{display:flex;align-items:center;gap:5px}
+  .dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+  /* ===== Redesign: toolbar + sidebar + tabel ===== */
+  .topbar{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+  .tb-id{width:42px;height:42px;border-radius:50%;background:var(--panel-2);
+    border:1px solid var(--line);display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-weight:700;color:var(--violet);flex-shrink:0}
+  .tb-title h1{font-size:24px}
+  .tb-title .sub{font-family:var(--mono);font-size:12px}
+  .tb-spacer{flex:1}
+  .tb-ctrls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .tb-search{position:relative}
+  .tb-search input{background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+    border-radius:10px;padding:9px 12px 9px 32px;font-family:inherit;font-size:13px;width:230px}
+  .tb-search input:focus{outline:none;border-color:var(--indigo)}
+  .tb-search .ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--faint);font-size:14px}
+  .pill-btn{display:inline-flex;align-items:center;gap:7px;border-radius:10px;
+    padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid;background:transparent;font-family:inherit}
+  .pill-btn.teal{color:#2dd4bf;border-color:#2dd4bf55} .pill-btn.teal:hover{background:#2dd4bf18}
+  .pill-btn.blue{color:#60a5fa;border-color:#60a5fa55} .pill-btn.blue:hover{background:#60a5fa18}
+  .pill-btn.green{color:#34d399;border-color:#34d39955} .pill-btn.green:hover{background:#34d39918}
+  .pill-btn.icon{padding:9px 11px;color:var(--muted);border-color:var(--line)}
+  .tb-sel{background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+    border-radius:10px;padding:9px 12px;font-size:13px;font-family:inherit;min-width:150px}
+
+  .layout{display:grid;grid-template-columns:260px 1fr;gap:18px;align-items:start}
+  @media(max-width:900px){ .layout{grid-template-columns:1fr} }
+  .side{display:flex;flex-direction:column;gap:14px}
+  .side-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+  .sync-card{display:flex;align-items:center;gap:10px}
+  .sync-card .ico{color:var(--indigo);font-size:18px}
+  .sync-card .lbl{font-size:12px;color:var(--indigo);font-weight:600}
+  .sync-card .dt{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:1px}
+  .side-label{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;
+    font-weight:600;margin:4px 2px -2px}
+  .sd-stat{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;padding:12px 14px;cursor:pointer;transition:border-color .12s}
+  .sd-stat:hover{border-color:var(--indigo)}
+  .sd-stat.active{border-color:var(--indigo);background:var(--indigo-soft)}
+  .sd-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    font-size:18px;flex-shrink:0}
+  .sd-ico.all{background:#60a5fa20;color:#60a5fa}
+  .sd-ico.on{background:#34d39920;color:#34d399}
+  .sd-ico.off{background:#5b5e7e25;color:#9598b4}
+  .sd-ico.dg{background:#fbbf2420;color:#fbbf24}
+  .sd-meta{flex:1;min-width:0}
+  .sd-meta .l{font-size:12px;color:var(--muted)}
+  .sd-meta .n{font-family:var(--mono);font-size:22px;font-weight:700;line-height:1.1}
+  .sd-meta .n small{font-size:12px;color:var(--faint);font-weight:400;margin-left:5px}
+  .health .bar{display:flex;height:10px;border-radius:6px;overflow:hidden;margin-bottom:8px;background:var(--panel-2)}
+  .health .seg{height:100%}
+
+  .main-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  .main-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
+  .main-head .cnt{font-size:13px;color:var(--muted)}
+  .main-head .cnt b{color:var(--ink)}
+  .otable{width:100%;border-collapse:collapse}
+  .otable th{text-align:left;font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;
+    font-weight:600;padding:11px 16px;border-bottom:1px solid var(--line);white-space:nowrap}
+  .otable td{padding:12px 16px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .otable tr:last-child td{border-bottom:none}
+  .otable tbody tr{transition:background .1s}
+  .otable tbody tr:hover{background:var(--panel-2)}
+  .nm-cell{display:flex;align-items:center;gap:10px}
+  .nm-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+  .nm-dot.on{background:#34d399;box-shadow:0 0 6px #34d39966}
+  .nm-dot.off{background:#5b5e7e}
+  .nm-dot.dg{background:#fbbf24;box-shadow:0 0 6px #fbbf2466}
+  .nm-name{font-weight:600;font-size:14px}
+  .nm-idx{font-family:var(--mono);font-size:11px;color:var(--faint)}
+  .st-badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px;margin-top:3px}
+  .st-badge.on{background:#34d39920;color:#34d399} .st-badge.off{background:#5b5e7e25;color:#9598b4}
+  .st-badge.dg{background:#fbbf2420;color:#fbbf24}
+  .pon-pill{font-family:var(--mono);font-size:12px;background:var(--panel-2);border:1px solid var(--line);
+    padding:3px 10px;border-radius:8px;color:var(--ink)}
+  .sig{font-family:var(--mono);font-size:13px;font-weight:700}
+  .sig.ok{color:#34d399} .sig.warn{color:#fbbf24} .sig.bad{color:#f87171} .sig.na{color:var(--faint);font-weight:400}
+  .sn-box{font-family:var(--mono);font-size:12px;background:var(--panel-2);border:1px solid var(--line);
+    padding:5px 10px;border-radius:8px;color:var(--muted);display:inline-block;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tr-cell{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+  .tr-badge{font-family:var(--mono);font-size:11px;font-weight:700;padding:3px 9px;border-radius:7px;
+    display:inline-flex;align-items:center;gap:4px;border:1px solid}
+  .tr-badge.dl{background:#60a5fa14;color:#60a5fa;border-color:#60a5fa30}
+  .tr-badge.ul{background:#34d39914;color:#34d399;border-color:#34d39930}
+  .tr-dash{color:var(--faint);font-family:var(--mono)}
+  .eye-btn{background:none;border:none;color:#60a5fa;cursor:pointer;font-size:18px;padding:6px;border-radius:8px}
+  .eye-btn:hover{background:var(--panel-2)}
+  .sk{display:inline-block;height:11px;width:54px;border-radius:5px;background:linear-gradient(90deg,var(--panel-2),var(--line),var(--panel-2));background-size:200% 100%;animation:sk 1.2s infinite}
+  @keyframes sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  .menu-pop{position:absolute;right:0;top:46px;background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;padding:6px;min-width:170px;box-shadow:0 12px 40px #0008;z-index:30}
+  .menu-pop button{display:block;width:100%;text-align:left;background:none;border:none;color:var(--ink);
+    padding:9px 12px;border-radius:8px;font-size:13px;cursor:pointer}
+  .menu-pop button:hover{background:var(--panel-2)}
+  .empty-row td{text-align:center;color:var(--faint);padding:30px}
+  .tb-search .ico i{font-size:15px}
+  .pill-btn i{font-size:15px}
+  .sd-ico i{font-size:19px}
+  .sync-card .ico i{font-size:17px}
+  .tr-badge i{font-size:11px}
+  .eye-btn i{font-size:17px;display:block}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="tb-id" id="tbId">OLT</div>
+  <div class="tb-title">
+    <h1 id="tbName">OLT</h1>
+    <div class="sub" id="tbSub">memuat…</div>
+  </div>
+  <div class="tb-spacer"></div>
+  <div class="tb-ctrls">
+    <select class="tb-sel" id="ponSel"><option value="">Semua PON</option></select>
+    <div class="tb-search"><span class="ico"><i class="ti ti-search"></i></span><input id="searchInp" placeholder="Cari nama, status, serial…"></div>
+    <button class="pill-btn teal" id="syncBtn"><i class="ti ti-cloud-up"></i> Sinkron</button>
+    <button class="pill-btn blue" id="refreshBtn"><i class="ti ti-refresh"></i> Refresh</button>
+    <button class="pill-btn green" id="oltCfgBtn"><i class="ti ti-plus"></i> Tambah</button>
+    <div style="position:relative"><button class="pill-btn icon" id="menuBtn"><i class="ti ti-dots-vertical"></i></button><div id="menuPop"></div></div>
+    <label class="auto" style="margin-left:2px"><input type="checkbox" id="autoChk"> auto 30s</label>
+  </div>
+</div>
+
+<div id="errBox"></div>
+
+<div class="layout">
+  <aside class="side">
+    <div class="side-card sync-card">
+      <span class="ico"><i class="ti ti-refresh"></i></span>
+      <div><div class="lbl">Sinkronisasi terakhir</div><div class="dt" id="syncDt">—</div></div>
+    </div>
+    <div class="side-label">Status perangkat</div>
+    <div class="sd-stat" data-filter="" id="sdAll"><div class="sd-ico all"><i class="ti ti-access-point"></i></div>
+      <div class="sd-meta"><div class="l">Semua ONU</div><div class="n" id="sdAllN">—</div></div></div>
+    <div class="sd-stat" data-filter="on"><div class="sd-ico on"><i class="ti ti-wifi"></i></div>
+      <div class="sd-meta"><div class="l">Online</div><div class="n" id="sdOnN">—</div></div></div>
+    <div class="sd-stat" data-filter="off"><div class="sd-ico off"><i class="ti ti-wifi-off"></i></div>
+      <div class="sd-meta"><div class="l">Offline</div><div class="n" id="sdOffN">—</div></div></div>
+    <div class="sd-stat" data-filter="dg"><div class="sd-ico dg"><i class="ti ti-bolt"></i></div>
+      <div class="sd-meta"><div class="l">Dying Gasp</div><div class="n" id="sdDgN">—</div></div></div>
+    <div class="side-label">Health overview</div>
+    <div class="side-card health">
+      <div class="bar" id="healthBar"></div>
+      <div class="legend">
+        <span><i class="dot" style="background:#34d399"></i> Online</span>
+        <span><i class="dot" style="background:#5b5e7e"></i> Offline</span>
+        <span><i class="dot" style="background:#fbbf24"></i> Dying Gasp</span>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-card">
+    <div class="main-head">
+      <div class="cnt">Menampilkan <b id="rowCount">0</b> ONU</div>
+      <div id="uncfgChip"></div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="otable">
+        <thead><tr>
+          <th>Nama / Status</th><th>PON</th><th>Signal</th><th>Serial Number</th><th>Traffic</th><th style="text-align:right">Aksi</th>
+        </tr></thead>
+        <tbody id="oltRows"><tr class="empty-row"><td colspan="6">memuat…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+const API = '/api'; // prefix route panel (route OLT = /api/olt)
+const TOKEN = localStorage.getItem('nb_token') || ''; // token JWT panel SimBill
+let currentOlt = '';
+let autoTimer = null;
+
+const $ = (s)=>document.querySelector(s);
+function showErr(msg){ $('#errBox').innerHTML = msg ? `<div class="err">${msg}</div>` : ''; }
+
+async function api(path){
+  if(!TOKEN){ throw new Error('Belum login. Buka panel admin & login dulu, baru buka halaman ini.'); }
+  const r = await fetch(API + path, {
+    credentials:'same-origin',
+    headers:{ 'Authorization':'Bearer '+TOKEN }
+  });
+  if(r.status===401){ throw new Error('Sesi login habis. Login ulang di panel admin.'); }
+  const j = await r.json().catch(()=>({ok:false,error:'respons bukan JSON'}));
+  if(!r.ok || !j.ok) throw new Error(j.error || ('HTTP '+r.status));
+  return j.data;
+}
+
+// klasifikasi RX pelanggan (dBm)
+function rxClass(rx){
+  if(rx===null||rx===undefined) return ['—','warn'];
+  if(rx > -8)  return ['Terlalu kuat','warn'];
+  if(rx >= -25) return ['Baik','ok'];
+  if(rx >= -28) return ['Lemah','warn'];
+  return ['Kritis','bad'];
+}
+function sigClass(rx){
+  if(rx===null||rx===undefined) return 'na';
+  if(rx > -8 || (rx < -28)) return 'bad';
+  if(rx < -25) return 'warn';
+  return 'ok';
+}
+
+let _allOnus=[], _uncfg=[], _filter='', _ponFilter='', _search='';
+let _metrics={};            // index -> {rx,downBps,upBps}
+let _metricRun=0;           // token buat batalin progressive load lama
+
+async function loadOlts(){
+  const list = await api('/olt/list');
+  const sel = $('#ponSel'); // PON filter diisi nanti dari data
+  currentOlt = list[0]?.id || '';
+  // simpan list buat menu ganti OLT
+  window._oltList = list;
+}
+
+function shortId(name){
+  name=name||'OLT';
+  if(name.includes('_')) return name.split('_').pop().slice(0,4).toUpperCase();
+  const m=name.match(/[A-Z0-9]+$/i); return (m?m[0]:name).slice(0,4).toUpperCase();
+}
+
+async function loadDashboard(){
+  showErr('');
+  const tok=++_metricRun;          // batalkan progressive load sebelumnya
+  $('#oltRows').innerHTML='<tr class="empty-row"><td colspan="6">memuat data ONU…</td></tr>';
+  try{
+    const d = await api('/olt/dashboard?olt='+encodeURIComponent(currentOlt));
+    // header
+    $('#tbName').textContent=d.olt.name||currentOlt;
+    $('#tbId').textContent=shortId(d.olt.name||currentOlt);
+    $('#tbSub').textContent=(d.olt.model||'ZTE')+' · '+ (_ponFilter||'Semua PON');
+    $('#syncDt').textContent=new Date(d.ts||Date.now()).toLocaleString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    _allOnus=d.onus; _uncfg=d.uncfg||[];
+    _metrics={};                   // reset metrik tiap reload
+    fillPonFilter(d.onus);
+    renderSidebar(d.summary, d.onus);
+    renderUncfgChip(_uncfg);
+    renderTable();
+    // progressive: isi signal + traffic per ONU (online dulu)
+    loadMetricsProgressive(tok);
+  }catch(e){
+    showErr('Gagal ambil data OLT: '+e.message);
+    $('#oltRows').innerHTML='<tr class="empty-row"><td colspan="6">gagal memuat</td></tr>';
+  }
+}
+
+function fillPonFilter(onus){
+  const pons=[...new Set(onus.map(o=>o.index.split(':')[0]))].sort();
+  const sel=$('#ponSel'); const cur=sel.value;
+  sel.innerHTML='<option value="">Semua PON</option>'+pons.map(p=>`<option value="${p}">PON ${p}</option>`).join('');
+  sel.value=cur;
+}
+
+function dgState(o){ return o.online ? 'on' : (isDg(o) ? 'dg' : 'off'); }
+function isDg(o){ return !o.online && /dying|dgi|dgasp/i.test(o.phaseState||''); }
+
+function renderSidebar(s, onus){
+  const total=onus.length, on=onus.filter(o=>o.online).length;
+  const dg=onus.filter(o=>isDg(o)).length;
+  const off=total-on-dg;
+  const pct=(n)=> total? Math.round(n/total*100):0;
+  $('#sdAllN').textContent=total;
+  $('#sdOnN').innerHTML=on+` <small>${pct(on)}%</small>`;
+  $('#sdOffN').innerHTML=off+` <small>${pct(off)}%</small>`;
+  $('#sdDgN').innerHTML=dg+` <small>${pct(dg)}%</small>`;
+  const seg=(c,n)=> n>0? `<div class="seg" style="background:${c};width:${n/total*100}%"></div>`:'';
+  $('#healthBar').innerHTML=seg('#34d399',on)+seg('#fbbf24',dg)+seg('#5b5e7e',off);
+}
+
+function renderUncfgChip(list){
+  $('#uncfgChip').innerHTML = list.length
+    ? `<button class="pill-btn green" style="padding:6px 12px" onclick="openUncfg()">${list.length} ONU belum register</button>` : '';
+}
+function openUncfg(){
+  const ov=$('#overlay'), m=$('#modal');
+  m.innerHTML=`<button class="closex" onclick="closeModal()">&times;</button><h3>ONU belum diregister</h3>
+    <div class="idx">${_uncfg.length} perangkat terdeteksi, belum terdaftar</div>
+    <table style="margin-top:12px"><thead><tr><th>PON</th><th>Serial</th><th>State</th><th></th></tr></thead><tbody>${
+      _uncfg.map(u=>`<tr><td class="mono">${u.index}</td><td class="mono">${u.sn}</td><td>${u.state||'-'}</td>
+        <td><button class="linkbtn" style="margin:0;padding:5px 12px" onclick="openRegister('${u.sn}','${u.index}')">Register</button></td></tr>`).join('')
+    }</tbody></table>`;
+  ov.classList.add('show');
+}
+
+function visibleOnus(){
+  let arr=_allOnus.slice();
+  if(_ponFilter) arr=arr.filter(o=>o.index.split(':')[0]===_ponFilter);
+  if(_filter==='on') arr=arr.filter(o=>o.online);
+  else if(_filter==='off') arr=arr.filter(o=>!o.online);
+  else if(_filter==='dg') arr=arr.filter(o=>isDg(o));
+  if(_search){
+    const q=_search.toLowerCase();
+    arr=arr.filter(o=>{
+      const nm=(o.pelanggan?.nama||'').toLowerCase();
+      const un=(o.pelanggan?.username||'').toLowerCase();
+      const sn=(o.sn||'').toLowerCase();
+      return nm.includes(q)||un.includes(q)||sn.includes(q)||o.index.includes(q)||(o.online?'online':'offline').includes(q);
+    });
+  }
+  // online dulu, lalu by index
+  return arr.sort((a,b)=> (b.online-a.online) || a.index.localeCompare(b.index,undefined,{numeric:true}));
+}
+
+function ponShort(index){ // 1/8/2:5 -> 8/2:5
+  const [pon,n]=index.split(':'); const p=pon.split('/'); return p.slice(1).join('/')+':'+n;
+}
+function onuLabel(index){ const n=index.split(':')[1]; const pon=index.split(':')[0].split('/'); return 'ONU-'+pon[1]+':'+n; }
+
+function rowHtml(o){
+  const st=dgState(o);
+  const name=o.pelanggan?.nama || (o.tag==='voucher'?'Voucher/Hotspot':'(belum tertaut)');
+  const badge = st==='on'?'<span class="st-badge on">Online</span>'
+    : st==='dg'?'<span class="st-badge dg">Dying Gasp</span>'
+    : '<span class="st-badge off">Offline</span>';
+  const m=_metrics[o.index];
+  let sig='<span class="sig na">—</span>', traffic='<span class="tr-dash">—</span>';
+  if(m){
+    if(m.rx!=null){ sig=`<span class="sig ${sigClass(m.rx)}">${m.rx.toFixed(2)} dBm</span>`; }
+    else sig='<span class="sig na">—</span>';
+    if(m.downBps!=null||m.upBps!=null){
+      traffic=`<div class="tr-cell">
+        <span class="tr-badge dl"><i class="ti ti-arrow-down"></i> ${fmtMbps(m.downBps)}</span>
+        <span class="tr-badge ul"><i class="ti ti-arrow-up"></i> ${fmtMbps(m.upBps)}</span></div>`;
+    } else traffic='<span class="tr-dash">—</span>';
+  } else if(o.online){
+    sig='<span class="sk"></span>'; traffic='<span class="sk"></span>';
+  }
+  const sn=o.sn?`<span class="sn-box" title="${o.sn}">${o.sn}</span>`:'<span class="tr-dash">—</span>';
+  return `<tr>
+    <td><div class="nm-cell"><span class="nm-dot ${st}"></span>
+      <div><div class="nm-name">${esc(name)}</div><div class="nm-idx">${onuLabel(o.index)}</div>${badge}</div></div></td>
+    <td><span class="pon-pill">${ponShort(o.index)}</span></td>
+    <td>${sig}</td>
+    <td>${sn}</td>
+    <td>${traffic}</td>
+    <td style="text-align:right"><button class="eye-btn" title="Detail" onclick="openOnu('${o.index}')"><i class="ti ti-eye"></i></button></td>
+  </tr>`;
+}
+
+function renderTable(){
+  const arr=visibleOnus();
+  $('#rowCount').textContent=arr.length;
+  $('#oltRows').innerHTML = arr.length
+    ? arr.map(rowHtml).join('')
+    : '<tr class="empty-row"><td colspan="6">Tidak ada ONU yang cocok dengan filter.</td></tr>';
+}
+
+function fmtMbps(bps){
+  if(bps==null) return '—';
+  const m=bps/1e6;
+  if(m>=10) return m.toFixed(1)+' Mbps';
+  if(m>=0.1) return m.toFixed(2)+' Mbps';
+  return (bps/1e3).toFixed(0)+' Kbps';
+}
+
+// Isi signal+traffic per ONU bertahap (throttle, online dulu). tok membatalkan run lama.
+async function loadMetricsProgressive(tok){
+  const queue=_allOnus.filter(o=>o.online).map(o=>o.index); // online dulu
+  for(const idx of queue){
+    if(tok!==_metricRun) return; // dibatalin (reload/ganti OLT)
+    try{
+      const m=await api(`/olt/onu/metrics?olt=${encodeURIComponent(currentOlt)}&index=${encodeURIComponent(idx)}`);
+      _metrics[idx]=m;
+      // tandai dying gasp kalau RX null tapi online (indikasi sinyal hilang) — heuristik ringan
+      const row=_allOnus.find(o=>o.index===idx);
+      patchRow(idx);
+    }catch(e){ _metrics[idx]={rx:null,downBps:null,upBps:null}; patchRow(idx); }
+  }
+}
+
+// update 1 baris tanpa re-render seluruh tabel (kalau baris itu lagi tampil)
+function patchRow(idx){
+  const arr=visibleOnus();
+  const pos=arr.findIndex(o=>o.index===idx);
+  if(pos<0) return;
+  const tbody=$('#oltRows');
+  const tr=tbody.children[pos];
+  if(tr){ const tmp=document.createElement('tbody'); tmp.innerHTML=rowHtml(arr[pos]); tr.replaceWith(tmp.firstElementChild); }
+}
+
+let _curIndex=null, _curDetail=null, _curPower=null, _trafficTimer=null;
+
+function billPill(b){
+  if(!b) return '';
+  const cls = b.state==='aktif'?'ok':(b.state==='nonaktif'?'bad':'warn');
+  return `<span class="pill ${cls}">${b.label}${b.expired?(' · '+b.expired):''}</span>`;
+}
+
+function pelangganBlock(pelanggan, suggestion){
+  if(pelanggan){
+    return `<div class="pelbox linked">
+      <div class="t">PELANGGAN</div>
+      <div class="pelname">${pelanggan.nama||'-'} ${billPill(pelanggan.billing)}</div>
+      <div class="pelmeta">@${pelanggan.username||'-'} · ID ${pelanggan.id}</div>
+      <button class="linkbtn ghost" onclick="startRelink()">Ganti / lepas tautan</button>
+    </div>`;
+  }
+  if(_curTag==='voucher'){
+    return `<div class="pelbox vcrbox">
+      <div class="t">JENIS ONU</div>
+      <div class="pelname"><span class="pill" style="background:#22d3ee18;color:#22d3ee">Voucher / Hotspot</span></div>
+      <div class="pelmeta">Tidak ditautkan ke pelanggan tetap.</div>
+      <button class="linkbtn ghost" onclick="markVoucher(false)">Batalkan tanda voucher</button>
+    </div>`;
+  }
+  if(suggestion){
+    return `<div class="pelbox suggest">
+      <div class="t">SARAN PELANGGAN <span class="badge">via ${suggestion.via}</span></div>
+      <div class="pelname">${suggestion.nama||'-'} ${billPill(suggestion.billing)}</div>
+      <div class="pelmeta">@${suggestion.username||'-'} · ID ${suggestion.id}</div>
+      <button class="linkbtn" onclick="confirmLink(${suggestion.id})">Tautkan ke pelanggan ini</button>
+      <button class="linkbtn ghost" onclick="startRelink()">Cari manual…</button>
+      <button class="linkbtn ghost" onclick="markVoucher(true)">Ini Voucher/Hotspot</button>
+    </div>`;
+  }
+  const chips = (_curCandidates&&_curCandidates.length)?`
+    <div class="t" style="margin-top:8px">MUNGKIN:</div>
+    <div class="candrow">${_curCandidates.map(c=>`
+      <button class="candchip" onclick="confirmLink(${c.id})" title="@${c.username||'-'}">
+        ${c.nama} ${c.billing&&c.billing.state!=='aktif'?'<span class="dotw"></span>':''}
+      </button>`).join('')}</div>`:'';
+  return `<div class="pelbox empty">
+    <div class="t">PELANGGAN</div>
+    <div class="pelmeta">Belum terhubung.</div>
+    ${chips}
+    <button class="linkbtn" onclick="startRelink()" style="margin-top:10px">Cari manual…</button>
+    <button class="linkbtn ghost" onclick="markVoucher(true)" style="margin-top:10px">Ini Voucher/Hotspot</button>
+  </div>`;
+}
+
+async function markVoucher(on){
+  try{
+    await fetch(API+'/olt/voucher',{
+      method:'POST', credentials:'same-origin',
+      headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'},
+      body:JSON.stringify({ olt:currentOlt, index:_curIndex, on,
+        sn:_curDetail?.sn||null, name:_curDetail?.name||null })
+    }).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); });
+    await openOnu(_curIndex);
+    loadDashboard();
+  }catch(e){ $('#pelHost').innerHTML='<div class="err">Gagal: '+e.message+'</div>'; }
+}
+
+function startRelink(){
+  const host=$('#pelHost'); if(!host) return;
+  host.innerHTML = `<div class="pelbox">
+    <div class="t">CARI PELANGGAN</div>
+    <input id="pelSearch" placeholder="nama / username…" autocomplete="off"
+      style="width:100%;margin-top:6px" oninput="doSearch(this.value)">
+    <div id="pelResults" style="margin-top:8px"></div>
+    <button class="linkbtn ghost" onclick="renderPelBlock()" style="margin-top:8px">Batal</button>
+    ${_curLinked?`<button class="linkbtn ghost danger" onclick="unlink()" style="margin-top:8px">Lepas tautan</button>`:''}
+  </div>`;
+  setTimeout(()=>$('#pelSearch')?.focus(),50);
+}
+
+let _searchT=null, _curLinked=false, _curSuggestion=null, _curPelanggan=null, _curCandidates=[], _curTag=null;
+function doSearch(q){
+  clearTimeout(_searchT);
+  if(!q || q.trim().length<2){ $('#pelResults').innerHTML=''; return; }
+  _searchT=setTimeout(async()=>{
+    try{
+      const rows=await api('/olt/pelanggan/search?q='+encodeURIComponent(q.trim()));
+      $('#pelResults').innerHTML = rows.length? rows.map(r=>`
+        <div class="presult" onclick="confirmLink(${r.id})">
+          <span>${r.nama} <span class="pelmeta">@${r.username||'-'}</span></span>
+          ${billPill(r.billing)}
+        </div>`).join('') : '<div class="pelmeta">Tidak ada hasil.</div>';
+    }catch(e){ $('#pelResults').innerHTML='<div class="err">'+e.message+'</div>'; }
+  },300);
+}
+
+async function confirmLink(pelangganId){
+  try{
+    await fetch(API+'/olt/link',{
+      method:'POST',
+      credentials:'same-origin',
+      headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'},
+      body:JSON.stringify({ olt:currentOlt, index:_curIndex, pelanggan_id:pelangganId,
+        sn:_curDetail?.sn||null, name:_curDetail?.name||null })
+    }).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); });
+    await openOnu(_curIndex);   // reload modal
+    loadDashboard();            // refresh grid
+  }catch(e){ $('#pelHost').innerHTML='<div class="err">Gagal tautkan: '+e.message+'</div>'; }
+}
+
+async function unlink(){
+  try{
+    await fetch(API+`/olt/link?olt=${encodeURIComponent(currentOlt)}&index=${encodeURIComponent(_curIndex)}`,{
+      method:'DELETE', credentials:'same-origin', headers:{'Authorization':'Bearer '+TOKEN}
+    }).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); });
+    await openOnu(_curIndex);
+    loadDashboard();
+  }catch(e){ $('#pelHost').innerHTML='<div class="err">Gagal lepas: '+e.message+'</div>'; }
+}
+
+function renderPelBlock(){
+  $('#pelHost').innerHTML = pelangganBlock(_curPelanggan, _curSuggestion);
+}
+
+async function openOnu(index){
+  const ov=$('#overlay'), m=$('#modal');
+  ov.classList.add('show');
+  m.innerHTML='<div class="loading">mengambil data ONU…</div>';
+  _curIndex=index;
+  if(_trafficTimer){ clearInterval(_trafficTimer); _trafficTimer=null; }
+  try{
+    const res = await api(`/olt/onu/info?olt=${encodeURIComponent(currentOlt)}&index=${encodeURIComponent(index)}`);
+    const d=res.detail||{}, p=res.power||{};
+    _curDetail=d; _curPelanggan=res.pelanggan||null; _curSuggestion=res.suggestion||null;
+    _curCandidates=res.candidates||[]; _curTag=res.tag||null;
+    _curLinked=!!res.pelanggan; _curPower=p;
+    m.innerHTML = `
+      <button class="closex" onclick="closeModal()">×</button>
+      <h3>${d.name||'(tanpa nama)'}</h3>
+      <div class="idx">gpon-onu_${index}</div>
+      <div class="tabbar">
+        <button class="tab active" data-tab="info" onclick="onuTab('info')">Info</button>
+        <button class="tab" data-tab="traffic" onclick="onuTab('traffic')">Traffic</button>
+        <button class="tab" data-tab="config" onclick="onuTab('config')">Config</button>
+      </div>
+      <div id="onuTabBody"></div>`;
+    onuTab('info');
+  }catch(e){
+    m.innerHTML=`<button class="closex" onclick="closeModal()">×</button><div class="err">Gagal: ${e.message}</div>`;
+  }
+}
+
+function onuTab(name){
+  document.querySelectorAll('#modal .tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  if(_trafficTimer){ clearInterval(_trafficTimer); _trafficTimer=null; }
+  if(name==='info') renderInfoTab();
+  else if(name==='traffic') renderTrafficTab();
+  else if(name==='config') renderConfigTab();
+}
+
+function renderInfoTab(){
+  const d=_curDetail||{}, p=_curPower||{};
+  const [rxLabel,rxCls]=rxClass(p.onuRx);
+  $('#onuTabBody').innerHTML = `
+    <div id="pelHost">${pelangganBlock(_curPelanggan,_curSuggestion)}</div>
+    <div class="inforow">
+      <div>
+        <div class="pwr">
+          <div class="box"><div class="t">RX Pelanggan</div>
+            <div class="v" style="color:var(--${rxCls==='ok'?'ok':rxCls==='warn'?'warn':'bad'})">${p.onuRx??'—'} <span style="font-size:13px">dBm</span></div>
+            <span class="pill ${rxCls}">${rxLabel}</span></div>
+          <div class="box"><div class="t">RX di OLT</div>
+            <div class="v">${p.oltRx??'—'} <span style="font-size:13px">dBm</span></div>
+            <div class="t" style="margin-top:6px">Atenuasi ${p.attenuationDown??'—'} dB</div></div>
+        </div>
+        ${d.history&&d.history.length?`<div style="margin-top:14px"><div class="t" style="color:var(--muted);font-size:12px;margin-bottom:6px">RIWAYAT OFFLINE TERAKHIR</div>
+          <table><tbody>${d.history.slice(-3).reverse().map(h=>`<tr><td class="mono" style="font-size:12px">${h.offline||'masih online'}</td><td><span class="pill ${h.cause?'bad':'ok'}">${h.cause||'up'}</span></td></tr>`).join('')}</tbody></table></div>`:''}
+      </div>
+      <div class="kv" style="margin-top:0">
+        <div class="k">Status</div><div class="v">${d.phaseState||'-'}</div>
+        <div class="k">Serial</div><div class="v">${d.sn||'-'}</div>
+        <div class="k">Jarak</div><div class="v">${d.distance||'-'}</div>
+        <div class="k">Online</div><div class="v">${d.onlineDuration||'-'}</div>
+        <div class="k">Deskripsi</div><div class="v">${d.description||'-'}</div>
+        <div class="k">Tipe</div><div class="v">${d.type||'-'}</div>
+      </div>
+    </div>
+    <button class="linkbtn ghost" onclick="reapplyFromModal()" style="margin-top:14px">Re-apply service (template)</button>
+    <div class="actionbar">
+      <div class="t" style="color:var(--muted);font-size:12px;margin-bottom:8px">AKSI ONU</div>
+      <div class="actrow">
+        <button class="actbtn" onclick="doAction('reboot')">⟳ Reboot</button>
+        <button class="actbtn warn" onclick="doAction('disable')">⊘ Disable</button>
+        <button class="actbtn ok2" onclick="doAction('enable')">✓ Enable</button>
+        <button class="actbtn warn" onclick="doAction('restore_wifi')">⟲ Reset WiFi</button>
+        <button class="actbtn danger" onclick="doAction('restore')">⚠ Factory Reset</button>
+        <button class="actbtn danger" onclick="doAction('delete')">🗑 Hapus</button>
+      </div>
+      <div id="actBox"></div>
+    </div>`;
+}
+
+function fmtBytes(n){
+  if(n===null||n===undefined) return '—';
+  const u=['B','KB','MB','GB','TB']; let i=0, v=Number(n);
+  while(v>=1024&&i<u.length-1){ v/=1024; i++; }
+  return v.toFixed(i?1:0)+' '+u[i];
+}
+function fmtRate(bps){
+  if(bps===null||bps===undefined) return '—';
+  const b=Number(bps)*8; // Bps -> bps
+  if(b>=1e6) return (b/1e6).toFixed(2)+' Mbps';
+  if(b>=1e3) return (b/1e3).toFixed(1)+' Kbps';
+  return b+' bps';
+}
+
+let _trafficSamples=[];
+async function renderTrafficTab(){
+  const body=$('#onuTabBody');
+  _trafficSamples=[];
+  body.innerHTML=`
+    <div class="trange">
+      <button class="rbtn active" data-r="live" onclick="trafRange('live')">Live</button>
+      <button class="rbtn" data-r="15m" onclick="trafRange('15m')">15m</button>
+      <button class="rbtn" data-r="1j" onclick="trafRange('1j')">1j</button>
+      <button class="rbtn" data-r="24j" onclick="trafRange('24j')">24j</button>
+    </div>
+    <canvas id="trafCanvas" style="width:100%;height:150px;display:block;margin-top:10px"></canvas>
+    <div class="pwr" style="grid-template-columns:1fr 1fr;margin-top:12px">
+      <div class="box"><div class="t">↓ Download</div>
+        <div class="v" style="color:#5b8def" id="dlNow">—</div>
+        <div class="trip" id="dlStat"></div></div>
+      <div class="box"><div class="t">↑ Upload</div>
+        <div class="v" style="color:var(--ok)" id="ulNow">—</div>
+        <div class="trip" id="ulStat"></div></div>
+    </div>
+    <div class="pelmeta" id="trafNote" style="margin-top:10px">Mode Live · diperbarui tiap 5 detik</div>`;
+  const push=(dlBps,ulBps)=>{
+    _trafficSamples.push({dl:Math.max(0,dlBps||0),ul:Math.max(0,ulBps||0)});
+    if(_trafficSamples.length>120) _trafficSamples.shift();
+    drawTraffic();
+  };
+  const load=async()=>{
+    try{
+      const t=await api(`/olt/onu/traffic?olt=${encodeURIComponent(currentOlt)}&index=${encodeURIComponent(_curIndex)}`);
+      if(!t){ $('#trafNote').textContent='Statistik tidak tersedia (ONU offline).'; return; }
+      // outRate = download, inRate = upload (Bps dari OLT) -> jadikan bps
+      push(Number(t.outRate||0)*8, Number(t.inRate||0)*8);
+      $('#trafNote').textContent='Mode Live · diperbarui tiap 5 detik';
+    }catch(e){ $('#trafNote').textContent='Gagal: '+(e&&e.message?e.message:e); }
+  };
+  await load();
+  _trafficTimer=setInterval(load, 5000);
+}
+
+function trafRange(r){
+  document.querySelectorAll('#modal .rbtn').forEach(b=>b.classList.toggle('active',b.dataset.r===r));
+  if(r==='live'){ $('#trafNote').textContent='Mode Live · diperbarui tiap 3 detik'; }
+  else { $('#trafNote').innerHTML='⚠️ Interval historical ('+r+') butuh sampler background (belum aktif). Live tetap jalan.'; }
+}
+
+function fmtbps(bps){
+  if(bps===null||bps===undefined) return '—';
+  const b=Number(bps);
+  if(b>=1e6) return (b/1e6).toFixed(2)+' Mbps';
+  if(b>=1e3) return (b/1e3).toFixed(1)+' Kbps';
+  return Math.round(b)+' bps';
+}
+function statLine(arr){
+  if(!arr.length) return {peak:0,avg:0,low:0};
+  const peak=Math.max(...arr), low=Math.min(...arr), avg=arr.reduce((a,b)=>a+b,0)/arr.length;
+  return {peak,avg,low};
+}
+
+function drawTraffic(){
+  const cv=$('#trafCanvas'); if(!cv) return;
+  const dpr=window.devicePixelRatio||1;
+  const W=cv.clientWidth, H=cv.clientHeight;
+  cv.width=W*dpr; cv.height=H*dpr;
+  const ctx=cv.getContext('2d'); ctx.scale(dpr,dpr); ctx.clearRect(0,0,W,H);
+  const s=_trafficSamples;
+  const last=s[s.length-1]||{dl:0,ul:0};
+  $('#dlNow').textContent=fmtbps(last.dl);
+  $('#ulNow').textContent=fmtbps(last.ul);
+  const dS=statLine(s.map(x=>x.dl)), uS=statLine(s.map(x=>x.ul));
+  const trip=(o)=>`<span>peak ${fmtRate2(o.peak)}</span><span>avg ${fmtRate2(o.avg)}</span><span>low ${fmtRate2(o.low)}</span>`;
+  $('#dlStat').innerHTML=trip(dS); $('#ulStat').innerHTML=trip(uS);
+  if(s.length<2){ ctx.fillStyle='rgba(160,170,200,.6)'; ctx.font='12px Inter'; ctx.fillText('mengumpulkan data…',8,H/2); return; }
+  const max=Math.max(1,...s.map(x=>Math.max(x.dl,x.ul)));
+  const xOf=(i)=>(i/(s.length-1))*(W-4)+2;
+  const yOf=(v)=>H-6-(v/max)*(H-16);
+  const area=(key,stroke,fill)=>{
+    ctx.beginPath(); ctx.moveTo(xOf(0),H-6);
+    s.forEach((p,i)=>ctx.lineTo(xOf(i),yOf(p[key])));
+    ctx.lineTo(xOf(s.length-1),H-6); ctx.closePath();
+    ctx.fillStyle=fill; ctx.fill();
+    ctx.beginPath(); s.forEach((p,i)=>i?ctx.lineTo(xOf(i),yOf(p[key])):ctx.moveTo(xOf(i),yOf(p[key])));
+    ctx.strokeStyle=stroke; ctx.lineWidth=2; ctx.stroke();
+  };
+  area('dl','#5b8def','#5b8def22');
+  area('ul','#34d399','#34d39922');
+}
+
+function fmtRate2(bps){
+  if(bps===null||bps===undefined) return '—';
+  const b=Number(bps);
+  if(b>=1e6) return (b/1e6).toFixed(1)+'M';
+  if(b>=1e3) return (b/1e3).toFixed(0)+'K';
+  return Math.round(b)+'';
+}
+
+async function renderConfigTab(){
+  const body=$('#onuTabBody');
+  body.innerHTML='<div class="loading">mengambil config…</div>';
+  try{
+    const c=await api(`/olt/onu/config?olt=${encodeURIComponent(currentOlt)}&index=${encodeURIComponent(_curIndex)}`);
+    body.innerHTML=`
+      <div class="t" style="margin-top:6px">interface gpon-onu</div>
+      <pre class="cmdpre">${(c.config||'(kosong)').replace(/</g,'&lt;')}</pre>
+      ${c.ponMng?`<div class="t" style="margin-top:10px">pon-onu-mng</div><pre class="cmdpre">${c.ponMng.replace(/</g,'&lt;')}</pre>`:''}`;
+  }catch(e){ body.innerHTML='<div class="err">'+e.message+'</div>'; }
+}
+// ── Fase 2: Register ONU (engine template) ────────────────────
+let _regSn=null, _regPon=null, _regPelangganId=null, _regCommands=null;
+let _regTemplates=[], _regSkipAdd=false, _regOnuNumber=null;
+
+async function openRegister(sn, pon, opts){
+  opts=opts||{};
+  const ov=$('#overlay'), m=$('#modal');
+  ov.classList.add('show');
+  _regSn=sn; _regPon=String(pon).split(':')[0]; _regPelangganId=opts.pelangganId||null;
+  _regCommands=null; _regSkipAdd=!!opts.skipOnuAdd; _regOnuNumber=opts.onuNumber||null;
+  m.innerHTML='<div class="loading">menyiapkan…</div>';
+  let profiles=[];
+  try{ _regTemplates=await api('/olt/templates'); }catch(e){ _regTemplates=[]; }
+  try{ profiles=await api('/olt/profiles?olt='+encodeURIComponent(currentOlt)); }catch(e){}
+  const plist=profiles.map(p=>`<option value="${p}">`).join('');
+  const topts=_regTemplates.map(t=>`<option value="${t.id}">${t.label}${t.hgu?' · HGU':''}</option>`).join('');
+  m.innerHTML=`
+    <button class="closex" onclick="closeModal()">×</button>
+    <h3>${_regSkipAdd?'Re-apply Service':'Register ONU'}</h3>
+    <div class="idx">${sn} · PON ${_regPon}${_regSkipAdd?(' · ONU '+_regOnuNumber):''}</div>
+    <div class="pelbox" style="margin-top:14px">
+      <div class="kv2"><label>Template</label>
+        <select id="regTpl" onchange="regTplChange()">${topts}</select></div>
+      <div class="kv2"><label>Nama ONU</label>
+        <input id="regName" placeholder="mis. username pelanggan" autocomplete="off"></div>
+      <div class="kv2"><label>Profile</label>
+        <input id="regProfile" list="regProfiles" placeholder="mis. 100M" autocomplete="off">
+        <datalist id="regProfiles">${plist}</datalist></div>
+      <div id="regPppoeFields"></div>
+      <div class="kv2"><label>Tautkan</label>
+        <div style="flex:1">
+          <input id="regPelSearch" placeholder="cari pelanggan (PPPoE auto)…" autocomplete="off" oninput="regSearch(this.value)" style="width:100%">
+          <div id="regPelResults"></div>
+          <div id="regPelChosen" class="pelmeta"></div>
+        </div></div>
+      <label class="auto" style="margin-top:8px"><input type="checkbox" id="regWrite" checked> simpan permanen (write)</label>
+    </div>
+    <div id="regCmdBox"></div>
+    <div style="margin-top:12px">
+      <button class="linkbtn" onclick="regDryRun()">Lihat command (dry-run)</button>
+      <button class="linkbtn ghost" id="regCommitBtn" onclick="regCommit()" disabled style="opacity:.5">Kirim ke OLT</button>
+    </div>
+    <div class="pelmeta" style="margin-top:8px">⚠️ Dry-run dulu, cocokin sama tool lama, baru kirim. Nulis ke OLT + write.</div>`;
+  if(_regPelangganId && opts.pelangganNama){ $('#regPelChosen').textContent='✓ '+opts.pelangganNama; if(opts.pelangganUsername) $('#regName').value=opts.pelangganUsername; }
+  regTplChange();
+}
+
+function curTpl(){ return _regTemplates.find(t=>t.id===$('#regTpl').value); }
+function regTplChange(){
+  const t=curTpl(); if(!t) return;
+  const needPppoe=t.vars.includes('USER_PPPOE')||t.vars.includes('PASSWORD_PPPOE');
+  $('#regPppoeFields').innerHTML = needPppoe?`
+    <div class="kv2"><label>PPPoE user</label><input id="regUser" placeholder="auto dari pelanggan" autocomplete="off"></div>
+    <div class="kv2"><label>PPPoE pass</label><input id="regPass" placeholder="auto dari pelanggan" autocomplete="off"></div>
+    <div class="pelmeta" style="margin:-2px 0 8px 106px">Kosongkan = ambil otomatis dari pelanggan yang ditautkan (radcheck).</div>`:'';
+}
+
+let _regSearchT=null;
+function regSearch(q){
+  clearTimeout(_regSearchT);
+  if(!q||q.trim().length<2){ $('#regPelResults').innerHTML=''; return; }
+  _regSearchT=setTimeout(async()=>{
+    try{
+      const rows=await api('/olt/pelanggan/search?q='+encodeURIComponent(q.trim()));
+      $('#regPelResults').innerHTML=rows.map(r=>`<div class="presult" onclick="regPickPel(${r.id},'${(r.username||'').replace(/'/g,'')}','${(r.nama||'').replace(/'/g,'')}')"><span>${r.nama} <span class="pelmeta">@${r.username||'-'}</span></span>${billPill(r.billing)}</div>`).join('');
+    }catch(e){}
+  },300);
+}
+function regPickPel(id,username,nama){
+  _regPelangganId=id;
+  $('#regPelResults').innerHTML=''; $('#regPelSearch').value='';
+  $('#regPelChosen').textContent='✓ '+nama+' (@'+username+')';
+  if(!$('#regName').value && username) $('#regName').value=username;
+}
+
+function regPayload(commit){
+  const vars={ PROFILE: ($('#regProfile').value||'').trim() };
+  if($('#regUser')) vars.USER_PPPOE=($('#regUser').value||'').trim();
+  if($('#regPass')) vars.PASSWORD_PPPOE=($('#regPass').value||'').trim();
+  return {
+    olt: currentOlt, sn:_regSn, pon:_regPon, templateId: $('#regTpl').value,
+    name: $('#regName').value.trim(), vars,
+    write: $('#regWrite').checked, pelanggan_id:_regPelangganId,
+    skipOnuAdd:_regSkipAdd, onuNumber:_regOnuNumber, commit:!!commit,
+  };
+}
+
+async function regPost(payload){
+  const r=await fetch(API+'/olt/onu/register',{
+    method:'POST', credentials:'same-origin',
+    headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  });
+  const j=await r.json();
+  if(!r.ok||!j.ok) throw new Error(j.error||('HTTP '+r.status));
+  return j.data;
+}
+
+async function regDryRun(){
+  $('#regCmdBox').innerHTML='<div class="loading">cek…</div>';
+  try{
+    const d=await regPost(regPayload(false));
+    _regCommands=d.commands;
+    $('#regCmdBox').innerHTML=`
+      <div class="t" style="margin-top:12px">COMMAND (akan dikirim) · ONU #${d.onuNumber} di PON ${d.pon}</div>
+      <pre class="cmdpre">${d.commands.join('\n')}</pre>`;
+    const b=$('#regCommitBtn'); b.disabled=false; b.style.opacity='1';
+  }catch(e){ $('#regCmdBox').innerHTML='<div class="err">'+e.message+'</div>'; }
+}
+
+async function regCommit(){
+  if(!confirm('Kirim command ini ke OLT produksi sekarang?')) return;
+  const b=$('#regCommitBtn'); b.disabled=true; b.textContent='Mengirim…';
+  $('#regCmdBox').insertAdjacentHTML('beforeend','<div class="loading">mengirim ke OLT…</div>');
+  try{
+    const d=await regPost(regPayload(true));
+    $('#regCmdBox').innerHTML=`<div class="pelbox linked"><div class="pelname">✓ Berhasil</div>
+      <div class="pelmeta">ONU ${d.index} ${d.written?'· tersimpan (write)':''}</div></div>`;
+    loadDashboard();
+  }catch(e){
+    $('#regCmdBox').insertAdjacentHTML('beforeend','<div class="err">Gagal: '+e.message+'</div>');
+    b.disabled=false; b.textContent='Kirim ke OLT';
+  }
+}
+
+function closeModal(){ if(_trafficTimer){clearInterval(_trafficTimer);_trafficTimer=null;} $('#overlay').classList.remove('show'); }
+
+function reapplyFromModal(){
+  const idx=_curIndex, pon=idx.split(':')[0], num=idx.split(':')[1];
+  openRegister(_curDetail?.sn||'', pon, {
+    skipOnuAdd:true, onuNumber:num,
+    pelangganId:_curPelanggan?.id||null,
+    pelangganNama:_curPelanggan?.nama||null,
+    pelangganUsername:_curPelanggan?.username||null,
+  });
+}
+
+const ACT_META={
+  reboot:{label:'Reboot ONU',danger:'medium',desc:'ONU restart, internet putus ~1-2 menit.'},
+  disable:{label:'Disable ONU',danger:'high',desc:'Kunci ONU — semua fungsi user diblokir.'},
+  enable:{label:'Enable ONU',danger:'low',desc:'Buka kunci ONU.'},
+  restore:{label:'Factory Reset',danger:'critical',desc:'Reset ONU ke setelan pabrik. Config WiFi/dll HILANG.'},
+  restore_wifi:{label:'Reset WiFi',danger:'high',desc:'Setelan WiFi ONU balik ke default.'},
+  delete:{label:'HAPUS / Unregister',danger:'critical',desc:'Hapus ONU dari OLT PERMANEN. Pelanggan offline total.'},
+};
+
+async function doAction(action){
+  const m=ACT_META[action]; if(!m) return;
+  const box=$('#actBox');
+  const pel=_curPelanggan?(' • '+_curPelanggan.nama):'';
+  // 1) dry-run dulu (liat command yg bakal dikirim)
+  box.innerHTML='<div class="loading">cek command…</div>';
+  let cmds=[];
+  try{
+    const r=await fetch(API+'/olt/onu/action',{method:'POST',credentials:'same-origin',
+      headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'},
+      body:JSON.stringify({olt:currentOlt,index:_curIndex,action})});
+    const j=await r.json(); if(!r.ok||!j.ok) throw new Error(j.error||('HTTP '+r.status));
+    cmds=j.data.commands||[];
+  }catch(e){ box.innerHTML='<div class="err">'+e.message+'</div>'; return; }
+
+  const dcls=m.danger==='critical'?'crit':m.danger==='high'?'warn':'';
+  // 2) konfirmasi berlapis sesuai bahaya
+  const needType = (m.danger==='critical'); // critical -> ketik nama ONU
+  box.innerHTML=`
+    <div class="actconfirm ${dcls}">
+      <div class="acthead">${m.label}${pel}</div>
+      <div class="actdesc">${m.desc}</div>
+      <pre class="cmdpre" style="max-height:120px">${cmds.join('\n')}</pre>
+      ${needType?`<div class="actdesc" style="margin-top:6px">Ketik <b>${_curIndex}</b> untuk konfirmasi:</div>
+        <input id="actType" placeholder="${_curIndex}" autocomplete="off" style="width:100%;margin-top:4px;font-family:var(--mono);font-size:13px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 10px">`:''}
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="actbtn" onclick="renderInfoTab()">Batal</button>
+        <button class="actbtn ${m.danger==='low'?'ok2':'danger'}" id="actGo" onclick="commitAction('${action}',${needType})">Kirim ke OLT</button>
+      </div>
+    </div>`;
+}
+
+async function commitAction(action, needType){
+  if(needType){
+    const v=($('#actType')?.value||'').trim();
+    if(v!==_curIndex){ alert('Konfirmasi tidak cocok. Ketik persis: '+_curIndex); return; }
+  }
+  const m=ACT_META[action];
+  if(!confirm(m.label+' untuk ONU '+_curIndex+'?\n\n'+m.desc)) return;
+  const btn=$('#actGo'); if(btn){ btn.disabled=true; btn.textContent='Mengirim…'; }
+  try{
+    const r=await fetch(API+'/olt/onu/action',{method:'POST',credentials:'same-origin',
+      headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'},
+      body:JSON.stringify({olt:currentOlt,index:_curIndex,action,commit:true})});
+    const j=await r.json(); if(!r.ok||!j.ok) throw new Error(j.error||('HTTP '+r.status));
+    $('#actBox').innerHTML='<div class="pelbox linked" style="margin-top:10px"><div class="pelname">✓ '+m.label+' terkirim</div><div class="pelmeta">ONU '+_curIndex+'</div></div>';
+    setTimeout(loadDashboard, 1500);
+  }catch(e){
+    $('#actBox').innerHTML='<div class="err">Gagal: '+e.message+'</div>';
+  }
+}
+$('#overlay').onclick=(e)=>{ if(e.target.id==='overlay') closeModal(); };
+
+$('#refreshBtn').onclick=loadDashboard;
+$('#syncBtn').onclick=async()=>{
+  const btn=$('#syncBtn'); const old=btn.textContent;
+  btn.disabled=true; btn.textContent='Menyinkron…';
+  showErr('');
+  try{
+    const r=await fetch(API+'/olt/sync?olt='+encodeURIComponent(currentOlt),{
+      method:'POST', credentials:'same-origin',
+      headers:{'Authorization':'Bearer '+TOKEN}
+    });
+    const j=await r.json();
+    if(!r.ok||!j.ok) throw new Error(j.error||('HTTP '+r.status));
+    const s=j.data;
+    btn.textContent='✓ '+(s.sn+s.username+s.nama+s.manual)+'/'+s.total+' terhubung';
+    setTimeout(()=>{ btn.textContent=old; btn.disabled=false; },3000);
+    await loadDashboard();
+  }catch(e){
+    showErr('Sinkron gagal: '+e.message);
+    btn.textContent=old; btn.disabled=false;
+  }
+};
+$('#autoChk').onchange=(e)=>{
+  if(e.target.checked) autoTimer=setInterval(loadDashboard,30000);
+  else clearInterval(autoTimer);
+};
+
+// ── Konfigurasi OLT (tambah/edit/hapus) ──
+$('#oltCfgBtn').onclick=()=>openOltConfig();
+
+async function openOltConfig(){
+  const ov=$('#overlay'), m=$('#modal');
+  m.innerHTML='<div class="loading">memuat…</div>';
+  ov.classList.add('show');
+  let list=[];
+  try{ list=await api('/olt/config/list'); }catch(e){ m.innerHTML='<div class="err">'+e.message+'</div>'; return; }
+  m.innerHTML=`
+    <button class="closex" onclick="closeModal()">&times;</button>
+    <h3>Konfigurasi OLT</h3>
+    <div class="idx">Tambah, ubah, atau hapus perangkat OLT</div>
+    <div id="oltCfgList" style="margin-top:14px">${renderOltCfgList(list)}</div>
+    <button class="linkbtn" style="margin-top:14px" onclick="oltCfgForm()">+ Tambah OLT baru</button>
+    <div id="oltCfgFormBox"></div>`;
+}
+
+function renderOltCfgList(list){
+  if(!list.length) return '<div class="muted2" style="font-size:13px;color:var(--muted)">Belum ada OLT.</div>';
+  return `<table><tbody>${list.map(o=>`
+    <tr>
+      <td><div style="font-weight:600">${esc(o.name)}</div>
+        <div class="mono" style="font-size:11px;color:var(--muted)">${esc(o.id)} · ${esc(o.host)}:${o.port} · ${esc(o.model||'C300')}${o.snmp?.hasCommunity?' · SNMP':''}</div></td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="actbtn" onclick='oltCfgForm(${JSON.stringify(o)})'>Edit</button>
+        <button class="actbtn danger" onclick="oltCfgDelete('${esc(o.id)}','${esc(o.name)}')">Hapus</button>
+      </td>
+    </tr>`).join('')}</tbody></table>`;
+}
+function esc(s){ return String(s==null?'':s).replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function oltCfgForm(o){
+  const e=o||{}; const isEdit=!!o;
+  $('#oltCfgFormBox').innerHTML=`
+    <div class="actconfirm" style="margin-top:14px">
+      <div class="acthead">${isEdit?'Edit OLT: '+esc(e.name):'Tambah OLT baru'}</div>
+      <div class="cfgrid">
+        <label>ID <input id="cf-id" value="${esc(e.id||'')}" ${isEdit?'readonly style="opacity:.6"':''} placeholder="mis: c320"></label>
+        <label>Nama <input id="cf-name" value="${esc(e.name||'')}" placeholder="OLT C320 - Idi"></label>
+        <label>Host/IP <input id="cf-host" value="${esc(e.host||'')}" placeholder="103.x.x.x"></label>
+        <label>Port <input id="cf-port" type="number" value="${e.port||22}"></label>
+        <label>Username <input id="cf-user" value="${esc(e.username||'')}" placeholder="rfnet"></label>
+        <label>Password <input id="cf-pass" type="password" value="" placeholder="${isEdit?'(kosongkan = tetap)':'password OLT'}"></label>
+        <label>Model <input id="cf-model" value="${esc(e.model||'C300')}" placeholder="C300 / C320"></label>
+      </div>
+      <details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;color:var(--muted)">SNMP (opsional)</summary>
+        <div class="cfgrid" style="margin-top:8px">
+          <label>Community <input id="cf-snmp-comm" value="" placeholder="${isEdit&&e.snmp?.hasCommunity?'(kosongkan = tetap)':'community'}"></label>
+          <label>Port <input id="cf-snmp-port" type="number" value="${e.snmp?.port||161}"></label>
+          <label>Col Down <input id="cf-snmp-cd" type="number" value="${e.snmp?.colDown||8}"></label>
+          <label>Col Up <input id="cf-snmp-cu" type="number" value="${e.snmp?.colUp||2}"></label>
+        </div>
+      </details>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="actbtn" onclick="$('#oltCfgFormBox').innerHTML=''">Batal</button>
+        <button class="actbtn ok2" id="cf-save" onclick="oltCfgSave()">${isEdit?'Simpan perubahan':'Tambah OLT'}</button>
+      </div>
+      <div id="cf-msg"></div>
+    </div>`;
+}
+
+async function oltCfgSave(){
+  const v=id=>($('#'+id)?.value||'').trim();
+  const body={
+    id:v('cf-id'), name:v('cf-name'), host:v('cf-host'),
+    port:parseInt(v('cf-port')||'22',10), username:v('cf-user'),
+    password:$('#cf-pass').value, model:v('cf-model')||'C300',
+  };
+  const comm=v('cf-snmp-comm');
+  if(comm) body.snmp={community:comm,port:parseInt(v('cf-snmp-port')||'161',10),colDown:parseInt(v('cf-snmp-cd')||'8',10),colUp:parseInt(v('cf-snmp-cu')||'2',10)};
+  const btn=$('#cf-save'); if(btn){ btn.disabled=true; btn.textContent='Menyimpan…'; }
+  try{
+    const r=await fetch(API+'/olt/config/save',{method:'POST',credentials:'same-origin',
+      headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const j=await r.json(); if(!r.ok||!j.ok) throw new Error(j.error||('HTTP '+r.status));
+    $('#cf-msg').innerHTML='<div class="pelbox linked" style="margin-top:10px"><div class="pelname">✓ Tersimpan</div></div>';
+    await loadOlts();                 // refresh dropdown
+    setTimeout(openOltConfig, 700);    // refresh list di modal
+  }catch(e){
+    $('#cf-msg').innerHTML='<div class="err">'+e.message+'</div>';
+    if(btn){ btn.disabled=false; btn.textContent='Simpan'; }
+  }
+}
+
+async function oltCfgDelete(id,nama){
+  if(!confirm('Hapus OLT "'+nama+'" ('+id+')?\n\nIni cuma hapus dari daftar config SimBill, TIDAK menyentuh perangkat OLT.')) return;
+  try{
+    const r=await fetch(API+'/olt/config/delete',{method:'POST',credentials:'same-origin',
+      headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'},body:JSON.stringify({id})});
+    const j=await r.json(); if(!r.ok||!j.ok) throw new Error(j.error||('HTTP '+r.status));
+    await loadOlts();
+    openOltConfig();
+  }catch(e){ alert('Gagal hapus: '+e.message); }
+}
+
+// ── wiring kontrol baru (search, filter PON, sidebar, menu) ──
+$('#searchInp').oninput=(e)=>{ _search=e.target.value.trim(); renderTable(); };
+$('#ponSel').onchange=(e)=>{ _ponFilter=e.target.value; $('#tbSub').textContent=($('#tbName').textContent? '':'')+( _ponFilter? 'PON '+_ponFilter : 'Semua PON'); renderTable(); renderSidebar(null,_allOnus); };
+document.querySelectorAll('.sd-stat').forEach(el=>{
+  el.onclick=()=>{
+    const f=el.getAttribute('data-filter')||'';
+    _filter = (_filter===f)? '' : f;
+    document.querySelectorAll('.sd-stat').forEach(s=>s.classList.remove('active'));
+    if(_filter) el.classList.add('active');
+    renderTable();
+  };
+});
+$('#menuBtn').onclick=(e)=>{
+  e.stopPropagation();
+  const pop=$('#menuPop');
+  if(pop.innerHTML){ pop.innerHTML=''; return; }
+  const list=window._oltList||[];
+  pop.className='menu-pop';
+  pop.innerHTML=`
+    <button onclick="openOltConfig()">⚙ Kelola OLT</button>
+    ${list.length>1?'<div style="border-top:1px solid var(--line);margin:4px 0"></div>'+list.map(o=>`<button onclick="switchOlt('${o.id}')">${o.id===currentOlt?'● ':'○ '}${esc(o.name)}</button>`).join(''):''}`;
+};
+document.addEventListener('click',()=>{ const p=$('#menuPop'); if(p) p.innerHTML=''; });
+function switchOlt(id){ currentOlt=id; $('#menuPop').innerHTML=''; _filter=''; _ponFilter=''; _search=''; $('#searchInp').value=''; document.querySelectorAll('.sd-stat').forEach(s=>s.classList.remove('active')); loadDashboard(); }
+
+(async function init(){
+  try{ await loadOlts(); await loadDashboard(); }
+  catch(e){ showErr('Init gagal: '+e.message+' — cek config/olt.json & route /olt terpasang.'); }
+})();
+</script>
+</body>
+</html>
