@@ -1,0 +1,10 @@
+{
+  "C300_CONTOH": {
+    "host": "192.168.1.1",
+    "port": 22,
+    "username": "admin",
+    "password": "GANTI_PASSWORD_DISINI",
+    "merk": "zte",
+    "model": "C300"
+  }
+}
