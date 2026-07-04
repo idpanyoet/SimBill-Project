@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Portal Pelanggan — SimBill</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;700;800&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#eceaf4;--bg2:#faf9fe;--bg3:#f3f1fb;
+  --border:#e4e1ee;--border2:#d3cee8;
+  --accent:#4f46e5;--accent2:#7c3aed;
+  --green:#16a34a;--red:#dc2626;--amber:#d97706;
+  --text:#161325;--text2:#5a5670;--text3:#8d89a3;
+  --disp:'Bricolage Grotesque',sans-serif;--mono:'Space Mono',ui-monospace,monospace;
+  --grad:linear-gradient(135deg,#4f46e5,#7c3aed 70%,#a855f7);
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;min-height:100vh;padding-bottom:74px}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(560px 360px at 12% -6%,rgba(124,58,237,.16),transparent 60%),
+             radial-gradient(560px 360px at 100% 108%,rgba(79,70,229,.14),transparent 60%)}
+
+/* NAV */
+nav{background:rgba(255,255,255,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:0 18px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:11px}
+.brand .mark{width:36px;height:36px;border-radius:11px;background:var(--grad);display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 6px 18px -4px rgba(124,58,237,.45);flex-shrink:0}
+.brand-txt{display:flex;flex-direction:column;line-height:1.18}
+.brand-txt b{font-family:var(--disp);font-size:15px;font-weight:800;color:var(--text)}
+.brand-txt small{font-size:10.5px;color:var(--text3);font-weight:500}
+.nav-right{display:flex;align-items:center;gap:10px}
+.nav-nama{font-size:12px;color:var(--text2);font-weight:600;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn-logout-nav{font-size:11px;padding:7px 13px;background:#fff;border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;font-family:inherit;font-weight:600;transition:.15s}
+.btn-logout-nav:hover{border-color:var(--border2);background:var(--bg2)}
+/* Eyebrow heading (gaya license) */
+.eyebrow{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--text3);font-weight:700}
+.page-head{margin-bottom:16px}
+.page-head h1{font-family:var(--disp);font-size:23px;font-weight:800;letter-spacing:-.01em;margin-top:3px}
+
+/* PAGES */
+.page{display:none;padding:20px 18px;max-width:760px;margin:0 auto;position:relative;z-index:1}
+.page.active{display:block;animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* BOTTOM NAV */
+.bot-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-top:1px solid var(--border);display:flex;z-index:100;box-shadow:0 -6px 20px -12px rgba(22,19,37,.18)}
+.bot-item{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:11px 5px;cursor:pointer;color:var(--text3);font-size:10px;font-weight:500;transition:color .15s;border:none;background:none;font-family:inherit}
+.bot-item.active{color:var(--accent)}
+.bot-item.active::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:36px;height:3px;border-radius:0 0 4px 4px;background:var(--grad)}
+.bot-item .ico{font-size:20px;line-height:1;transition:transform .15s}
+.bot-item.active .ico{transform:translateY(-1px) scale(1.1)}
+
+/* LOGIN */
+.login-wrap{position:relative;overflow:hidden;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.login-orb{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;pointer-events:none;animation:orbFloat 16s ease-in-out infinite}
+.login-orb.o1{width:340px;height:340px;background:#a78bfa;top:-110px;left:-70px}
+.login-orb.o2{width:320px;height:320px;background:#818cf8;bottom:-120px;right:-80px;animation-delay:-6s}
+.login-orb.o3{width:240px;height:240px;background:#c4b5fd;bottom:40px;left:30%;animation-delay:-10s;opacity:.4}
+@keyframes orbFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-26px) scale(1.08)}}
+.login-box{position:relative;z-index:1;background:#fff;border:1px solid var(--line,#e4e1ee);border-radius:24px;padding:38px 32px 28px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 30px 70px -28px rgba(76,40,130,.45),0 2px 8px rgba(22,19,37,.05);animation:loginIn .6s cubic-bezier(.2,.8,.2,1)}
+.login-box::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--grad)}
+@keyframes loginIn{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}
+.login-logo{text-align:center;margin-bottom:24px}
+.login-logo .ico{position:relative;width:60px;height:60px;border-radius:17px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px;box-shadow:0 12px 28px -6px rgba(124,58,237,.5);animation:logoFloat 4s ease-in-out infinite}
+@keyframes logoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.login-logo h2{font-family:var(--disp);font-size:27px;font-weight:800;letter-spacing:-.01em;color:var(--text)}
+.login-logo p{font-size:13px;color:var(--text2);margin-top:6px}
+.login-secure{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:22px;padding-top:16px;border-top:1px solid var(--border);font-size:11px;color:var(--text3)}
+.login-secure .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(22,163,74,.6);animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+.step{display:none}
+.step.active{display:block}
+
+/* FORM */
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+.fg input,.fg select,.fg textarea{width:100%;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;transition:.15s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--accent2);background:#fff;box-shadow:0 0 0 3px rgba(124,58,237,.14)}
+.fg input::placeholder,.fg textarea::placeholder{color:var(--text3)}
+.fg textarea{resize:vertical;min-height:90px}
+.fg select option{background:#fff;color:var(--text)}
+
+/* BUTTONS */
+.btn{padding:12px 18px;border:1px solid var(--border);border-radius:12px;color:var(--text);background:#fff;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:transform .12s,box-shadow .2s,filter .2s,background .2s}
+.btn:hover{border-color:var(--border2);background:var(--bg2)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 10px 24px -8px rgba(99,102,241,.5)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.primary:disabled{opacity:.55;cursor:not-allowed;filter:none}
+.btn.danger{background:rgba(220,38,38,.08);color:var(--red);border-color:rgba(220,38,38,.22)}
+.btn.full{width:100%;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn.sm{padding:6px 13px;font-size:11px;border-radius:9px}
+
+/* CARD */
+.card{background:var(--card,#fff);border:1px solid var(--border);border-radius:20px;padding:18px;margin-bottom:13px;box-shadow:0 10px 30px -16px rgba(60,40,120,.18)}
+.card-title{font-family:var(--disp);font-size:14px;font-weight:700;color:var(--text);margin-bottom:13px;display:flex;align-items:center;justify-content:space-between}
+.card-title .sub{font-size:11px;color:var(--text3);font-weight:400;font-family:'Inter',sans-serif}
+
+/* STATUS */
+.status-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+.status-row:last-child{border-bottom:none}
+.status-row .lbl{color:var(--text2)}
+.status-row .val{font-weight:600}
+.tag{display:inline-flex;align-items:center;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600}
+.tag.aktif,.tag.paid,.tag.selesai{background:rgba(22,163,74,.12);color:#15803d}
+.tag.suspend,.tag.overdue{background:rgba(220,38,38,.1);color:var(--red)}
+.tag.unpaid,.tag.proses{background:rgba(217,119,6,.12);color:#b45309}
+.tag.open{background:rgba(79,70,229,.12);color:var(--accent)}
+
+/* METRIC MINI */
+.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;margin-bottom:13px}
+.metric{position:relative;overflow:hidden;border:none;border-radius:16px;padding:16px;color:#fff;box-shadow:0 12px 26px -14px rgba(22,19,37,.4)}
+.metric::before{content:"";position:absolute;top:-26px;right:-16px;width:92px;height:92px;border-radius:50%;background:rgba(255,255,255,.16)}
+.metric::after{content:"";position:absolute;bottom:-34px;right:34px;width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.1)}
+.metric>*{position:relative;z-index:1}
+.metric:nth-child(1){background:linear-gradient(135deg,#10b981,#059669)}
+.metric:nth-child(2){background:linear-gradient(135deg,#4f46e5,#4338ca)}
+.metric:nth-child(3){background:linear-gradient(135deg,#f59e0b,#d97706)}
+.metric:nth-child(4){background:linear-gradient(135deg,#8b5cf6,#7c3aed)}
+.metric .ico{font-size:22px;margin-bottom:6px}
+.metric .val{font-family:var(--disp);font-size:21px;font-weight:800;color:#fff}
+.metric .lbl{font-size:11px;color:rgba(255,255,255,.92);margin-top:2px}
+
+/* INVOICE LIST */
+.inv-item{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border)}
+.inv-item:last-child{border-bottom:none}
+.inv-left .no{font-size:12.5px;font-weight:600;color:var(--text)}
+.inv-left .tgl{font-size:11px;color:var(--text3);margin-top:2px}
+.inv-right{text-align:right}
+.inv-right .harga{font-size:14px;font-weight:700;font-family:var(--mono)}
+.inv-right .aksi{margin-top:6px}
+
+/* TIKET */
+.tiket-item{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:9px;cursor:pointer;transition:.15s}
+.tiket-item:hover{border-color:var(--border2);background:#fff;box-shadow:0 6px 18px -12px rgba(22,19,37,.25)}
+.tiket-judul{font-size:13px;font-weight:600;margin-bottom:5px}
+.tiket-meta{font-size:11px;color:var(--text3);display:flex;gap:10px}
+
+/* CHAT */
+.chat-wrap{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;max-height:350px;overflow-y:auto}
+.chat-msg{max-width:80%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.5}
+.chat-msg.admin{background:var(--grad);color:#fff;border:none;align-self:flex-start;border-bottom-left-radius:4px}
+.chat-msg.pelanggan{background:var(--bg3);border:1px solid var(--border);align-self:flex-end;border-bottom-right-radius:4px}
+.chat-msg .sender{font-size:10px;font-weight:700;margin-bottom:4px;opacity:.85}
+.chat-msg .waktu{font-size:10px;opacity:.7;margin-top:4px;text-align:right}
+.chat-foto{max-width:200px;border-radius:8px;margin-top:6px;cursor:pointer}
+
+/* OTP */
+.otp-wrap{display:flex;gap:9px;justify-content:center;margin:18px 0}
+.otp-wrap input{width:44px;height:52px;text-align:center;font-size:21px;font-weight:700;font-family:var(--mono);background:var(--bg2);border:1px solid var(--border);border-radius:12px;color:var(--text);-moz-appearance:textfield}
+.otp-wrap input::-webkit-outer-spin-button,.otp-wrap input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.otp-wrap input:focus{outline:none;border-color:var(--accent2);background:#fff;box-shadow:0 0 0 3px rgba(124,58,237,.14)}
+
+/* UPLOAD */
+.upload-area{border:2px dashed var(--border2);border-radius:12px;padding:22px;text-align:center;cursor:pointer;transition:.2s;position:relative;background:var(--bg2)}
+.upload-area:hover{border-color:var(--accent2);background:#fff}
+.upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upload-area .ico{font-size:28px;margin-bottom:6px}
+.upload-area p{font-size:12px;color:var(--text2)}
+.preview-foto{max-width:100%;border-radius:10px;margin-top:10px;display:none}
+
+/* EMPTY */
+.empty{text-align:center;padding:42px 20px;color:var(--text3)}
+.empty .ico{font-size:38px;margin-bottom:10px;opacity:.7}
+.empty p{font-size:13px}
+
+/* TOAST */
+.toast-el{position:fixed;bottom:84px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;border-radius:12px;padding:11px 18px;font-size:13px;font-weight:600;display:none;align-items:center;gap:8px;z-index:400;white-space:nowrap;max-width:90vw;box-shadow:0 12px 30px -10px rgba(22,19,37,.5)}
+.toast-el.show{display:flex;animation:fade .25s ease}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(22,19,37,.42);backdrop-filter:blur(4px);z-index:200;display:none;align-items:flex-end;justify-content:center;padding:0}
+.overlay.open{display:flex}
+.modal{background:#fff;border:1px solid var(--border);border-radius:20px 20px 0 0;width:100%;max-width:500px;max-height:85vh;overflow-y:auto;animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(40px);opacity:.6}to{transform:none;opacity:1}}
+.modal-hdr{padding:18px 18px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;position:sticky;top:0;background:#fff;z-index:1;border-bottom:1px solid var(--border);padding-bottom:13px}
+.modal-hdr h3{font-family:var(--disp);font-size:16px;font-weight:700}
+.btn-x{width:30px;height:30px;border-radius:9px;background:var(--bg2);border:1px solid var(--border);color:var(--text2);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.btn-x:hover{background:var(--bg3);color:var(--text)}
+.modal-body{padding:0 18px 24px}
+
+/* SESI */
+.sesi-item{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);font-size:12px}
+.sesi-item:last-child{border-bottom:none}
+.sesi-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 6px rgba(22,163,74,.5)}
+.sesi-info{flex:1}
+.sesi-info .ip{font-weight:600;font-family:var(--mono)}
+.sesi-info .meta{color:var(--text3);margin-top:1px}
+
+@media(min-width:560px){
+  .overlay{align-items:center;padding:20px}
+  .modal{border-radius:20px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="app-login" class="login-wrap">
+  <div class="login-orb o1"></div>
+  <div class="login-orb o2"></div>
+  <div class="login-orb o3"></div>
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="ico js-app-logo">⚡</div>
+      <h2>Portal Pelanggan</h2>
+      <p>Login dengan nomor WhatsApp Anda</p>
+    </div>
+
+    <!-- Step 1: No HP -->
+    <div class="step active" id="step-hp">
+      <div class="fg">
+        <label>Nomor WhatsApp</label>
+        <input type="tel" id="inp-hp" placeholder="08xxxxxxxxxx atau 628xxxxxxxxx" maxlength="15">
+      </div>
+      <button class="btn primary full" onclick="kirimOTP()" id="btn-kirim-otp">
+        📲 Kirim OTP via WhatsApp
+      </button>
+      <p style="text-align:center;font-size:11px;color:var(--text3);margin-top:12px">
+        OTP akan dikirim ke WhatsApp terdaftar
+      </p>
+    </div>
+
+    <!-- Step 2: OTP -->
+    <div class="step" id="step-otp">
+      <p style="text-align:center;font-size:13px;color:var(--text2);margin-bottom:4px">Masukkan kode OTP yang dikirim ke</p>
+      <p style="text-align:center;font-size:14px;font-weight:600;margin-bottom:16px" id="otp-nohp-display">—</p>
+      <div class="otp-wrap" id="otp-inputs">
+        <input type="number" maxlength="1" oninput="otpInput(this,0)">
+        <input type="number" maxlength="1" oninput="otpInput(this,1)">
+        <input type="number" maxlength="1" oninput="otpInput(this,2)">
+        <input type="number" maxlength="1" oninput="otpInput(this,3)">
+        <input type="number" maxlength="1" oninput="otpInput(this,4)">
+        <input type="number" maxlength="1" oninput="otpInput(this,5)">
+      </div>
+      <button class="btn primary full" onclick="verifikasiOTP()" id="btn-verif">✅ Verifikasi</button>
+      <button class="btn full" style="margin-top:8px" onclick="showStep('hp')">← Ganti Nomor</button>
+      <p style="text-align:center;font-size:11px;color:var(--text3);margin-top:12px">
+        OTP berlaku 5 menit · <span id="resend-countdown"></span>
+        <span id="resend-btn" style="display:none;color:var(--accent);cursor:pointer" onclick="kirimOTP()">Kirim ulang</span>
+      </p>
+    </div>
+    <div class="login-secure"><span class="dot"></span> Koneksi aman & terenkripsi · LintasHome 2026</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app-main" style="display:none">
+  <nav>
+    <div class="brand">
+      <span class="mark js-app-logo"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5a9 9 0 0 1 14 0"/><path d="M8.5 15.5a4.5 4.5 0 0 1 7 0"/><circle cx="12" cy="18.5" r="1.3" fill="currentColor" stroke="none"/></svg></span>
+      <div class="brand-txt"><b class="js-app-name">SimBill</b><small>Portal Pelanggan</small></div>
+    </div>
+    <div class="nav-right">
+      <span class="nav-nama" id="nav-nama">—</span>
+      <button class="btn-logout-nav" onclick="logout()">Keluar</button>
+    </div>
+  </nav>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="pg-dashboard">
+    <div class="page-head">
+      <div class="eyebrow">Dashboard</div>
+      <h1>Halo, <span id="dash-greet">Pelanggan</span> 👋</h1>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="ico">📶</div><div class="val" id="m-status">—</div><div class="lbl">Status</div></div>
+      <div class="metric"><div class="ico">📦</div><div class="val" id="m-paket">—</div><div class="lbl">Paket</div></div>
+      <div class="metric"><div class="ico">📅</div><div class="val" id="m-expired">—</div><div class="lbl">Jatuh Tempo</div></div>
+      <div class="metric"><div class="ico">🖥️</div><div class="val" id="m-sesi">—</div><div class="lbl">Sesi Aktif</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Info Koneksi</div>
+      <div class="status-row"><span class="lbl">Username</span><span class="val" id="d-username">—</span></div>
+      <div class="status-row"><span class="lbl">Tipe</span><span class="val" id="d-tipe">—</span></div>
+      <div class="status-row"><span class="lbl">Kecepatan</span><span class="val" id="d-speed">—</span></div>
+      <div class="status-row"><span class="lbl">Status</span><span class="val" id="d-status-tag">—</span></div>
+    </div>
+
+    <div class="card" id="card-pemakaian">
+      <div class="card-title">📊 Pemakaian Bulan Ini <span class="sub" id="pakai-bulan"></span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="position:relative;overflow:hidden;border-radius:14px;padding:14px;color:#fff;background:linear-gradient(135deg,#3b82f6,#2563eb);box-shadow:0 8px 22px -12px rgba(0,0,0,.5)">
+          <div style="position:absolute;top:-22px;right:-14px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.14)"></div>
+          <div style="position:relative"><div style="font-size:12px;opacity:.9">⬇️ Unduh (Download)</div><div id="pakai-unduh" style="font-size:22px;font-weight:800;margin-top:4px">0 GB</div></div>
+        </div>
+        <div style="position:relative;overflow:hidden;border-radius:14px;padding:14px;color:#fff;background:linear-gradient(135deg,#8b5cf6,#7c3aed);box-shadow:0 8px 22px -12px rgba(0,0,0,.5)">
+          <div style="position:absolute;top:-22px;right:-14px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.14)"></div>
+          <div style="position:relative"><div style="font-size:12px;opacity:.9">⬆️ Unggah (Upload)</div><div id="pakai-unggah" style="font-size:22px;font-weight:800;margin-top:4px">0 GB</div></div>
+        </div>
+      </div>
+      <div style="margin-top:10px;text-align:center;font-size:12px;color:var(--text2)">Total pemakaian: <b id="pakai-total" style="color:var(--text)">0 GB</b></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Tagihan Terakhir</div>
+      <div id="tagihan-mini"></div>
+    </div>
+
+    <div class="card">
+      <button onclick="perpanjangSekarang(this)" style="width:100%;padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,#BA7517,#B45309);color:#fff;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        ⏱ Perpanjang / Bayar Sekarang
+      </button>
+      <div style="font-size:11px;color:#94a3b8;text-align:center;margin-top:7px">Bayar untuk memperpanjang masa aktif internet Anda</div>
+    </div>
+  </div>
+
+  <!-- TAGIHAN -->
+  <div class="page" id="pg-tagihan">
+    <div class="card">
+      <div class="card-title">Invoice & Tagihan</div>
+      <div id="tagihan-list"><div class="empty"><div class="ico">🧾</div><p>Memuat...</p></div></div>
+    </div>
+  </div>
+
+  <!-- GANTI PASSWORD WIFI via TR-069 -->
+  <div class="page" id="pg-password">
+    <div class="card" id="card-acs-status" style="margin-bottom:12px;display:none">
+      <div class="card-title">📡 Router Terdeteksi</div>
+      <div id="acs-device-info"></div>
+    </div>
+
+    <div class="card" id="card-no-acs" style="margin-bottom:12px;display:none">
+      <div style="text-align:center;padding:16px 0">
+        <div style="font-size:32px;margin-bottom:8px">⚠️</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:6px">Router belum terhubung ke ACS</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">Router Anda belum terdaftar di sistem manajemen kami. Hubungi admin untuk mengaktifkan fitur ini.</div>
+      </div>
+    </div>
+
+    <div class="card" id="card-akun-hotspot" style="display:none">
+      <div class="card-title">🔑 Ganti Username &amp; Sandi Hotspot</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6">Ubah username dan/atau password akun hotspot Anda. Setelah disimpan, sesi aktif akan diputus dan Anda perlu menyambung ulang ke hotspot lalu login dengan kredensial baru.</p>
+      <div class="fg">
+        <label>Username Hotspot</label>
+        <input type="text" id="inp-username-baru" placeholder="Username baru" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false">
+      </div>
+      <div class="fg"><label>Password Baru <span style="color:var(--text3)">(kosongkan jika tidak diganti)</span></label>
+        <div style="position:relative">
+          <input type="password" id="inp-hs-pw-baru" placeholder="Password baru" style="padding-right:38px" autocomplete="new-password">
+          <button type="button" onclick="togglePw('inp-hs-pw-baru',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px">👁</button>
+        </div>
+      </div>
+      <div class="fg"><label>Konfirmasi Password</label>
+        <div style="position:relative">
+          <input type="password" id="inp-hs-pw-konf" placeholder="Ulangi password baru" style="padding-right:38px" autocomplete="new-password">
+          <button type="button" onclick="togglePw('inp-hs-pw-konf',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px">👁</button>
+        </div>
+      </div>
+      <button class="btn primary full" onclick="gantiAkunHotspot()" id="btn-ganti-akun">💾 Simpan Perubahan</button>
+    </div>
+
+    <div class="card" id="card-pw-form">
+      <div class="card-title">🔑 Ganti Password WiFi</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6">Masukkan password WiFi baru. Jika router Anda sudah terdaftar di sistem kami, perubahan akan langsung dikirim ke router. Jika belum, permintaan akan diteruskan ke admin.</p>
+      <div class="fg">
+        <label>SSID (Nama WiFi) — ubah jika ingin ganti</label>
+        <input type="text" id="inp-ssid" placeholder="Nama WiFi">
+      </div>
+      <div class="fg"><label>Password WiFi Baru <span style="color:var(--red)">*</span></label>
+        <div style="position:relative">
+          <input type="password" id="inp-pw-baru" placeholder="Minimal 8 karakter" style="padding-right:38px">
+          <button type="button" onclick="togglePw('inp-pw-baru',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px">👁</button>
+        </div>
+      </div>
+      <div class="fg"><label>Konfirmasi Password <span style="color:var(--red)">*</span></label>
+        <div style="position:relative">
+          <input type="password" id="inp-pw-konf" placeholder="Ulangi password baru" style="padding-right:38px">
+          <button type="button" onclick="togglePw('inp-pw-konf',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px">👁</button>
+        </div>
+      </div>
+      <button class="btn primary full" onclick="gantiPasswordWifi()" id="btn-ganti-pw">📶 Ganti Password WiFi</button>
+    </div>
+
+    <div class="card" id="card-perangkat">
+      <div class="card-title">📶 Perangkat Terhubung <span class="sub" id="perangkat-info" style="cursor:pointer" onclick="loadPerangkatWifi(true)">⟳ Segarkan</span></div>
+      <div id="list-perangkat"><div class="empty"><div class="ico">📡</div><p>Memuat...</p></div></div>
+    </div>
+  </div>
+
+  <!-- TIKET -->
+  <div class="page" id="pg-tiket">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:15px;font-weight:600">🎫 Tiket Laporan</div>
+      <button class="btn sm primary" onclick="bukaModalTiket()">+ Buat Tiket</button>
+    </div>
+    <div id="tiket-list"><div class="empty"><div class="ico">🎫</div><p>Belum ada tiket</p></div></div>
+  </div>
+
+  <!-- PROFIL -->
+  <div class="page" id="pg-profil">
+    <div class="card">
+      <div class="card-title">👤 Profil Saya</div>
+      <div class="status-row"><span class="lbl">Nama</span><span class="val" id="p-nama">—</span></div>
+      <div class="status-row"><span class="lbl">Nomor HP</span><span class="val" id="p-nohp">—</span></div>
+      <div class="status-row"><span class="lbl">Email</span><span class="val" id="p-email">—</span></div>
+      <div class="status-row"><span class="lbl">Alamat</span><span class="val" id="p-alamat">—</span></div>
+      <div class="status-row"><span class="lbl">Username</span><span class="val" id="p-username">—</span></div>
+      <div class="status-row"><span class="lbl">Paket</span><span class="val" id="p-paket">—</span></div>
+    </div>
+    <button class="btn primary full" onclick="bukaEditProfil()" style="margin-bottom:10px">✏️ Edit Profil</button>
+    <button class="btn danger full" onclick="logout()">🚪 Keluar</button>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bot-nav">
+    <button class="bot-item active" onclick="showPage('dashboard',this)"><span class="ico">🏠</span>Beranda</button>
+    <button class="bot-item" onclick="showPage('tagihan',this)"><span class="ico">🧾</span>Tagihan</button>
+    <button class="bot-item" onclick="showPage('password',this)"><span class="ico">🔑</span>Password</button>
+    <button class="bot-item" onclick="showPage('tiket',this)"><span class="ico">🎫</span>Tiket</button>
+    <button class="bot-item" onclick="showPage('profil',this)"><span class="ico">👤</span>Profil</button>
+  </div>
+</div>
+
+<!-- MODAL BUAT TIKET -->
+<div class="overlay" id="ov-tiket">
+  <div class="modal">
+    <div class="modal-hdr"><h3>🎫 Buat Tiket</h3><button class="btn-x" onclick="tutupModal('ov-tiket')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label>Kategori</label>
+        <select id="tk-kategori">
+          <option value="gangguan">📡 Gangguan Internet</option>
+          <option value="billing">💳 Masalah Tagihan</option>
+          <option value="umum">💬 Pertanyaan Umum</option>
+          <option value="lainnya">🔧 Lainnya</option>
+        </select>
+      </div>
+      <div class="fg"><label>Judul</label><input type="text" id="tk-judul" placeholder="Singkat dan jelas..."></div>
+      <div class="fg"><label>Deskripsi</label><textarea id="tk-pesan" placeholder="Jelaskan masalah Anda..."></textarea></div>
+      <div class="fg">
+        <label>Foto (opsional)</label>
+        <div class="upload-area" id="upload-area">
+          <input type="file" id="tk-foto" accept="image/*" onchange="previewFoto(this)">
+          <div class="ico">📷</div>
+          <p>Klik atau tap untuk upload foto</p>
+        </div>
+        <img id="preview-foto" class="preview-foto">
+      </div>
+      <button class="btn primary full" onclick="kirimTiket()" id="btn-kirim-tiket">📤 Kirim Tiket</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETAIL TIKET -->
+<div class="overlay" id="ov-tiket-detail">
+  <div class="modal">
+    <div class="modal-hdr"><h3 id="detail-judul">Detail Tiket</h3><button class="btn-x" onclick="tutupModal('ov-tiket-detail')">✕</button></div>
+    <div class="modal-body">
+      <div id="detail-meta" style="margin-bottom:12px;font-size:12px;color:var(--text3)"></div>
+      <div class="chat-wrap" id="chat-wrap"></div>
+      <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:4px">
+        <div class="fg" style="margin-bottom:8px">
+          <textarea id="reply-pesan" placeholder="Tulis balasan..." style="min-height:70px"></textarea>
+        </div>
+        <button class="btn primary full" onclick="kirimBalasan()" id="btn-balas">📤 Kirim Balasan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ov-edit-profil">
+  <div class="modal">
+    <div class="modal-hdr"><h3>✏️ Edit Profil</h3><button class="btn-x" onclick="tutupModal('ov-edit-profil')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg"><label>Nama</label><input id="ep-nama" type="text" placeholder="Nama lengkap"></div>
+      <div class="fg"><label>Nomor HP</label><input id="ep-nohp" type="tel" placeholder="08xxxxxxxxxx"></div>
+      <div class="fg"><label>Email</label><input id="ep-email" type="email" placeholder="email@contoh.com"></div>
+      <div class="fg"><label>Alamat</label><textarea id="ep-alamat" placeholder="Alamat lengkap"></textarea></div>
+      <div class="fg"><label>Username (tidak bisa diubah)</label><input id="ep-username" type="text" disabled style="opacity:.6;cursor:not-allowed"></div>
+      <div class="fg"><label>Paket (tidak bisa diubah)</label><input id="ep-paket" type="text" disabled style="opacity:.6;cursor:not-allowed"></div>
+      <button class="btn primary full" id="ep-btn" onclick="simpanProfil()">💾 Simpan Perubahan</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-el" id="toast-el"></div>
+
+<script>
+
+function applyBranding(d){
+  try{
+    if(d && d.app_name){ document.querySelectorAll('.js-app-name').forEach(function(e){ e.textContent=d.app_name; }); }
+    if(d && d.app_logo){
+      document.querySelectorAll('.js-app-logo').forEach(function(e){
+        e.style.background='transparent'; e.style.boxShadow='none';
+        e.innerHTML='<img src="'+d.app_logo+'" alt="logo" style="width:100%;height:100%;object-fit:contain;display:block">';
+      });
+      var fav=document.querySelector('link[rel="icon"]'); if(fav){ fav.href=d.app_logo; fav.removeAttribute('type'); }
+    }
+  }catch(_){}
+}
+(function(){ fetch('/voucher/info').then(function(r){return r.json();}).then(applyBranding).catch(function(){}); })();
+const TOKEN_KEY   = 'nb_client_token';
+const PROFIL_KEY  = 'nb_client_profil';
+let profil        = null;
+let noHpLogin     = '';
+let tiketAktifId  = null;
+let countdown     = null;
+
+// ── INIT ─────────────────────────────────────────────────────
+window.addEventListener('load', function() {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) {
+    profil = JSON.parse(localStorage.getItem(PROFIL_KEY) || '{}');
+    tampilkanApp();
+    loadDashboard();
+  }
+  // OTP box — auto move focus
+  document.querySelectorAll('.otp-wrap input').forEach(function(inp, i, arr) {
+    inp.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' && !inp.value && i > 0) arr[i-1].focus();
+    });
+  });
+});
+
+// ── HELPER ───────────────────────────────────────────────────
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+
+async function apiFetch(path, opts) {
+  opts = opts || {};
+  opts.headers = opts.headers || {};
+  const token = getToken();
+  if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+  const r = await fetch(path, opts);
+  if (!r.ok) {
+    const err = await r.json().catch(function() { return { error: 'Error ' + r.status }; });
+    throw new Error(err.error || 'Terjadi kesalahan');
+  }
+  return r.json();
+}
+
+function toast(msg) {
+  var el = document.getElementById('toast-el');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(el._t); el._t = setTimeout(function() { el.classList.remove('show'); }, 3500);
+}
+
+function tutupModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function togglePw(id, btn) {
+  var el = document.getElementById(id);
+  var show = el.type === 'password';
+  el.type = show ? 'text' : 'password';
+  btn.textContent = show ? '🙈' : '👁';
+}
+
+function fmt(n) {
+  return 'Rp ' + Number(n).toLocaleString('id-ID');
+}
+function fmtData(bytes) {
+  var b = Number(bytes) || 0;
+  if (b >= 1073741824) return (b / 1073741824).toFixed(2) + ' GB';
+  if (b >= 1048576)    return (b / 1048576).toFixed(1) + ' MB';
+  if (b >= 1024)       return (b / 1024).toFixed(0) + ' KB';
+  return b + ' B';
+}
+
+function fmtTgl(s) {
+  if (!s) return '—';
+  return new Date(s).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────
+function showStep(step) {
+  document.querySelectorAll('.step').forEach(function(s) { s.classList.remove('active'); });
+  document.getElementById('step-' + step).classList.add('active');
+}
+
+function otpInput(el, idx) {
+  var v = el.value.replace(/\D/g,'').slice(-1);
+  el.value = v;
+  var inputs = document.querySelectorAll('.otp-wrap input');
+  if (v && idx < 5) inputs[idx+1].focus();
+  if (idx === 5 && v) verifikasiOTP();
+}
+
+async function kirimOTP() {
+  var nohp = document.getElementById('inp-hp').value.trim();
+  if (!nohp) { toast('❗ Masukkan nomor WhatsApp'); return; }
+  noHpLogin = nohp;
+  var btn = document.getElementById('btn-kirim-otp');
+  btn.disabled = true; btn.textContent = '⏳ Mengirim...';
+  try {
+    var d = await apiFetch('/api/client/otp/kirim', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ no_hp: nohp })
+    });
+    toast('✅ OTP dikirim ke ' + nohp);
+    document.getElementById('otp-nohp-display').textContent = nohp;
+    document.querySelectorAll('.otp-wrap input').forEach(function(i) { i.value = ''; });
+    document.querySelectorAll('.otp-wrap input')[0].focus();
+    showStep('otp');
+    startCountdown();
+  } catch(e) { toast('❌ ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = '📲 Kirim OTP via WhatsApp'; }
+}
+
+function startCountdown() {
+  var sisa = 60;
+  var el = document.getElementById('resend-countdown');
+  var elBtn = document.getElementById('resend-btn');
+  elBtn.style.display = 'none';
+  clearInterval(countdown);
+  countdown = setInterval(function() {
+    sisa--;
+    el.textContent = sisa + 'd ';
+    if (sisa <= 0) {
+      clearInterval(countdown);
+      el.textContent = '';
+      elBtn.style.display = 'inline';
+    }
+  }, 1000);
+}
+
+async function verifikasiOTP() {
+  var inputs = document.querySelectorAll('.otp-wrap input');
+  var otp = Array.from(inputs).map(function(i) { return i.value; }).join('');
+  if (otp.length < 6) { toast('❗ Masukkan 6 digit OTP'); return; }
+  var btn = document.getElementById('btn-verif');
+  btn.disabled = true; btn.textContent = '⏳ Memverifikasi...';
+  try {
+    var d = await apiFetch('/api/client/otp/verifikasi', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ no_hp: noHpLogin, otp: otp })
+    });
+    localStorage.setItem(TOKEN_KEY, d.token);
+    localStorage.setItem(PROFIL_KEY, JSON.stringify(d.pelanggan));
+    profil = d.pelanggan;
+    toast('✅ Login berhasil, selamat datang ' + d.pelanggan.nama);
+    tampilkanApp();
+    loadDashboard();
+  } catch(e) { toast('❌ ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = '✅ Verifikasi'; }
+}
+
+function setNamaPelanggan(n){
+  n = n || '—';
+  var nn = document.getElementById('nav-nama'); if (nn) nn.textContent = n;
+  var dg = document.getElementById('dash-greet'); if (dg) dg.textContent = (n.split(' ')[0] || n);
+}
+function tampilkanApp() {
+  document.getElementById('app-login').style.display = 'none';
+  document.getElementById('app-main').style.display  = 'block';
+  if (profil) setNamaPelanggan(profil.nama);
+}
+
+function logout() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(PROFIL_KEY);
+  profil = null;
+  document.getElementById('app-login').style.display = 'flex';
+  document.getElementById('app-main').style.display  = 'none';
+  showStep('hp');
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+  document.getElementById('pg-' + name).classList.add('active');
+  document.querySelectorAll('.bot-item').forEach(function(b) { b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  // Lazy load
+  if (name === 'tagihan') loadTagihan();
+  if (name === 'tiket') loadTiket();
+  if (name === 'password') loadPasswordPage();
+  if (name === 'profil') loadProfil();
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    var d = await apiFetch('/api/client/profil');
+    profil = d;
+    setNamaPelanggan(d.nama);
+    document.getElementById('m-status').innerHTML  = '<span class="tag ' + d.status + '">' + (d.status==='aktif'?'Aktif':'Suspend') + '</span>';
+    document.getElementById('m-paket').textContent  = d.nama_paket || '—';
+    document.getElementById('m-expired').textContent = fmtTgl(d.tgl_expired);
+    document.getElementById('d-username').textContent = d.username || '—';
+    document.getElementById('d-tipe').textContent     = d.tipe_koneksi === 'pppoe' ? 'PPPoE' : 'Hotspot';
+    document.getElementById('d-speed').textContent    = d.kecepatan_dn ? d.kecepatan_dn + ' / ' + d.kecepatan_up + ' Mbps' : '—';
+    document.getElementById('d-status-tag').innerHTML = '<span class="tag ' + d.status + '">' + d.status + '</span>';
+  } catch(e) {
+    // Jangan telan diam-diam: kalau /profil gagal, semua kartu jadi "—".
+    // Tampilkan penyebabnya agar mudah didiagnosa (mis. kolom DB hilang / 500).
+    console.error('Gagal memuat profil:', e.message);
+    toast('⚠️ Gagal memuat info pelanggan: ' + e.message);
+  }
+
+  try {
+    var sesi = await apiFetch('/api/client/sesi');
+    var ms = document.getElementById('m-sesi'); if (ms) ms.textContent = sesi.length;
+  } catch(e) {}
+
+  try {
+    var pk = await apiFetch('/api/client/pemakaian');
+    var blnArr = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    var pb = document.getElementById('pakai-bulan'); if (pb) pb.textContent = blnArr[new Date().getMonth()] + ' ' + new Date().getFullYear();
+    var dn = Number(pk.download_bytes) || 0, up = Number(pk.upload_bytes) || 0;
+    document.getElementById('pakai-unduh').textContent  = fmtData(dn);
+    document.getElementById('pakai-unggah').textContent = fmtData(up);
+    document.getElementById('pakai-total').textContent  = fmtData(dn + up);
+  } catch(e) {}
+
+  try {
+    var inv = await apiFetch('/api/client/tagihan');
+    var mini = document.getElementById('tagihan-mini');
+    var unpaid = inv.filter(function(i) { return i.status !== 'paid'; }).slice(0, 3);
+    if (!unpaid.length) {
+      mini.innerHTML = '<div class="empty"><div class="ico">✅</div><p>Semua tagihan lunas</p></div>';
+    } else {
+      mini.innerHTML = unpaid.map(function(i) { return renderInvItem(i); }).join('');
+    }
+  } catch(e) {}
+}
+
+function renderInvItem(i) {
+  var st = i.status === 'paid' ? 'paid' : (new Date(i.tgl_jatuh_tempo) < new Date() ? 'overdue' : 'unpaid');
+  var stLabel = st === 'paid' ? 'Lunas' : st === 'overdue' ? 'Jatuh Tempo' : 'Belum Bayar';
+  var bayarBtn = st !== 'paid' ? '<button class="btn sm primary" onclick="bayarInvoice(' + i.id + ')">Bayar</button>' : '';
+  var pdfBtn = '<button class="btn sm" onclick="downloadInvoicePDF(' + i.id + ',\'' + (i.no_invoice||'') + '\')">📄 PDF</button>';
+  return '<div class="inv-item"><div class="inv-left"><div class="no">' + i.no_invoice + '</div><div class="tgl">' + fmtTgl(i.tgl_invoice) + ' · ' + (i.nama_paket||'—') + '</div></div><div class="inv-right"><div class="harga" style="color:' + (st==='overdue'?'var(--red)':st==='paid'?'var(--green)':'var(--text)') + '">' + fmt(i.jumlah) + '</div><div class="aksi"><span class="tag ' + st + '">' + stLabel + '</span> ' + pdfBtn + ' ' + bayarBtn + '</div></div></div>';
+}
+
+async function downloadInvoicePDF(id, no) {
+  toast('⏳ Menyiapkan PDF…');
+  try {
+    var r = await fetch('/api/client/invoice/' + id + '/pdf', { headers: { 'Authorization': 'Bearer ' + getToken() } });
+    if (!r.ok) { var e = await r.json().catch(function(){ return { error: 'Gagal membuat PDF' }; }); throw new Error(e.error || 'Gagal membuat PDF'); }
+    var blob = await r.blob();
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = (no || 'invoice') + '.pdf';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+  } catch(e) { toast('❌ ' + e.message, true); }
+}
+
+// ── TAGIHAN ───────────────────────────────────────────────────
+async function loadTagihan() {
+  var el = document.getElementById('tagihan-list');
+  el.innerHTML = '<div class="empty"><div class="ico">⏳</div><p>Memuat...</p></div>';
+  try {
+    var rows = await apiFetch('/api/client/tagihan');
+    if (!rows.length) { el.innerHTML = '<div class="empty"><div class="ico">🧾</div><p>Belum ada tagihan</p></div>'; return; }
+    el.innerHTML = rows.map(function(i) { return renderInvItem(i); }).join('');
+  } catch(e) { el.innerHTML = '<div class="empty"><p>❌ ' + e.message + '</p></div>'; }
+}
+
+async function bayarInvoice(id) {
+  toast('⏳ Membuat link pembayaran...');
+  try {
+    var d = await apiFetch('/api/client/tagihan/' + id + '/bayar', { method: 'POST' });
+    if (d.payment_url) { window.location.href = d.payment_url; }
+    else toast('❌ Gagal membuat link bayar');
+  } catch(e) { toast('❌ ' + e.message); }
+}
+
+async function perpanjangSekarang(btn) {
+  if (btn) { btn.disabled = true; btn.style.opacity = '.6'; }
+  toast('⏳ Menyiapkan pembayaran...');
+  try {
+    var d = await apiFetch('/api/client/perpanjang', { method: 'POST' });
+    if (d.payment_url) { window.location.href = d.payment_url; }
+    else toast('❌ Gagal membuat link bayar. Hubungi admin.');
+  } catch(e) { toast('❌ ' + e.message); }
+  finally { if (btn) { btn.disabled = false; btn.style.opacity = '1'; } }
+}
+
+// ── GANTI PASSWORD WIFI (TR-069 / Tiket fallback) ────────────
+let _acsDevice = null;
+
+async function loadPasswordPage() {
+  // Tentukan tipe koneksi pelanggan (pppoe / hotspot)
+  var tipe = (profil && profil.tipe_koneksi) ? profil.tipe_koneksi : null;
+  if (!tipe) {
+    try { var pr = await apiFetch('/api/client/profil'); profil = pr; tipe = pr.tipe_koneksi; } catch(e) {}
+  }
+
+  var cardAkun = document.getElementById('card-akun-hotspot');
+  var cardAcs  = document.getElementById('card-acs-status');
+  var cardNoAcs= document.getElementById('card-no-acs');
+  var cardForm = document.getElementById('card-pw-form');
+  var cardPer  = document.getElementById('card-perangkat');
+
+  // ── HOTSPOT: form ganti username & sandi akun (bukan WiFi router) ──
+  if (tipe === 'hotspot') {
+    if (cardAkun) cardAkun.style.display = 'block';
+    [cardAcs, cardNoAcs, cardForm, cardPer].forEach(function(c){ if (c) c.style.display = 'none'; });
+    var uel = document.getElementById('inp-username-baru');
+    if (uel && profil) uel.value = profil.username || '';
+    return;
+  }
+
+  // ── PPPoE: flow router/WiFi via GenieACS (seperti biasa) ──
+  if (cardAkun) cardAkun.style.display = 'none';
+  if (cardForm) cardForm.style.display = 'block';
+  if (cardPer)  cardPer.style.display  = 'block';
+  try {
+    const d = await apiFetch('/api/client/acs-device');
+    _acsDevice = d;
+    if (d) {
+      const online = d.status === 'online';
+      cardAcs.style.display = 'block';
+      cardNoAcs.style.display = 'none';
+      document.getElementById('acs-device-info').innerHTML =
+        `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
+          <div><span style="color:var(--text2)">Vendor</span><br><b>${escHtml(d.manufacturer||'—')} ${escHtml(d.product_class||'')}</b></div>
+          <div><span style="color:var(--text2)">IP Router</span><br><b>${escHtml(d.ip_address||'—')}</b></div>
+          <div><span style="color:var(--text2)">Versi SW</span><br><b>${escHtml(d.software_version||'—')}</b></div>
+          <div><span style="color:var(--text2)">Status</span><br><b>${online?'<span style="color:var(--green)">🟢 Online</span>':'<span style="color:var(--red)">🔴 Offline</span>'}</b></div>
+        </div>`;
+      document.getElementById('btn-ganti-pw').textContent = '📶 Kirim ke Router';
+      // Tampilkan nama WiFi (SSID) saat ini langsung di kolom input
+      var ssidInp = document.getElementById('inp-ssid');
+      if (ssidInp && !ssidInp.value) ssidInp.value = d.ssid || '';
+    } else {
+      cardAcs.style.display = 'none';
+      cardNoAcs.style.display = 'block';
+      document.getElementById('btn-ganti-pw').textContent = '📤 Kirim ke Admin';
+    }
+  } catch(e) {
+    document.getElementById('card-no-acs').style.display = 'block';
+  }
+  loadPerangkatWifi();
+}
+
+async function gantiAkunHotspot() {
+  var unew = document.getElementById('inp-username-baru').value.trim();
+  var p1   = document.getElementById('inp-hs-pw-baru').value;
+  var p2   = document.getElementById('inp-hs-pw-konf').value;
+  var unameLama = (profil && profil.username) ? profil.username : '';
+
+  if ((!unew || unew === unameLama) && !p1) { toast('❗ Tidak ada perubahan. Isi username baru dan/atau password baru'); return; }
+  if (p1 && p1.length < 4) { toast('❗ Password minimal 4 karakter'); return; }
+  if (p1 !== p2) { toast('❗ Konfirmasi password tidak sama'); return; }
+
+  var btn = document.getElementById('btn-ganti-akun');
+  btn.disabled = true; btn.textContent = '⏳ Menyimpan...';
+  try {
+    var d = await apiFetch('/api/client/ganti-akun', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ username_baru: unew || undefined, password_baru: p1 || undefined })
+    });
+    toast('✅ ' + d.pesan);
+    if (profil) { profil.username = d.username; setNamaPelanggan(profil.nama); }
+    document.getElementById('inp-username-baru').value = d.username || unew || '';
+    document.getElementById('inp-hs-pw-baru').value = '';
+    document.getElementById('inp-hs-pw-konf').value = '';
+  } catch(e) { toast('❌ ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = '💾 Simpan Perubahan'; }
+}
+
+async function gantiPasswordWifi() {
+  var ssid = document.getElementById('inp-ssid').value.trim();
+  var pw1  = document.getElementById('inp-pw-baru').value;
+  var pw2  = document.getElementById('inp-pw-konf').value;
+  if (!pw1 || pw1.length < 8) { toast('❗ Password minimal 8 karakter'); return; }
+  if (pw1 !== pw2) { toast('❗ Password tidak sama'); return; }
+
+  var btn = document.getElementById('btn-ganti-pw');
+  btn.disabled = true; btn.textContent = '⏳ Mengirim...';
+  try {
+    var d = await apiFetch('/api/client/wifi', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ ssid: ssid || undefined, password: pw1 })
+    });
+    toast('✅ ' + d.pesan);
+    document.getElementById('inp-ssid').value    = '';
+    document.getElementById('inp-pw-baru').value = '';
+    document.getElementById('inp-pw-konf').value = '';
+    loadPerangkatWifi();
+  } catch(e) { toast('❌ ' + e.message); }
+  finally {
+    btn.disabled = false;
+    btn.textContent = _acsDevice ? '📶 Kirim ke Router' : '📤 Kirim ke Admin';
+  }
+}
+
+var _perangkatList = [];
+var _perangkatPage = 1;
+var _perangkatPerPage = 10;
+
+async function loadPerangkatWifi(manual) {
+  var el = document.getElementById('list-perangkat');
+  var info = document.getElementById('perangkat-info');
+  if (manual && el) el.innerHTML = '<div class="empty"><div class="ico">📡</div><p>Menyegarkan…</p></div>';
+  try {
+    var d = await apiFetch('/api/client/perangkat-wifi' + (manual ? '?manual=1' : ''));
+    if (!d.device) {
+      el.innerHTML = '<div class="empty"><div class="ico">📡</div><p>Router belum terhubung ke ACS</p></div>';
+      if (info) info.textContent = '';
+      return;
+    }
+    if (info) info.innerHTML = '⟳ Segarkan';
+    _perangkatList = d.perangkat || [];
+    _perangkatPage = 1;
+    renderPerangkat();
+  } catch (e) {
+    if (el) el.innerHTML = '<div class="empty"><div class="ico">⚠️</div><p>' + e.message + '</p></div>';
+  }
+}
+
+function setPerangkatPerPage(n) { _perangkatPerPage = parseInt(n, 10) || 10; _perangkatPage = 1; renderPerangkat(); }
+function gotoPerangkatPage(p)   { _perangkatPage = p; renderPerangkat(); }
+
+function renderPerangkat() {
+  var el = document.getElementById('list-perangkat');
+  if (!el) return;
+  var list = _perangkatList || [];
+  if (!list.length) {
+    el.innerHTML = '<div class="empty"><div class="ico">📡</div><p>Belum ada data perangkat.<br>Tekan ⟳ lalu tunggu router sinkron.</p></div>';
+    return;
+  }
+  var aktif = list.filter(function(p){ return p.active; }).length;
+  var per = _perangkatPerPage;
+  var totalPages = Math.max(1, Math.ceil(list.length / per));
+  if (_perangkatPage > totalPages) _perangkatPage = totalPages;
+  if (_perangkatPage < 1) _perangkatPage = 1;
+  var start = (_perangkatPage - 1) * per;
+  var slice = list.slice(start, start + per);
+
+  var ppOpts = [10, 20, 50].map(function(n) {
+    return '<option value="' + n + '"' + (n === per ? ' selected' : '') + '>' + n + '</option>';
+  }).join('');
+
+  var header =
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px">' +
+      '<div style="font-size:11px;color:var(--text3)">' + list.length + ' perangkat terdeteksi · ' + aktif + ' aktif</div>' +
+      '<label style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text3)">Tampil' +
+        '<select onchange="setPerangkatPerPage(this.value)" style="padding:3px 6px;border:1px solid var(--border);border-radius:8px;background:var(--card,#fff);color:inherit;font-size:11px">' + ppOpts + '</select>' +
+      '</label>' +
+    '</div>';
+
+  var rows = slice.map(function(p) {
+    var nama = p.hostname || '(tanpa nama)';
+    var ikon = /android|samsung|xiaomi|oppo|vivo|redmi|iphone|ios/i.test(nama) ? '📱'
+             : /pc|desktop|laptop|win|mac/i.test(nama) ? '💻'
+             : /tv|smart/i.test(nama) ? '📺' : '📶';
+    var dot = p.active ? '#4ade80' : '#6b6560';
+    return '<div style="display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--border)">' +
+             '<div style="font-size:20px">' + ikon + '</div>' +
+             '<div style="flex:1;min-width:0">' +
+               '<div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(nama) + '</div>' +
+               '<div style="font-size:11px;color:var(--text3)">' + escHtml(p.ip || '-') + (p.mac ? ' · ' + escHtml(p.mac) : '') + '</div>' +
+             '</div>' +
+             '<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:' + (p.active?'#4ade80':'var(--text3)') + '"><span style="width:8px;height:8px;border-radius:50%;background:' + dot + '"></span>' + (p.active?'Aktif':'Idle') + '</span>' +
+           '</div>';
+  }).join('');
+
+  var nav = '';
+  if (totalPages > 1) {
+    nav =
+      '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px">' +
+        '<button class="btn sm" ' + (_perangkatPage <= 1 ? 'disabled' : '') + ' onclick="gotoPerangkatPage(' + (_perangkatPage - 1) + ')">‹ Sebelumnya</button>' +
+        '<span style="font-size:12px;color:var(--text2)">Hal ' + _perangkatPage + ' / ' + totalPages + '</span>' +
+        '<button class="btn sm" ' + (_perangkatPage >= totalPages ? 'disabled' : '') + ' onclick="gotoPerangkatPage(' + (_perangkatPage + 1) + ')">Berikutnya ›</button>' +
+      '</div>';
+  }
+
+  el.innerHTML = header + rows + nav;
+}
+
+async function loadWifiHistory() {
+  var el = document.getElementById('list-pw-history');
+  try {
+    var d = await apiFetch('/api/client/wifi-tasks');
+    if (!d.items || !d.items.length) {
+      el.innerHTML = '<div class="empty"><div class="ico">📋</div><p>Belum ada riwayat</p></div>';
+      return;
+    }
+    if (d.via === 'acs') {
+      el.innerHTML = d.items.map(function(t) {
+        var stCls = t.status === 'done' ? 'aktif' : t.status === 'failed' ? 'suspend' : 'open';
+        var stLabel = t.status === 'done' ? 'Berhasil' : t.status === 'failed' ? 'Gagal' : t.status === 'running' ? 'Diproses' : 'Menunggu';
+        return '<div class="inv-item"><div class="inv-left"><div class="no">Ganti Password WiFi via Router</div><div class="tgl">' + fmtTgl(t.created_at) + '</div></div><div class="inv-right"><div class="aksi"><span class="tag ' + stCls + '">' + stLabel + '</span></div></div></div>';
+      }).join('');
+    } else {
+      el.innerHTML = d.items.map(function(t) {
+        return '<div class="tiket-item" onclick="lihatTiket(' + t.id + ')"><div class="tiket-judul">' + escHtml(t.judul) + '</div><div class="tiket-meta"><span class="tag ' + t.status + '">' + t.status + '</span><span>' + fmtTgl(t.created_at) + '</span></div></div>';
+      }).join('');
+    }
+  } catch(e) {
+    el.innerHTML = '<div class="empty"><p>—</p></div>';
+  }
+}
+
+// ── TIKET ─────────────────────────────────────────────────────
+async function loadTiket() {
+  var el = document.getElementById('tiket-list');
+  el.innerHTML = '<div class="empty"><div class="ico">⏳</div><p>Memuat...</p></div>';
+  try {
+    var rows = await apiFetch('/api/client/tiket');
+    if (!rows.length) { el.innerHTML = '<div class="empty"><div class="ico">🎫</div><p>Belum ada tiket</p></div>'; return; }
+    el.innerHTML = rows.map(function(t) {
+      return '<div class="tiket-item" onclick="lihatTiket(' + t.id + ')">'
+        + '<div class="tiket-judul">' + escHtml(t.judul) + '</div>'
+        + '<div class="tiket-meta"><span class="tag ' + t.status + '">' + t.status + '</span><span>' + fmtTgl(t.created_at) + '</span><span>' + (t.jumlah_reply||0) + ' balasan</span></div>'
+        + '</div>';
+    }).join('');
+  } catch(e) { el.innerHTML = '<div class="empty"><p>❌ ' + e.message + '</p></div>'; }
+}
+
+function bukaModalTiket() {
+  document.getElementById('tk-judul').value = '';
+  document.getElementById('tk-pesan').value = '';
+  document.getElementById('tk-foto').value = '';
+  document.getElementById('preview-foto').style.display = 'none';
+  document.getElementById('ov-tiket').classList.add('open');
+}
+
+function previewFoto(inp) {
+  if (!inp.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = document.getElementById('preview-foto');
+    img.src = e.target.result;
+    img.style.display = 'block';
+  };
+  reader.readAsDataURL(inp.files[0]);
+}
+
+async function kirimTiket() {
+  var judul    = document.getElementById('tk-judul').value.trim();
+  var pesan    = document.getElementById('tk-pesan').value.trim();
+  var kategori = document.getElementById('tk-kategori').value;
+  var foto     = document.getElementById('tk-foto').files[0];
+  if (!judul || !pesan) { toast('❗ Judul dan deskripsi wajib diisi'); return; }
+
+  var fd = new FormData();
+  fd.append('judul', judul);
+  fd.append('pesan', pesan);
+  fd.append('kategori', kategori);
+  if (foto) fd.append('foto', foto);
+
+  var btn = document.getElementById('btn-kirim-tiket');
+  btn.disabled = true; btn.textContent = '⏳ Mengirim...';
+  try {
+    var r = await fetch('/api/client/tiket', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + getToken() },
+      body: fd
+    });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    toast('✅ Tiket berhasil dikirim');
+    tutupModal('ov-tiket');
+    loadTiket();
+  } catch(e) { toast('❌ ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = '📤 Kirim Tiket'; }
+}
+
+async function lihatTiket(id) {
+  tiketAktifId = id;
+  try {
+    var d = await apiFetch('/api/client/tiket/' + id);
+    document.getElementById('detail-judul').textContent = d.judul;
+    var prioMap = { rendah:['Rendah','#16a34a'], sedang:['Sedang','#d97706'], tinggi:['Tinggi','#ea580c'], urgent:['Urgent','#dc2626'] };
+    var pr = prioMap[d.prioritas];
+    var extra = '';
+    if (pr) extra += ' &nbsp;<span style="font-size:11px;font-weight:700;color:' + pr[1] + '">⚑ ' + pr[0] + '</span>';
+    if (d.perkiraan_perbaikan) extra += '<br><span style="color:#4ade80">🛠️ Estimasi perbaikan: ' + fmtTgl(d.perkiraan_perbaikan) + '</span>';
+    document.getElementById('detail-meta').innerHTML = '<span class="tag ' + d.status + '">' + d.status + '</span> &nbsp;' + fmtTgl(d.created_at) + extra;
+    var wrap = document.getElementById('chat-wrap');
+    var msgs = [{dari:'pelanggan', pesan:d.pesan, foto:d.foto, created_at:d.created_at}].concat(d.reply||[]);
+    wrap.innerHTML = msgs.map(function(m) {
+      var cls = m.dari === 'admin' ? 'admin' : 'pelanggan';
+      var fotoHtml = m.foto ? '<img src="' + m.foto + '" class="chat-foto" onclick="window.open(\'' + m.foto + '\',\'_blank\')">' : '';
+      return '<div class="chat-msg ' + cls + '"><div class="sender">' + (m.dari==='admin'?'👨‍💼 Admin':'👤 Anda') + '</div>' + escHtml(m.pesan) + fotoHtml + '<div class="waktu">' + fmtTgl(m.created_at) + '</div></div>';
+    }).join('');
+    wrap.scrollTop = wrap.scrollHeight;
+    document.getElementById('reply-pesan').value = '';
+    document.getElementById('ov-tiket-detail').classList.add('open');
+  } catch(e) { toast('❌ ' + e.message); }
+}
+
+async function kirimBalasan() {
+  var pesan = document.getElementById('reply-pesan').value.trim();
+  if (!pesan) { toast('❗ Tulis balasan dulu'); return; }
+  var btn = document.getElementById('btn-balas');
+  btn.disabled = true;
+  try {
+    await apiFetch('/api/client/tiket/' + tiketAktifId + '/reply', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ pesan: pesan, dari: 'pelanggan' })
+    });
+    await lihatTiket(tiketAktifId);
+  } catch(e) { toast('❌ ' + e.message); }
+  finally { btn.disabled = false; }
+}
+
+// ── PROFIL ────────────────────────────────────────────────────
+async function loadProfil() {
+  try {
+    var d = await apiFetch('/api/client/profil');
+    _profilData = d;
+    document.getElementById('p-nama').textContent    = d.nama || '—';
+    document.getElementById('p-nohp').textContent    = d.no_hp || '—';
+    document.getElementById('p-email').textContent   = d.email || '—';
+    document.getElementById('p-alamat').textContent  = d.alamat || '—';
+    document.getElementById('p-username').textContent = d.username || '—';
+    document.getElementById('p-paket').textContent   = d.nama_paket ? d.nama_paket + ' (' + d.kecepatan_dn + '/' + d.kecepatan_up + ' Mbps)' : '—';
+  } catch(e) {}
+}
+var _profilData = null;
+function bukaEditProfil() {
+  var d = _profilData || {};
+  document.getElementById('ep-nama').value   = d.nama || '';
+  document.getElementById('ep-nohp').value   = d.no_hp || '';
+  document.getElementById('ep-email').value  = d.email || '';
+  document.getElementById('ep-alamat').value = d.alamat || '';
+  document.getElementById('ep-username').value = d.username || '';
+  document.getElementById('ep-paket').value  = d.nama_paket ? d.nama_paket + ' (' + d.kecepatan_dn + '/' + d.kecepatan_up + ' Mbps)' : '';
+  document.getElementById('ov-edit-profil').classList.add('open');
+}
+async function simpanProfil() {
+  var nama = document.getElementById('ep-nama').value.trim();
+  if (!nama) return toast('❌ Nama wajib diisi', true);
+  var btn = document.getElementById('ep-btn'); btn.disabled = true; btn.textContent = 'Menyimpan…';
+  try {
+    await apiFetch('/api/client/profil', {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        nama: nama,
+        no_hp: document.getElementById('ep-nohp').value.trim(),
+        email: document.getElementById('ep-email').value.trim(),
+        alamat: document.getElementById('ep-alamat').value.trim()
+      })
+    });
+    toast('✅ Profil berhasil diperbarui');
+    tutupModal('ov-edit-profil');
+    loadProfil();
+    setNamaPelanggan(nama);
+  } catch(e) { toast('❌ ' + e.message, true); }
+  finally { btn.disabled = false; btn.innerHTML = '💾 Simpan Perubahan'; }
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
