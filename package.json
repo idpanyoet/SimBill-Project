@@ -1,0 +1,9 @@
+{
+  "name": "simbill",
+  "version": "1.4.6",
+  "description": "SimBill — ISP billing & management (FreeRADIUS + MikroTik + OLT + WhatsApp)",
+  "private": true,
+  "dependencies": {
+    "ssh2": "^1.17.0"
+  }
+}
