@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SimBill — Voucher Internet Online</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;700;800&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#eef1fb;--bg2:#f8f9ff;--bg3:#f1f3fc;
+  --card:#fff;--border:#e6e8f5;--border2:#d4d8ef;
+  --accent:#5b5be6;--accent2:#7c3aed;
+  --green:#16a34a;--amber:#d97706;--red:#dc2626;
+  --text:#1a1830;--text2:#5c5878;--text3:#928ea8;
+  --disp:'Bricolage Grotesque',sans-serif;--mono:'Space Mono',ui-monospace,monospace;
+  --grad:linear-gradient(120deg,#7c3aed 0%,#4f46e5 36%,#06b6d4 72%,#f59e0b 112%);
+  --grad-btn:linear-gradient(120deg,#7c3aed,#4f46e5 60%,#4338ca);
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.6;min-height:100vh;position:relative}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(640px 430px at 4% -8%,rgba(124,58,237,.17),transparent 60%),
+             radial-gradient(560px 400px at 99% -2%,rgba(6,182,212,.15),transparent 60%),
+             radial-gradient(520px 380px at 88% 14%,rgba(245,158,11,.10),transparent 62%)}
+nav,.hero,.section,.cek-wrap,.cara-wrap,.kontak-wrap,footer{position:relative;z-index:1}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:0 22px;display:flex;align-items:center;justify-content:space-between;height:60px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.brand .mark{width:34px;height:34px;border-radius:10px;background:var(--grad);display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 6px 16px -4px rgba(124,58,237,.45);flex-shrink:0}
+.nav-links{display:flex;gap:3px;align-items:center}
+.nav-links a{color:var(--text2);text-decoration:none;font-size:13px;font-weight:500;padding:7px 13px;border-radius:9px;transition:.15s}
+.nav-links a:hover{color:var(--text);background:var(--bg3)}
+.nav-links a.btn-login{background:var(--grad-btn);color:#fff;font-weight:600;box-shadow:0 8px 20px -8px rgba(99,102,241,.5)}
+.nav-links a.btn-login:hover{filter:brightness(1.06);background:var(--grad-btn)}
+.nav-toggle{display:none;background:none;border:1px solid var(--border);cursor:pointer;width:40px;height:40px;border-radius:10px;align-items:center;justify-content:center;color:var(--text);flex-shrink:0;transition:.15s}
+.nav-toggle:hover{background:var(--bg3);border-color:var(--border2)}
+.nav-toggle svg{width:22px;height:22px}
+
+/* HERO (split-screen) */
+.hero{padding:46px 24px 30px}
+.hero-inner{max-width:820px;margin:0 auto;text-align:center}
+.hero-left{min-width:0}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:600;padding:6px 15px;border-radius:99px;margin-bottom:18px;box-shadow:0 6px 18px -10px rgba(60,40,120,.3)}
+.eyebrow-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(22,163,74,.6);animation:blink 1.8s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hero h1{font-family:var(--disp);font-size:clamp(30px,4.6vw,48px);font-weight:800;letter-spacing:-.02em;line-height:1.08;margin-bottom:14px;color:var(--text)}
+.hero h1 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero-sub{font-size:15px;color:var(--text2);max-width:480px;margin:0 auto}
+
+/* FEATURE TILES */
+.feature-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:26px auto 0;max-width:760px;text-align:left}
+.ftile{background:#fff;border:1px solid var(--border);border-radius:17px;padding:15px 15px 16px;box-shadow:0 12px 30px -22px rgba(60,40,120,.4);transition:transform .15s,box-shadow .15s}
+.ftile:hover{transform:translateY(-3px);box-shadow:0 18px 38px -22px rgba(60,40,120,.5)}
+.ftico{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;margin-bottom:11px;box-shadow:0 8px 18px -8px rgba(60,40,120,.5)}
+.ftico-1{background:linear-gradient(135deg,#8b5cf6,#7c3aed)}
+.ftico-2{background:linear-gradient(135deg,#60a5fa,#4f46e5)}
+.ftico-3{background:linear-gradient(135deg,#22d3ee,#06b6d4)}
+.ftico-4{background:linear-gradient(135deg,#fbbf24,#f59e0b)}
+.ftt{font-family:var(--disp);font-weight:700;font-size:13.5px;color:var(--text)}
+.fts{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* HERO CARD (kanan) */
+.hero-right{min-width:0}
+.hero-card{background:#fff;border:1px solid var(--border);border-radius:24px;padding:22px;box-shadow:0 26px 64px -30px rgba(60,40,120,.5);position:relative;overflow:hidden}
+.hero-card::before{content:"";position:absolute;top:0;left:0;right:0;height:5px;background:var(--grad)}
+.hero-card-label{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px}
+.hero-cta{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;padding:14px;border-radius:14px;background:var(--grad-btn);color:#fff;text-decoration:none;font-family:var(--disp);font-weight:700;font-size:14px;box-shadow:0 14px 30px -10px rgba(99,102,241,.55);transition:filter .15s}
+.hero-cta:hover{filter:brightness(1.06)}
+
+/* STATS (grid 2x2 dalam kartu) */
+.stats-bar{display:inline-flex;flex-wrap:wrap;justify-content:center;background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;margin:22px auto 0;box-shadow:0 14px 40px -22px rgba(60,40,120,.4)}
+.stat{padding:13px 22px;border-right:1px solid var(--border);text-align:center}
+.stat:last-child{border-right:none}
+.stat-val{font-family:var(--disp);font-size:20px;font-weight:800;color:var(--text)}
+.stat-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;font-weight:600}
+
+/* SEARCH */
+.search-wrap{max-width:360px;margin:0 auto 36px;position:relative}
+.search-wrap input{width:100%;padding:12px 44px 12px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-family:inherit;transition:.2s}
+.search-wrap input:focus{outline:none;border-color:var(--accent2);background:#fff;box-shadow:0 0 0 3px rgba(124,58,237,.14)}
+.search-wrap input::placeholder{color:var(--text3)}
+.search-ico{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none;font-size:16px}
+
+/* SECTION */
+.section{max-width:1080px;margin:0 auto;padding:24px 24px 56px}
+.sec-label{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:16px}
+.paket-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:15px}
+
+/* CARD */
+.paket-card{background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;transition:transform .15s,box-shadow .15s,border-color .15s;display:flex;flex-direction:column;box-shadow:0 10px 30px -20px rgba(60,40,120,.3)}
+.paket-card:hover{border-color:var(--border2);transform:translateY(-3px);box-shadow:0 18px 40px -20px rgba(60,40,120,.45)}
+.paket-card.popular{border-color:var(--accent);box-shadow:0 0 0 2px rgba(79,70,229,.18),0 16px 40px -20px rgba(79,70,229,.4)}
+.pop-badge{font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;background:rgba(255,255,255,.25);color:#fff}
+.card-top{padding:15px 16px;display:flex;align-items:center;gap:11px;background:var(--grad-btn)}
+.card-ic{width:40px;height:40px;border-radius:11px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.card-tm{flex:1;min-width:0}
+.card-title{font-family:var(--disp);font-size:15px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-sub{font-size:11px;color:rgba(255,255,255,.82);margin-top:2px}
+.card-dur{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.22);color:#fff;white-space:nowrap}
+.card-body{padding:15px 16px;display:flex;flex-direction:column;flex:1}
+.card-chips{display:flex;flex-wrap:wrap;gap:6px;flex:1;align-content:flex-start;margin-bottom:12px}
+.chip{font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
+.card-bot{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding-top:12px;margin-top:auto}
+.card-price{font-family:var(--disp);font-size:19px;font-weight:800;color:var(--text)}
+.card-price small{font-size:11px;font-weight:400;color:var(--text3);margin-left:3px;font-family:'Inter',sans-serif}
+.btn-beli{padding:9px 20px;border:none;border-radius:10px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;color:#fff;background:var(--grad-btn);box-shadow:0 8px 18px -8px rgba(99,102,241,.5);transition:filter .15s,transform .12s}
+.btn-beli:hover{filter:brightness(1.06)}
+.btn-beli:active{transform:translateY(1px)}
+
+/* SKELETON */
+.skeleton{background:#fff;border:1px solid var(--border);border-radius:18px;padding:18px;animation:shimmer 1.5s infinite;box-shadow:0 10px 30px -20px rgba(60,40,120,.3)}
+@keyframes shimmer{0%,100%{opacity:.6}50%{opacity:1}}
+.skel-line{height:11px;background:var(--bg3);border-radius:5px;margin-bottom:9px}
+.w60{width:60%}.w40{width:40%}
+.skel-btn{height:36px;background:var(--bg3);border-radius:10px;margin-top:14px}
+
+/* ERROR */
+.load-error{text-align:center;padding:40px 20px;color:var(--text3);grid-column:1/-1}
+.load-error p{margin-top:8px;font-size:13px}
+
+/* CEK VOUCHER */
+.cek-wrap{padding:36px 24px}
+.cek-box{max-width:680px;margin:0 auto;display:flex;align-items:center;gap:28px;background:#fff;border:1px solid var(--border);border-radius:20px;padding:24px 26px;box-shadow:0 14px 40px -24px rgba(60,40,120,.4)}
+.cek-info h3{font-family:var(--disp);font-size:16px;font-weight:700;margin-bottom:5px}
+.cek-info p{font-size:13px;color:var(--text2)}
+.cek-form{display:flex;gap:9px;flex:1;min-width:0;flex-wrap:wrap}
+.cek-form input{flex:1;min-width:0;padding:11px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:11px;color:var(--text);font-size:13px;font-family:var(--mono);letter-spacing:.04em;transition:.15s}
+.cek-form input:focus{outline:none;border-color:var(--accent2);background:#fff;box-shadow:0 0 0 3px rgba(124,58,237,.14)}
+.btn-cek{padding:11px 20px;background:var(--grad-btn);color:#fff;border:none;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;box-shadow:0 8px 18px -8px rgba(99,102,241,.5);transition:filter .15s}
+.btn-cek:hover{filter:brightness(1.06)}
+
+/* CARA PAKAI */
+.cara-wrap{max-width:1080px;margin:0 auto;padding:48px 24px}
+.cara-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-top:16px}
+.cara-item{background:#fff;border:1px solid var(--border);border-radius:16px;padding:20px;position:relative;box-shadow:0 10px 30px -22px rgba(60,40,120,.3)}
+.cara-num{width:30px;height:30px;border-radius:10px;background:var(--grad-btn);color:#fff;font-family:var(--disp);font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-bottom:12px;box-shadow:0 6px 16px -6px rgba(124,58,237,.5)}
+.cara-item h4{font-family:var(--disp);font-size:14.5px;font-weight:700;margin-bottom:5px}
+.cara-item p{font-size:12px;color:var(--text2);line-height:1.55}
+
+/* KONTAK */
+.kontak-wrap{padding:32px 24px;border-top:1px solid var(--border)}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:18px 24px;text-align:center;font-size:12px;color:var(--text3)}
+footer a{color:var(--text2);text-decoration:none}
+footer a:hover{color:var(--accent)}
+
+/* OVERLAY & MODAL */
+.overlay{position:fixed;inset:0;background:rgba(22,19,37,.42);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.modal{background:#fff;border:1px solid var(--border);border-radius:22px;width:100%;max-width:430px;max-height:92vh;max-height:92dvh;overflow-y:auto;animation:popIn .2s ease;box-shadow:0 30px 70px -30px rgba(60,40,120,.5);position:relative}
+.modal::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--grad);border-radius:22px 22px 0 0}
+@keyframes popIn{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.modal-hdr{padding:20px 18px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.modal-hdr h3{font-family:var(--disp);font-size:16px;font-weight:700}
+.btn-x{width:30px;height:30px;border-radius:9px;background:var(--bg2);border:1px solid var(--border);color:var(--text2);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.btn-x:hover{background:var(--bg3);color:var(--text)}
+.modal-body{padding:0 18px 22px}
+.order-box{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:15px;margin-bottom:18px}
+.order-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0}
+.order-row .lbl{color:var(--text2)}
+.order-row .val{font-weight:600;color:var(--text)}
+.order-row.total{border-top:1px solid var(--border);margin-top:8px;padding-top:11px}
+.order-row.total .val{color:var(--accent);font-size:16px;font-family:var(--disp);font-weight:800}
+.fg{margin-bottom:13px}
+.fg label{display:block;font-size:11px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+.fg input{width:100%;padding:11px 13px;background:var(--bg2);border:1px solid var(--border);border-radius:11px;color:var(--text);font-size:14px;font-family:inherit;transition:.15s}
+.fg input:focus{outline:none;border-color:var(--accent2);background:#fff;box-shadow:0 0 0 3px rgba(124,58,237,.14)}
+.fg input::placeholder{color:var(--text3)}
+.sec-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:9px}
+.metode-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px}
+.metode-item{background:var(--bg2);border:2px solid var(--border);border-radius:12px;padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:9px;transition:.15s}
+.metode-item:hover{border-color:var(--border2)}
+.metode-item.sel{border-color:var(--accent);background:rgba(79,70,229,.08)}
+.metode-item .ico{font-size:18px}
+.metode-item .name{font-size:12px;font-weight:700;color:var(--text)}
+.metode-item .sub{font-size:10px;color:var(--text3)}
+.btn-bayar{width:100%;padding:14px;background:var(--grad-btn);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 12px 26px -10px rgba(99,102,241,.55);transition:filter .15s}
+.btn-bayar:hover{filter:brightness(1.06)}
+.btn-bayar:disabled{opacity:.55;cursor:not-allowed;filter:none}
+.hasil-body{text-align:center;padding:26px 18px 22px}
+.hasil-ico{width:60px;height:60px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 16px}
+.hasil-ico.ok{background:rgba(22,163,74,.12)}
+.hasil-ico.err{background:rgba(220,38,38,.1)}
+.hasil-body h3{font-family:var(--disp);font-size:17px;font-weight:700;margin-bottom:8px}
+.hasil-body p{font-size:13px;color:var(--text2);margin-bottom:18px}
+.vcr-box{background:var(--bg2);border:1.5px dashed var(--accent2);border-radius:14px;padding:18px;margin-bottom:16px;text-align:center}
+.vcr-kode{font-family:var(--mono);font-size:23px;font-weight:700;letter-spacing:.16em;color:#5b21b6;margin-bottom:4px}
+.vcr-sub{font-size:12px;color:var(--text3)}
+.btn-salin{width:100%;padding:11px;background:#fff;border:1px solid var(--border);color:var(--text);border-radius:11px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:8px;transition:.15s}
+.btn-salin:hover{background:var(--bg2);border-color:var(--border2)}
+.btn-wa{width:100%;padding:11px;background:rgba(22,163,74,.08);border:1px solid rgba(22,163,74,.25);color:#15803d;border-radius:11px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;transition:.15s}
+.btn-wa:hover{background:rgba(22,163,74,.14)}
+.toast-el{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;border-radius:12px;padding:11px 18px;font-size:13px;font-weight:600;display:none;align-items:center;gap:8px;z-index:400;white-space:nowrap;max-width:90vw;box-shadow:0 14px 34px -12px rgba(22,19,37,.5)}
+.toast-el.show{display:flex}
+
+@media(max-width:860px){
+  .feature-tiles{grid-template-columns:1fr 1fr;max-width:480px}
+}
+@media(max-width:580px){
+  .stats-bar{display:none}
+  .cek-box{flex-direction:column;gap:14px;padding:18px}
+  .cek-form{flex-direction:column}
+  .metode-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .metode-item{padding:9px;gap:8px;border-radius:11px}
+  .metode-item>div{min-width:0}
+  .metode-item .name,.metode-item .sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .metode-item .sub{font-size:9px}
+  .overlay{align-items:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 12px calc(22px + env(safe-area-inset-bottom))}
+  .modal{max-height:none}
+  nav{padding:0 14px}
+  .brand{min-width:0}
+  .brand .js-app-name{font-size:15px !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .nav-toggle{display:flex}
+  .nav-links{
+    position:absolute;top:100%;left:0;right:0;
+    flex-direction:column;align-items:stretch;gap:2px;
+    background:rgba(255,255,255,.97);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--border);
+    padding:8px 14px 12px;display:none;
+    box-shadow:0 16px 30px -14px rgba(22,19,37,.22);
+  }
+  .nav-links.open{display:flex}
+  .nav-links a{padding:12px 12px;font-size:14px;border-radius:10px}
+  .nav-links a.btn-login{text-align:center;margin-top:6px}
+  .hero{padding:34px 16px 22px}
+}
+</style>
+<style>.stats-bar{display:none !important}</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="brand"><span class="mark js-app-logo"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5a9 9 0 0 1 14 0"/><path d="M8.5 15.5a4.5 4.5 0 0 1 7 0"/><circle cx="12" cy="18.5" r="1.3" fill="currentColor" stroke="none"/></svg></span><span class="js-app-name" style="font-family:'Bricolage Grotesque',sans-serif;font-size:17px;letter-spacing:-.01em;color:#161325"><span style="font-weight:800">Sim</span><span style="font-weight:400;color:#5a5670">Bill</span></span></a>
+  <div class="nav-links">
+    <a href="#paket">Paket</a>
+    <a href="#cara">Cara Pakai</a>
+    <a href="#cek">Cek Voucher</a>
+    <a href="/admin" class="btn-login">Login Admin</a>
+  </div>
+  <button class="nav-toggle" id="navToggle" aria-label="Buka menu" aria-expanded="false" onclick="toggleNav(this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+  </button>
+</nav>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow"><span class="eyebrow-dot"></span>Server Online 24 Jam</div>
+    <h1>Internet Cepat,<br><em>Voucher Langsung Aktif</em></h1>
+    <p class="hero-sub">Beli voucher hotspot online, bayar via QRIS atau transfer — kode dikirim otomatis ke WhatsApp Anda.</p>
+    <div class="stats-bar">
+      <div class="stat"><div class="stat-val" id="stat-total">—</div><div class="stat-lbl">Pelanggan Aktif</div></div>
+      <div class="stat"><div class="stat-val" id="stat-online">—</div><div class="stat-lbl">Sedang Online</div></div>
+      <div class="stat"><div class="stat-val">99.2%</div><div class="stat-lbl">Uptime</div></div>
+      <div class="stat"><div class="stat-val">&lt;3ms</div><div class="stat-lbl">Latensi Lokal</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="section" id="paket">
+  <div class="sec-label">Pilih Paket Voucher</div>
+  <div class="paket-grid" id="paket-grid">
+    <div class="skeleton"><div class="skel-line w60"></div><div class="skel-line"></div><div class="skel-line w40"></div><div class="skel-btn"></div></div>
+    <div class="skeleton"><div class="skel-line w60"></div><div class="skel-line"></div><div class="skel-line w40"></div><div class="skel-btn"></div></div>
+    <div class="skeleton"><div class="skel-line w60"></div><div class="skel-line"></div><div class="skel-line w40"></div><div class="skel-btn"></div></div>
+    <div class="skeleton"><div class="skel-line w60"></div><div class="skel-line"></div><div class="skel-line w40"></div><div class="skel-btn"></div></div>
+  </div>
+</div>
+
+<div class="cek-wrap" id="cek">
+  <div class="cek-box">
+    <div class="cek-info">
+      <h3>🔍 Cek Status Voucher</h3>
+      <p>Masukkan kode voucher untuk mengecek apakah masih aktif.</p>
+    </div>
+    <div class="cek-form">
+      <input type="text" id="inp-cek" placeholder="Masukkan kode voucher..." maxlength="20">
+      <button class="btn-cek" onclick="cekVoucher()">Cek</button>
+    </div>
+  </div>
+</div>
+
+<div class="cara-wrap" id="cara">
+  <div class="sec-label">Cara Pakai</div>
+  <div class="cara-grid">
+    <div class="cara-item"><div class="cara-num">1</div><h4>Pilih Paket</h4><p>Pilih durasi yang sesuai kebutuhan Anda.</p></div>
+    <div class="cara-item"><div class="cara-num">2</div><h4>Isi Data & Bayar</h4><p>Masukkan nomor WhatsApp lalu pilih metode pembayaran.</p></div>
+    <div class="cara-item"><div class="cara-num">3</div><h4>Terima Kode WA</h4><p>Kode voucher dikirim otomatis ke WhatsApp setelah bayar.</p></div>
+    <div class="cara-item"><div class="cara-num">4</div><h4>Gunakan & Nikmati</h4><p>Sambung WiFi → buka browser → login hotspot → masukkan kode.</p></div>
+  </div>
+</div>
+
+<div class="kontak-wrap">
+  <div style="max-width:480px;margin:0 auto;text-align:center">
+    <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">📞 Kontak Bantuan</div>
+    <div id="kontak-wa" style="font-size:13px;color:var(--text2);margin-bottom:6px">
+      WhatsApp: <a id="kontak-wa-link" href="https://wa.me/6282273309190" target="_blank" style="color:#4f46e5;font-weight:600">6282273309190</a>
+    </div>
+    <div id="kontak-alamat" style="font-size:12px;color:var(--text3);line-height:1.6">
+      Dusun Mesjid Lama Desa Keude Aceh no 59 Kec. Idi Rayeuk Kab. Aceh Timur Prov. Aceh
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p style="margin-bottom:6px"><a href="/syarat-ketentuan.html" style="color:inherit;text-decoration:underline">Syarat &amp; Ketentuan</a></p>
+  <p>© 2026 <span id="footer-app-name">SimBill</span> &nbsp;·&nbsp; Seluruh hak cipta dilindungi.</p>
+</footer>
+
+<!-- MODAL CHECKOUT -->
+<div class="overlay" id="ov-checkout">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h3>🛒 Checkout Voucher</h3>
+      <button class="btn-x" onclick="tutup('ov-checkout')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="order-box">
+        <div class="order-row"><span class="lbl">Paket</span><span class="val" id="co-nama">—</span></div>
+        <div class="order-row"><span class="lbl">Durasi</span><span class="val" id="co-durasi">—</span></div>
+        <div class="order-row total"><span class="lbl">Total Bayar</span><span class="val" id="co-harga">—</span></div>
+      </div>
+      <div class="fg">
+        <label>Nomor WhatsApp <span style="color:var(--red)">*</span></label>
+        <input type="tel" id="inp-nohp" placeholder="Contoh: 08123456789">
+      </div>
+      <div class="fg">
+        <label>Nama (opsional)</label>
+        <input type="text" id="inp-nama" placeholder="Nama Anda">
+      </div>
+      <div class="sec-title">Metode Pembayaran</div>
+      <div class="metode-grid" id="metode-checkout-grid">
+        <div style="color:var(--text3);font-size:12px;padding:8px 0">Memuat metode...</div>
+      </div>
+      <button class="btn-bayar" id="btn-bayar" onclick="prosesBayar()">
+        🔒 Bayar Sekarang
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CEK VOUCHER -->
+<div class="overlay" id="ov-cek">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h3>🔍 Status Voucher</h3>
+      <button class="btn-x" onclick="tutup('ov-cek')">✕</button>
+    </div>
+    <div id="cek-body"></div>
+  </div>
+</div>
+
+<!-- MODAL HASIL BAYAR -->
+<div class="overlay" id="ov-hasil">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h3>✅ Voucher Berhasil</h3>
+      <button class="btn-x" onclick="tutup('ov-hasil')">✕</button>
+    </div>
+    <div class="hasil-body">
+      <div class="hasil-ico ok">🎉</div>
+      <h3>Voucher Siap Digunakan!</h3>
+      <p>Kode sudah dikirim ke WhatsApp Anda.</p>
+      <div class="vcr-box">
+        <div class="vcr-kode" id="vcr-kode">—</div>
+        <div class="vcr-sub" id="vcr-sub">—</div>
+      </div>
+      <button class="btn-salin" onclick="salin()">📋 Salin Kode</button>
+      <button class="btn-wa" onclick="kirimWA()">📱 Kirim ke WhatsApp Saya</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-el" id="toast-el"></div>
+
+<script>
+var PAKET_LIST  = [];
+var paketDipilih = {};
+var metode      = 'qris';
+var noWa        = '';
+var kodeVoucher = '';
+
+window.addEventListener('load', function() {
+  loadPaketDariAPI();
+  loadStatsDashboard();
+  loadStorefrontInfo();
+  document.querySelectorAll('.overlay').forEach(function(o){
+    o.addEventListener('click', function(e){ if(e.target===o) o.classList.remove('open'); });
+  });
+  document.getElementById('inp-cek').addEventListener('keydown', function(e){
+    if(e.key==='Enter') cekVoucher();
+  });
+});
+
+function loadPaketDariAPI() {
+  var grid = document.getElementById('paket-grid');
+  fetch('/voucher/paket')
+    .then(function(r) {
+      if (!r.ok) return r.text().then(function(txt){ throw new Error('HTTP ' + r.status + ' — ' + txt.slice(0,120)); });
+      return r.json();
+    })
+    .then(function(data) {
+      if (!Array.isArray(data)) throw new Error('Response bukan array');
+      PAKET_LIST = data;
+      if (data.length === 0) {
+        grid.innerHTML = '<div class="load-error" style="grid-column:1/-1">⚙️ Belum ada paket tersedia.<br><small>Admin perlu menambahkan paket.</small></div>';
+        return;
+      }
+      renderPaketGrid(data);
+    })
+    .catch(function(err) {
+      grid.innerHTML = '<div class="load-error" style="grid-column:1/-1">⚠️ Gagal memuat paket.<br><small>' + err.message + '</small><br><button onclick="loadPaketDariAPI()" style="margin-top:12px;padding:8px 16px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:var(--card);font-family:inherit">🔄 Coba Lagi</button></div>';
+    });
+}
+
+function renderPaketGrid(list) {
+  var grid = document.getElementById('paket-grid');
+  var COLORS = ['linear-gradient(135deg,#4f46e5,#7c3aed)','linear-gradient(135deg,#0ea5e9,#4f46e5)','linear-gradient(135deg,#8b5cf6,#d946ef)','linear-gradient(135deg,#059669,#0d9488)','linear-gradient(135deg,#f59e0b,#ec4899)','linear-gradient(135deg,#6366f1,#06b6d4)','linear-gradient(135deg,#7c3aed,#4f46e5)','linear-gradient(135deg,#e11d48,#7c3aed)'];
+  var ICONS_MAP = ['🏠','📱','⚡','🌐','💼','🎮','📡','🔥'];
+  var popularIdx = Math.floor(list.length / 2);
+  var html = '';
+  list.forEach(function(p, i) {
+    var color = COLORS[i % COLORS.length];
+    var icon  = ICONS_MAP[i % ICONS_MAP.length];
+    var satuan = p.satuan_masa || 'hari';
+    var satuanLabel = satuan === 'jam' ? 'Jam' : satuan === 'bulan' ? 'Bln' : 'Hr';
+    var durLabel = (p.masa_aktif || '?') + ' ' + satuanLabel;
+    var chips = [];
+    if (p.deskripsi) chips = p.deskripsi.split(',').map(function(s){ return s.trim(); }).filter(Boolean).slice(0,3);
+    if (!chips.length) chips = ['Akses penuh', 'Tanpa batas'];
+    var chipsHtml = chips.map(function(c){ return '<span class="chip">'+escHtml(c)+'</span>'; }).join('');
+    var isPopular = (i === popularIdx);
+    html += '<div class="paket-card'+(isPopular?' popular':'')+'" id="pc-'+p.id+'" data-id="'+p.id+'" data-nama="'+escHtml(p.nama)+'" data-harga="'+p.harga+'" data-durasi="'+escHtml(durLabel)+'">'
+      +'<div class="card-top" style="background:'+color+'">'
+      +'<div class="card-ic">'+icon+'</div>'
+      +'<div class="card-tm"><div class="card-title">'+escHtml(p.nama)+'</div><div class="card-sub">'+(p.tipe==='hotspot'?'Hotspot':p.tipe==='pppoe'?'PPPoE':'Hotspot & PPPoE')+'</div></div>'
+      +'<span class="card-dur">'+durLabel+(isPopular?' 🔥':'')+'</span>'
+      +'</div>'
+      +'<div class="card-body">'
+      +'<div class="card-chips">'+chipsHtml+'</div>'
+      +'<div class="card-bot">'
+      +'<div class="card-price">Rp '+Number(p.harga).toLocaleString('id-ID')+'<small>/ voucher</small></div>'
+      +'<button class="btn-beli" style="background:'+color+'" onclick="bukaBeli(\'pc-'+p.id+'\')">Beli</button>'
+      +'</div></div></div>';
+  });
+  grid.innerHTML = html;
+}
+
+function loadStorefrontInfo() {
+  function applyBranding(d){
+    try{
+      if(d && d.app_name){
+        document.querySelectorAll('.js-app-name').forEach(function(e){ e.textContent = d.app_name; });
+        try{ if(document.title.indexOf('—')>-1){ var tail=document.title.split('—').slice(1).join('—').trim(); document.title=d.app_name+(tail?' — '+tail:''); } else { document.title=d.app_name; } }catch(_e){}
+      }
+      if(d && d.app_logo){
+        document.querySelectorAll('.js-app-logo').forEach(function(e){
+          e.style.background='transparent'; e.style.boxShadow='none';
+          e.innerHTML='<img src="'+d.app_logo+'" alt="logo" style="width:100%;height:100%;object-fit:contain;display:block">';
+        });
+        var fav=document.querySelector('link[rel="icon"]'); if(fav){ fav.href=d.app_logo; fav.removeAttribute('type'); }
+      }
+    }catch(_){}
+  }
+  fetch('/voucher/info').then(function(r){ return r.json(); }).then(function(d) {
+    applyBranding(d);
+    if (d.app_name) document.getElementById('footer-app-name').textContent = d.app_name;
+    if (d.wa_number) {
+      var waUrl = 'https://wa.me/' + d.wa_number.replace(/\D/g,'');
+      var waLink = document.getElementById('kontak-wa-link');
+      if (waLink) { waLink.href = waUrl; waLink.textContent = d.wa_number; }
+      var ftLink = document.getElementById('footer-wa-link');
+      if (ftLink) ftLink.href = waUrl;
+    }
+    if (d.alamat) { var el = document.getElementById('kontak-alamat'); if (el) el.textContent = d.alamat; }
+  }).catch(function() {});
+}
+
+function loadStatsDashboard(retries) {
+  retries = retries || 0;
+  fetch('/voucher/stats')
+    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(function(d) {
+      document.getElementById('stat-total').textContent  = d.total_pelanggan !== undefined ? d.total_pelanggan : '—';
+      document.getElementById('stat-online').textContent = d.aktif_online    !== undefined ? d.aktif_online    : '—';
+    })
+    .catch(function(err){ if (retries < 1) setTimeout(function(){ loadStatsDashboard(1); }, 2000); });
+}
+
+function filterPaket(q) {
+  document.querySelectorAll('#paket-grid .paket-card').forEach(function(c) {
+    c.style.display = c.textContent.toLowerCase().indexOf(q.toLowerCase()) >= 0 ? '' : 'none';
+  });
+}
+
+function bukaBeli(cardId) {
+  var card = document.getElementById(cardId);
+  if (!card) { toast('❌ Paket tidak ditemukan'); return; }
+  paketDipilih = {
+    id:     card.getAttribute('data-id'),
+    nama:   card.getAttribute('data-nama'),
+    harga:  parseInt(card.getAttribute('data-harga'), 10),
+    durasi: card.getAttribute('data-durasi')
+  };
+  document.getElementById('co-nama').textContent   = paketDipilih.nama;
+  document.getElementById('co-durasi').textContent = paketDipilih.durasi;
+  document.getElementById('co-harga').textContent  = 'Rp ' + paketDipilih.harga.toLocaleString('id-ID');
+  document.getElementById('inp-nohp').value = '';
+  document.getElementById('inp-nama').value = '';
+  metode = '';
+  loadMetodeCheckout();
+  document.getElementById('ov-checkout').classList.add('open');
+}
+
+function pilihMetode(el, kode) {
+  metode = kode;
+  document.querySelectorAll('.metode-item').forEach(function(m){ m.classList.remove('sel'); });
+  el.classList.add('sel');
+}
+
+function prosesBayar() {
+  var nohp = document.getElementById('inp-nohp').value.trim();
+  var nama = document.getElementById('inp-nama').value.trim() || 'Pembeli';
+  if (!nohp) { toast('❗ Nomor WhatsApp wajib diisi'); document.getElementById('inp-nohp').focus(); return; }
+  if (!paketDipilih.id) { toast('❗ Pilih paket terlebih dahulu'); return; }
+  noWa = nohp;
+  var btn = document.getElementById('btn-bayar');
+  btn.disabled = true; btn.textContent = '⏳ Memproses...';
+  var noHpNormal = nohp.replace(/[-\s]/g,'').replace(/^0/,'62').replace(/^\+/,'');
+  fetch('/voucher/beli', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ paket_id:parseInt(paketDipilih.id,10), no_hp:noHpNormal, nama:nama, metode:metode })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    btn.disabled = false; btn.textContent = '🔒 Bayar Sekarang';
+    if (data.payment_url) { tutup('ov-checkout'); toast('⏳ Mengarahkan ke halaman pembayaran...'); setTimeout(function(){ window.location.href = data.payment_url; }, 800); }
+    else if (data.sukses && data.kode_voucher) { tutup('ov-checkout'); tampilHasil(data.kode_voucher); }
+    else if (data.error) toast('❌ ' + data.error);
+    else toast('❌ Gagal memproses, coba lagi');
+  })
+  .catch(function(err) { btn.disabled = false; btn.textContent = '🔒 Bayar Sekarang'; toast('❌ Tidak dapat terhubung ke server.'); });
+}
+
+function tampilHasil(kode) {
+  kodeVoucher = kode;
+  document.getElementById('vcr-kode').textContent = kode;
+  document.getElementById('vcr-sub').textContent  = 'Berlaku ' + paketDipilih.durasi;
+  document.getElementById('ov-hasil').classList.add('open');
+}
+
+function cekVoucher() {
+  var kode = document.getElementById('inp-cek').value.trim().toUpperCase();
+  if (!kode) { toast('❗ Masukkan kode voucher'); return; }
+  var btn = document.querySelector('.btn-cek');
+  btn.textContent = '⏳'; btn.disabled = true;
+  fetch('/voucher/cek?kode=' + encodeURIComponent(kode))
+  .then(function(r){ return r.json(); })
+  .then(function(data) {
+    btn.textContent = 'Cek'; btn.disabled = false;
+    var html = '';
+    if (data.error) {
+      html = tmplHasil('err','❌','Kode Tidak Ditemukan','Kode <strong>'+kode+'</strong> tidak ditemukan dalam sistem.');
+    } else if (data.status === 'unused') {
+      html = '<div class="hasil-body"><div class="hasil-ico ok">✅</div><h3>Voucher Aktif & Siap Pakai</h3>'
+        +'<div class="vcr-box"><div class="vcr-kode">'+kode+'</div>'
+        +'<div class="vcr-sub">'+escHtml(data.paket)+(data.tgl_expired?' · Exp: '+data.tgl_expired:'')+'</div></div>'
+        +'<button class="btn-salin" onclick="tutup(\'ov-cek\')">Tutup</button></div>';
+    } else if (data.status === 'used') {
+      html = tmplHasil('err','⚠️','Voucher Sudah Digunakan','Kode <strong>'+kode+'</strong> sudah dipakai pada '+(data.tgl_digunakan||'-')+'.');
+    } else {
+      html = tmplHasil('err','🚫','Voucher Tidak Aktif','Kode <strong>'+kode+'</strong> sudah tidak aktif. Hubungi admin.');
+    }
+    document.getElementById('cek-body').innerHTML = html;
+    document.getElementById('ov-cek').classList.add('open');
+  })
+  .catch(function() {
+    btn.textContent = 'Cek'; btn.disabled = false;
+    document.getElementById('cek-body').innerHTML = tmplHasil('err','⚠️','Tidak Dapat Terhubung','Gagal menghubungi server.');
+    document.getElementById('ov-cek').classList.add('open');
+  });
+}
+
+function tmplHasil(type, ico, judul, pesan) {
+  return '<div class="hasil-body"><div class="hasil-ico '+type+'">'+ico+'</div><h3>'+judul+'</h3><p>'+pesan+'</p><button class="btn-salin" onclick="tutup(\'ov-cek\')">Tutup</button></div>';
+}
+
+function salin() {
+  if (navigator.clipboard) navigator.clipboard.writeText(kodeVoucher).catch(function(){});
+  else { var el=document.createElement('textarea'); el.value=kodeVoucher; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); }
+  toast('📋 Kode disalin!');
+}
+
+function kirimWA() {
+  var no = noWa.replace(/[-\s]/g,'').replace(/^0/,'62').replace(/^\+/,'');
+  var msg = 'Voucher internet saya:\n*'+kodeVoucher+'*\nPaket: '+paketDipilih.nama+' ('+paketDipilih.durasi+')\n\nCara pakai:\n1. Sambung WiFi hotspot\n2. Buka browser\n3. Masuk halaman login\n4. Masukkan kode di atas';
+  window.open('https://wa.me/'+no+'?text='+encodeURIComponent(msg), '_blank');
+}
+
+function tutup(id) { document.getElementById(id).classList.remove('open'); }
+
+function toast(msg) {
+  var el = document.getElementById('toast-el');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(el._t); el._t = setTimeout(function(){ el.classList.remove('show'); }, 3500);
+}
+
+function pmBadge(t,bg,fg){var s=String(t),n=s.length,fs=n>=5?7:(n>=4?8:9);return '<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;background:'+bg+';color:'+(fg||'#fff')+';font-size:'+fs+'px;font-weight:700;letter-spacing:.2px;flex-shrink:0;line-height:1">'+s+'</span>';}
+var _QRIS=pmBadge('QRIS','#0f172a'), _ALFA=pmBadge('Alfa','#ED1C24'), _INDO=pmBadge('Indo','#0072BC');
+var SEMUA_METODE = {
+  'QRIS':       { ico:_QRIS,                          name:'QRIS',          sub:'Scan QR semua dompet' },
+  'qris':       { ico:_QRIS,                          name:'QRIS',          sub:'Scan QR semua dompet' },
+  'M2':         { ico:_QRIS,                          name:'QRIS',          sub:'Scan QR semua dompet' },
+  'NQ':         { ico:_QRIS,                          name:'QRIS',          sub:'Scan QR semua dompet' },
+  'SP':         { ico:_QRIS,                          name:'QRIS',          sub:'Scan QR semua dompet' },
+  'SA':         { ico:_QRIS,                          name:'QRIS',          sub:'Scan QR semua dompet' },
+  'OV':         { ico:pmBadge('OVO','#4C2A86'),       name:'OVO',           sub:'Push notif OVO' },
+  'OVO':        { ico:pmBadge('OVO','#4C2A86'),       name:'OVO',           sub:'Push notif OVO' },
+  'DA':         { ico:pmBadge('DANA','#118EEA'),      name:'DANA',          sub:'Bayar via DANA' },
+  'DANA':       { ico:pmBadge('DANA','#118EEA'),      name:'DANA',          sub:'Bayar via DANA' },
+  'LA':         { ico:pmBadge('Link','#E61E2A'),      name:'LinkAja',       sub:'Bayar via LinkAja' },
+  'BR':         { ico:pmBadge('BRI','#00529C'),       name:'VA BRI',        sub:'ATM / BRImo' },
+  'BRIVA':      { ico:pmBadge('BRI','#00529C'),       name:'VA BRI',        sub:'ATM / BRImo' },
+  'BV':         { ico:pmBadge('BSI','#00A39D'),       name:'VA BSI',        sub:'ATM / BSI Mobile' },
+  'BSIVA':      { ico:pmBadge('BSI','#00A39D'),       name:'VA BSI',        sub:'ATM / BSI Mobile' },
+  'BC':         { ico:pmBadge('BCA','#0060AF'),       name:'VA BCA',        sub:'ATM / m-BCA' },
+  'BCAVA':      { ico:pmBadge('BCA','#0060AF'),       name:'VA BCA',        sub:'ATM / m-BCA' },
+  'B1':         { ico:pmBadge('BNI','#F37021'),       name:'VA BNI',        sub:'ATM / BNI Mobile' },
+  'BNIVA':      { ico:pmBadge('BNI','#F37021'),       name:'VA BNI',        sub:'ATM / BNI Mobile' },
+  'I1':         { ico:pmBadge('MDR','#003D79'),       name:'VA Mandiri',    sub:'ATM / Livin by Mandiri' },
+  'MANDIRIVA':  { ico:pmBadge('MDR','#003D79'),       name:'VA Mandiri',    sub:'ATM / Livin' },
+  'VA':         { ico:pmBadge('MAY','#FFC600','#000'),name:'VA Maybank',    sub:'ATM / Maybank' },
+  'PERMATAVA':  { ico:pmBadge('PRMT','#1B7B3A'),      name:'VA Permata',    sub:'ATM / PermataMobile' },
+  'A1':         { ico:_ALFA,                          name:'Alfamart',      sub:'Alfamart / Alfamidi' },
+  'ALFAMART':   { ico:_ALFA,                          name:'Alfamart',      sub:'Alfamart / Alfamidi' },
+  'IR':         { ico:_INDO,                          name:'Indomaret',     sub:'Indomaret' },
+  'FT':         { ico:pmBadge('Ritel','#64748b'),     name:'Retail',        sub:'Alfamart · Pegadaian · POS' },
+  'snap':       { ico:pmBadge('MTR','#1f2937'),       name:'Midtrans Snap', sub:'Semua metode Midtrans' },
+  'gopay':      { ico:pmBadge('GoPay','#00AA13'),     name:'GoPay',         sub:'GoPay via Midtrans' },
+  'xendit':     { ico:pmBadge('Xnd','#4F46E5'),       name:'Xendit Invoice',sub:'Semua metode Xendit' },
+};
+
+function loadMetodeCheckout() {
+  var grid = document.getElementById('metode-checkout-grid');
+  if (!grid) return;
+  fetch('/voucher/info')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var aktif = d.pg_metode_aktif ? d.pg_metode_aktif.split(',').filter(Boolean) : ['qris','QRIS'];
+      if (!aktif.length) aktif = ['qris'];
+      grid.innerHTML = aktif.map(function(code, idx) {
+        var key = String(code || '').trim();
+        var m = SEMUA_METODE[key] || SEMUA_METODE[key.toUpperCase()] || SEMUA_METODE[key.toLowerCase()]
+              || { ico: pmBadge((key||'?').slice(0,4), '#64748b'), name: key, sub: '' };
+        var selCls = idx === 0 ? ' sel' : '';
+        if (idx === 0) metode = code;
+        return '<div class="metode-item' + selCls + '" onclick="pilihMetode(this,\'' + code + '\')">'
+          + '<span class="ico">' + m.ico + '</span>'
+          + '<div><div class="name">' + m.name + '</div><div class="sub">' + m.sub + '</div></div>'
+          + '</div>';
+      }).join('');
+    })
+    .catch(function() {
+      grid.innerHTML = '<div class="metode-item sel" onclick="pilihMetode(this,\'qris\')">'
+        + '<span class="ico">⬛</span><div><div class="name">QRIS</div><div class="sub">GoPay · OVO · Dana</div></div></div>';
+      metode = 'qris';
+    });
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toggleNav(btn){
+  var nl=document.querySelector('.nav-links');
+  if(!nl) return;
+  var open=nl.classList.toggle('open');
+  if(btn) btn.setAttribute('aria-expanded', open?'true':'false');
+}
+function closeNav(){
+  var nl=document.querySelector('.nav-links'); if(nl) nl.classList.remove('open');
+  var t=document.getElementById('navToggle'); if(t) t.setAttribute('aria-expanded','false');
+}
+document.querySelectorAll('.nav-links a').forEach(function(a){ a.addEventListener('click', closeNav); });
+document.addEventListener('click', function(e){
+  var nav=document.querySelector('nav');
+  if(nav && !nav.contains(e.target)) closeNav();
+});
+</script>
+</body>
+</html>
