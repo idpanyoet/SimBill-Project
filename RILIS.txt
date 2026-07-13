@@ -1,0 +1,233 @@
+================================================================================
+ SimBill v1.13.2 — PAKET RILIS
+ Overlay untuk /opt/simbill-source -> push SimBill-Source -> release-all.sh
+================================================================================
+
+STATUS: [!] BELUM diuji di dash.rfnet.id. Diuji dgn SQL & dayjs sungguhan
+        (10/10 + 9/9), tapi harness BUKAN bukti jalan (SOP 10.3).
+        CATATAN: dash.rfnet.id punya 0 pelanggan postpaid+kalender -> bug utama
+        rilis ini TIDAK menggigit panelmu. Yang kena = POP mitra & pelanggan
+        SimBill lain yang memakai Fixed Date.
+
+TIDAK ada dependensi baru -> npm install tidak wajib (aman dari jebakan mirror
+Tencent). TIDAK ada migrasi database WAJIB (ada SQL OPSIONAL di bawah).
+
+Interval cek lisensi TETAP 5 menit — tidak diubah.
+
+MEMUAT v1.13.1 (fix prepaid+Fixed Date tak pernah ter-isolir). Kalau v1.13.1
+belum kamu rilis, LEWATI saja — v1.13.2 sudah kumulatif.
+
+--------------------------------------------------------------------------------
+ ISI (5 file kode + 4 berkas versi/changelog)
+--------------------------------------------------------------------------------
+  VERSION                             -> v1.13.2
+  package.json / backend/package.json -> 1.13.2   (SUDAH di-bump KEDUANYA)
+  CHANGELOG-v1.13.2.md                tempel di ATAS CHANGELOG.md
+
+  BARU di v1.13.2:
+    backend/config/db.js         + expiredKalender() + isKalenderPostpaid()
+                                 (memakai nextFixedDate() yang SUDAH ADA)
+    backend/routes/pelanggan.js  3 titik tgl_expired: tambah / import / aktivasi
+    backend/routes/invoice.js    bayar tunai + query ambil periode & siklus
+    backend/routes/webhook.js    bayar gateway + query ambil periode & siklus
+
+  DIBAWA DARI v1.13.1:
+    backend/services/cron.js     1 baris SQL (prepaid+kalender ikut cek masa aktif)
+
+  [!] FILE INTI: backend/config/db.js — dipakai SELURUH aplikasi. Kalau rusak,
+      app MATI saat boot. node --check WAJIB sebelum pm2 restart.
+
+  [OK] FILE WA TIDAK DISENTUH (SOP 2.3): routes/whatsapp.js, routes/wa-command.js,
+       services/whatsapp.js — NOL PERUBAHAN, tidak ada risiko drift.
+  [OK] backend/server.js TIDAK DISENTUH.
+
+--------------------------------------------------------------------------------
+ BUG UTAMA — invoice dibatalkan sendiri, pelanggan TAK PERNAH DITAGIH
+--------------------------------------------------------------------------------
+ Pelanggan POSTPAID + Fixed Date (periode='kalender'):
+
+   1 Agu 07:10  invoice dibuat, jatuh tempo 5 Agu               OK
+   2 Agu 06:00  auto-cancel basi: tgl_expired (15 Agu)
+                > jatuh_tempo (5 Agu) -> INVOICE DIBATALKAN     GAGAL (sehari setelah lahir!)
+   6 Agu 09:10  _isolirKalender cari invoice unpaid -> tidak
+                ada (sudah cancelled) -> TIDAK ter-isolir       GAGAL
+
+   Terulang SETIAP BULAN. Tidak pernah bayar, tidak pernah ter-isolir.
+
+ AKAR MASALAH: tgl_expired dihitung anniversary (tgl_aktif + masa_aktif), padahal
+ jatuh tempo invoice ikut Fixed Date (billing_tgl_isolir). tgl_expired SELALU
+ lebih jauh dari jatuh tempo -> auto-cancel selalu menganggapnya basi.
+
+ PERBAIKAN: tgl_expired postpaid+Fixed Date DISELARASKAN ke Fixed Date.
+   pasang 15 Juli     -> tgl_expired 5 Agustus   (dulu 15 Agustus)
+   bayar invoice Agu  -> tgl_expired 5 September
+   telat bayar        -> tetap 5 September (telat TIDAK dapat bonus masa aktif)
+
+ Karena tgl_expired kini SAMA DENGAN jatuh tempo, dan auto-cancel memakai ">"
+ (bukan ">="), invoice sah tidak ikut dibatalkan. AKAR MASALAHNYA HILANG —
+ auto-cancel TIDAK perlu ditambal.
+
+ BONUS: kolom masa aktif di daftar pelanggan jadi SERAGAM ikut setingan billing
+ (tidak lagi acak ikut tanggal pasang) — persis yang diminta pengguna.
+
+ [!] PREPAID + Fixed Date SENGAJA TIDAK DIUBAH. Masa aktifnya sudah dibayar
+     penuh; memaksanya ke Fixed Date akan MEMOTONG hak yang sudah dibayar.
+
+--------------------------------------------------------------------------------
+ SQL OPSIONAL — merapikan pelanggan LAMA
+--------------------------------------------------------------------------------
+ Perbaikan di atas berlaku utk pelanggan BARU & pembayaran BERIKUTNYA. Pelanggan
+ postpaid+Fixed Date yang SUDAH ADA masih punya tgl_expired melenceng -> invoice
+ mereka MASIH akan di-cancel bulan depan.
+
+ CEK DULU (hanya membaca):
+   SELECT id, nama, username, tgl_aktif, tgl_expired
+   FROM pelanggan WHERE siklus='postpaid' AND periode='kalender';
+
+ Kalau kosong -> tidak perlu apa-apa.
+
+ Kalau ada isinya (ganti 5 / '05' dengan billing_tgl_isolir kamu):
+   -- Maju ke Fixed Date BERIKUTNYA setelah tgl_expired sekarang. Sengaja MAJU
+   -- (tidak pernah mundur) supaya TIDAK ADA pelanggan yang tiba-tiba terputus.
+   UPDATE pelanggan
+   SET tgl_expired = DATE_ADD(DATE_FORMAT(tgl_expired, '%Y-%m-05'), INTERVAL 1 MONTH)
+   WHERE siklus='postpaid' AND periode='kalender'
+     AND tgl_expired IS NOT NULL
+     AND DAY(tgl_expired) <> 5;
+
+   [!] BACKUP DULU. Jalankan SETELAH update kode. Cek hasilnya sebelum lanjut.
+
+--------------------------------------------------------------------------------
+ SUDAH DIUJI (harness, BUKAN produksi)
+--------------------------------------------------------------------------------
+ Alur Fixed Date 10/10 (dayjs sungguhan, helper disalin PERSIS dari db.js):
+   pasang 15 Juli -> tgl_expired 5 Agustus
+   invoice TIDAK dibatalkan lagi (dulu dibatalkan)
+   belum bayar -> TER-ISOLIR
+   bayar -> maju 5 September
+   telat bayar -> tetap 5 September (tak ada bonus)
+   4 siklus: 5 Agu -> 5 Sep -> 5 Okt -> 5 Nov (tidak drift)
+   postpaid+tetap / prepaid+kalender / prepaid+tetap -> TIDAK diselaraskan
+
+ v1.13.1 (prepaid) 9/9 dgn SQL sungguhan (sql.js), memakai data Miwifi ASLI.
+
+ REGRESI (dicek, bukan diklaim):
+   PELANGGAN_HAPUS (audit log v1.13.0) utuh
+   lengkapiPembeliVoucher (v1.12.2) utuh
+   hitungProrata utuh
+   module.exports = router: pelanggan / invoice / webhook = 1
+
+--------------------------------------------------------------------------------
+ LANGKAH RILIS
+--------------------------------------------------------------------------------
+1) OVERLAY ke /opt/simbill-source (semua file kecuali RILIS.txt)
+
+2) VERIFIKASI
+   cd /opt/simbill-source
+   cat VERSION                                          # -> v1.13.2
+   grep '"version"' package.json backend/package.json   # -> 1.13.2 KEDUANYA
+
+   for f in backend/config/db.js backend/routes/pelanggan.js \
+            backend/routes/invoice.js backend/routes/webhook.js \
+            backend/services/cron.js; do
+     node --check "$f" || echo "GAGAL: $f"; done
+
+   grep -c "expiredKalender"       backend/config/db.js         # -> 2
+   grep -c "isKalenderPostpaid"    backend/config/db.js         # -> 2
+   grep -c "isKalenderPostpaid"    backend/routes/pelanggan.js  # -> 4
+   grep -c "isKalenderPostpaid"    backend/routes/invoice.js    # -> 2
+   grep -c "isKalenderPostpaid"    backend/routes/webhook.js    # -> 2
+
+   # WAJIB: query pembayaran mengambil periode & siklus. Tanpa ini perbaikan
+   # DIAM-DIAM TIDAK JALAN (inv.periode = undefined):
+   grep -c "p.periode, p.siklus"   backend/routes/invoice.js    # -> 1
+   grep -c "p.periode, p.siklus"   backend/routes/webhook.js    # -> 1
+
+   grep -c "OR siklus = 'prepaid'" backend/services/cron.js     # -> 1  (v1.13.1)
+
+   # REGRESI:
+   grep -c "PELANGGAN_HAPUS"        backend/routes/pelanggan.js # -> 1
+   grep -c "lengkapiPembeliVoucher" backend/routes/invoice.js   # -> 3
+   grep -c "function hitungProrata" backend/config/db.js        # -> 1
+   grep -c "module.exports = router" backend/routes/pelanggan.js  # -> 1
+   grep -c "module.exports = router" backend/routes/invoice.js    # -> 1
+   grep -c "module.exports = router" backend/routes/webhook.js    # -> 1
+
+   bash -n update.sh && bash -n install.sh
+
+3) CHANGELOG
+   cat CHANGELOG-v1.13.2.md CHANGELOG.md > /tmp/cl && mv /tmp/cl CHANGELOG.md
+   head -5 CHANGELOG.md
+   rm CHANGELOG-v1.13.2.md
+
+4) COMMIT + PUSH
+   git add -A
+   git status        # [!] PASTIKAN TIDAK ADA .env / PAT / github_token
+   git commit -m "v1.13.2: fix postpaid+Fixed Date - invoice dibatalkan sendiri & pelanggan tak pernah ditagih; selaraskan tgl_expired ke setingan billing"
+   git push origin master
+
+5) RILIS PUBLIK
+   cd /opt/obf-tool
+   DRY_RUN=1 DEST_REPO="git@github.com:idpanyoet/SimBill-Project.git" ./release-all.sh v1.13.2
+   DEST_REPO="git@github.com:idpanyoet/SimBill-Project.git" ./release-all.sh v1.13.2
+
+6) VERIFIKASI PUBLIK
+   curl -s https://raw.githubusercontent.com/idpanyoet/SimBill-Project/master/VERSION
+   # -> v1.13.2
+   [!] JANGAN grep string ke file backend publik (ter-obfuscate). Uji FUNGSIONAL.
+
+7) UJI FUNGSIONAL DI 1 INSTANCE PELANGGAN (yang PUNYA pelanggan Fixed Date)
+   [ ] update jalan tanpa "Cannot find module"
+   [ ] APP NAIK setelah update        <<< config/db.js FILE INTI, ini kritis
+   [ ] Tambah pelanggan postpaid+Fixed Date -> tgl_expired = tanggal isolir
+       (mis. 5 bulan depan), BUKAN tanggal pasang + 1 bulan
+   [ ] Invoice bulanannya TIDAK di-cancel keesokan harinya
+       (dulu H+1 langsung jadi 'cancelled')
+   [ ] Bayar invoice -> tgl_expired maju ke tanggal isolir bulan berikutnya
+   [ ] Pelanggan postpaid + TETAP: perilaku TIDAK berubah
+   [ ] Pelanggan prepaid: tidak ada perubahan
+
+--------------------------------------------------------------------------------
+ PENGUMUMAN KE PELANGGAN
+--------------------------------------------------------------------------------
+ [!] INI YANG BISA MENGAGETKAN — SEBUTKAN, ATAU MEREKA PANIK:
+
+  * ISP yang memakai FIXED DATE selama ini kemungkinan besar TIDAK PERNAH menagih
+    pelanggan postpaid-nya — invoice dibuat lalu dibatalkan sendiri keesokan
+    harinya. Setelah update, penagihan MULAI JALAN.
+    Artinya: pelanggan yang selama ini gratis MULAI DITAGIH, dan yang tidak bayar
+    MULAI TER-ISOLIR. Ini perilaku yang BENAR — tapi bagi ISP akan terasa seperti
+    "tiba-tiba muncul banyak tagihan baru".
+
+  * Kolom MASA AKTIF pelanggan Fixed Date akan BERUBAH: dari acak (ikut tanggal
+    pasang) jadi seragam (ikut setingan billing). Ini disengaja.
+
+  * Ingatkan menjalankan SQL OPSIONAL di atas untuk pelanggan LAMA. Tanpa itu,
+    pelanggan lama MASIH bocor bulan depan.
+
+  * Prorata bulan pertama TIDAK berubah: hanya prepaid + Fixed Date. Postpaid yang
+    pasang di tengah bulan tetap gratis sisa bulan itu.
+
+ JANGAN pernah bundle PAT / github_token ke rilis.
+ Produksimu update lewat update-prod.sh, BUKAN panel "Update Sekarang".
+
+--------------------------------------------------------------------------------
+ MD5
+--------------------------------------------------------------------------------
+b2e698c90ce5e2f691c7b8971bb48893  VERSION
+5316962cf3b061b96fa2425298a8b726  package.json
+28fbcbe938ccf8c0feeec4f234d99879  backend/package.json
+94e75951c21f582366cac23280f2d6fe  CHANGELOG-v1.13.2.md
+34a3de643c03d8bf936fb5ee538e3e8f  backend/config/db.js
+9da5e7202bf941fc0cae6ea0b1fef06a  backend/routes/pelanggan.js
+6655a20f063544086700c4165f2a43b9  backend/routes/invoice.js
+21fe0bcaae04e1dfcd03e6310215c9d6  backend/routes/webhook.js
+1492eadf8789871abc54a722199df54b  backend/services/cron.js
+
+ md5 ASLI (sebelum ditimpa) untuk cek SOP 0.1:
+   backend/config/db.js       b162670505cc4a405327e774b02dc713
+   backend/routes/invoice.js  d28b187ddd324a02fafc25bc06697ef2
+   backend/routes/webhook.js  0333ea473a2b6098fc4b0eb6b11cb195
+   backend/services/cron.js   44cd1035092d146c28664eabf0c8bb05
+     (ini md5 v1.13.0. Kalau kamu SUDAH pasang v1.13.1, md5 cron.js-mu BEDA — wajar.)
+================================================================================
