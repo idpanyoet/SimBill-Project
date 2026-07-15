@@ -1,0 +1,235 @@
+================================================================================
+ SimBill v1.14.0 — PAKET RILIS  (RILIS KEAMANAN)
+ Overlay untuk /opt/simbill-source -> push SimBill-Source -> release-all.sh
+================================================================================
+
+STATUS: [OK] SUDAH diterapkan & diuji di dash.rfnet.id (enforce AKTIF, panel
+        Active, teknisi kaoi/munir/pong kerja normal). Signature DIVERIFIKASI
+        terhadap tanda tangan PRODUKSI ASLI (curl dash.rfnet.id) -> hasil TRUE.
+
+FOKUS : Anti-pembajakan lisensi (tanda tangan Ed25519), tutup kebocoran PII
+        endpoint publik, penegakan RBAC, dan penegakan lisensi DIPAKSA aktif.
+TIDAK ada dependensi baru (semua pakai `crypto` bawaan). TIDAK ada migrasi DB
+        baru (kecuali auto-set license_enforce=1 tiap boot, lihat bawah).
+
+--------------------------------------------------------------------------------
+ ISI
+--------------------------------------------------------------------------------
+  VERSION / package.json / backend/package.json / backend/VERSION -> 1.14.0
+  CHANGELOG-v1.14.0.md                            tempel di ATAS CHANGELOG.md
+
+  BARU / BERUBAH di v1.14.0:
+    backend/server.js                    PAKSA license_enforce=1 tiap boot
+                                         (Pola A) + kill-switch ENV
+    backend/services/license.js          verifikasi tanda tangan Ed25519
+                                         (public key tertanam) + grace 3 hari
+                                         + URL server dikunci
+    backend/middleware/license-guard.js  fail-open dipersempit (bukan status)
+    backend/routes/license.js            activate tak terima license_server_url
+    backend/routes/voucher-publik.js     K2: buang no_hp + rate-limit isolir
+    backend/middleware/rbac.js           penegakan + bebas 3 endpoint boot-time
+    backend/services/radius.js           CoA: fallback:false saat expiry voucher
+    backend/cek-enforce.js               [BARU] utilitas pre-flight enforce
+    frontend/admin.html                  force-logout ke gerbang saat lisensi ilegal
+
+  [!] admin.html RAWAN besar (§5). backend/server.js + db.js = FILE INTI (§2.4).
+  [!] TIDAK menyentuh file WA rawan-drift (whatsapp.js/wa-command.js) di rilis ini.
+
+--------------------------------------------------------------------------------
+ FITUR 1 (INTI) — Anti-pembajakan: tanda tangan Ed25519
+--------------------------------------------------------------------------------
+ Dulu instans bisa dibajak dgn mengarahkan validasi ke LICENSE SERVER PALSU
+ (template "MY API"/"PT Customer") yang selalu jawab {valid:true}. Terkonfirmasi
+ dari laporan pelanggan.
+
+ SEKARANG: license server menandatangani tiap jawaban /api/validate dgn PRIVATE
+ KEY Ed25519. SimBill memverifikasi dgn PUBLIC KEY tertanam (ikut ter-obfuscate).
+ Server palsu tak punya kunci privat -> tanda tangan gagal -> DITOLAK walau
+ isinya {valid:true}. Nonce acak tiap request menutup replay.
+
+ PRASYARAT: license.cmi.my.id HARUS sudah menandatangani (paket Fase-2 server
+ sudah terpasang; curl memunculkan "sig"). Public key di rilis ini SUDAH final
+ & COCOK dgn private key server (diuji thd tanda tangan asli = TRUE).
+ [!!] JANGAN generate ulang keypair setelah rilis disebar, atau SEMUA pelanggan
+      yang sudah update gagal verifikasi.
+
+--------------------------------------------------------------------------------
+ FITUR 2 — Penegakan lisensi DIPAKSA aktif (Pola A)
+--------------------------------------------------------------------------------
+ backend/server.js tiap boot menjalankan:
+   INSERT ... ('license_enforce','1') ON DUPLICATE KEY UPDATE nilai='1'
+ -> pembajak TIDAK bisa mematikan enforce permanen (set '0' di DB kembali '1'
+    saat restart).
+
+ AMAN utk pelanggan SAH: guard HANYA mengunci bila lisensi benar-benar INVALID
+ (sig_invalid/hwid_mismatch/expired). Server lisensi DOWN -> offline-grace 3 hari
+ (asal pernah validasi sukses). Bukan mengunci karena timing.
+
+ [!] RISIKO SISA: instans BARU yang belum pernah validasi + server lisensi DOWN
+     saat boot pertama = bisa terkunci (tak ada cache utk grace). Pastikan
+     license server uptime bagus saat rilis disebar.
+
+ KILL-SWITCH DARURAT (mematikan enforce utk 1 pelanggan sah):
+   set di .env instans itu:  LICENSE_ENFORCE_LOCK=0
+   lalu: UPDATE setting SET nilai='0' WHERE kunci='license_enforce'; + restart.
+   (Tanpa ENV itu, '0' manual kembali '1' saat restart.)
+
+--------------------------------------------------------------------------------
+ FITUR 3 — Force-logout ke gerbang lisensi (frontend)
+--------------------------------------------------------------------------------
+ Saat backend balas 403 {license:'invalid'} & enforce aktif, panel MENGUNCI
+ diri utk SEMUA role -> layar "Aktifkan lisensi". Offline-grace TIDAK memicu.
+
+--------------------------------------------------------------------------------
+ FITUR 4 — RBAC ditegakkan (siap enforce)
+--------------------------------------------------------------------------------
+ Layar "Hak Akses" kini BENAR-BENAR ditegakkan di backend. 3 endpoint boot-time
+ (GET /api/setting, /api/license/status, /api/license/hwid) DIBEBASKAN agar
+ teknisi/operator tak salah-blokir. Mode: off|audit|enforce (setting rbac_mode).
+ rbac_mode TIDAK dipaksa -- tetap default 'audit'. Aktifkan per-instans pakai
+ backend/cek-enforce.js (pre-flight GO/NO-GO). dash.rfnet.id: SUDAH enforce.
+
+--------------------------------------------------------------------------------
+ KEAMANAN — endpoint publik bocor PII (K2)
+--------------------------------------------------------------------------------
+ /voucher/isolir-info dulu mengirim no_hp pelanggan & bisa dienumerasi massal.
+ Sekarang: no_hp DIBUANG + rate-limit 30/10menit per-IP.
+
+--------------------------------------------------------------------------------
+ BUG — spam log MikroTik "disconnect with no ip provided"
+--------------------------------------------------------------------------------
+ Expiry voucher dulu menembak putus-sesi ke SEMUA router walau voucher offline
+ -> hotspot MikroTik menolak (no ip) -> log merah berderet, klaim "ACK" palsu.
+ Sekarang expiry voucher pakai fallback:false. Alur pelanggan/PPPoE tak berubah.
+
+--------------------------------------------------------------------------------
+ SUDAH DIUJI (bukti nyata, §4.5)
+--------------------------------------------------------------------------------
+ [OK] Signature: public key rilis diverifikasi thd sig PRODUKSI ASLI
+      (key a8b9a.., hwid dd8e43dd.., nonce abc123) -> crypto.verify = TRUE.
+ [OK] dash.rfnet.id: enforce AKTIF, panel Active, 3 teknisi kerja normal,
+      log audit BERSIH (tidak ada AKAN DITOLAK utk /api/setting & license).
+ [OK] node --check SEMUA backend .js (termasuk server.js INTI) -> 0 error.
+ [OK] admin.html: 4 script inline node --check 0 error (§5.7).
+ [OK] cek-enforce.js: parser log diuji thd baris log produksi asli -> tepat.
+
+--------------------------------------------------------------------------------
+ LANGKAH RILIS
+--------------------------------------------------------------------------------
+1) OVERLAY ke /opt/simbill-source
+   [!] File WA rawan-drift TIDAK ada di rilis ini -> tak perlu diff WA.
+   [!] server.js & db.js FILE INTI -> WAJIB bash/node --check (di bawah).
+
+2) VERIFIKASI
+   cd /opt/simbill-source
+   cat VERSION                                          # -> v1.14.0
+   cat backend/VERSION                                  # -> v1.14.0
+   grep '"version"' package.json backend/package.json   # -> 1.14.0 KEDUANYA
+
+   node --check backend/server.js                       # FILE INTI
+   node --check backend/services/license.js
+   node --check backend/middleware/rbac.js
+   node --check backend/middleware/license-guard.js
+   node --check backend/routes/voucher-publik.js
+   node --check backend/routes/license.js
+   node --check backend/services/radius.js
+   node --check backend/cek-enforce.js
+
+   # Fitur AKTIF (bukan mode transisi):
+   grep -c "BEGIN PUBLIC KEY"        backend/services/license.js       # -> 1
+   grep -c 'PUBKEY_LISENSI = "";'    backend/services/license.js       # -> 0 (!)
+   grep -c "Date.now() - c.ts) > GRACE_MS" backend/services/license.js # -> 1
+   grep -c "ON DUPLICATE KEY UPDATE nilai='1'" backend/server.js       # -> 1
+   grep -c "LICENSE_ENFORCE_LOCK"    backend/server.js                 # -> 2
+   grep -c "__BEBAS__"               backend/middleware/rbac.js        # -> 3
+   grep -c "limitIsolir"             backend/routes/voucher-publik.js  # -> 2
+   grep -c "fallback: false }"       backend/services/radius.js        # -> 2
+   grep -c "function licKunciSistem" frontend/admin.html               # -> 1
+
+   # Route/middleware export utuh (§2.2):
+   grep -c "module.exports = async function rbac" backend/middleware/rbac.js  # -> 1
+   grep -c "module.exports = { router"   backend/routes/voucher-publik.js  # -> 1
+   #  [!] rbac.js = middleware FUNGSI (bukan router). voucher-publik.js =
+   #      named-export {router,...}. KEDUANYA bukan "module.exports = router" -> NORMAL (§2.2)
+
+   # REGRESI (fitur lama tidak rusak):
+   grep -c "INTERVAL p.masa_aktif" backend/routes/voucher-publik.js  # -> 8
+   grep -c "dateStrings"           backend/config/db.js              # -> 2
+
+   # admin.html §5.7: ekstrak <script> inline -> node --check (0 error), div render seimbang.
+
+3) CHANGELOG
+   cat CHANGELOG-v1.14.0.md CHANGELOG.md > /tmp/cl && mv /tmp/cl CHANGELOG.md
+   rm CHANGELOG-v1.14.0.md
+
+4) COMMIT + PUSH
+   git add -A && git status      # [!] TIDAK ADA .env / PAT / github_token / PRIVATE KEY
+   git commit -m "v1.14.0: keamanan - anti-bobol lisensi (tanda tangan Ed25519 + URL server dikunci + grace 3 hari), penegakan lisensi dipaksa aktif tiap boot, force-logout saat lisensi ilegal, RBAC ditegakkan, endpoint isolir tak lagi bocorkan no_hp + rate-limit, log MikroTik tak lagi spam disconnect-no-ip"
+   git push origin master
+
+5) RILIS PUBLIK
+   cd /opt/obf-tool
+   DRY_RUN=1 DEST_REPO="git@github.com:idpanyoet/SimBill-Project.git" ./release-all.sh v1.14.0
+   DEST_REPO="git@github.com:idpanyoet/SimBill-Project.git" ./release-all.sh v1.14.0
+
+6) VERIFIKASI RILIS PUBLIK (§3.4 — JANGAN grep backend publik, sudah obfuscate)
+   curl -s https://raw.githubusercontent.com/idpanyoet/SimBill-Project/master/VERSION
+   # -> v1.14.0
+
+7) UJI FUNGSIONAL
+   [ ] Panel dash.rfnet.id tetap Active setelah update (signature terverifikasi)
+   [ ] Login teknisi -> panel kerja normal (OLT/tiket/redaman), TIDAK ketendang
+   [ ] Simulasi lisensi ilegal (ubah 1 char PUBKEY di instans UJI) -> ketendang
+       ke gerbang "Aktifkan lisensi" -> kembalikan
+   [ ] Cek voucher publik: /voucher/isolir-info response TIDAK memuat "no_hp"
+   [ ] Log MikroTik saat cron expiry: TIDAK ada lagi "disconnect with no ip"
+       berderet dari voucher
+   [ ] cek-enforce.js jalan -> verdict sesuai
+
+--------------------------------------------------------------------------------
+ PENGUMUMAN KE PELANGGAN
+--------------------------------------------------------------------------------
+  * Rilis KEAMANAN. Menutup celah yang memungkinkan SimBill dipakai tanpa lisensi
+    resmi (mengarahkan ke license server palsu). Kini validasi lisensi
+    ditandatangani kriptografis dan diverifikasi.
+
+  * Penegakan lisensi kini AKTIF otomatis. Instans berlisensi SAH berjalan normal;
+    hanya lisensi tidak sah / kedaluwarsa yang dikunci. Gangguan koneksi sementara
+    ke server lisensi TIDAK mengunci (toleransi 3 hari).
+
+  * Halaman tagihan pelanggan terisolir tak lagi mengirim nomor HP ke publik.
+
+  * Log router bersih dari pesan "disconnect with no ip provided" yang menyesatkan.
+
+ [!] JANGAN bundle PAT/github_token/PRIVATE KEY. Produksimu via update-prod.sh (§3.7).
+ [!] Pastikan license.cmi.my.id UPTIME bagus saat menyebar rilis ini (lihat
+     RISIKO SISA di Fitur 2).
+
+--------------------------------------------------------------------------------
+ MD5 (dihitung SETELAH semua edit selesai, §4.3)
+--------------------------------------------------------------------------------
+d81fe3bd2c47d2c391a65b7406d9b827  VERSION
+d81fe3bd2c47d2c391a65b7406d9b827  backend/VERSION
+6ad2a31d2bc01d7d3964f501babfe504  backend/cek-enforce.js
+4ceb8b5a699b691b06d760e881b4a453  backend/middleware/license-guard.js
+6fa2806a1928d0d30971de1d929f4a8d  backend/middleware/rbac.js
+6995c8f6de8ff44c56c8363ce2d4c878  backend/package.json
+03783c19c6dccc6acc74dbead80914df  backend/routes/license.js
+2823ba0e07fc670832f8e41b242a0e59  backend/routes/voucher-publik.js
+90ce82d93b853a70d3c8e743d1e7e2a9  backend/server.js
+8a6ad2709057a8ee912787985ad188c1  backend/services/license.js
+b874e58a43132d3475d57f6f3b80050d  backend/services/radius.js
+1e7763c68ca5b397f7ab3a4b37a32003  frontend/admin.html
+a1b1855adb7041e9077c25802ee1c1ce  package.json
+
+ md5 ASLI v1.13.5 (cek SOP §0.1 SEBELUM menimpa di server):
+   backend/server.js                    c1ffe6dc31acbf36a988b22c6b8f9cf4
+   backend/services/license.js          b874e58a43132d3475d57f6f3b80050d
+   backend/services/radius.js           b2fab8e927c1ac012e94530073e7ff2a
+   backend/middleware/license-guard.js  dad5fac51cafe0304982459425b68f23
+   backend/middleware/rbac.js           ab0f66efe037f101b3fe9deffa9e13eb
+   backend/routes/license.js            3bd8c4be3c5fe2c3aa8c3c8bb74b14d9
+   backend/routes/voucher-publik.js     e98777b2161aff00908f320c065fb2ce
+   frontend/admin.html                  7509892605d2ece53d995722b2143a5a
+   backend/VERSION                      1cd4c908a7abed9f8bd69142e129ac9a
+================================================================================
