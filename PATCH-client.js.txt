@@ -1,0 +1,13 @@
+PATCH backend/routes/client.js — tambah field siklus ke /api/client/profil
+
+Cari query di endpoint GET /profil, ubah baris:
+    p.tipe_koneksi, p.status, p.tgl_expired,
+menjadi:
+    p.tipe_koneksi, p.status, p.tgl_expired, p.siklus,
+
+sed presisi (jalankan di folder SimBill-Source):
+  sed -i "s/                   p.tipe_koneksi, p.status, p.tgl_expired,/                   p.tipe_koneksi, p.status, p.tgl_expired, p.siklus,/" backend/routes/client.js
+
+Verifikasi:
+  grep -c "p.siklus" backend/routes/client.js   # harus 1
+  node --check backend/routes/client.js
