@@ -1,0 +1,37 @@
+node_modules/
+.env
+backend/.env
+wa-session/
+uploads/
+tools/
+*.log
+*.xlsx
+backend/*.xlsx
+backend/Payment
+backend/migrate-data.js
+backend/restore-radcheck.js
+backend/test-duitku.js
+*.zip
+BACA-DULU.txt
+*.csv
+masa_aktif_*.sql
+sync_masa_aktif.js
+*_clean.csv
+*_update.sql
+
+node_modules/
+.env
+*.bak
+*.bak-*
+*.bak3
+_backup/
+frontend/uploads/
+acs_link.sql
+/backend/config/olt.json
+backend/config/.olt-alert-state.json
+backend/config/.olt-alert-state.json
+# olt-templates.json = data admin (template ONU buatan sendiri), BUKAN kode.
+# Di-untrack supaya `git reset --hard` saat update TIDAK menghapusnya.
+# Bawaan pabrik ada di olt-templates.default.json (tetap ikut repo).
+/backend/config/olt-templates.json
+backend/backups/
